@@ -65,7 +65,7 @@ Go deeper get better. Completing a run allows you to go deeper on the next.
 
 ## 11. Milestones
 - Prototype target date: 1/10/2026
-- First playable target date: 1/09/2026
+- First playable target date: 1/11/2026
 
 
 ## 12. Open Questions

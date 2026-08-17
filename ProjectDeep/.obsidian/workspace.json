@@ -34,9 +34,21 @@
               "icon": "lucide-file",
               "title": "New Beginnings"
             }
+          },
+          {
+            "id": "6b556b74527583e2",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.13.7"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.13.7"
+            }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       },
       {
         "id": "edcc917e31df999c",
@@ -219,7 +231,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "3e2a9e2f8bcdfa18",
+  "active": "6b556b74527583e2",
   "lastOpenFiles": [
     "Welcome.md",
     "New Beginnings.md"
