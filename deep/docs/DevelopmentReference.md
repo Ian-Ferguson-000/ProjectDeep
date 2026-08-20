@@ -14,7 +14,7 @@ This document is the onboarding source of truth for the current playable Godot d
 
 - `scenes/main/Main.tscn`: root controller scene. It owns scene transitions and run state through `scripts/main.gd`.
 - `scenes/tavern/Tavern.tscn`: starting hub. It contains tilemap layers, player/bartender/gear/door tokens, and dialogue/gear UI.
-- `scenes/forest/Forest.tscn`: first dungeon floor. It contains `Board/Tiles` as a `TileMapLayer`, marker/enemy/token roots, an `ExitDoor`, HUD, minimap, and action buttons.
+- `scenes/forest/Forest.tscn`: first dungeon floor. It contains `Board/Tiles` as a `TileMapLayer`, `Board/Decorations` for non-blocking forest dressing, marker/enemy/token roots, an `ExitDoor`, HUD, minimap, and action buttons.
 - `scenes/components/BoardPiece.tscn`: reusable tabletop token with `Panel`, `Sprite2D`, and `Label` child nodes.
 - `scenes/components/ExitDoor.tscn`: reusable exit marker that emits door signals.
 - `scenes/components/MinimapPanel.tscn`: compact visual map made from generated UI child nodes.
@@ -60,8 +60,9 @@ Current Fighter gear is created in `main.gd`:
 
 `scripts/scenes/forest.gd` owns the active floor dictionaries and arrays:
 
-- Grid: `GRID_W = 16`, `GRID_H = 11`, `TILE_SIZE = 48`, `ORIGIN = Vector2(48, 92)`.
+- Grid: `GRID_W = 16`, `GRID_H = 11`, `TILE_SIZE = 48`, `ORIGIN = Vector2(40, 150)`.
 - Tile art: `TX Tileset Grass.png`, atlas tile size `32x32`, display scale `1.5`.
+- Decoration art: `FreePack.png`, rendered as non-blocking `Sprite2D` children under `Board/Decorations`.
 - `floor_cells`: dictionary set of walkable carved cells.
 - `critical_path`: dictionary set of guaranteed route cells between generated room centers.
 - `player_pos`: starts at `Vector2i(2, 8)`, then becomes the first generated room center.
@@ -73,6 +74,7 @@ Current Fighter gear is created in `main.gd`:
 - `props`: five prop dictionaries chosen from rocks, barrels, and campfire. Rocks/barrels have `hp = 2`; campfire has `hp = 99`.
 - `loot`: loose gold, potion, and key dictionaries. Loose gold gives `7`.
 - `traps`: one dictionary `{ "pos": Vector2i, "sprung": false }`.
+- `decorations`: seeded non-gameplay dictionaries `{ "kind": String, "pos": Vector2i, "offset": Vector2 }` for floor clutter and edge dressing.
 - `chest`: `{ "pos": Vector2i(10, 4), "opened": false }` before generation; generated position is randomized.
 - `secret`: `{ "pos": Vector2i(6, 7), "found": false }` before generation; generated position is randomized.
 
@@ -102,8 +104,9 @@ Current Fighter gear is created in `main.gd`:
 - Player idle: `res://assets/sprite_packs/Player/IDLE/idle_down.png`.
 - Tavern keeper portrait/token: `res://assets/generated_characters/tavern_keeper.png`.
 - Feral wolf sheet: `res://assets/enemies/feral_wolf/normalized_sheet.png`.
-- Forest/tavern tile atlases: `TX Tileset Grass.png`, `TX Tileset Stone Ground.png`, `TX Tileset Wall.png`.
+- Forest/tavern tile atlases: `TX Tileset Grass.png`, `FreePack.png`, `generated_maps/tavern_floor_wood.png`, `TX Tileset Wall.png`.
 - Props/structures/plants: `TX Props.png`, `TX Struct.png`, `TX Plant.png`.
+- Shared exit door sprite: `generated_ui/wooden_exit_door.png`, cropped from `TX Props.png` and used by both tavern and forest exits.
 - Humble Gift buttons: `Sprites/Content/4 Buttons/1.png`, `2.png`, `3.png`.
 - Tavern desk: `Sprites/Book Desk/1.png`.
 
@@ -158,9 +161,10 @@ Purpose: hub map, gear selection, dialogue, and forest entry.
 
 Data:
 
-- Grid: `GRID_W = 10`, `GRID_H = 7`, `TILE_SIZE = 56`, `ORIGIN = Vector2(72, 112)`.
-- Tile scale: `TILESCALE = 1.75`, atlas tile size `32x32`.
-- Positions: player `Vector2i(2, 4)`, bartender `Vector2i(4, 2)`, forest door `Vector2i(8, 2)`, gear rack interaction near `Vector2i(1, 2)`.
+- Grid: `GRID_W = 12`, `GRID_H = 7`, `TILE_SIZE = 48`, `ORIGIN = Vector2(64, 138)`.
+- Prop/wall tile scale: `TILESCALE = 1.5`, atlas tile size `32x32`.
+- Generated tavern floor scale: `WOOD_TILESCALE = 0.03827751` for the `1254x1254` generated wood floor texture.
+- Positions: player `Vector2i(3, 5)`, bartender `Vector2i(6, 2)`, forest door `Vector2i(10, 2)`, gear rack interaction near `Vector2i(2, 2)`.
 - UI nodes: status, title, dialogue panel, gear detail, gear buttons, enter button.
 - Board nodes: ground/wall/fixture tile layers, prop sprite root, player/bartender/gear/door tokens.
 
@@ -180,7 +184,7 @@ Functions:
 - `_setup_layer(layer, texture, atlas_tiles)`: creates a `TileSet` and `TileSetAtlasSource` for a `TileMapLayer`.
 - `_paint_rect(layer, rect, atlas_tile)`: fills a rectangle of tile cells on a layer.
 - `_position_tavern_sprites()`: positions and scales the gear desk sprite.
-- `_configure_token_sprites()`: assigns player, bartender, gear rack, and forest door sprite regions/scales.
+- `_configure_token_sprites()`: assigns player, bartender, gear rack, and forest door sprites/scales. The forest door uses `generated_ui/wooden_exit_door.png`.
 - `_update_token_positions()`: places token nodes at their grid centers.
 - `_screen_to_grid(pos)`: converts screen coordinates into grid coordinates.
 - `_grid_to_screen(tile)`: converts grid coordinates into top-left screen coordinates.
@@ -199,13 +203,16 @@ Functions:
 
 - `setup(game_controller, state)`: receives controller/state, initializes block stacks from selected gear, and generates/refreshes immediately if already in the tree.
 - `_ready()`: styles UI, connects buttons and exit door signals, generates the floor, builds grass tilemap, configures the player sprite, and refreshes UI.
-- `_generate()`: seeded floor generation. Carves five rooms, links them with corridors, sets player/exit positions, then places chest, secret, props, loot, traps, and enemies. It exits early if generation already happened.
+- `_generate()`: seeded floor generation. Carves five rooms, links them with corridors, sets player/exit positions, then places chest, secret, props, loot, traps, enemies, and decorations. It exits early if generation already happened.
 - `_carve_room(center, radius_x, radius_y)`: adds rectangular room cells to `floor_cells`.
 - `_carve_corridor(a, b)`: adds an L-shaped guaranteed path between two room centers and records those cells in `critical_path`.
 - `_place_props()`: adds rocks, barrels, and a campfire to random unreserved floor cells.
 - `_place_loot()`: adds one gold pile, one potion, and one key.
 - `_place_traps()`: adds one unsprung trap.
 - `_place_enemies()`: adds three wolves with `4` hp and `2` damage.
+- `_place_decorations()`: adds small floor clutter on safe non-critical floor cells, guarantees local edge dressing near player start and exit, then adds larger edge decorations on non-floor cells adjacent to the carved floor.
+- `_add_decoration(kind, tile, offset)`: records one non-blocking decoration dictionary for later rendering.
+- `_seed_edge_decorations_near(center, edge_kinds, target_count)`: places a target number of non-blocking edge decorations near an important floor position.
 - `_unhandled_input(event)`: maps special, interact, potion, keyboard directions, and left-click tile selection.
 - `_take_directional_action(delta)`: updates facing and treats keyboard movement as an adjacent tile action.
 - `_handle_tile_click(tile)`: validates adjacency, then attacks enemies, hits props, opens chest, exits, moves, or reports blocked trees.
@@ -229,14 +236,16 @@ Functions:
 - `_die()`: returns to tavern with `"death"`.
 - `_build_board_tiles()`: builds the visible grass `TileMapLayer` from `floor_cells`.
 - `_make_grass_tile_set()`: creates a runtime `TileSet` from the grass atlas.
+- `_build_decorations()`: clears and rebuilds `Board/Decorations` as `Sprite2D` children from the seeded decoration dictionaries.
+- `_apply_decoration_sprite(sprite, kind)`: maps `FreePack.png` decoration keys to atlas regions, scale, and sprite offsets.
 - `_configure_player_sprite()`: assigns the player idle sprite sheet region and hides placeholder token visuals.
 - `_refresh_ui()`: updates health bar, stats text, log text, board nodes, and minimap state.
 - `_sync_board_nodes()`: positions player/exit, clears and rebuilds generated markers/enemies, adds enemy health bars, and updates minimap.
 - `_add_marker(node_name, tile, label, color, sprite_key)`: creates and adds a non-enemy marker piece.
 - `_make_piece(node_name, tile, label, color, shape, sprite_key = "")`: instances `BoardPiece`, configures label/color/shape, applies sprite art, and positions it.
-- `_apply_sprite_to_piece(piece, sprite_key)`: maps sprite keys like `wolf`, `rock`, `gold`, `chest`, and `trap` to atlas regions.
+- `_apply_sprite_to_piece(piece, sprite_key)`: maps sprite keys like `wolf`, `rock`, `gold`, `chest`, and `trap` to atlas regions. Breakable rocks use `FreePack.png`.
 - `_set_piece_sprite(piece, texture, region, scale)`: assigns sprite texture/region/scale and hides label/panel.
-- `_configure_exit_sprite()`: assigns structure atlas art to the `ExitDoor`.
+- `_configure_exit_sprite()`: assigns `generated_ui/wooden_exit_door.png` to the forest `ExitDoor`.
 - `_atlas_region(x, y)`: returns a `32x32` atlas `Rect2`.
 - `_add_enemy_health_bar(piece, enemy)`: attaches a small `ProgressBar` to an enemy token using enemy hp/max hp.
 - `_style_health_bar()`: styles the player HUD health bar.
@@ -248,6 +257,8 @@ Functions:
 - `_build_minimap_state()`: packages grid, player, exit, enemy, prop, loot, trap, chest, and secret state for `MinimapPanel`.
 - `_pick_floor_cell(avoid_path)`: picks a random unreserved floor cell, optionally avoiding `critical_path`.
 - `_reserved(tile)`: returns true if a tile is occupied by player, exit, chest, secret, props, loot, traps, or enemies.
+- `_decoration_at(tile)`: returns true if a non-blocking decoration already occupies that tile.
+- `_has_floor_neighbor(tile)`: returns true if a non-floor tile touches the carved floor and is suitable for edge decoration.
 - `_step_toward(from_tile, to_tile)`: chooses a simple Manhattan step toward the player, avoiding blocked and occupied cells.
 - `_is_walkable(tile)`: checks floor membership and blocks props, chest, and enemies.
 - `_prop_at(tile)`: returns the prop index at a tile or `-1`.

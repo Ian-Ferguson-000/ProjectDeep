@@ -3,11 +3,13 @@ extends Node2D
 const TILE_SIZE := 48
 const GRID_W := 16
 const GRID_H := 11
-const ORIGIN := Vector2(48, 92)
+const ORIGIN := Vector2(40, 150)
 const BoardPieceScene := preload("res://scenes/components/BoardPiece.tscn")
 const PLAYER_IDLE_DOWN := preload("res://assets/sprite_packs/Player/IDLE/idle_down.png")
 const WOLF_SHEET := preload("res://assets/enemies/feral_wolf/normalized_sheet.png")
 const GRASS_ATLAS := preload("res://assets/pixel_art/TX Tileset Grass.png")
+const FREEPACK_ATLAS := preload("res://assets/pixel_art/FreePack.png")
+const WOODEN_EXIT_DOOR := preload("res://assets/generated_ui/wooden_exit_door.png")
 const PROPS_ATLAS := preload("res://assets/pixel_art/TX Props.png")
 const STRUCT_ATLAS := preload("res://assets/pixel_art/TX Struct.png")
 const PLANT_ATLAS := preload("res://assets/pixel_art/TX Plant.png")
@@ -36,6 +38,7 @@ var enemies: Array[Dictionary] = []
 var props: Array[Dictionary] = []
 var loot: Array[Dictionary] = []
 var traps: Array[Dictionary] = []
+var decorations: Array[Dictionary] = []
 var chest := {"pos": Vector2i(10, 4), "opened": false}
 var secret := {"pos": Vector2i(6, 7), "found": false}
 
@@ -43,6 +46,7 @@ var message := "The forest arranges itself into a dangerous little board."
 
 @onready var markers_root: Node2D = $Board/Markers
 @onready var ground_layer: TileMapLayer = $Board/Tiles
+@onready var decorations_root: Node2D = $Board/Decorations
 @onready var enemies_root: Node2D = $Board/Enemies
 @onready var player_token: BoardPiece = $Board/Tokens/PlayerToken
 @onready var exit_door: ExitDoor = $Board/Markers/ExitDoor
@@ -64,6 +68,8 @@ func setup(game_controller: Node, state: RunState) -> void:
 		block_stacks = run_state.selected_gear.block_limit
 	if is_inside_tree():
 		_generate()
+		_build_board_tiles()
+		_build_decorations()
 		_refresh_ui()
 
 func _ready() -> void:
@@ -76,6 +82,7 @@ func _ready() -> void:
 	exit_door.door_entered.connect(_on_exit_door_entered)
 	_generate()
 	_build_board_tiles()
+	_build_decorations()
 	_configure_player_sprite()
 	_refresh_ui()
 
@@ -102,6 +109,7 @@ func _generate() -> void:
 	_place_loot()
 	_place_traps()
 	_place_enemies()
+	_place_decorations()
 
 func _carve_room(center: Vector2i, radius_x: int, radius_y: int) -> void:
 	for y in range(center.y - radius_y, center.y + radius_y + 1):
@@ -138,6 +146,43 @@ func _place_traps() -> void:
 func _place_enemies() -> void:
 	for i in range(3):
 		enemies.append({"kind": "wolf", "pos": _pick_floor_cell(true), "hp": 4, "max_health": 4, "damage": 2})
+
+func _place_decorations() -> void:
+	var floor_kinds: Array[String] = ["free_shrub_a", "free_shrub_b", "free_red_bush", "free_orange_bush", "free_small_rock"]
+	for i in range(20):
+		for attempt in range(80):
+			var tile := _pick_floor_cell(true)
+			if _decoration_at(tile) or _distance(tile, player_pos) <= 1 or _distance(tile, exit_pos) <= 1:
+				continue
+			_add_decoration(floor_kinds[rng.randi_range(0, floor_kinds.size() - 1)], tile, Vector2(rng.randf_range(-7.0, 7.0), rng.randf_range(-6.0, 6.0)))
+			break
+
+	var edge_kinds: Array[String] = ["free_pine", "free_small_tree", "free_blue_tree", "free_large_rock", "free_shrub_a", "free_shrub_b"]
+	_seed_edge_decorations_near(player_pos, edge_kinds, 6)
+	_seed_edge_decorations_near(exit_pos, edge_kinds, 6)
+	for i in range(30):
+		for attempt in range(160):
+			var tile := Vector2i(rng.randi_range(0, GRID_W - 1), rng.randi_range(0, GRID_H - 1))
+			if floor_cells.has(tile) or _decoration_at(tile) or not _has_floor_neighbor(tile):
+				continue
+			_add_decoration(edge_kinds[rng.randi_range(0, edge_kinds.size() - 1)], tile, Vector2(rng.randf_range(-10.0, 10.0), rng.randf_range(-8.0, 8.0)))
+			break
+
+func _add_decoration(kind: String, tile: Vector2i, offset: Vector2) -> void:
+	decorations.append({"kind": kind, "pos": tile, "offset": offset})
+
+func _seed_edge_decorations_near(center: Vector2i, edge_kinds: Array[String], target_count: int) -> void:
+	var placed := 0
+	for radius in range(1, 4):
+		for y in range(center.y - radius, center.y + radius + 1):
+			for x in range(center.x - radius, center.x + radius + 1):
+				if placed >= target_count:
+					return
+				var tile := Vector2i(x, y)
+				if not _is_inside_grid(tile) or floor_cells.has(tile) or _decoration_at(tile) or not _has_floor_neighbor(tile):
+					continue
+				_add_decoration(edge_kinds[rng.randi_range(0, edge_kinds.size() - 1)], tile, Vector2(rng.randf_range(-8.0, 8.0), rng.randf_range(-6.0, 8.0)))
+				placed += 1
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("special"):
@@ -438,6 +483,66 @@ func _make_grass_tile_set() -> TileSet:
 	tile_set.add_source(source, GRASS_SOURCE_ID)
 	return tile_set
 
+func _build_decorations() -> void:
+	if decorations_root == null:
+		return
+	_clear_children(decorations_root)
+	for decoration in decorations:
+		var decoration_kind: String = decoration["kind"]
+		var decoration_pos: Vector2i = decoration["pos"]
+		var decoration_offset: Vector2 = decoration["offset"]
+		var sprite := Sprite2D.new()
+		sprite.name = "Decor_%s_%d_%d" % [decoration_kind, decoration_pos.x, decoration_pos.y]
+		sprite.texture = FREEPACK_ATLAS
+		sprite.region_enabled = true
+		sprite.centered = true
+		sprite.position = _grid_center(decoration_pos) + decoration_offset
+		_apply_decoration_sprite(sprite, decoration_kind)
+		decorations_root.add_child(sprite)
+
+func _apply_decoration_sprite(sprite: Sprite2D, kind: String) -> void:
+	match kind:
+		"free_pine":
+			sprite.region_rect = Rect2(0, 96, 82, 92)
+			sprite.scale = Vector2(0.78, 0.78)
+			sprite.offset = Vector2(0, -18)
+		"free_small_tree":
+			sprite.region_rect = Rect2(84, 210, 54, 86)
+			sprite.scale = Vector2(0.70, 0.70)
+			sprite.offset = Vector2(0, -14)
+		"free_blue_tree":
+			sprite.region_rect = Rect2(160, 210, 62, 86)
+			sprite.scale = Vector2(0.68, 0.68)
+			sprite.offset = Vector2(0, -14)
+		"free_large_rock":
+			sprite.region_rect = Rect2(360, 82, 118, 74)
+			sprite.scale = Vector2(0.54, 0.54)
+			sprite.offset = Vector2(0, 2)
+		"free_small_rock":
+			sprite.region_rect = Rect2(410, 348, 54, 30)
+			sprite.scale = Vector2(0.70, 0.70)
+			sprite.offset = Vector2(0, 7)
+		"free_shrub_a":
+			sprite.region_rect = Rect2(118, 20, 82, 68)
+			sprite.scale = Vector2(0.48, 0.48)
+			sprite.offset = Vector2(0, 6)
+		"free_shrub_b":
+			sprite.region_rect = Rect2(208, 22, 84, 68)
+			sprite.scale = Vector2(0.48, 0.48)
+			sprite.offset = Vector2(0, 6)
+		"free_red_bush":
+			sprite.region_rect = Rect2(105, 156, 72, 48)
+			sprite.scale = Vector2(0.52, 0.52)
+			sprite.offset = Vector2(0, 7)
+		"free_orange_bush":
+			sprite.region_rect = Rect2(188, 158, 66, 46)
+			sprite.scale = Vector2(0.52, 0.52)
+			sprite.offset = Vector2(0, 7)
+		_:
+			sprite.region_rect = Rect2(118, 20, 82, 68)
+			sprite.scale = Vector2(0.48, 0.48)
+			sprite.offset = Vector2(0, 6)
+
 func _configure_player_sprite() -> void:
 	player_token.sprite_texture = PLAYER_IDLE_DOWN
 	player_token.sprite_region_enabled = true
@@ -514,7 +619,7 @@ func _apply_sprite_to_piece(piece: BoardPiece, sprite_key: String) -> void:
 		"wolf":
 			_set_piece_sprite(piece, WOLF_SHEET, Rect2(0, 0, 96, 80), Vector2(0.58, 0.58))
 		"rock":
-			_set_piece_sprite(piece, STRUCT_ATLAS, _atlas_region(1, 1), Vector2(1.45, 1.45))
+			_set_piece_sprite(piece, FREEPACK_ATLAS, Rect2(360, 82, 118, 74), Vector2(0.55, 0.55))
 		"barrel":
 			_set_piece_sprite(piece, PROPS_ATLAS, _atlas_region(2, 0), Vector2(1.55, 1.55))
 		"campfire":
@@ -543,10 +648,9 @@ func _set_piece_sprite(piece: BoardPiece, texture: Texture2D, region: Rect2, sca
 	piece.show_panel = false
 
 func _configure_exit_sprite() -> void:
-	exit_door.sprite_texture = STRUCT_ATLAS
-	exit_door.sprite_region_enabled = true
-	exit_door.sprite_region = _atlas_region(5, 0)
-	exit_door.sprite_scale = Vector2(1.6, 1.7)
+	exit_door.sprite_texture = WOODEN_EXIT_DOOR
+	exit_door.sprite_region_enabled = false
+	exit_door.sprite_scale = Vector2(0.82, 0.82)
 	exit_door.show_label = false
 	exit_door.show_panel = false
 
@@ -668,6 +772,20 @@ func _reserved(tile: Vector2i) -> bool:
 			return true
 	for enemy in enemies:
 		if enemy["pos"] == tile:
+			return true
+	return false
+
+func _decoration_at(tile: Vector2i) -> bool:
+	for decoration in decorations:
+		var decoration_pos: Vector2i = decoration["pos"]
+		if decoration_pos == tile:
+			return true
+	return false
+
+func _has_floor_neighbor(tile: Vector2i) -> bool:
+	var deltas: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	for delta in deltas:
+		if floor_cells.has(tile + delta):
 			return true
 	return false
 

@@ -21,6 +21,7 @@ The starter demo should be easy to inspect in the Godot editor. Scenes use named
 - `Forest`: handles generation, combat turns, loot, death, and completion.
 - `Board`: parent for the forest board.
 - `Board/Tiles`: `TileMapLayer` populated at runtime from `TX Tileset Grass.png` so the generated forest uses real grass tile sprites instead of script-drawn rectangles.
+- `Board/Decorations`: runtime-generated non-blocking forest dressing from `FreePack.png`, such as edge trees, shrubs, bushes, and rocks.
 - `Board/Markers`: runtime-generated props, loot, traps, chest, found secrets, and the editable `ExitDoor`.
 - `Board/Markers/ExitDoor`: reusable signal-based exit component adapted from the archived duplicate project.
 - `Board/Enemies`: runtime-generated enemy tokens using sprite regions, such as the feral wolf sheet, with small generated `ProgressBar` health bars.

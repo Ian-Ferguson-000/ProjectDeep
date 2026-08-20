@@ -1,14 +1,17 @@
 extends Node2D
 
-const TILE_SIZE := 56
-const GRID_W := 10
+const TILE_SIZE := 48
+const GRID_W := 12
 const GRID_H := 7
-const ORIGIN := Vector2(72, 112)
+const ORIGIN := Vector2(64, 138)
 const ATLAS_TILE_SIZE := Vector2i(32, 32)
-const TILESCALE := 1.75
+const TILESCALE := 1.5
+const WOOD_TILE_SIZE := Vector2i(1254, 1254)
+const WOOD_TILESCALE := 0.03827751
 const PLAYER_IDLE_DOWN := preload("res://assets/sprite_packs/Player/IDLE/idle_down.png")
 const TAVERN_KEEPER := preload("res://assets/generated_characters/tavern_keeper.png")
-const STONE_GROUND_ATLAS := preload("res://assets/pixel_art/TX Tileset Stone Ground.png")
+const TAVERN_FLOOR_ATLAS := preload("res://assets/generated_maps/tavern_floor_wood.png")
+const WOODEN_EXIT_DOOR := preload("res://assets/generated_ui/wooden_exit_door.png")
 const STRUCT_ATLAS := preload("res://assets/pixel_art/TX Struct.png")
 const PROPS_ATLAS := preload("res://assets/pixel_art/TX Props.png")
 const UI_BUTTON_NORMAL := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/1.png")
@@ -19,9 +22,9 @@ var controller: Node
 var run_state: RunState
 var gear_options: Array[GearData] = []
 var selected_gear: GearData
-var player_pos := Vector2i(2, 4)
-var bartender_pos := Vector2i(4, 2)
-var door_pos := Vector2i(8, 2)
+var player_pos := Vector2i(3, 5)
+var bartender_pos := Vector2i(6, 2)
+var door_pos := Vector2i(10, 2)
 var message := ""
 
 @onready var ground_layer: TileMapLayer = $Board/GroundLayer
@@ -112,6 +115,7 @@ func _populate_gear_buttons() -> void:
 		button.text = "%s  (%d dmg)" % [gear.display_name, gear.damage]
 		button.toggle_mode = true
 		button.button_pressed = selected_gear == gear
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.pressed.connect(_select_gear.bind(gear))
 		_style_button(button)
 		gear_box.add_child(button)
@@ -148,7 +152,7 @@ func _try_move(delta: Vector2i) -> void:
 func _interact() -> void:
 	if _is_adjacent(player_pos, bartender_pos):
 		message = "The bartender says, 'Every brave fool gets a first run. The smart ones choose gear before the door.'"
-	elif _is_adjacent(player_pos, Vector2i(1, 2)):
+	elif _is_adjacent(player_pos, Vector2i(2, 2)):
 		message = "The weapon rack hums with old victories."
 	elif _is_adjacent(player_pos, door_pos):
 		_enter_forest()
@@ -162,12 +166,6 @@ func _enter_forest() -> void:
 	controller.start_forest(selected_gear)
 
 func _build_tavern_tilemaps() -> void:
-	var ground_tiles: Array[Vector2i] = [
-		Vector2i(0, 0),
-		Vector2i(1, 0),
-		Vector2i(2, 0),
-		Vector2i(3, 0),
-	]
 	var wall_tiles: Array[Vector2i] = [
 		Vector2i(0, 0),
 		Vector2i(1, 0),
@@ -183,42 +181,45 @@ func _build_tavern_tilemaps() -> void:
 		Vector2i(5, 0),
 		Vector2i(6, 0),
 	]
-	_setup_layer(ground_layer, STONE_GROUND_ATLAS, ground_tiles)
+	_setup_layer(ground_layer, TAVERN_FLOOR_ATLAS, [Vector2i.ZERO], WOOD_TILE_SIZE, WOOD_TILESCALE)
 	_setup_layer(wall_layer, STRUCT_ATLAS, wall_tiles)
 	_setup_layer(fixture_layer, PROPS_ATLAS, fixture_tiles)
 
 	for y in range(GRID_H):
 		for x in range(GRID_W):
-			var atlas_tile := ground_tiles[(x + y) % ground_tiles.size()]
-			ground_layer.set_cell(Vector2i(x, y), 0, atlas_tile)
+			ground_layer.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
 
 	for x in range(GRID_W):
-		wall_layer.set_cell(Vector2i(x, 0), 0, wall_tiles[x % wall_tiles.size()])
-		wall_layer.set_cell(Vector2i(x, GRID_H - 1), 0, wall_tiles[(x + 1) % wall_tiles.size()])
+		wall_layer.set_cell(Vector2i(x, 0), 0, wall_tiles[0])
+		wall_layer.set_cell(Vector2i(x, GRID_H - 1), 0, wall_tiles[1])
 	for y in range(GRID_H):
 		wall_layer.set_cell(Vector2i(0, y), 0, wall_tiles[2])
 		wall_layer.set_cell(Vector2i(GRID_W - 1, y), 0, wall_tiles[3])
 
-	_paint_rect(fixture_layer, Rect2i(2, 1, 4, 1), Vector2i(0, 0))
-	_paint_rect(fixture_layer, Rect2i(3, 4, 3, 2), Vector2i(1, 0))
-	_paint_rect(fixture_layer, Rect2i(1, 5, 2, 1), Vector2i(2, 0))
-	_paint_rect(fixture_layer, Rect2i(7, 5, 2, 1), Vector2i(2, 0))
-	_paint_rect(fixture_layer, Rect2i(7, 0, 2, 1), Vector2i(3, 0))
-	fixture_layer.set_cell(Vector2i(1, 2), 0, Vector2i(4, 0))
-	fixture_layer.set_cell(door_pos, 0, Vector2i(5, 0))
+	_paint_rect(fixture_layer, Rect2i(4, 1, 5, 1), Vector2i(0, 0))
+	_paint_rect(fixture_layer, Rect2i(2, 3, 2, 2), Vector2i(1, 0))
+	_paint_rect(fixture_layer, Rect2i(8, 4, 2, 1), Vector2i(2, 0))
+	_paint_rect(fixture_layer, Rect2i(5, 5, 3, 1), Vector2i(2, 0))
+	fixture_layer.set_cell(Vector2i(2, 2), 0, Vector2i(4, 0))
 
-func _setup_layer(layer: TileMapLayer, texture: Texture2D, atlas_tiles: Array[Vector2i]) -> void:
+func _setup_layer(
+	layer: TileMapLayer,
+	texture: Texture2D,
+	atlas_tiles: Array[Vector2i],
+	tile_size: Vector2i = ATLAS_TILE_SIZE,
+	tile_scale: float = TILESCALE
+) -> void:
 	var tile_set := TileSet.new()
-	tile_set.tile_size = ATLAS_TILE_SIZE
+	tile_set.tile_size = tile_size
 	var source := TileSetAtlasSource.new()
 	source.texture = texture
-	source.texture_region_size = ATLAS_TILE_SIZE
+	source.texture_region_size = tile_size
 	for tile in atlas_tiles:
 		source.create_tile(tile)
 	tile_set.add_source(source, 0)
 	layer.tile_set = tile_set
 	layer.position = ORIGIN
-	layer.scale = Vector2(TILESCALE, TILESCALE)
+	layer.scale = Vector2(tile_scale, tile_scale)
 	layer.clear()
 
 func _paint_rect(layer: TileMapLayer, rect: Rect2i, atlas_tile: Vector2i) -> void:
@@ -227,9 +228,9 @@ func _paint_rect(layer: TileMapLayer, rect: Rect2i, atlas_tile: Vector2i) -> voi
 			layer.set_cell(Vector2i(x, y), 0, atlas_tile)
 
 func _position_tavern_sprites() -> void:
-	gear_desk_sprite.position = _grid_center(Vector2i(1, 3)) + Vector2(4, 0)
-	gear_desk_sprite.scale = Vector2(0.12, 0.12)
-	gear_desk_sprite.modulate = Color(0.90, 0.78, 0.58, 0.88)
+	gear_desk_sprite.position = _grid_center(Vector2i(2, 3)) + Vector2(0, 2)
+	gear_desk_sprite.scale = Vector2(0.085, 0.085)
+	gear_desk_sprite.modulate = Color(0.95, 0.82, 0.58, 0.90)
 
 func _configure_token_sprites() -> void:
 	player_token.sprite_texture = PLAYER_IDLE_DOWN
@@ -241,7 +242,7 @@ func _configure_token_sprites() -> void:
 
 	bartender_token.sprite_texture = TAVERN_KEEPER
 	bartender_token.sprite_region_enabled = false
-	bartender_token.sprite_scale = Vector2(0.055, 0.055)
+	bartender_token.sprite_scale = Vector2(0.036, 0.036)
 	bartender_token.show_label = false
 	bartender_token.show_panel = false
 
@@ -250,16 +251,15 @@ func _configure_token_sprites() -> void:
 	gear_rack_token.sprite_texture = PROPS_ATLAS
 	gear_rack_token.sprite_region_enabled = true
 	gear_rack_token.sprite_region = Rect2(4 * ATLAS_TILE_SIZE.x, 0, ATLAS_TILE_SIZE.x, ATLAS_TILE_SIZE.y)
-	gear_rack_token.sprite_scale = Vector2(1.55, 1.55)
+	gear_rack_token.sprite_scale = Vector2(1.25, 1.25)
 	gear_rack_token.show_label = false
 	gear_rack_token.show_panel = false
 
 	forest_door_token.shape = BoardPiece.PieceShape.SQUARE
 	forest_door_token.size = Vector2(42, 48)
-	forest_door_token.sprite_texture = STRUCT_ATLAS
-	forest_door_token.sprite_region_enabled = true
-	forest_door_token.sprite_region = Rect2(5 * ATLAS_TILE_SIZE.x, 0, ATLAS_TILE_SIZE.x, ATLAS_TILE_SIZE.y)
-	forest_door_token.sprite_scale = Vector2(1.6, 1.8)
+	forest_door_token.sprite_texture = WOODEN_EXIT_DOOR
+	forest_door_token.sprite_region_enabled = false
+	forest_door_token.sprite_scale = Vector2(0.80, 0.80)
 	forest_door_token.show_label = false
 	forest_door_token.show_panel = false
 
@@ -268,7 +268,7 @@ func _update_token_positions() -> void:
 		return
 	player_token.position = _grid_center(player_pos)
 	bartender_token.position = _grid_center(bartender_pos)
-	gear_rack_token.position = _grid_center(Vector2i(1, 2))
+	gear_rack_token.position = _grid_center(Vector2i(2, 2))
 	forest_door_token.position = _grid_center(door_pos)
 
 func _screen_to_grid(pos: Vector2) -> Vector2i:
@@ -294,7 +294,7 @@ func _style_dialogue_panel() -> void:
 	dialogue_panel.add_theme_stylebox_override("panel", style)
 
 func _style_button(button: Button) -> void:
-	button.custom_minimum_size = Vector2(0, 40)
+	button.custom_minimum_size = Vector2(260, 34)
 	button.add_theme_stylebox_override("normal", _button_style(UI_BUTTON_NORMAL))
 	button.add_theme_stylebox_override("hover", _button_style(UI_BUTTON_HOVER))
 	button.add_theme_stylebox_override("pressed", _button_style(UI_BUTTON_PRESSED))

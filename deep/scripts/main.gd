@@ -17,7 +17,7 @@ func _build_gear_options() -> void:
 		GearData.create(
 			"sword_shield",
 			"Sword and Shield",
-			1,
+			5,
 			true,
 			2,
 			"charge",
