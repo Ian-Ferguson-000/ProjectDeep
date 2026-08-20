@@ -1,0 +1,64 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://ddk3x847fm1tv"]
+
+[ext_resource type="Texture2D" uid="uid://dtjn5gpxcttat" path="res://assets/pixel_art/shroomie - wakeup.png" id="1_8yb13"]
+[ext_resource type="Texture2D" uid="uid://7hcdt5ainxj0" path="res://assets/pixel_art/shroomie.png" id="2_0oiss"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x8oy8"]
+atlas = ExtResource("1_8yb13")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o34d4"]
+atlas = ExtResource("1_8yb13")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o8vyw"]
+atlas = ExtResource("2_0oiss")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qpff0"]
+atlas = ExtResource("2_0oiss")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6ijmv"]
+atlas = ExtResource("2_0oiss")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jml74"]
+atlas = ExtResource("2_0oiss")
+region = Rect2(32, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x8oy8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o34d4")
+}],
+"loop": 0,
+"name": &"attack",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o8vyw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qpff0")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6ijmv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jml74")
+}],
+"loop": 1,
+"name": &"run",
+"speed": 7.0
+}]

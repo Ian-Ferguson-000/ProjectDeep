@@ -1,0 +1,64 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://dc3l7j4bx6ulr"]
+
+[ext_resource type="Texture2D" uid="uid://bne0gdbbyaj3w" path="res://assets/pixel_art/voodoo-guy-behaviour.png" id="1_38mri"]
+[ext_resource type="Texture2D" uid="uid://dm1rhhj8cxn1x" path="res://assets/pixel_art/voodoo-guy-walk anim.png" id="2_5pxb3"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5dg0u"]
+atlas = ExtResource("1_38mri")
+region = Rect2(0, 0, 32, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f8hea"]
+atlas = ExtResource("1_38mri")
+region = Rect2(32, 0, 32, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6kqun"]
+atlas = ExtResource("2_5pxb3")
+region = Rect2(0, 0, 44, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hqpde"]
+atlas = ExtResource("2_5pxb3")
+region = Rect2(44, 0, 44, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wb2jr"]
+atlas = ExtResource("2_5pxb3")
+region = Rect2(0, 0, 44, 37)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xgxjm"]
+atlas = ExtResource("2_5pxb3")
+region = Rect2(44, 0, 44, 37)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5dg0u")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f8hea")
+}],
+"loop": 0,
+"name": &"attack",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6kqun")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hqpde")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wb2jr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xgxjm")
+}],
+"loop": 1,
+"name": &"run",
+"speed": 7.0
+}]

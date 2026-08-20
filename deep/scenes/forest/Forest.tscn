@@ -1,0 +1,107 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/scenes/forest.gd" id="1_forest"]
+[ext_resource type="Script" path="res://scripts/components/board_piece.gd" id="2_piece"]
+[ext_resource type="PackedScene" path="res://scenes/components/ExitDoor.tscn" id="3_exit_door"]
+[ext_resource type="PackedScene" path="res://scenes/components/MinimapPanel.tscn" id="4_minimap"]
+
+[node name="Forest" type="Node2D"]
+script = ExtResource("1_forest")
+
+[node name="Board" type="Node2D" parent="."]
+
+[node name="Tiles" type="TileMapLayer" parent="Board"]
+
+[node name="Markers" type="Node2D" parent="Board"]
+
+[node name="ExitDoor" parent="Board/Markers" instance=ExtResource("3_exit_door")]
+
+[node name="Enemies" type="Node2D" parent="Board"]
+
+[node name="Tokens" type="Node2D" parent="Board"]
+
+[node name="PlayerToken" type="Node2D" parent="Board/Tokens"]
+script = ExtResource("2_piece")
+label_text = "F"
+fill_color = Color(0.24, 0.48, 0.91, 1)
+radius = 18.0
+
+[node name="Panel" type="Panel" parent="Board/Tokens/PlayerToken"]
+offset_left = -18.0
+offset_top = -18.0
+offset_right = 18.0
+offset_bottom = 18.0
+
+[node name="Sprite" type="Sprite2D" parent="Board/Tokens/PlayerToken"]
+
+[node name="Label" type="Label" parent="Board/Tokens/PlayerToken"]
+offset_left = -18.0
+offset_top = -12.0
+offset_right = 18.0
+offset_bottom = 12.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Root" type="MarginContainer" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 14.0
+offset_right = -18.0
+offset_bottom = -14.0
+
+[node name="Columns" type="HBoxContainer" parent="UI/Root"]
+
+[node name="LeftPanel" type="VBoxContainer" parent="UI/Root/Columns"]
+custom_minimum_size = Vector2(780, 0)
+
+[node name="TitleLabel" type="Label" parent="UI/Root/Columns/LeftPanel"]
+text = "Forest Floor"
+
+[node name="ActionLabel" type="Label" parent="UI/Root/Columns/LeftPanel"]
+custom_minimum_size = Vector2(700, 34)
+autowrap_mode = 3
+text = "Click adjacent tiles. E/Space interacts. F uses your gear special. Q drinks a potion."
+
+[node name="RightPanel" type="VBoxContainer" parent="UI/Root/Columns"]
+custom_minimum_size = Vector2(330, 0)
+
+[node name="HealthPanel" type="VBoxContainer" parent="UI/Root/Columns/RightPanel"]
+custom_minimum_size = Vector2(320, 54)
+
+[node name="HealthTitle" type="Label" parent="UI/Root/Columns/RightPanel/HealthPanel"]
+text = "Health"
+
+[node name="HealthBarRow" type="HBoxContainer" parent="UI/Root/Columns/RightPanel/HealthPanel"]
+
+[node name="HealthBar" type="ProgressBar" parent="UI/Root/Columns/RightPanel/HealthPanel/HealthBarRow"]
+custom_minimum_size = Vector2(230, 24)
+size_flags_horizontal = 3
+show_percentage = false
+
+[node name="HealthValueLabel" type="Label" parent="UI/Root/Columns/RightPanel/HealthPanel/HealthBarRow"]
+custom_minimum_size = Vector2(72, 24)
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="HudLabel" type="Label" parent="UI/Root/Columns/RightPanel"]
+custom_minimum_size = Vector2(320, 112)
+autowrap_mode = 3
+
+[node name="MinimapPanel" parent="UI/Root/Columns/RightPanel" instance=ExtResource("4_minimap")]
+
+[node name="SpecialButton" type="Button" parent="UI/Root/Columns/RightPanel"]
+text = "Use Special"
+
+[node name="InteractButton" type="Button" parent="UI/Root/Columns/RightPanel"]
+text = "Interact"
+
+[node name="PotionButton" type="Button" parent="UI/Root/Columns/RightPanel"]
+text = "Drink Potion"
+
+[node name="LogLabel" type="Label" parent="UI/Root/Columns/RightPanel"]
+custom_minimum_size = Vector2(320, 230)
+autowrap_mode = 3

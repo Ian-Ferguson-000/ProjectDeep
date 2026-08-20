@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyProfile" format=3 uid="uid://cewtw5umav2t0"]
+
+[ext_resource type="Script" uid="uid://csnapanx857b1" path="res://codes/combat/enemy_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+enemy_id = "kobold_guard"
+journal_id = "kobold_guard"
+display_name = "Kobold Guard"
+respawn_time = 5.0

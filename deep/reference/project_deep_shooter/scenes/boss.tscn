@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://boss001"]
+
+[ext_resource type="Script" path="res://scripts/boss.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 20.0
+
+[node name="Boss" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 2
+script = ExtResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" shape=SubResource("CircleShape2D_1")]
+
+[node name="Sprite" type="ColorRect"]
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+color = Color(0.6, 0.1, 0.8, 1)
