@@ -122,7 +122,8 @@ func _populate_gear_buttons() -> void:
 
 func _select_gear(gear: GearData) -> void:
 	selected_gear = gear
-	message = "The bartender nods. '%s. A fair answer to an unfair forest.'" % gear.display_name
+	var class_type := run_state.selected_class_name if run_state != null else "Fighter"
+	message = "The bartender nods. '%s. A fair answer for a %s.'" % [gear.display_name, class_type]
 	_refresh_ui()
 
 func _handle_tile_click(tile: Vector2i) -> void:
@@ -141,7 +142,7 @@ func _try_move(delta: Vector2i) -> void:
 	if not _is_inside_grid(target):
 		return
 	if target == bartender_pos:
-		message = "The bartender says, 'Pick a blade, then let the forest judge your footwork.'"
+		message = "The bartender says, '%s'" % _selection_prompt()
 	elif target == door_pos:
 		_enter_forest()
 	else:
@@ -151,9 +152,9 @@ func _try_move(delta: Vector2i) -> void:
 
 func _interact() -> void:
 	if _is_adjacent(player_pos, bartender_pos):
-		message = "The bartender says, 'Every brave fool gets a first run. The smart ones choose gear before the door.'"
+		message = "The bartender says, '%s'" % _selection_prompt()
 	elif _is_adjacent(player_pos, Vector2i(2, 2)):
-		message = "The weapon rack hums with old victories."
+		message = "The weapon rack hums with old victories." if _selected_class_id() == "fighter" else "The spell shelf flickers with patient firelight."
 	elif _is_adjacent(player_pos, door_pos):
 		_enter_forest()
 	else:
@@ -164,6 +165,16 @@ func _enter_forest() -> void:
 	if controller == null or selected_gear == null:
 		return
 	controller.start_forest(selected_gear)
+
+func _selection_prompt() -> String:
+	if _selected_class_id() == "mage":
+		return "Choose a spell book, then make the forest answer in kind."
+	return "Pick a blade, then let the forest judge your footwork."
+
+func _selected_class_id() -> String:
+	if run_state == null:
+		return "fighter"
+	return run_state.selected_class_id
 
 func _build_tavern_tilemaps() -> void:
 	var wall_tiles: Array[Vector2i] = [

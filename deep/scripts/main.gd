@@ -1,27 +1,31 @@
 extends Node
 
+const StartScreenScene := preload("res://scenes/start/StartScreen.tscn")
+const ClassSelectionScene := preload("res://scenes/class_selection/ClassSelection.tscn")
 const TavernScene := preload("res://scenes/tavern/Tavern.tscn")
 const ForestScene := preload("res://scenes/forest/Forest.tscn")
 
 var run_state := RunState.new()
-var gear_options: Array[GearData] = []
+var all_gear_options: Array[GearData] = []
 var current_scene: Node
 
 func _ready() -> void:
 	_ensure_input_actions()
 	_build_gear_options()
-	show_tavern("The hearth is warm. The bartender gestures toward three old weapons.")
+	show_start_screen()
 
 func _build_gear_options() -> void:
-	gear_options = [
+	all_gear_options = [
 		GearData.create(
 			"sword_shield",
 			"Sword and Shield",
-			5,
+			1,
 			true,
 			2,
 			"charge",
-			"Reliable defense. Special: Charge in your facing direction and strike the first enemy."
+			"Reliable defense. Special: Charge in your facing direction and strike the first enemy.",
+			"fighter",
+			"block"
 		),
 		GearData.create(
 			"greatsword",
@@ -30,7 +34,9 @@ func _build_gear_options() -> void:
 			false,
 			0,
 			"sweep",
-			"Heavy damage with no shield. Special: Sweep all adjacent enemies."
+			"Heavy damage with no shield. Special: Sweep all adjacent enemies.",
+			"fighter",
+			"none"
 		),
 		GearData.create(
 			"spear_shield",
@@ -39,28 +45,98 @@ func _build_gear_options() -> void:
 			true,
 			1,
 			"brace",
-			"Defensive reach. Special: Brace to hit the next enemy that approaches."
+			"Defensive reach. Special: Brace to hit the next enemy that approaches.",
+			"fighter",
+			"block"
+		),
+		GearData.create(
+			"magic_missile_shield",
+			"Magic Missile and Shield",
+			1,
+			true,
+			2,
+			"force_blast",
+			"Balanced spell book. Special: Force Blast damages a target, pushes it back, and splashes nearby foes.",
+			"mage",
+			"block"
+		),
+		GearData.create(
+			"fireball_fire_shield",
+			"Fireball and Fire Shield",
+			3,
+			false,
+			0,
+			"flamethrower",
+			"Wide offense. Fire Shield retaliates when hit. Special: Flamethrower burns a line ahead.",
+			"mage",
+			"retaliate"
+		),
+		GearData.create(
+			"lightning_flash_step",
+			"Lightning Bolt and Flash Step",
+			2,
+			false,
+			0,
+			"shockwave",
+			"Mobile control. Flash Step slips backward when struck. Special: Shockwave stuns adjacent enemies.",
+			"mage",
+			"flash_step"
 		),
 	]
+
+func show_start_screen() -> void:
+	_clear_scene()
+	var start_screen := StartScreenScene.instantiate()
+	current_scene = start_screen
+	start_screen.setup(self)
+	add_child(start_screen)
+
+func show_class_selection() -> void:
+	_clear_scene()
+	var class_selection := ClassSelectionScene.instantiate()
+	current_scene = class_selection
+	class_selection.setup(self)
+	add_child(class_selection)
+
+func choose_class(class_id: String) -> void:
+	run_state.set_class(class_id)
+	var class_type := run_state.selected_class_name
+	show_tavern("The hearth is warm. The bartender lays out %s choices for the road ahead." % class_type)
 
 func show_tavern(message: String = "") -> void:
 	_clear_scene()
 	var tavern := TavernScene.instantiate()
 	current_scene = tavern
-	tavern.setup(self, run_state, gear_options, message)
+	tavern.setup(self, run_state, _gear_options_for_class(run_state.selected_class_id), message)
 	add_child(tavern)
 
 func start_forest(gear: GearData) -> void:
 	run_state.start_new_run(gear)
+	_load_forest_floor()
+
+func _load_forest_floor() -> void:
 	_clear_scene()
 	var forest := ForestScene.instantiate()
 	current_scene = forest
 	forest.setup(self, run_state)
 	add_child(forest)
 
+func complete_forest_floor() -> void:
+	if run_state.advance_floor():
+		_load_forest_floor()
+	else:
+		return_to_tavern("victory", "You escape the five-floor forest dungeon with %d gold. The bartender smiles like he expected it." % run_state.gold)
+
 func return_to_tavern(outcome: String, message: String) -> void:
 	run_state.finish_run(outcome, message)
 	show_tavern(message)
+
+func _gear_options_for_class(class_id: String) -> Array[GearData]:
+	var options: Array[GearData] = []
+	for gear in all_gear_options:
+		if gear.class_id == class_id:
+			options.append(gear)
+	return options
 
 func _clear_scene() -> void:
 	if current_scene != null:

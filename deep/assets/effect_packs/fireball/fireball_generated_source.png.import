@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dgpbg6nkivc33"
-path="res://.godot/imported/fireball_start.png-71a3e20aea1064e7d24330fea24f74b5.ctex"
+uid="uid://hlcttt2yoe0"
+path="res://.godot/imported/fireball_generated_source.png-cceee4832ac425d4a1352bb6b8471d3c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/generated_vfx/fireball/fireball_start.png"
-dest_files=["res://.godot/imported/fireball_start.png-71a3e20aea1064e7d24330fea24f74b5.ctex"]
+source_file="res://assets/effect_packs/fireball/fireball_generated_source.png"
+dest_files=["res://.godot/imported/fireball_generated_source.png-cceee4832ac425d4a1352bb6b8471d3c.ctex"]
 
 [params]
 

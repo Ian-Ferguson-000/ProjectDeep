@@ -276,7 +276,7 @@ script = ExtResource("1_forest")
 [node name="Tiles" type="TileMapLayer" parent="Board" unique_id=1265704257]
 tile_set = SubResource("TileSet_f4e54")
 
-[node name="Decorations" type="Node2D" parent="Board"]
+[node name="Decorations" type="Node2D" parent="Board" unique_id=889151432]
 
 [node name="Markers" type="Node2D" parent="Board" unique_id=444387203]
 
