@@ -1,0 +1,17 @@
+{
+  "xp": {
+	"floor_clear": 40
+  },
+  "healing": {
+	"potion_base": 5,
+	"campfire_combat": 2
+  },
+  "props": {
+	"hp": {
+	  "rock": 3,
+	  "barrel": 1,
+	  "campfire": 99
+	},
+	"break_gold": 1
+  }
+}

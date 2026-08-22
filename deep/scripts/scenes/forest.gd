@@ -8,6 +8,7 @@ const BoardPieceScene := preload("res://scenes/components/BoardPiece.tscn")
 const PLAYER_IDLE_DOWN := preload("res://assets/sprite_packs/Player/IDLE/idle_down.png")
 const FIRE_MAGE_SHEET := preload("res://assets/enemies/fire_mage/normalized_sheet.png")
 const WOLF_SHEET := preload("res://assets/enemies/feral_wolf/normalized_sheet.png")
+const KOBOLD_IDLE_SHEET := preload("res://assets/sprite_packs/Kobold/Sprites/with_outline/IDLE.png")
 const GRASS_TILE_A := preload("res://assets/pixel_art/forest_art/grass1.jpeg")
 const GRASS_TILE_B := preload("res://assets/pixel_art/forest_art/grass2.jpg")
 const GRASS_TILE_C := preload("res://assets/pixel_art/forest_art/grass3.jpg")
@@ -16,9 +17,6 @@ const WOODEN_EXIT_DOOR := preload("res://assets/generated_ui/wooden_exit_door.pn
 const PROPS_ATLAS := preload("res://assets/pixel_art/TX Props.png")
 const STRUCT_ATLAS := preload("res://assets/pixel_art/TX Struct.png")
 const PLANT_ATLAS := preload("res://assets/pixel_art/TX Plant.png")
-const UI_BUTTON_NORMAL := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/1.png")
-const UI_BUTTON_HOVER := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/2.png")
-const UI_BUTTON_PRESSED := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/3.png")
 const ATLAS_TILE_SIZE := 32
 const GRASS_TILE_DRAW_SIZE := 48.0
 const PLAYER_MOVE_ALLOWANCE := 3
@@ -52,17 +50,119 @@ const ICON_FLOOR := preload("res://assets/Humble Gift - Paper UI System v1.1/Spr
 const ICON_MODE := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/7.png")
 const ICON_ROUND := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/26.png")
 const ICON_SPELL := preload("res://assets/pixel_art/spellnode.png")
+# Item-card art handoff: generated fantasy UI assets are wrapped by
+# scripts/ui/item_reward_card.gd so future card styling can move out of combat code.
+const ACTION_HOTKEYS := {
+	"move": "1",
+	"attack": "2",
+	"special": "3",
+	"potion": "4",
+	"defend": "5",
+	"end": "Enter",
+}
+# Boss chamber handoff: floor 5 uses these fixed 16x11 character maps instead
+# of procedural room graphs. Designers can tune room flow by editing symbols here:
+# S player start, E exit, B boss, W wolf, L elite wolf, O blood wolf, D kobold, C chest, R rock,
+# A barrel, F campfire, T trap, G gold, P potion, K key, . walkable grass.
+const BOSS_CHAMBERS := [
+	{
+		"id": "heartwood_throne",
+		"name": "Heartwood Throne",
+		"rows": [
+			"################",
+			"####....E...####",
+			"###..R...R...###",
+			"##....DWO.....##",
+			"##..R..B..R...##",
+			"##.....L......##",
+			"###..T...T...###",
+			"####...C...#####",
+			"#####.S.P.######",
+			"######...#######",
+			"################",
+		],
+	},
+	{
+		"id": "split_root_bridge",
+		"name": "Split-Root Bridge",
+		"rows": [
+			"################",
+			"###E....B....###",
+			"###.RR...RR..###",
+			"###...D.W....###",
+			"#####..T..######",
+			"##....L....C..##",
+			"##.A.....A....##",
+			"##....T....G..##",
+			"#####..S..######",
+			"######...#######",
+			"################",
+		],
+	},
+	{
+		"id": "moonlit_den",
+		"name": "Moonlit Den",
+		"rows": [
+			"################",
+			"####...E....####",
+			"###..R...R...###",
+			"##...D.B.O....##",
+			"##..R.....R...##",
+			"##.....L......##",
+			"##..T.....T...##",
+			"###...C.K....###",
+			"####..S.P...####",
+			"#####.....######",
+			"################",
+		],
+	},
+	{
+		"id": "bramble_crossing",
+		"name": "Bramble Crossing",
+		"rows": [
+			"################",
+			"##E....R....G###",
+			"##..###.###...##",
+			"##D..A.B.A..O.##",
+			"####...L...#####",
+			"##....T.T....###",
+			"##..###.###...##",
+			"##...C...P....##",
+			"####...S...#####",
+			"#####.....######",
+			"################",
+		],
+	},
+	{
+		"id": "fallen_grove",
+		"name": "Fallen Grove",
+		"rows": [
+			"################",
+			"###....E.....###",
+			"##..R.....R...##",
+			"##.D...B...O..##",
+			"##....AAA.....##",
+			"###..T.L.T...###",
+			"##.....F.....###",
+			"##..G..C..K...##",
+			"###....S....####",
+			"#####.....######",
+			"################",
+		],
+	},
+]
 
 var controller: Node
 var run_state: RunState
 var rng := RandomNumberGenerator.new()
 var fog_tile_textures: Array[Texture2D] = []
 
-var floor_cells := {}
-var critical_path := {}
+var floor_cells: Dictionary = {}
+var critical_path: Dictionary = {}
 var room_graph: Array[Dictionary] = []
 var critical_room_ids: Array[int] = []
 var layout_type := "linear"
+var boss_chamber_name := ""
 var player_pos := Vector2i(2, 8)
 var exit_pos := Vector2i(14, 2)
 var facing := Vector2i.RIGHT
@@ -76,6 +176,7 @@ var is_player_turn := false
 var is_resolving_enemy_turn := false
 var combat_started := false
 var free_roam_started := false
+var floor_clear_xp_awarded := false
 var round_number := 1
 var current_actor_index := 0
 var initiative_order: Array[Dictionary] = []
@@ -87,8 +188,9 @@ var props: Array[Dictionary] = []
 var loot: Array[Dictionary] = []
 var traps: Array[Dictionary] = []
 var decorations: Array[Dictionary] = []
-var chest := {"pos": Vector2i(10, 4), "opened": false}
-var secret := {"pos": Vector2i(6, 7), "found": false}
+var progression_log_buffer: Array[String] = []
+var chest: Dictionary = {"pos": Vector2i(10, 4), "opened": false}
+var secret: Dictionary = {"pos": Vector2i(6, 7), "found": false}
 
 var message := "The forest arranges itself into a dangerous little board."
 
@@ -113,8 +215,6 @@ var defend_button: Button
 var end_turn_button: Button
 var initiative_panel: PanelContainer
 var initiative_tracker: HBoxContainer
-var compact_status_panel: PanelContainer
-var compact_status_body: VBoxContainer
 var actions_panel: PanelContainer
 var actions_grid: GridContainer
 var hover_panel: PanelContainer
@@ -123,12 +223,19 @@ var hover_detail_label: Label
 var hover_actions_box: HBoxContainer
 var hovered_tile := Vector2i(-999, -999)
 var hovered_object: Dictionary = {}
+var character_menu_panel: PlayerCharacterMenu
+var chest_choice_backdrop: ColorRect
+var chest_choice_panel: PanelContainer
+var chest_choice_title_label: Label
+var chest_choice_subtitle_label: Label
+var chest_choice_cards: HBoxContainer
+var reward_choice_source: String = "chest"
 
 func setup(game_controller: Node, state: RunState) -> void:
 	controller = game_controller
 	run_state = state
 	if run_state != null and run_state.selected_gear != null:
-		block_stacks = run_state.selected_gear.block_limit
+		block_stacks = _gear_block_limit()
 	if is_inside_tree():
 		_generate()
 		_build_board_tiles()
@@ -181,24 +288,6 @@ func _setup_combat_layout_ui() -> void:
 
 	hud_label.visible = false
 	hud_label.custom_minimum_size = Vector2.ZERO
-	compact_status_panel = PanelContainer.new()
-	compact_status_panel.name = "CompactStatusPanel"
-	compact_status_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.13, 0.09, 0.06, 0.90), 5, Color(0.55, 0.39, 0.20)))
-	var hud_index: int = hud_label.get_index()
-	right_panel.add_child(compact_status_panel)
-	right_panel.move_child(compact_status_panel, hud_index)
-
-	var status_margin := MarginContainer.new()
-	status_margin.add_theme_constant_override("margin_left", 8)
-	status_margin.add_theme_constant_override("margin_right", 8)
-	status_margin.add_theme_constant_override("margin_top", 8)
-	status_margin.add_theme_constant_override("margin_bottom", 8)
-	compact_status_panel.add_child(status_margin)
-
-	compact_status_body = VBoxContainer.new()
-	compact_status_body.name = "CompactStatusBody"
-	compact_status_body.add_theme_constant_override("separation", 6)
-	status_margin.add_child(compact_status_body)
 
 	var spacer := Control.new()
 	spacer.name = "RightPanelFlexSpacer"
@@ -271,6 +360,67 @@ func _setup_combat_layout_ui() -> void:
 	hover_actions_box.add_theme_constant_override("separation", 5)
 	hover_body.add_child(hover_actions_box)
 
+	# UI handoff: modal surfaces for rewards and character inventory live here.
+	# Artists/designers can restyle these panels without touching combat rules.
+	_setup_chest_choice_modal(ui_layer)
+	_setup_character_menu(ui_layer)
+
+func _setup_chest_choice_modal(ui_layer: CanvasLayer) -> void:
+	chest_choice_backdrop = ColorRect.new()
+	chest_choice_backdrop.name = "ChestChoiceBackdrop"
+	chest_choice_backdrop.visible = false
+	chest_choice_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	chest_choice_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	chest_choice_backdrop.color = Color(0.025, 0.018, 0.012, 0.72)
+	ui_layer.add_child(chest_choice_backdrop)
+
+	chest_choice_panel = PanelContainer.new()
+	chest_choice_panel.name = "ChestChoiceModal"
+	chest_choice_panel.visible = false
+	chest_choice_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	chest_choice_panel.set_anchors_preset(Control.PRESET_CENTER)
+	chest_choice_panel.offset_left = -405
+	chest_choice_panel.offset_top = -245
+	chest_choice_panel.offset_right = 405
+	chest_choice_panel.offset_bottom = 245
+	chest_choice_panel.add_theme_stylebox_override("panel", _reward_modal_style())
+	ui_layer.add_child(chest_choice_panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 22)
+	margin.add_theme_constant_override("margin_right", 22)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	chest_choice_panel.add_child(margin)
+
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 12)
+	margin.add_child(body)
+
+	chest_choice_title_label = Label.new()
+	chest_choice_title_label.text = "Choose One Relic"
+	chest_choice_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	chest_choice_title_label.add_theme_font_size_override("font_size", 25)
+	chest_choice_title_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.50))
+	body.add_child(chest_choice_title_label)
+
+	chest_choice_subtitle_label = Label.new()
+	chest_choice_subtitle_label.text = "The chest opens with three offerings. Claim one boon for the road ahead."
+	chest_choice_subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	chest_choice_subtitle_label.add_theme_font_size_override("font_size", 12)
+	chest_choice_subtitle_label.add_theme_color_override("font_color", Color(0.78, 0.68, 0.50))
+	body.add_child(chest_choice_subtitle_label)
+
+	chest_choice_cards = HBoxContainer.new()
+	chest_choice_cards.name = "ChestChoiceCards"
+	chest_choice_cards.add_theme_constant_override("separation", 14)
+	body.add_child(chest_choice_cards)
+
+func _setup_character_menu(ui_layer: CanvasLayer) -> void:
+	character_menu_panel = PlayerCharacterMenu.new()
+	character_menu_panel.setup(_toggle_character_menu)
+	ui_layer.add_child(character_menu_panel)
+
 func _setup_action_buttons() -> void:
 	move_button = Button.new()
 	move_button.name = "MoveButton"
@@ -283,23 +433,27 @@ func _setup_action_buttons() -> void:
 	end_turn_button = Button.new()
 	end_turn_button.name = "EndTurnButton"
 	end_turn_button.pressed.connect(_end_player_turn)
-	_configure_action_button(move_button, "Move", ICON_MOVE, "Move up to three grid spaces.")
-	_configure_action_button(interact_button, "Attack", ICON_ATTACK, "Target an enemy with your basic attack.")
-	_configure_action_button(special_button, "Special", ICON_SPECIAL, "Use your equipped special ability.")
-	_configure_action_button(potion_button, "Potion", ICON_POTION, "Drink a potion as your action.")
-	_configure_action_button(defend_button, "Defend", ICON_DEFEND, "Hold position and reduce incoming damage.")
-	_configure_action_button(end_turn_button, "End", ICON_END_TURN, "Pass to the next actor.")
+	_configure_action_button(move_button, "move", "Dash", ICON_MOVE, "Dash up to three grid spaces.")
+	_configure_action_button(interact_button, "attack", "Attack", ICON_ATTACK, "Target an enemy with your basic attack.")
+	_configure_action_button(special_button, "special", "Special", ICON_SPECIAL, "Use your equipped special ability.")
+	_configure_action_button(potion_button, "potion", "Potion", ICON_POTION, "Drink a potion as your action.")
+	_configure_action_button(defend_button, "defend", "Defend", ICON_DEFEND, "Hold position and reduce incoming damage.")
+	_configure_action_button(end_turn_button, "end", "End", ICON_END_TURN, "Pass to the next actor.")
 	for button: Button in _action_buttons():
 		_reparent_to_actions_grid(button)
 	_style_action_buttons()
 
-func _configure_action_button(button: Button, label: String, icon: Texture2D, tooltip: String) -> void:
-	button.text = label
+func _configure_action_button(button: Button, action_id: String, label: String, icon: Texture2D, tooltip: String) -> void:
+	var hotkey: String = String(ACTION_HOTKEYS.get(action_id, ""))
+	button.text = "%s %s" % [hotkey, label]
 	button.icon = icon
-	button.tooltip_text = tooltip
-	button.expand_icon = true
+	button.tooltip_text = "%s (%s)" % [tooltip, hotkey]
+	button.expand_icon = false
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.add_theme_constant_override("icon_max_width", 22)
+	button.add_theme_constant_override("icon_separation", 4)
 
 func _reparent_to_actions_grid(button: Button) -> void:
 	if actions_grid == null or button == null:
@@ -318,19 +472,22 @@ func _generate() -> void:
 	rng.seed = seed_value
 
 	_reset_generated_state()
-	layout_type = _choose_layout_type()
-	_build_room_graph(layout_type)
-	_assign_room_roles()
-	_carve_room_graph()
-	_assign_start_and_exit()
-	message = _floor_intro_message()
-	chest = {"pos": _pick_role_cell("treasure", true), "opened": false}
-	secret = {"pos": _pick_floor_cell(true), "found": false}
+	if _current_floor() >= _max_floors():
+		_build_boss_chamber()
+	else:
+		layout_type = _choose_layout_type()
+		_build_room_graph(layout_type)
+		_assign_room_roles()
+		_carve_room_graph()
+		_assign_start_and_exit()
+		message = _floor_intro_message()
+		chest = {"pos": _pick_role_cell("treasure", true), "opened": false}
+		secret = {"pos": _pick_floor_cell(true), "found": false}
 
-	_place_props()
-	_place_loot()
-	_place_traps()
-	_place_enemies()
+		_place_props()
+		_place_loot()
+		_place_traps()
+		_place_enemies()
 	_place_decorations()
 	_start_combat()
 
@@ -344,10 +501,12 @@ func _reset_generated_state() -> void:
 	loot.clear()
 	traps.clear()
 	decorations.clear()
+	progression_log_buffer.clear()
 	initiative_order.clear()
 	enemy_id_counter = 1
 	combat_started = false
 	free_roam_started = false
+	floor_clear_xp_awarded = false
 	is_player_turn = false
 	is_resolving_enemy_turn = false
 	selected_action = "move"
@@ -358,6 +517,120 @@ func _reset_generated_state() -> void:
 	current_actor_index = 0
 	chest = {"pos": Vector2i(-1, -1), "opened": false}
 	secret = {"pos": Vector2i(-1, -1), "found": false}
+	boss_chamber_name = ""
+
+func _build_boss_chamber() -> void:
+	var chamber: Dictionary = BOSS_CHAMBERS[rng.randi_range(0, BOSS_CHAMBERS.size() - 1)]
+	layout_type = "boss_%s" % String(chamber["id"])
+	boss_chamber_name = String(chamber["name"])
+	message = _floor_intro_message()
+	secret = {"pos": Vector2i(-1, -1), "found": true}
+	_carve_boss_chamber(chamber)
+	_mark_boss_critical_path()
+	_build_boss_room_graph()
+
+func _carve_boss_chamber(chamber: Dictionary) -> void:
+	var rows: Array = chamber["rows"]
+	for y in range(mini(rows.size(), GRID_H)):
+		var row: String = String(rows[y])
+		for x in range(mini(row.length(), GRID_W)):
+			var symbol: String = row.substr(x, 1)
+			if symbol == "#":
+				continue
+			var tile := Vector2i(x, y)
+			floor_cells[tile] = true
+			_apply_boss_chamber_symbol(symbol, tile)
+
+func _apply_boss_chamber_symbol(symbol: String, tile: Vector2i) -> void:
+	match symbol:
+		"S":
+			player_pos = tile
+		"E":
+			exit_pos = tile
+		"B":
+			_add_boss_enemy(tile)
+		"W":
+			_add_floor_enemy(tile, "normal_wolf")
+		"L":
+			_add_floor_enemy(tile, "elite_wolf")
+		"O":
+			_add_floor_enemy(tile, "blood_wolf")
+		"D":
+			_add_floor_enemy(tile, "kobold")
+		"C":
+			chest = {"pos": tile, "opened": false}
+		"R":
+			props.append({"kind": "rock", "pos": tile, "hp": GameBalance.get_prop_hp("rock", 3)})
+		"A":
+			props.append({"kind": "barrel", "pos": tile, "hp": GameBalance.get_prop_hp("barrel", 1)})
+		"F":
+			props.append({"kind": "campfire", "pos": tile, "hp": GameBalance.get_prop_hp("campfire", 99)})
+		"T":
+			traps.append({"pos": tile, "sprung": false})
+		"G":
+			loot.append({"kind": "gold", "pos": tile, "amount": 18})
+		"P":
+			loot.append({"kind": "potion", "pos": tile, "amount": 1})
+		"K":
+			loot.append({"kind": "key", "pos": tile, "amount": 1})
+
+func _add_floor_enemy(tile: Vector2i, enemy_type: String) -> void:
+	var max_health: int = _enemy_max_health(enemy_type)
+	var damage: int = _enemy_damage(enemy_type)
+	_add_enemy(tile, enemy_type, max_health, damage, enemy_type == "elite_wolf", false)
+
+func _add_boss_enemy(tile: Vector2i) -> void:
+	var max_health: int = int(GameBalance.get_enemy_value("boss_wolf", "health", 16))
+	_add_enemy(tile, "boss_wolf", max_health, int(GameBalance.get_enemy_value("boss_wolf", "damage", 5)), true, true)
+
+func _add_enemy(tile: Vector2i, enemy_type: String, max_health: int, damage: int, elite: bool, boss: bool) -> void:
+	enemies.append({
+		"id": enemy_id_counter,
+		"kind": _enemy_kind_for_type(enemy_type),
+		"enemy_type": enemy_type,
+		"pos": tile,
+		"hp": max_health,
+		"max_health": max_health,
+		"damage": damage,
+		"elite": elite,
+		"boss": boss,
+	})
+	enemy_id_counter += 1
+
+func _enemy_kind_for_type(enemy_type: String) -> String:
+	if enemy_type == "kobold":
+		return "kobold"
+	return "wolf"
+
+func _enemy_max_health(enemy_type: String) -> int:
+	if enemy_type == "elite_wolf":
+		return _enemy_max_health("normal_wolf") + int(GameBalance.get_enemy_value("elite_wolf", "add_health", 3))
+	var base_health: int = int(GameBalance.get_enemy_value(enemy_type, "base_health", 4))
+	var health_per_floor: float = float(GameBalance.get_enemy_value(enemy_type, "health_per_floor", 0.75))
+	return base_health + int(floori(float(_current_floor() - 1) * health_per_floor))
+
+func _enemy_damage(enemy_type: String) -> int:
+	if enemy_type == "elite_wolf":
+		return _enemy_damage("normal_wolf") + int(GameBalance.get_enemy_value("elite_wolf", "add_damage", 1))
+	if _current_floor() >= 4:
+		return int(GameBalance.get_enemy_value(enemy_type, "damage_from_floor_4", 3))
+	return int(GameBalance.get_enemy_value(enemy_type, "damage_before_floor", 2))
+
+func _mark_boss_critical_path() -> void:
+	var path: Array[Vector2i] = _find_path_through_floor(player_pos, exit_pos)
+	for tile in path:
+		critical_path[tile] = true
+	if path.is_empty():
+		for tile in floor_cells.keys():
+			critical_path[Vector2i(tile)] = true
+
+func _build_boss_room_graph() -> void:
+	room_graph = [
+		{"id": 0, "center": player_pos, "radius": Vector2i(1, 1), "neighbors": [1], "role": "start"},
+		{"id": 1, "center": Vector2i(8, 5), "radius": Vector2i(4, 3), "neighbors": [0, 2], "role": "elite"},
+		{"id": 2, "center": exit_pos, "radius": Vector2i(1, 1), "neighbors": [1], "role": "exit"},
+	]
+	critical_room_ids = [0, 1, 2]
 
 func _choose_layout_type() -> String:
 	var floor_num := _current_floor()
@@ -493,7 +766,7 @@ func _place_props() -> void:
 	if _current_floor() >= 3:
 		kinds.append_array(["rock", "barrel"])
 	for kind in kinds:
-		props.append({"kind": kind, "pos": _pick_floor_cell(false), "hp": 2 if kind != "campfire" else 99})
+		props.append({"kind": kind, "pos": _pick_floor_cell(false), "hp": GameBalance.get_prop_hp(kind, 2 if kind != "campfire" else 99)})
 
 func _place_loot() -> void:
 	loot.append({"kind": "gold", "pos": _pick_floor_cell(true), "amount": 6 + _current_floor() * 2})
@@ -515,23 +788,26 @@ func _place_traps() -> void:
 func _place_enemies() -> void:
 	var count := mini(3 + _current_floor(), 7)
 	for i in range(count):
-		var elite := i == 0 and (_current_floor() >= 4 or layout_type == "arena")
-		var spawn_pos := _pick_role_cell("elite", false) if elite else _pick_floor_cell(true)
-		var max_health := 4 + int(floori(float(_current_floor() - 1) * 0.75))
-		var damage := 3 if _current_floor() >= 4 else 2
-		if elite:
-			max_health += 3
-			damage += 1
-		enemies.append({
-			"id": enemy_id_counter,
-			"kind": "wolf",
-			"pos": spawn_pos,
-			"hp": max_health,
-			"max_health": max_health,
-			"damage": damage,
-			"elite": elite,
-		})
-		enemy_id_counter += 1
+		var elite: bool = i == 0 and (_current_floor() >= 4 or layout_type == "arena")
+		var spawn_pos: Vector2i = _pick_role_cell("elite", false) if elite else _pick_floor_cell(true)
+		var enemy_type: String = "elite_wolf" if elite else _enemy_type_for_spawn(i)
+		_add_floor_enemy(spawn_pos, enemy_type)
+
+func _enemy_type_for_spawn(spawn_index: int) -> String:
+	var floor_num: int = _current_floor()
+	if floor_num <= 1:
+		return "normal_wolf"
+	if floor_num == 2:
+		return "kobold" if spawn_index % 3 == 1 else "normal_wolf"
+	if floor_num == 3:
+		return "kobold" if spawn_index % 2 == 0 else "normal_wolf"
+	if floor_num == 4:
+		if spawn_index % 3 == 0:
+			return "blood_wolf"
+		return "kobold" if spawn_index % 3 == 1 else "normal_wolf"
+	if spawn_index % 2 == 0:
+		return "blood_wolf"
+	return "kobold" if spawn_index % 3 == 0 else "normal_wolf"
 
 func _place_decorations() -> void:
 	var floor_kinds: Array[String] = ["grass_tuft_a", "grass_tuft_b", "grass_tuft_c", "low_bush_a", "low_bush_b", "sapling"]
@@ -585,7 +861,7 @@ func _start_combat() -> void:
 	initiative_order.clear()
 	round_number = 1
 	current_actor_index = 0
-	var player_modifier := 2 if run_state != null and run_state.selected_class_id == "mage" else 1
+	var player_modifier: int = _player_initiative_modifier()
 	var player_roll := rng.randi_range(1, 20)
 	initiative_order.append({
 		"kind": "player",
@@ -598,12 +874,12 @@ func _start_combat() -> void:
 	})
 	for i in range(enemies.size()):
 		var enemy: Dictionary = enemies[i]
-		var modifier: int = 1 if bool(enemy.get("elite", false)) else 0
+		var modifier: int = _enemy_initiative_modifier(enemy)
 		var roll := rng.randi_range(1, 20)
 		initiative_order.append({
 			"kind": "enemy",
 			"id": int(enemy["id"]),
-			"name": "Elite Wolf" if bool(enemy.get("elite", false)) else "Wolf",
+			"name": _enemy_display_name(enemy),
 			"roll": roll,
 			"modifier": modifier,
 			"initiative": roll + modifier,
@@ -613,6 +889,11 @@ func _start_combat() -> void:
 	initiative_order.sort_custom(_sort_initiative)
 	combat_started = true
 	message = "%s\nInitiative: %s" % [_floor_intro_message(), _initiative_roll_summary()]
+	if _open_pending_progression_choice_if_needed():
+		return
+	if _should_offer_starter_reward():
+		_offer_starter_reward()
+		return
 	_begin_current_actor_turn()
 
 func _sort_initiative(a: Dictionary, b: Dictionary) -> bool:
@@ -649,11 +930,11 @@ func _begin_player_turn() -> void:
 	is_defending = false
 	selected_action = "move"
 	has_used_action = false
-	movement_remaining = PLAYER_MOVE_ALLOWANCE
+	movement_remaining = _player_move_allowance()
 	if round_number == 1:
-		message = "Initiative: %s\nRound %d: Your turn. Move up to %d tiles, then choose an action." % [_initiative_roll_summary(), round_number, movement_remaining]
+		message = "Initiative: %s\nRound %d: Your turn. Dash up to %d tiles, then choose an action." % [_initiative_roll_summary(), round_number, movement_remaining]
 	else:
-		message = "Round %d: Your turn. Move up to %d tiles, then choose an action." % [round_number, movement_remaining]
+		message = "Round %d: Your turn. Dash up to %d tiles, then choose an action." % [round_number, movement_remaining]
 	_refresh_ui()
 
 func _begin_enemy_turn(actor: Dictionary) -> void:
@@ -671,7 +952,7 @@ func _advance_to_next_actor() -> void:
 	if run_state != null and run_state.current_health <= 0:
 		_die()
 		return
-	var current_actor := {}
+	var current_actor: Dictionary = {}
 	if current_actor_index >= 0 and current_actor_index < initiative_order.size():
 		current_actor = initiative_order[current_actor_index]
 	_prune_initiative_order()
@@ -697,8 +978,15 @@ func _enter_free_roam_if_clear() -> bool:
 	selected_action = "move"
 	movement_remaining = FREE_ROAM_MOVE_ALLOWANCE
 	current_actor_index = _player_initiative_index()
-	message = "The last enemy falls. The path is clear, and you can explore freely."
+	var xp_logs: Array[String] = _award_floor_clear_xp()
+	var logs: Array[String] = _consume_progression_logs()
+	logs.append_array(xp_logs)
+	var clear_message: String = "The last enemy falls. The path is clear, and you can explore freely."
+	if not message.is_empty():
+		clear_message = "%s\nThe path is clear, and you can explore freely." % message
+	message = _append_log_lines(clear_message, logs)
 	_refresh_ui()
+	_open_pending_progression_choice_if_needed()
 	return true
 
 func _player_initiative_index() -> int:
@@ -709,7 +997,7 @@ func _player_initiative_index() -> int:
 	return 0
 
 func _prune_initiative_order() -> void:
-	var active_enemy_ids := {}
+	var active_enemy_ids: Dictionary = {}
 	for enemy in enemies:
 		active_enemy_ids[int(enemy["id"])] = true
 	for i in range(initiative_order.size() - 1, -1, -1):
@@ -725,10 +1013,20 @@ func _initiative_index_for(actor: Dictionary) -> int:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
+		if _is_blocking_modal_open():
+			_hide_hover_context()
+			return
 		_update_hover_context(event.position)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("character_menu"):
+		_toggle_character_menu()
+		return
+	if _is_blocking_modal_open():
+		return
 	if not is_player_turn or is_resolving_enemy_turn:
+		return
+	if _handle_combat_hotkey(event):
 		return
 	if event.is_action_pressed("special"):
 		_select_action("special")
@@ -751,6 +1049,53 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _is_inside_grid(tile):
 			_hide_hover_context()
 			_handle_tile_click(tile)
+
+func _handle_combat_hotkey(event: InputEvent) -> bool:
+	if not (event is InputEventKey):
+		return false
+	var key_event: InputEventKey = event
+	if not key_event.pressed or key_event.echo:
+		return false
+	match key_event.keycode:
+		KEY_1:
+			if not _can_trigger_action_button(move_button):
+				return _reject_combat_hotkey()
+			_select_action("move")
+			return true
+		KEY_2:
+			if not _can_trigger_action_button(interact_button):
+				return _reject_combat_hotkey()
+			_select_action("attack")
+			return true
+		KEY_3:
+			if not _can_trigger_action_button(special_button):
+				return _reject_combat_hotkey()
+			_select_action("special")
+			return true
+		KEY_4:
+			if not _can_trigger_action_button(potion_button):
+				return _reject_combat_hotkey()
+			_drink_potion()
+			return true
+		KEY_5:
+			if not _can_trigger_action_button(defend_button):
+				return _reject_combat_hotkey()
+			_defend()
+			return true
+		KEY_ENTER, KEY_KP_ENTER:
+			if not _can_trigger_action_button(end_turn_button):
+				return _reject_combat_hotkey()
+			_end_player_turn()
+			return true
+	return false
+
+func _can_trigger_action_button(button: Button) -> bool:
+	return button != null and not button.disabled
+
+func _reject_combat_hotkey() -> bool:
+	message = "That action is not available right now."
+	_refresh_ui()
+	return true
 
 func _take_directional_action(delta: Vector2i) -> void:
 	facing = delta
@@ -782,10 +1127,6 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		message = "The chest blocks the way. Use Interact from its menu while adjacent."
 		_refresh_ui()
 		return
-	if tile == exit_pos:
-		message = "Use Interact from the gate menu to leave this floor."
-		_refresh_ui()
-		return
 	if not _is_walkable(tile):
 		message = "Dense trees block the way."
 		_refresh_ui()
@@ -804,10 +1145,13 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		message = "You move through the cleared forest."
 	else:
 		movement_remaining -= maxi(0, path.size() - 1)
-		message = "You move. %d movement remaining." % movement_remaining
+		message = "You dash. %d dash movement remaining." % movement_remaining
 	_resolve_tile()
 	if run_state.current_health <= 0:
 		_die()
+		return
+	if player_pos == exit_pos:
+		_complete_floor()
 		return
 	_refresh_ui()
 
@@ -819,8 +1163,7 @@ func _try_context_interaction(tile: Vector2i) -> bool:
 		var prop_kind: String = String(props[prop_index]["kind"])
 		match prop_kind:
 			"campfire":
-				run_state.heal(2)
-				message = "The campfire steadies you. Restored 2 health."
+				_use_campfire()
 			"npc":
 				message = "They nod, but have nothing more to say yet."
 			_:
@@ -828,8 +1171,13 @@ func _try_context_interaction(tile: Vector2i) -> bool:
 		_finish_player_action()
 		return true
 	if tile == chest["pos"]:
-		_open_chest()
-		_finish_player_action()
+		var opened_choices: bool = _open_chest()
+		if opened_choices:
+			if not _is_free_roam():
+				has_used_action = true
+			_refresh_ui()
+		else:
+			_finish_player_action()
 		return true
 	if tile == exit_pos:
 		_complete_floor()
@@ -848,6 +1196,8 @@ func _update_hover_context(screen_pos: Vector2) -> void:
 		return
 	if hover_panel.visible and hover_panel.get_global_rect().has_point(screen_pos):
 		return
+	if hover_panel.visible and _hover_travel_rect().has_point(screen_pos):
+		return
 	var tile: Vector2i = _screen_to_grid(screen_pos)
 	if not _is_inside_grid(tile):
 		_hide_hover_context()
@@ -856,9 +1206,11 @@ func _update_hover_context(screen_pos: Vector2) -> void:
 	if object.is_empty():
 		_hide_hover_context()
 		return
+	if hover_panel.visible and hovered_tile == tile:
+		return
 	hovered_tile = tile
 	hovered_object = object
-	_sync_hover_context(screen_pos, object)
+	_sync_hover_context(tile, object)
 
 func _hide_hover_context() -> void:
 	if hover_panel != null:
@@ -866,7 +1218,7 @@ func _hide_hover_context() -> void:
 	hovered_tile = Vector2i(-999, -999)
 	hovered_object = {}
 
-func _sync_hover_context(screen_pos: Vector2, object: Dictionary) -> void:
+func _sync_hover_context(tile: Vector2i, object: Dictionary) -> void:
 	hover_title_label.text = String(object["title"])
 	hover_detail_label.text = String(object["detail"])
 	_clear_children_now(hover_actions_box)
@@ -884,28 +1236,32 @@ func _sync_hover_context(screen_pos: Vector2, object: Dictionary) -> void:
 		_style_context_button(button)
 		button.pressed.connect(_choose_context_action.bind(action_id))
 		hover_actions_box.add_child(button)
-	hover_panel.position = _hover_panel_position(screen_pos)
+	hover_panel.position = _hover_panel_position_for_tile(tile)
 	hover_panel.visible = true
 
-func _hover_panel_position(screen_pos: Vector2) -> Vector2:
+func _hover_panel_position_for_tile(tile: Vector2i) -> Vector2:
 	var viewport_size: Vector2 = get_viewport_rect().size
 	var panel_size: Vector2 = Vector2(320, 150)
-	var position: Vector2 = screen_pos + Vector2(18, 18)
+	var position: Vector2 = _grid_to_screen(tile) + Vector2(TILE_SIZE + 8, -8)
 	position.x = minf(position.x, viewport_size.x - panel_size.x - 12.0)
 	position.y = minf(position.y, viewport_size.y - panel_size.y - 12.0)
 	position.x = maxf(12.0, position.x)
 	position.y = maxf(12.0, position.y)
 	return position
 
+func _hover_travel_rect() -> Rect2:
+	if hovered_tile == Vector2i(-999, -999) or hover_panel == null:
+		return Rect2()
+	var tile_rect := Rect2(_grid_to_screen(hovered_tile), Vector2(TILE_SIZE, TILE_SIZE))
+	var panel_rect := hover_panel.get_global_rect()
+	var left: float = minf(tile_rect.position.x, panel_rect.position.x)
+	var top: float = minf(tile_rect.position.y, panel_rect.position.y)
+	var right: float = maxf(tile_rect.position.x + tile_rect.size.x, panel_rect.position.x + panel_rect.size.x)
+	var bottom: float = maxf(tile_rect.position.y + tile_rect.size.y, panel_rect.position.y + panel_rect.size.y)
+	return Rect2(Vector2(left, top), Vector2(right - left, bottom - top)).grow(18.0)
+
 func _style_context_button(button: Button) -> void:
-	button.add_theme_font_size_override("font_size", 12)
-	button.add_theme_color_override("font_color", Color(0.98, 0.90, 0.68))
-	button.add_theme_color_override("font_hover_color", Color(1.0, 0.96, 0.78))
-	button.add_theme_color_override("font_pressed_color", Color(0.12, 0.08, 0.04))
-	button.add_theme_color_override("font_disabled_color", Color(0.50, 0.46, 0.38))
-	button.add_theme_stylebox_override("normal", _flat_style(Color(0.18, 0.13, 0.08, 0.96), 4, Color(0.78, 0.58, 0.29)))
-	button.add_theme_stylebox_override("hover", _flat_style(Color(0.28, 0.20, 0.11, 0.98), 4, Color(0.98, 0.78, 0.36)))
-	button.add_theme_stylebox_override("pressed", _flat_style(Color(0.82, 0.60, 0.28, 1.0), 4, Color(1.0, 0.86, 0.50)))
+	_apply_flat_ui_button(button, 12, Vector2(84, 34))
 	button.add_theme_stylebox_override("disabled", _flat_style(Color(0.10, 0.08, 0.06, 0.78), 4, Color(0.26, 0.22, 0.17)))
 
 func _context_action_icon(action_id: String) -> Texture2D:
@@ -996,7 +1352,7 @@ func _object_at_tile(tile: Vector2i) -> Dictionary:
 	var enemy_index: int = _enemy_at(tile)
 	if enemy_index != -1:
 		var enemy: Dictionary = enemies[enemy_index]
-		var enemy_name: String = "Elite Wolf" if bool(enemy.get("elite", false)) else "Wolf"
+		var enemy_name: String = _enemy_display_name(enemy)
 		return {
 			"kind": "enemy",
 			"pos": tile,
@@ -1103,9 +1459,10 @@ func _try_player_attack(tile: Vector2i) -> void:
 		return
 	facing = _direction_to(tile)
 	_play_attack_effect(player_pos, tile)
-	_attack_enemy(enemy_index, run_state.selected_gear.damage)
+	_attack_enemy(enemy_index, _player_gear_damage())
 	if run_state.selected_class_id == "mage":
 		message = "Your spell strikes from across the clearing."
+	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
 func _try_player_special(tile: Vector2i) -> void:
@@ -1151,7 +1508,7 @@ func _defend() -> void:
 		return
 	is_defending = true
 	if run_state.selected_gear != null and run_state.selected_gear.defense_id == "block":
-		block_stacks = maxi(block_stacks, run_state.selected_gear.block_limit)
+		block_stacks = maxi(block_stacks, _gear_block_limit())
 	if run_state.selected_gear != null and run_state.selected_gear.special_id == "brace":
 		braced = true
 	message = "You defend and hold your ground."
@@ -1160,6 +1517,9 @@ func _defend() -> void:
 func _finish_player_action() -> void:
 	has_used_action = true
 	if _enter_free_roam_if_clear():
+		_open_pending_progression_choice_if_needed()
+		return
+	if _open_pending_progression_choice_if_needed():
 		return
 	if _is_free_roam():
 		has_used_action = false
@@ -1188,8 +1548,13 @@ func _interact() -> void:
 		_complete_floor()
 		return
 	if _distance(player_pos, chest["pos"]) == 1:
-		_open_chest()
-		_finish_player_action()
+		var opened_choices: bool = _open_chest()
+		if opened_choices:
+			if not _is_free_roam():
+				has_used_action = true
+			_refresh_ui()
+		else:
+			_finish_player_action()
 		return
 	if _distance(player_pos, secret["pos"]) <= 1 and not secret["found"]:
 		secret["found"] = true
@@ -1201,8 +1566,7 @@ func _interact() -> void:
 	for i in range(props.size()):
 		if _distance(player_pos, props[i]["pos"]) == 1:
 			if props[i]["kind"] == "campfire":
-				run_state.heal(2)
-				message = "The campfire steadies you. Restored 2 health."
+				_use_campfire()
 			else:
 				_hit_prop(i)
 			_finish_player_action()
@@ -1228,8 +1592,9 @@ func _special_charge_at(tile: Vector2i) -> void:
 		var enemy_index: int = _enemy_at(cursor)
 		if enemy_index != -1:
 			_play_attack_effect(player_pos, cursor)
-			_attack_enemy(enemy_index, run_state.selected_gear.damage + 1)
+			_attack_enemy(enemy_index, _player_gear_damage() + 1)
 			message = "You charge through the brush and crash into an enemy."
+			message = _append_log_lines(message, _consume_progression_logs())
 			_finish_player_action()
 			return
 		if not _is_walkable(cursor):
@@ -1241,47 +1606,54 @@ func _special_charge_at(tile: Vector2i) -> void:
 
 func _special_force_blast_at(tile: Vector2i) -> void:
 	var enemy_index: int = _enemy_at(tile)
-	if not _is_straight_line_target(tile, 4, true) or enemy_index == -1 or not _has_clear_line(player_pos, tile, true):
+	var blast_range: int = 4 + _mage_progression_value("force_blast_range_bonus")
+	if not _is_straight_line_target(tile, blast_range, true) or enemy_index == -1 or not _has_clear_line(player_pos, tile, true):
 		message = "Force Blast needs a visible enemy in a straight line."
 		_refresh_ui()
 		return
 	facing = _direction_to(tile)
 	var blast_origin: Vector2i = enemies[enemy_index]["pos"]
 	_play_projectile_effect(AETHER_HIT, player_pos, blast_origin)
-	_attack_enemy(enemy_index, run_state.selected_gear.damage + 2)
-	var pushed := _push_enemy_from(blast_origin, facing, 2)
+	_attack_enemy(enemy_index, _player_gear_damage() + 2)
+	var pushed := _push_enemy_from(blast_origin, facing, 2 + _mage_progression_value("force_blast_push_bonus"))
 	var splash_hits := 0
+	var splash_radius: int = 1 + _mage_progression_value("force_blast_splash_radius_bonus")
+	var splash_damage: int = maxi(1, _player_damage_bonus() + _mage_progression_value("force_blast_splash_bonus"))
 	for i in range(enemies.size() - 1, -1, -1):
-		if _distance(enemies[i]["pos"], blast_origin) == 1:
-			_attack_enemy(i, 1)
+		if _distance(enemies[i]["pos"], blast_origin) <= splash_radius:
+			_attack_enemy(i, splash_damage)
 			splash_hits += 1
 	var push_note := ", pushing a foe back" if pushed else ""
 	var splash_note := ""
 	if splash_hits > 0:
 		splash_note = " and splashing %d nearby foe%s" % [splash_hits, "" if splash_hits == 1 else "s"]
 	message = "Force Blast slams forward%s%s." % [push_note, splash_note]
+	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
 func _special_flamethrower_at(tile: Vector2i) -> void:
-	if not _is_straight_line_target(tile, 3, true):
-		message = "Flamethrower needs a direction up to 3 tiles."
+	var flame_range: int = 3 + _mage_progression_value("flamethrower_range_bonus")
+	if not _is_straight_line_target(tile, flame_range, true):
+		message = "Flamethrower needs a direction up to %d tiles." % flame_range
 		_refresh_ui()
 		return
 	facing = _direction_to(tile)
 	var hit_count := 0
-	for step in range(1, 4):
+	var flame_damage: int = _player_gear_damage() + _mage_progression_value("flamethrower_damage_bonus")
+	for step in range(1, flame_range + 1):
 		var target := player_pos + facing * step
 		if not floor_cells.has(target):
 			break
 		_spawn_tile_effect(FIREBALL_IMPACT, target)
 		var enemy_index: int = _enemy_at(target)
 		if enemy_index != -1:
-			_attack_enemy(enemy_index, run_state.selected_gear.damage)
+			_attack_enemy(enemy_index, flame_damage)
 			hit_count += 1
 	if hit_count == 0:
 		message = "Flamethrower scorches a bright line through empty brush."
 	else:
 		message = "Flamethrower burns %d foe%s in a line." % [hit_count, "" if hit_count == 1 else "s"]
+	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
 func _is_valid_basic_attack_target(tile: Vector2i, enemy_index: int) -> bool:
@@ -1316,8 +1688,8 @@ func _find_path(start: Vector2i, goal: Vector2i, max_steps: int) -> Array[Vector
 		same_tile_path.append(start)
 		return same_tile_path
 	var frontier: Array[Vector2i] = [start]
-	var came_from := {start: start}
-	var distance_by_tile := {start: 0}
+	var came_from: Dictionary = {start: start}
+	var distance_by_tile: Dictionary = {start: 0}
 	var deltas: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 	while not frontier.is_empty():
 		var current: Vector2i = frontier.pop_front()
@@ -1332,6 +1704,31 @@ func _find_path(start: Vector2i, goal: Vector2i, max_steps: int) -> Array[Vector
 				continue
 			came_from[next] = current
 			distance_by_tile[next] = next_distance
+			if next == goal:
+				var path: Array[Vector2i] = [goal]
+				var cursor := goal
+				while cursor != start:
+					cursor = came_from[cursor]
+					path.push_front(cursor)
+				return path
+			frontier.append(next)
+	return []
+
+func _find_path_through_floor(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
+	if start == goal:
+		var same_tile_path: Array[Vector2i] = []
+		same_tile_path.append(start)
+		return same_tile_path
+	var frontier: Array[Vector2i] = [start]
+	var came_from: Dictionary = {start: start}
+	var deltas: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	while not frontier.is_empty():
+		var current: Vector2i = frontier.pop_front()
+		for delta in deltas:
+			var next: Vector2i = current + delta
+			if came_from.has(next) or not floor_cells.has(next):
+				continue
+			came_from[next] = current
 			if next == goal:
 				var path: Array[Vector2i] = [goal]
 				var cursor := goal
@@ -1368,17 +1765,20 @@ func _valid_special_tiles() -> Array[Vector2i]:
 			tiles.append(player_pos)
 		"charge", "flamethrower":
 			var directions: Array[Vector2i] = _cardinal_directions()
+			var max_range := 3
 			if run_state.selected_gear.special_id == "flamethrower":
 				directions = _eight_directions()
+				max_range += _mage_progression_value("flamethrower_range_bonus")
 			for direction in directions:
-				for step in range(1, 4):
+				for step in range(1, max_range + 1):
 					var tile: Vector2i = player_pos + direction * step
 					if floor_cells.has(tile):
 						tiles.append(tile)
 		"force_blast":
+			var blast_range: int = 4 + _mage_progression_value("force_blast_range_bonus")
 			for enemy in enemies:
 				var tile: Vector2i = enemy["pos"]
-				if _is_straight_line_target(tile, 4, true) and _has_clear_line(player_pos, tile, true):
+				if _is_straight_line_target(tile, blast_range, true) and _has_clear_line(player_pos, tile, true):
 					tiles.append(tile)
 	return tiles
 
@@ -1445,6 +1845,8 @@ func _get_effects_root() -> Node2D:
 	return effects_root
 
 func _action_name() -> String:
+	if selected_action == "move":
+		return "Dash"
 	return selected_action.capitalize()
 
 func _active_actor_name() -> String:
@@ -1464,11 +1866,73 @@ func _turn_status() -> String:
 	if _is_free_roam():
 		return "Exploration | Area Clear"
 	if is_player_turn:
-		return "Round %d | Active: You | Mode: %s | Move: %d" % [round_number, _action_name(), movement_remaining]
+		return "Round %d | Active: You | Mode: %s | Dash: %d" % [round_number, _action_name(), movement_remaining]
 	return "Round %d | Active: %s" % [round_number, _active_actor_name()]
 
 func _can_use_player_controls() -> bool:
 	return is_player_turn and not is_resolving_enemy_turn
+
+func _player_damage_bonus() -> int:
+	if run_state == null:
+		return 0
+	if run_state.selected_class_id == "mage":
+		return run_state.get_derived_stat("spell_power")
+	return run_state.get_derived_stat("attack_bonus")
+
+func _player_gear_damage() -> int:
+	if run_state == null or run_state.selected_gear == null:
+		return 1
+	return run_state.selected_gear.damage + _player_damage_bonus()
+
+func _player_initiative_modifier() -> int:
+	if run_state == null:
+		return 1
+	return run_state.get_derived_stat("initiative_modifier")
+
+func _gear_block_limit() -> int:
+	if run_state == null or run_state.selected_gear == null:
+		return 0
+	return run_state.selected_gear.block_limit + run_state.get_derived_stat("defense") + run_state.get_derived_stat("block_bonus")
+
+func _player_move_allowance() -> int:
+	if run_state == null:
+		return PLAYER_MOVE_ALLOWANCE
+	return PLAYER_MOVE_ALLOWANCE + run_state.get_derived_stat("movement")
+
+func _mage_progression_value(flag_id: String) -> int:
+	if run_state == null or run_state.selected_class_id != "mage":
+		return 0
+	return run_state.get_progression_flag_value(flag_id)
+
+func _enemy_xp_reward(enemy: Dictionary) -> int:
+	var base_reward: int = int(GameBalance.get_enemy_value(_enemy_type(enemy), "xp", 15))
+	if run_state == null:
+		return base_reward
+	return run_state.apply_reward_bonus(base_reward, "xp")
+
+func _enemy_gold_reward(enemy: Dictionary) -> int:
+	var base_reward: int = int(GameBalance.get_enemy_value(_enemy_type(enemy), "gold", 3))
+	if run_state == null:
+		return base_reward
+	return run_state.apply_reward_bonus(base_reward, "gold")
+
+func _award_floor_clear_xp() -> Array[String]:
+	if floor_clear_xp_awarded or run_state == null:
+		return []
+	floor_clear_xp_awarded = true
+	var base_reward: int = int(GameBalance.get_combat_value(["xp", "floor_clear"], 40))
+	var reward: int = run_state.apply_reward_bonus(base_reward, "xp")
+	return run_state.gain_xp(reward, "Floor %d cleared" % _current_floor())
+
+func _consume_progression_logs() -> Array[String]:
+	var logs: Array[String] = progression_log_buffer.duplicate()
+	progression_log_buffer.clear()
+	return logs
+
+func _append_log_lines(base: String, lines: Array[String]) -> String:
+	if lines.is_empty():
+		return base
+	return "%s\n%s" % [base, "\n".join(lines)]
 
 func _set_combat_buttons_enabled() -> void:
 	var enabled := _can_use_player_controls()
@@ -1497,27 +1961,31 @@ func _special_sweep() -> void:
 	for i in range(enemies.size() - 1, -1, -1):
 		if _distance(player_pos, enemies[i]["pos"]) == 1:
 			_spawn_tile_effect(AETHER_HIT, enemies[i]["pos"])
-			_attack_enemy(i, run_state.selected_gear.damage)
+			_attack_enemy(i, _player_gear_damage())
 			hit_count += 1
 	if hit_count == 0:
 		message = "You sweep the greatsword through empty air."
 	else:
 		message = "Your greatsword sweep catches %d foe%s." % [hit_count, "" if hit_count == 1 else "s"]
+	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
 func _special_shockwave() -> void:
 	var hit_count := 0
+	var stun_turns: int = 1 + _mage_progression_value("shockwave_stun_bonus")
+	var shock_damage: int = maxi(1, _player_damage_bonus() + _mage_progression_value("shockwave_damage_bonus"))
 	_spawn_tile_effect(AETHER_HIT, player_pos)
 	for i in range(enemies.size() - 1, -1, -1):
 		if _distance(player_pos, enemies[i]["pos"]) == 1:
-			enemies[i]["stunned"] = 1
+			enemies[i]["stunned"] = stun_turns
 			_spawn_tile_effect(AETHER_HIT, enemies[i]["pos"])
-			_attack_enemy(i, 1)
+			_attack_enemy(i, shock_damage)
 			hit_count += 1
 	if hit_count == 0:
 		message = "Shockwave cracks around you, but catches no one."
 	else:
 		message = "Shockwave stuns %d adjacent foe%s." % [hit_count, "" if hit_count == 1 else "s"]
+	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
 func _drink_potion() -> void:
@@ -1531,8 +1999,9 @@ func _drink_potion() -> void:
 		message = "No potion waits at your belt."
 	else:
 		run_state.potions -= 1
-		run_state.heal(5)
-		message = "You drink a potion and recover 5 health."
+		var heal_amount: int = int(GameBalance.get_combat_value(["healing", "potion_base"], 5)) + run_state.get_derived_stat("potion_heal_bonus")
+		run_state.heal(heal_amount)
+		message = "You drink a potion and recover %d health." % heal_amount
 		_finish_player_action()
 	_refresh_ui()
 
@@ -1540,39 +2009,53 @@ func _attack_enemy(index: int, damage: int) -> void:
 	var enemy: Dictionary = enemies[index]
 	enemy["hp"] -= damage
 	if enemy["hp"] <= 0:
-		message = "The forest token falls. You gain 3 gold."
-		run_state.gold += 3
+		var reward: int = _enemy_gold_reward(enemy)
+		var xp_reward: int = _enemy_xp_reward(enemy)
+		message = "%s falls. You gain %d gold." % [_enemy_display_name(enemy), reward]
+		run_state.gold += reward
+		progression_log_buffer.append_array(run_state.gain_xp(xp_reward, "%s defeated" % _enemy_display_name(enemy)))
 		enemies.remove_at(index)
 	else:
 		enemies[index] = enemy
-		message = "Hit for %d. The enemy has %d health left." % [damage, enemy["hp"]]
+		message = "Hit %s for %d. It has %d health left." % [_enemy_display_name(enemy), damage, enemy["hp"]]
 
 func _hit_prop(index: int) -> void:
 	var prop: Dictionary = props[index]
 	if prop["kind"] == "campfire":
-		run_state.heal(2)
-		message = "The campfire steadies you. Restored 2 health."
+		_use_campfire()
 		return
 	prop["hp"] -= 1
 	if prop["hp"] <= 0:
 		message = "The %s breaks. Something clinks in the grass." % prop["kind"]
-		run_state.gold += 1
+		run_state.gold += int(GameBalance.get_combat_value(["props", "break_gold"], 1))
 		props.remove_at(index)
 	else:
 		props[index] = prop
 		message = "The %s cracks." % prop["kind"]
 
-func _open_chest() -> void:
+func _use_campfire() -> void:
+	if _is_free_roam():
+		run_state.heal(run_state.max_health)
+		message = "The campfire burns bright. You recover to full health."
+	else:
+		var heal_amount: int = int(GameBalance.get_combat_value(["healing", "campfire_combat"], 2))
+		run_state.heal(heal_amount)
+		message = "The campfire steadies you. Restored %d health." % heal_amount
+
+func _open_chest() -> bool:
 	if chest["opened"]:
 		message = "The chest is already open."
+		return false
 	elif run_state.keys > 0:
 		run_state.keys -= 1
 		chest["opened"] = true
-		run_state.gold += 15
-		run_state.potions += 1
-		message = "The key turns. Inside: 15 gold and a potion."
+		run_state.generate_chest_choices(_current_floor(), rng)
+		message = "The key turns. Choose one relic from the chest."
+		_open_chest_choice_modal()
+		return true
 	else:
 		message = "The chest is locked. Find a key."
+		return false
 
 func _resolve_tile() -> void:
 	for item in loot.duplicate():
@@ -1596,7 +2079,7 @@ func _resolve_enemy_actor_turn(enemy_id: int) -> void:
 	if int(enemy.get("stunned", 0)) > 0:
 		enemy["stunned"] = int(enemy["stunned"]) - 1
 		enemies[index] = enemy
-		message = "%s is stunned and loses its turn." % ("Elite Wolf" if bool(enemy.get("elite", false)) else "Wolf")
+		message = "%s is stunned and loses its turn." % _enemy_display_name(enemy)
 		_refresh_ui()
 		is_resolving_enemy_turn = false
 		_advance_to_next_actor()
@@ -1607,13 +2090,14 @@ func _resolve_enemy_actor_turn(enemy_id: int) -> void:
 		if not _brace_hits_enemy(index):
 			_enemy_attack(index)
 	elif index != -1:
-		message = "%s prowls closer." % ("Elite Wolf" if bool(enemies[index].get("elite", false)) else "Wolf")
+		message = "%s prowls closer." % _enemy_display_name(enemies[index])
 	_refresh_ui()
 	is_resolving_enemy_turn = false
 	_advance_to_next_actor()
 
 func _enemy_move_toward_player(index: int) -> void:
-	for step in range(ENEMY_MOVE_ALLOWANCE):
+	var movement: int = _enemy_movement(enemies[index]) if index >= 0 and index < enemies.size() else ENEMY_MOVE_ALLOWANCE
+	for step in range(movement):
 		if index < 0 or index >= enemies.size():
 			return
 		if _distance(enemies[index]["pos"], player_pos) == 1:
@@ -1631,11 +2115,56 @@ func _enemy_index_by_id(enemy_id: int) -> int:
 			return i
 	return -1
 
+func _enemy_display_name(enemy: Dictionary) -> String:
+	return String(GameBalance.get_enemy_value(_enemy_type(enemy), "display_name", "Wolf"))
+
+func _enemy_short_name(enemy: Dictionary) -> String:
+	return String(GameBalance.get_enemy_value(_enemy_type(enemy), "short_name", _enemy_display_name(enemy)))
+
+func _enemy_type(enemy: Dictionary) -> String:
+	return String(enemy.get("enemy_type", "normal_wolf"))
+
+func _enemy_initiative_modifier(enemy: Dictionary) -> int:
+	return int(GameBalance.get_enemy_value(_enemy_type(enemy), "initiative_modifier", 0))
+
+func _enemy_movement(enemy: Dictionary) -> int:
+	return int(GameBalance.get_enemy_value(_enemy_type(enemy), "movement", ENEMY_MOVE_ALLOWANCE))
+
+func _enemy_sprite_key(enemy: Dictionary) -> String:
+	match _enemy_type(enemy):
+		"kobold":
+			return "kobold"
+		"blood_wolf":
+			return "blood_wolf"
+	return "wolf"
+
+func _enemy_label(enemy: Dictionary) -> String:
+	match _enemy_type(enemy):
+		"kobold":
+			return "K"
+		"blood_wolf":
+			return "B"
+		"elite_wolf":
+			return "E"
+		"boss_wolf":
+			return "W"
+	return "W"
+
+func _enemy_color(enemy: Dictionary) -> Color:
+	match _enemy_type(enemy):
+		"kobold":
+			return Color(0.62, 0.36, 0.12)
+		"blood_wolf":
+			return Color(0.62, 0.05, 0.07)
+		"elite_wolf", "boss_wolf":
+			return Color(0.56, 0.14, 0.14)
+	return Color(0.45, 0.12, 0.12)
+
 func _brace_hits_enemy(index: int) -> bool:
 	if not braced:
 		return false
 	braced = false
-	_attack_enemy(index, run_state.selected_gear.damage + 1)
+	_attack_enemy(index, _player_gear_damage() + 1)
 	message = "Brace lands before the enemy can strike."
 	return true
 
@@ -1645,8 +2174,9 @@ func _enemy_attack(index: int) -> void:
 	var enemy: Dictionary = enemies[index]
 	var damage: int = int(enemy["damage"])
 	var attack_direction: Vector2i = Vector2i(_sign_int(enemy["pos"].x - player_pos.x), _sign_int(enemy["pos"].y - player_pos.y))
+	var defense_bonus: int = run_state.get_derived_stat("defense") if run_state != null else 0
 	if is_defending:
-		damage = maxi(0, damage - 1)
+		damage = maxi(0, damage - 1 - defense_bonus)
 		message = "Your defensive stance softens the hit."
 	if block_stacks > 0:
 		block_stacks -= 1
@@ -1657,8 +2187,10 @@ func _enemy_attack(index: int) -> void:
 	if run_state != null and run_state.selected_gear != null:
 		match run_state.selected_gear.defense_id:
 			"retaliate":
-				_attack_enemy(index, 1)
-				message = "Fire Shield lashes back for 1 damage."
+				var retaliate_damage: int = 1 + _mage_progression_value("fire_shield_retaliate_bonus")
+				_attack_enemy(index, retaliate_damage)
+				message = "Fire Shield lashes back for %d damage." % retaliate_damage
+				message = _append_log_lines(message, _consume_progression_logs())
 			"flash_step":
 				if _flash_step_back(attack_direction):
 					message = "Flash Step snaps you backward from the blow."
@@ -1840,85 +2372,15 @@ func _refresh_ui() -> void:
 	health_bar.value = run_state.current_health
 	health_value_label.text = "%d/%d" % [run_state.current_health, run_state.max_health]
 	title_label.text = "Forest Dungeon - Floor %d/%d" % [_current_floor(), _max_floors()]
-	action_label.text = "%s | %s layout" % [_turn_status(), layout_type.capitalize()]
+	action_label.text = "%s | %s" % [_turn_status(), _layout_display_name()]
 	hud_label.text = ""
 	hud_label.visible = false
 	log_label.text = message
-	_sync_compact_status_panel()
 	_sync_initiative_tracker()
 	_sync_action_panel()
 	_sync_board_nodes()
-
-func _sync_compact_status_panel() -> void:
-	if compact_status_body == null or run_state == null:
-		return
-	_clear_children_now(compact_status_body)
-	var gear: GearData = run_state.selected_gear
-	var gear_name := "None"
-	var special_name := "None"
-	if gear != null:
-		gear_name = gear.display_name
-		special_name = gear.special_id.capitalize()
-
-	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 8)
-	compact_status_body.add_child(header)
-
-	var portrait := TextureRect.new()
-	portrait.texture = _player_portrait_texture()
-	portrait.custom_minimum_size = Vector2(42, 42)
-	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	header.add_child(portrait)
-
-	var gear_icon := TextureRect.new()
-	gear_icon.texture = ICON_SPELL if run_state.selected_class_id == "mage" else ICON_ATTACK
-	gear_icon.custom_minimum_size = Vector2(24, 24)
-	gear_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	gear_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	header.add_child(gear_icon)
-
-	var identity := VBoxContainer.new()
-	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(identity)
-	_add_small_label(identity, run_state.selected_class_name, 14, Color(0.97, 0.87, 0.62))
-	_add_small_label(identity, gear_name, 11, Color(0.82, 0.73, 0.58))
-	_add_small_label(identity, special_name, 10, Color(0.67, 0.86, 0.95))
-
-	var stats_grid := GridContainer.new()
-	stats_grid.columns = 2
-	stats_grid.add_theme_constant_override("h_separation", 6)
-	stats_grid.add_theme_constant_override("v_separation", 4)
-	compact_status_body.add_child(stats_grid)
-	stats_grid.add_child(_make_icon_stat_row(ICON_GOLD, "Gold", str(run_state.gold)))
-	stats_grid.add_child(_make_icon_stat_row(ICON_KEY, "Keys", str(run_state.keys)))
-	stats_grid.add_child(_make_icon_stat_row(ICON_POTION, "Potions", str(run_state.potions)))
-	stats_grid.add_child(_make_icon_stat_row(ICON_BLOCK, "Block", str(block_stacks)))
-	stats_grid.add_child(_make_icon_stat_row(ICON_MOVE, "Move", "Free" if _is_free_roam() else str(movement_remaining)))
-	stats_grid.add_child(_make_icon_stat_row(ICON_MODE, "Mode", _action_name()))
-	stats_grid.add_child(_make_icon_stat_row(ICON_FLOOR, "Floor", "%d/%d" % [_current_floor(), _max_floors()]))
-	stats_grid.add_child(_make_icon_stat_row(ICON_ROUND, "Round", str(round_number)))
-
-func _make_icon_stat_row(icon: Texture2D, label: String, value: String) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.custom_minimum_size = Vector2(118, 26)
-	row.add_theme_constant_override("separation", 5)
-
-	var image := TextureRect.new()
-	image.texture = icon
-	image.custom_minimum_size = Vector2(18, 18)
-	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	row.add_child(image)
-
-	var text := Label.new()
-	text.text = "%s %s" % [label, value]
-	text.clip_text = true
-	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text.add_theme_font_size_override("font_size", 11)
-	text.add_theme_color_override("font_color", Color(0.90, 0.82, 0.68))
-	row.add_child(text)
-	return row
+	if character_menu_panel != null and character_menu_panel.visible:
+		_sync_character_menu()
 
 func _sync_initiative_tracker() -> void:
 	if initiative_tracker == null:
@@ -1958,6 +2420,7 @@ func _make_initiative_token(actor: Dictionary, active: bool) -> PanelContainer:
 
 	var image := TextureRect.new()
 	image.texture = _actor_portrait_texture(actor)
+	image.modulate = _actor_portrait_modulate(actor)
 	image.custom_minimum_size = Vector2(32, 32)
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -1991,6 +2454,700 @@ func _sync_action_panel() -> void:
 	_set_button_selected(defend_button, is_defending)
 	_set_button_selected(end_turn_button, false)
 
+func _is_blocking_modal_open() -> bool:
+	return (chest_choice_panel != null and chest_choice_panel.visible) or (character_menu_panel != null and character_menu_panel.visible)
+
+func _toggle_character_menu() -> void:
+	if chest_choice_panel != null and chest_choice_panel.visible:
+		return
+	if character_menu_panel == null:
+		return
+	character_menu_panel.visible = not character_menu_panel.visible
+	if character_menu_panel.visible:
+		_hide_hover_context()
+		_sync_character_menu()
+
+func _sync_character_menu() -> void:
+	if character_menu_panel == null or run_state == null:
+		return
+	var profile_value: Variant = run_state.hero_profiles.get(run_state.selected_class_id, {})
+	var profile: Dictionary = profile_value if profile_value is Dictionary else {}
+	var derived_value: Variant = profile.get("derived_stats", {})
+	var derived: Dictionary = derived_value if derived_value is Dictionary else {}
+	var gear_name := "None"
+	if run_state.selected_gear != null:
+		gear_name = run_state.selected_gear.display_name
+	character_menu_panel.sync(run_state, _player_portrait_texture(), gear_name, derived, run_state.get_inventory_items())
+
+func _open_chest_choice_modal() -> void:
+	if chest_choice_panel == null or chest_choice_cards == null or run_state == null:
+		return
+	_hide_hover_context()
+	_sync_reward_choice_copy()
+	_clear_children_now(chest_choice_cards)
+	if reward_choice_source == "progression":
+		var pending_choice: Dictionary = run_state.get_pending_progression_choice()
+		var choices_value: Variant = pending_choice.get("choices", [])
+		if choices_value is Array:
+			for choice in choices_value:
+				if choice is Dictionary:
+					chest_choice_cards.add_child(_make_progression_choice_card(choice))
+	else:
+		for item_id in run_state.pending_chest_choices:
+			chest_choice_cards.add_child(_make_chest_choice_card(String(item_id)))
+	if chest_choice_backdrop != null:
+		chest_choice_backdrop.visible = true
+	chest_choice_panel.visible = true
+
+func _open_pending_progression_choice_if_needed() -> bool:
+	if run_state == null or not run_state.has_pending_progression_choice():
+		return false
+	if chest_choice_panel != null and chest_choice_panel.visible:
+		return false
+	reward_choice_source = "progression"
+	_open_chest_choice_modal()
+	return true
+
+func _should_offer_starter_reward() -> bool:
+	return run_state != null and not run_state.starter_reward_claimed and _current_floor() == 1
+
+func _offer_starter_reward() -> void:
+	reward_choice_source = "starter"
+	run_state.generate_chest_choices(_current_floor(), rng)
+	message = "Before the first chamber, the forest offers a relic."
+	_open_chest_choice_modal()
+	_refresh_ui()
+
+func _sync_reward_choice_copy() -> void:
+	if chest_choice_title_label == null or chest_choice_subtitle_label == null:
+		return
+	if reward_choice_source == "starter":
+		chest_choice_title_label.text = "Choose Your Opening Relic"
+		chest_choice_subtitle_label.text = "Before the first chamber, claim one boon to shape this dungeon run."
+	elif reward_choice_source == "progression":
+		var pending_choice: Dictionary = run_state.get_pending_progression_choice() if run_state != null else {}
+		var choice_type: String = String(pending_choice.get("type", "ability"))
+		var level: int = int(pending_choice.get("level", run_state.get_level() if run_state != null else 1))
+		chest_choice_title_label.text = "Choose Mage Evolution" if choice_type == "evolution" else "Choose Ability Upgrade"
+		chest_choice_subtitle_label.text = "Level %d unlock. Choose one path; it will persist on this Mage." % level
+	else:
+		chest_choice_title_label.text = "Choose One Relic"
+		chest_choice_subtitle_label.text = "The chest opens with three offerings. Claim one boon for the road ahead."
+
+func _make_chest_choice_card(item_id: String) -> PanelContainer:
+	var item: Dictionary = GameBalance.get_item(item_id)
+	var rarity: String = String(item.get("rarity", "common"))
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(246, 398)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	card.add_theme_stylebox_override("panel", _reward_card_style())
+	card.gui_input.connect(_on_reward_card_gui_input.bind(item_id))
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 0)
+	margin.add_theme_constant_override("margin_right", 0)
+	margin.add_theme_constant_override("margin_top", 0)
+	margin.add_theme_constant_override("margin_bottom", 0)
+	card.add_child(margin)
+
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 7)
+	margin.add_child(body)
+
+	body.add_child(_make_reward_card_banner(item, rarity))
+
+	var name_label := Label.new()
+	var item_name: String = String(item.get("name", item_id))
+	name_label.text = item_name.to_upper()
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.custom_minimum_size = Vector2(0, 50)
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_apply_relic_title_style(name_label, item_name)
+	body.add_child(name_label)
+
+	body.add_child(_make_reward_ornament(rarity))
+
+	body.add_child(_make_reward_modifier_section(item, rarity))
+
+	var description := Label.new()
+	description.text = String(item.get("description", "A strange relic."))
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description.custom_minimum_size = Vector2(0, 70)
+	description.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	description.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	description.add_theme_font_size_override("font_size", 10)
+	description.add_theme_color_override("font_color", Color(0.82, 0.76, 0.63))
+	body.add_child(description)
+
+	var choose_button := Button.new()
+	choose_button.text = "Claim Relic"
+	choose_button.custom_minimum_size = Vector2(0, 34)
+	choose_button.pressed.connect(_choose_chest_reward.bind(item_id))
+	_style_reward_choose_button(choose_button, rarity)
+	body.add_child(choose_button)
+	_make_card_body_click_through(card)
+	return card
+
+func _make_progression_choice_card(choice: Dictionary) -> PanelContainer:
+	var rarity := "rare"
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(246, 398)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	card.add_theme_stylebox_override("panel", _reward_card_style())
+	card.gui_input.connect(_on_progression_card_gui_input.bind(String(choice.get("id", ""))))
+
+	var margin := MarginContainer.new()
+	card.add_child(margin)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 8)
+	margin.add_child(body)
+	body.add_child(_make_progression_card_banner(choice, rarity))
+
+	var name_label := Label.new()
+	var choice_name: String = String(choice.get("name", "Mage Upgrade"))
+	name_label.text = choice_name.to_upper()
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.custom_minimum_size = Vector2(0, 64)
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_apply_relic_title_style(name_label, choice_name)
+	body.add_child(name_label)
+	body.add_child(_make_reward_ornament(rarity))
+	body.add_child(_make_reward_modifier_section(choice, rarity))
+
+	var description := Label.new()
+	description.text = String(choice.get("description", "Your magic changes shape."))
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description.custom_minimum_size = Vector2(0, 86)
+	description.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	description.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	description.add_theme_font_size_override("font_size", 10)
+	description.add_theme_color_override("font_color", Color(0.82, 0.76, 0.63))
+	body.add_child(description)
+
+	var choose_button := Button.new()
+	choose_button.text = "Choose"
+	choose_button.custom_minimum_size = Vector2(0, 34)
+	choose_button.pressed.connect(_choose_progression_reward.bind(String(choice.get("id", ""))))
+	_style_reward_choose_button(choose_button, rarity)
+	body.add_child(choose_button)
+	_make_card_body_click_through(card)
+	return card
+
+func _make_progression_card_banner(choice: Dictionary, rarity: String) -> PanelContainer:
+	var banner := PanelContainer.new()
+	banner.custom_minimum_size = Vector2(0, 36)
+	banner.add_theme_stylebox_override("panel", _reward_metadata_style(rarity))
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 5)
+	margin.add_theme_constant_override("margin_right", 5)
+	margin.add_theme_constant_override("margin_top", 3)
+	margin.add_theme_constant_override("margin_bottom", 3)
+	banner.add_child(margin)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	margin.add_child(row)
+	var icon := TextureRect.new()
+	icon.texture = ICON_SPELL
+	icon.custom_minimum_size = Vector2(28, 28)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+	var labels := VBoxContainer.new()
+	labels.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(labels)
+	var type_label := Label.new()
+	var pending_choice: Dictionary = run_state.get_pending_progression_choice() if run_state != null else {}
+	type_label.text = "Evolution" if String(pending_choice.get("type", "ability")) == "evolution" else "Ability"
+	type_label.add_theme_font_size_override("font_size", 9)
+	type_label.add_theme_color_override("font_color", _rarity_color(rarity).lightened(0.06))
+	labels.add_child(type_label)
+	var level_label := Label.new()
+	level_label.text = "Level %d" % int(choice.get("level", 1))
+	level_label.add_theme_font_size_override("font_size", 8)
+	level_label.add_theme_color_override("font_color", Color(0.86, 0.78, 0.62))
+	labels.add_child(level_label)
+	var badge := TextureRect.new()
+	badge.texture = _rarity_medallion_texture(rarity)
+	badge.custom_minimum_size = Vector2(32, 32)
+	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(badge)
+	return banner
+
+func _make_reward_card_banner(item: Dictionary, rarity: String) -> PanelContainer:
+	var banner := PanelContainer.new()
+	banner.custom_minimum_size = Vector2(0, 36)
+	banner.add_theme_stylebox_override("panel", _reward_metadata_style(rarity))
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 5)
+	margin.add_theme_constant_override("margin_right", 5)
+	margin.add_theme_constant_override("margin_top", 3)
+	margin.add_theme_constant_override("margin_bottom", 3)
+	banner.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	margin.add_child(row)
+
+	var icon := TextureRect.new()
+	icon.texture = _item_icon_texture(String(item.get("icon_key", "special")))
+	icon.custom_minimum_size = Vector2(28, 28)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+
+	var labels := VBoxContainer.new()
+	labels.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(labels)
+	var rarity_label := Label.new()
+	rarity_label.text = _rarity_name(rarity)
+	rarity_label.add_theme_font_size_override("font_size", 9)
+	rarity_label.add_theme_color_override("font_color", _rarity_color(rarity).lightened(0.06))
+	labels.add_child(rarity_label)
+
+	var duration_label := Label.new()
+	duration_label.text = _duration_text_for_item(item)
+	duration_label.add_theme_font_size_override("font_size", 8)
+	duration_label.add_theme_color_override("font_color", Color(0.86, 0.78, 0.62))
+	labels.add_child(duration_label)
+
+	var badge := TextureRect.new()
+	badge.texture = _rarity_medallion_texture(rarity)
+	badge.custom_minimum_size = Vector2(32, 32)
+	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(badge)
+	return banner
+
+func _choose_chest_reward(item_id: String) -> void:
+	if run_state == null:
+		return
+	var is_starter_reward: bool = reward_choice_source == "starter"
+	var logs: Array[String] = run_state.choose_starter_item(item_id) if is_starter_reward else run_state.choose_chest_item(item_id)
+	message = _append_log_lines("The relic settles into your pack.", logs)
+	if chest_choice_backdrop != null:
+		chest_choice_backdrop.visible = false
+	if chest_choice_panel != null:
+		chest_choice_panel.visible = false
+	reward_choice_source = "chest"
+	if character_menu_panel != null and character_menu_panel.visible:
+		_sync_character_menu()
+	if is_starter_reward:
+		_begin_current_actor_turn()
+		message = _append_log_lines(message, logs)
+		_refresh_ui()
+		return
+	_refresh_ui()
+	if not is_starter_reward and not _is_free_roam():
+		_finish_player_action()
+
+func _choose_progression_reward(choice_id: String) -> void:
+	if run_state == null:
+		return
+	var logs: Array[String] = run_state.choose_progression_choice(choice_id)
+	message = _append_log_lines("Your spellbook rewrites itself.", logs)
+	if chest_choice_backdrop != null:
+		chest_choice_backdrop.visible = false
+	if chest_choice_panel != null:
+		chest_choice_panel.visible = false
+	reward_choice_source = "chest"
+	if character_menu_panel != null and character_menu_panel.visible:
+		_sync_character_menu()
+	if _open_pending_progression_choice_if_needed():
+		_refresh_ui()
+		return
+	_refresh_ui()
+	if combat_started and not is_player_turn and not is_resolving_enemy_turn:
+		_begin_current_actor_turn()
+		return
+	if is_player_turn and has_used_action and not _is_free_roam():
+		_end_player_turn()
+
+func _rarity_name(rarity: String) -> String:
+	var rarities: Dictionary = GameBalance.get_item_rarities()
+	var rarity_value: Variant = rarities.get(rarity, {})
+	if rarity_value is Dictionary:
+		return String(rarity_value.get("name", rarity.capitalize()))
+	return rarity.capitalize()
+
+func _rarity_abbrev(rarity: String) -> String:
+	match rarity:
+		"common":
+			return "C"
+		"uncommon":
+			return "U"
+		"rare":
+			return "R"
+		"very_rare":
+			return "VR"
+		"legendary":
+			return "L"
+	return "?"
+
+func _rarity_medallion_texture(rarity: String) -> Texture2D:
+	return ItemRewardCard.rarity_medallion(rarity)
+
+func _rarity_color(rarity: String) -> Color:
+	var rarities: Dictionary = GameBalance.get_item_rarities()
+	var rarity_value: Variant = rarities.get(rarity, {})
+	var color_string := ""
+	if rarity_value is Dictionary:
+		color_string = String(rarity_value.get("color", ""))
+	if not color_string.is_empty():
+		return Color.html(color_string)
+	match rarity:
+		"uncommon":
+			return Color(0.44, 0.82, 0.51)
+		"rare":
+			return Color(0.40, 0.65, 1.0)
+		"very_rare":
+			return Color(0.76, 0.49, 1.0)
+		"legendary":
+			return Color(1.0, 0.70, 0.30)
+	return Color(0.79, 0.76, 0.67)
+
+func _duration_text(entry: Dictionary) -> String:
+	var duration_type: String = String(entry.get("duration_type", "dungeon_bound"))
+	match duration_type:
+		"temporary":
+			var remaining_floors: int = int(entry.get("remaining_floors", 0))
+			return "%d Floor%s" % [remaining_floors, "" if remaining_floors == 1 else "s"]
+		"dungeon_bound":
+			return "This Run"
+		"permanent":
+			return "Permanent"
+	return duration_type.capitalize()
+
+func _duration_text_for_item(item: Dictionary) -> String:
+	var duration_type: String = String(item.get("duration_type", "dungeon_bound"))
+	match duration_type:
+		"temporary":
+			var floor_count: int = int(item.get("duration_floors", 2))
+			return "%d Floor%s" % [floor_count, "" if floor_count == 1 else "s"]
+		"dungeon_bound":
+			return "This Run"
+		"permanent":
+			return "Permanent"
+	return duration_type.capitalize()
+
+func _modifier_text(item: Dictionary) -> String:
+	var modifiers_value: Variant = item.get("modifiers", {})
+	if not (modifiers_value is Dictionary):
+		return "No visible effect"
+	var modifiers: Dictionary = modifiers_value
+	var parts: Array[String] = []
+	for key in modifiers.keys():
+		var value: int = int(modifiers[key])
+		var label: String = _modifier_label(String(key))
+		var prefix := "+" if value >= 0 else ""
+		parts.append("%s%s %s" % [prefix, value, label])
+	if parts.is_empty():
+		return "No visible effect"
+	return ", ".join(parts)
+
+func _modifier_chip_texts(item: Dictionary) -> Array[String]:
+	var modifiers_value: Variant = item.get("modifiers", {})
+	var chips: Array[String] = []
+	if not (modifiers_value is Dictionary):
+		return ["No visible effect"]
+	var modifiers: Dictionary = modifiers_value
+	for key in modifiers.keys():
+		var value: int = int(modifiers[key])
+		var prefix := "+" if value >= 0 else ""
+		chips.append("%s%s %s" % [prefix, value, _modifier_label(String(key))])
+	if chips.is_empty():
+		chips.append("No visible effect")
+	return chips
+
+func _modifier_rows(item: Dictionary) -> Array[Dictionary]:
+	var modifiers_value: Variant = item.get("modifiers", {})
+	var rows: Array[Dictionary] = []
+	if modifiers_value is Dictionary:
+		var modifiers: Dictionary = modifiers_value
+		for key in modifiers.keys():
+			var value: int = int(modifiers[key])
+			rows.append({
+				"value": value,
+				"label": _modifier_label(String(key)).to_upper(),
+			})
+	var flags_value: Variant = item.get("flags", {})
+	if flags_value is Dictionary:
+		var flags: Dictionary = flags_value
+		for key in flags.keys():
+			var value: int = int(flags[key])
+			rows.append({
+				"value": value,
+				"label": _progression_flag_label(String(key)).to_upper(),
+			})
+	return rows
+
+func _modifier_label(stat_id: String) -> String:
+	match stat_id:
+		"max_health":
+			return "Max HP"
+		"attack_bonus":
+			return "Attack"
+		"spell_power":
+			return "Spell"
+		"defense":
+			return "Defense"
+		"initiative_modifier":
+			return "Initiative"
+		"potion_heal_bonus":
+			return "Potion Heal"
+		"movement":
+			return "Move"
+		"block_bonus":
+			return "Block"
+		"gold_bonus_percent":
+			return "Gold%"
+		"xp_bonus_percent":
+			return "XP%"
+	return stat_id.capitalize()
+
+func _progression_flag_label(flag_id: String) -> String:
+	match flag_id:
+		"fire_shield_retaliate_bonus":
+			return "Fire Shield"
+		"flamethrower_damage_bonus":
+			return "Flame Damage"
+		"flamethrower_range_bonus":
+			return "Flame Range"
+		"shockwave_damage_bonus":
+			return "Shock Damage"
+		"shockwave_stun_bonus":
+			return "Stun"
+		"force_blast_push_bonus":
+			return "Force Push"
+		"force_blast_splash_bonus":
+			return "Splash Damage"
+		"force_blast_splash_radius_bonus":
+			return "Splash Radius"
+		"force_blast_range_bonus":
+			return "Force Range"
+	return flag_id.capitalize()
+
+func _item_icon_texture(icon_key: String) -> Texture2D:
+	match icon_key:
+		"attack":
+			return ICON_ATTACK
+		"defense":
+			return ICON_DEFEND
+		"potion", "health":
+			return ICON_POTION
+		"move":
+			return ICON_MOVE
+		"gold":
+			return ICON_GOLD
+		"spell":
+			return ICON_SPELL
+		"mode":
+			return ICON_MODE
+	return ICON_SPECIAL
+
+func _make_reward_ornament(rarity: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0, 12)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 5)
+	row.add_child(_make_reward_rule(rarity))
+	var gem := Label.new()
+	gem.text = "<>"
+	gem.add_theme_font_size_override("font_size", 9)
+	gem.add_theme_color_override("font_color", _rarity_color(rarity).lightened(0.10))
+	row.add_child(gem)
+	row.add_child(_make_reward_rule(rarity))
+	return row
+
+func _make_reward_rule(rarity: String) -> ColorRect:
+	var divider := ColorRect.new()
+	divider.custom_minimum_size = Vector2(54, 1)
+	divider.color = _rarity_color(rarity).darkened(0.08)
+	return divider
+
+func _make_reward_modifier_section(item: Dictionary, rarity: String) -> VBoxContainer:
+	var section := VBoxContainer.new()
+	section.custom_minimum_size = Vector2(0, 72)
+	section.add_theme_constant_override("separation", 2)
+	var rows: Array[Dictionary] = _modifier_rows(item)
+	if rows.is_empty():
+		var empty_label := Label.new()
+		empty_label.text = "NO VISIBLE EFFECT"
+		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_label.add_theme_font_size_override("font_size", 10)
+		empty_label.add_theme_color_override("font_color", Color(0.92, 0.84, 0.68))
+		section.add_child(empty_label)
+		return section
+	if rows.size() == 1:
+		var single_value: Variant = rows[0]
+		var single_row: Dictionary = single_value if single_value is Dictionary else {}
+		section.add_child(_make_reward_primary_modifier(single_row, rarity))
+		return section
+	for row_value in rows:
+		var row_data: Dictionary = row_value if row_value is Dictionary else {}
+		section.add_child(_make_reward_modifier_row(row_data, rarity, rows.size()))
+	return section
+
+func _make_reward_primary_modifier(row_data: Dictionary, rarity: String) -> VBoxContainer:
+	var column := VBoxContainer.new()
+	column.custom_minimum_size = Vector2(0, 72)
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.add_theme_constant_override("separation", 0)
+
+	var value: int = int(row_data.get("value", 0))
+	var prefix := "+" if value >= 0 else ""
+	var value_label := Label.new()
+	value_label.text = "%s%d" % [prefix, value]
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	value_label.add_theme_font_size_override("font_size", 30)
+	value_label.add_theme_color_override("font_color", _rarity_color(rarity).lightened(0.10))
+	column.add_child(value_label)
+
+	var stat_label := Label.new()
+	stat_label.text = String(row_data.get("label", "EFFECT"))
+	stat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stat_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stat_label.add_theme_font_size_override("font_size", 13)
+	stat_label.add_theme_color_override("font_color", Color(0.96, 0.89, 0.72))
+	column.add_child(stat_label)
+	return column
+
+func _make_reward_modifier_row(row_data: Dictionary, rarity: String, row_count: int) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var row_height := 54
+	if row_count == 2:
+		row_height = 34
+	elif row_count > 2:
+		row_height = 22
+	row.custom_minimum_size = Vector2(0, row_height)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 8)
+	var value_font_size := 25
+	var stat_font_size := 13
+	if row_count == 2:
+		value_font_size = 16
+		stat_font_size = 10
+	elif row_count > 2:
+		value_font_size = 13
+		stat_font_size = 8
+
+	var value: int = int(row_data.get("value", 0))
+	var prefix := "+" if value >= 0 else ""
+	var value_label := Label.new()
+	value_label.text = "%s%d" % [prefix, value]
+	value_label.custom_minimum_size = Vector2(52, 0)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	value_label.add_theme_font_size_override("font_size", value_font_size)
+	value_label.add_theme_color_override("font_color", _rarity_color(rarity).lightened(0.10))
+	row.add_child(value_label)
+
+	var stat_label := Label.new()
+	stat_label.text = String(row_data.get("label", "EFFECT"))
+	stat_label.clip_text = true
+	stat_label.custom_minimum_size = Vector2(112, 0)
+	stat_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	stat_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stat_label.add_theme_font_size_override("font_size", stat_font_size)
+	stat_label.add_theme_color_override("font_color", Color(0.96, 0.89, 0.72))
+	row.add_child(stat_label)
+	return row
+
+func _make_reward_chip(text: String, rarity: String) -> PanelContainer:
+	var chip := PanelContainer.new()
+	chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chip.custom_minimum_size = Vector2(0, 30)
+	chip.add_theme_stylebox_override("panel", _reward_chip_style(rarity))
+
+	var label := Label.new()
+	label.text = text
+	label.clip_text = true
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override("font_color", Color(0.26, 0.15, 0.07))
+	chip.add_child(label)
+	return chip
+
+func _style_reward_choose_button(button: Button, _rarity: String) -> void:
+	FantasyButton.apply_dark(button, 12)
+
+func _reward_modal_style() -> StyleBoxFlat:
+	var style := _ornate_style(Color(0.095, 0.062, 0.037, 0.98), Color(0.90, 0.63, 0.28), 2, 7)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
+	style.shadow_size = 12
+	style.shadow_offset = Vector2(0, 5)
+	return style
+
+func _reward_card_style() -> StyleBox:
+	return ItemRewardCard.card_style()
+
+func _reward_banner_style(rarity: String) -> StyleBoxFlat:
+	var rarity_color: Color = _rarity_color(rarity)
+	return _ornate_style(Color(0.16, 0.09, 0.045, 0.96).lerp(rarity_color, 0.15), rarity_color, 1, 4)
+
+func _reward_metadata_style(rarity: String) -> StyleBoxFlat:
+	var rarity_color: Color = _rarity_color(rarity)
+	return _ornate_style(Color(0.07, 0.055, 0.04, 0.70), rarity_color.darkened(0.08), 1, 4)
+
+func _reward_icon_seal_style(rarity: String) -> StyleBoxFlat:
+	var rarity_color: Color = _rarity_color(rarity)
+	return _ornate_style(Color(0.86, 0.78, 0.48, 0.90).lerp(rarity_color, 0.12), Color(0.30, 0.16, 0.06), 2, 22)
+
+func _reward_badge_style(rarity: String) -> StyleBoxFlat:
+	return _ornate_style(_rarity_color(rarity).lightened(0.12), Color(0.22, 0.12, 0.05), 1, 12)
+
+func _reward_inner_style() -> StyleBox:
+	return ItemRewardCard.parchment_style()
+
+func _reward_readable_panel_style(color: Color = Color(0.88, 0.76, 0.51, 0.84), border_color: Color = Color(0.50, 0.30, 0.12), radius: int = 4) -> StyleBoxFlat:
+	var style := _ornate_style(color, border_color.darkened(0.12), 1, radius)
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		style.set_content_margin(side, 4.0)
+	return style
+
+func _reward_chip_style(rarity: String) -> StyleBoxFlat:
+	var rarity_color: Color = _rarity_color(rarity)
+	return _ornate_style(Color(0.90, 0.78, 0.50, 0.90).lerp(rarity_color, 0.08), Color(0.48, 0.29, 0.12), 1, 4)
+
+func _reward_title_color() -> Color:
+	return Color(1.0, 0.90, 0.68)
+
+func _apply_relic_title_style(label: Label, item_name: String) -> void:
+	# Font handoff: no fantasy serif is currently checked into the repo.
+	# Replace this helper with a Theme variation or FontFile override when one is added.
+	var title_size := 17
+	if item_name.length() > 22:
+		title_size = 15
+	if item_name.length() > 30:
+		title_size = 13
+	label.add_theme_font_size_override("font_size", title_size)
+	label.add_theme_color_override("font_color", _reward_title_color())
+	label.add_theme_color_override("font_shadow_color", Color(0.08, 0.045, 0.02, 0.85))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+
+func _ornate_style(color: Color, border_color: Color, border_width: int, corner_radius: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = border_color
+	style.set_border_width_all(border_width)
+	style.set_corner_radius_all(corner_radius)
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		style.set_content_margin(side, 6.0)
+	return style
+
 func _set_button_selected(button: Button, selected: bool) -> void:
 	if button == null:
 		return
@@ -2007,7 +3164,18 @@ func _player_portrait_texture() -> Texture2D:
 func _actor_portrait_texture(actor: Dictionary) -> Texture2D:
 	if String(actor["kind"]) == "player":
 		return _player_portrait_texture()
+	var enemy_index: int = _enemy_index_by_id(int(actor["id"]))
+	if enemy_index != -1 and _enemy_type(enemies[enemy_index]) == "kobold":
+		return _make_atlas_texture(KOBOLD_IDLE_SHEET, Rect2(0, 0, 74, 96))
 	return _make_atlas_texture(WOLF_SHEET, Rect2(0, 0, 96, 80))
+
+func _actor_portrait_modulate(actor: Dictionary) -> Color:
+	if String(actor["kind"]) != "enemy":
+		return Color.WHITE
+	var enemy_index: int = _enemy_index_by_id(int(actor["id"]))
+	if enemy_index != -1 and _enemy_type(enemies[enemy_index]) == "blood_wolf":
+		return Color(1.15, 0.45, 0.45)
+	return Color.WHITE
 
 func _make_atlas_texture(texture: Texture2D, region: Rect2) -> AtlasTexture:
 	var atlas := AtlasTexture.new()
@@ -2018,9 +3186,10 @@ func _make_atlas_texture(texture: Texture2D, region: Rect2) -> AtlasTexture:
 func _short_actor_name(actor: Dictionary) -> String:
 	if String(actor["kind"]) == "player":
 		return "You"
-	if String(actor["name"]).begins_with("Elite"):
-		return "Elite"
-	return "Wolf"
+	var enemy_index: int = _enemy_index_by_id(int(actor["id"]))
+	if enemy_index != -1:
+		return _enemy_short_name(enemies[enemy_index])
+	return String(actor["name"])
 
 func _actor_status_marker(actor: Dictionary) -> String:
 	if String(actor["kind"]) == "player":
@@ -2064,7 +3233,7 @@ func _sync_board_nodes() -> void:
 		_add_marker("HiddenCache", secret["pos"], "$", Color(0.78, 0.73, 0.43), "secret")
 	_add_highlight_markers()
 	for i in range(enemies.size()):
-		var enemy_piece: BoardPiece = _make_piece("Wolf_%d" % i, enemies[i]["pos"], "W", Color(0.56, 0.14, 0.14), BoardPiece.PieceShape.CIRCLE, "wolf")
+		var enemy_piece: BoardPiece = _make_piece("Enemy_%d" % i, enemies[i]["pos"], _enemy_label(enemies[i]), _enemy_color(enemies[i]), BoardPiece.PieceShape.CIRCLE, _enemy_sprite_key(enemies[i]))
 		_add_enemy_health_bar(enemy_piece, enemies[i])
 		enemies_root.add_child(enemy_piece)
 	if minimap_panel != null:
@@ -2086,6 +3255,11 @@ func _apply_sprite_to_piece(piece: BoardPiece, sprite_key: String) -> void:
 	match sprite_key:
 		"wolf":
 			_set_piece_sprite(piece, WOLF_SHEET, Rect2(0, 0, 96, 80), Vector2(0.58, 0.58))
+		"blood_wolf":
+			_set_piece_sprite(piece, WOLF_SHEET, Rect2(0, 0, 96, 80), Vector2(0.74, 0.74))
+			piece.modulate = Color(1.15, 0.45, 0.45)
+		"kobold":
+			_set_piece_sprite(piece, KOBOLD_IDLE_SHEET, Rect2(0, 0, 74, 96), Vector2(0.50, 0.50))
 		"rock":
 			_set_fitted_piece_sprite(piece, ROCK_SPRITE, Vector2(38, 34))
 		"barrel":
@@ -2168,25 +3342,54 @@ func _style_action_buttons() -> void:
 	for button: Button in _action_buttons():
 		if button == null:
 			continue
-		button.custom_minimum_size = Vector2(0, 42)
-		button.add_theme_stylebox_override("normal", _button_style(UI_BUTTON_NORMAL))
-		button.add_theme_stylebox_override("hover", _button_style(UI_BUTTON_HOVER))
-		button.add_theme_stylebox_override("pressed", _button_style(UI_BUTTON_PRESSED))
-		button.add_theme_stylebox_override("focus", _button_style(UI_BUTTON_HOVER))
-		button.add_theme_color_override("font_color", Color(0.20, 0.12, 0.07))
-		button.add_theme_color_override("font_hover_color", Color(0.10, 0.07, 0.04))
-		button.add_theme_color_override("font_pressed_color", Color(0.08, 0.05, 0.03))
-		button.add_theme_font_size_override("font_size", 15)
+		_apply_flat_ui_button(button, 13, Vector2(0, 38))
 
 func _action_buttons() -> Array[Button]:
 	return [move_button, interact_button, special_button, potion_button, defend_button, end_turn_button]
 
-func _button_style(texture: Texture2D) -> StyleBoxTexture:
-	var style := StyleBoxTexture.new()
-	style.texture = texture
+func _on_reward_card_gui_input(event: InputEvent, item_id: String) -> void:
+	if reward_choice_source == "progression":
+		return
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event
+		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			_choose_chest_reward(item_id)
+
+func _on_progression_card_gui_input(event: InputEvent, choice_id: String) -> void:
+	if reward_choice_source != "progression":
+		return
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event
+		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			_choose_progression_reward(choice_id)
+
+func _make_card_body_click_through(node: Node) -> void:
+	for child in node.get_children():
+		if child is Control and not (child is Button):
+			var control: Control = child
+			control.mouse_filter = Control.MOUSE_FILTER_PASS if child is Container else Control.MOUSE_FILTER_IGNORE
+		_make_card_body_click_through(child)
+
+func _apply_flat_ui_button(button: Button, font_size: int, minimum_size: Vector2) -> void:
+	if minimum_size != Vector2.ZERO:
+		button.custom_minimum_size = minimum_size
+	button.add_theme_stylebox_override("normal", _button_flat_style(Color(0.11, 0.085, 0.055, 0.86), Color(0.58, 0.39, 0.17), 1))
+	button.add_theme_stylebox_override("hover", _button_flat_style(Color(0.18, 0.13, 0.075, 0.94), Color(0.86, 0.62, 0.26), 1))
+	button.add_theme_stylebox_override("pressed", _button_flat_style(Color(0.27, 0.18, 0.08, 0.98), Color(1.0, 0.76, 0.36), 2))
+	button.add_theme_stylebox_override("focus", _button_flat_style(Color(0.15, 0.10, 0.055, 0.92), Color(0.96, 0.78, 0.42), 1))
+	button.add_theme_stylebox_override("disabled", _button_flat_style(Color(0.07, 0.06, 0.05, 0.62), Color(0.24, 0.20, 0.16), 1))
+	button.add_theme_color_override("font_color", Color(1.0, 0.88, 0.62))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.95, 0.74))
+	button.add_theme_color_override("font_pressed_color", Color(0.82, 0.68, 0.42))
+	button.add_theme_color_override("font_disabled_color", Color(0.50, 0.46, 0.38))
+	button.add_theme_font_size_override("font_size", font_size)
+	button.add_theme_constant_override("h_separation", 4)
+
+func _button_flat_style(color: Color, border_color: Color, border_width: int) -> StyleBoxFlat:
+	var style := _flat_style(color, 4, border_color)
+	style.set_border_width_all(border_width)
 	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
-		style.set_texture_margin(side, 8.0)
-		style.set_content_margin(side, 10.0)
+		style.set_content_margin(side, 5.0)
 	return style
 
 func _flat_style(color: Color, corner_radius: int, border_color: Color) -> StyleBoxFlat:
@@ -2432,6 +3635,8 @@ func _max_floors() -> int:
 
 func _floor_intro_message() -> String:
 	var room_note := "The path is direct, but the trees still listen."
+	if layout_type.begins_with("boss_"):
+		return "Floor %d/%d: %s waits beyond the roots." % [_current_floor(), _max_floors(), boss_chamber_name]
 	match layout_type:
 		"branching":
 			room_note = "Side paths split away toward caches and snares."
@@ -2442,6 +3647,11 @@ func _floor_intro_message() -> String:
 		"arena":
 			room_note = "The final grove opens wide, daring you to cross it."
 	return "Floor %d/%d: %s" % [_current_floor(), _max_floors(), room_note]
+
+func _layout_display_name() -> String:
+	if layout_type.begins_with("boss_"):
+		return "%s boss chamber" % boss_chamber_name
+	return "%s layout" % layout_type.capitalize()
 
 func _dead_end_room_ids() -> Array[int]:
 	var ids: Array[int] = []

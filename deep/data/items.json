@@ -1,0 +1,640 @@
+{
+  "rarities": {
+	"common": {"name": "Common", "color": "#c9c2aa"},
+	"uncommon": {"name": "Uncommon", "color": "#6fd082"},
+	"rare": {"name": "Rare", "color": "#65a7ff"},
+	"very_rare": {"name": "Very Rare", "color": "#c17cff"},
+	"legendary": {"name": "Legendary", "color": "#ffb24d"}
+  },
+  "items": {
+	"soldiers_buckle": {
+	  "name": "Soldier's Buckle",
+	  "rarity": "common",
+	  "duration_type": "dungeon_bound",
+	  "description": "A plain iron buckle etched with a guard oath.",
+	  "tags": ["martial", "defense"],
+	  "icon_key": "defense",
+	  "modifiers": {"defense": 1}
+	},
+	"embershard_focus": {
+	  "name": "Embershard Focus",
+	  "rarity": "common",
+	  "duration_type": "temporary",
+	  "duration_floors": 2,
+	  "description": "Warm crystal splinters sharpen simple spellwork for a short stretch.",
+	  "tags": ["arcane", "spell"],
+	  "icon_key": "spell",
+	  "modifiers": {"spell_power": 1}
+	},
+	"keen_edge_oil": {
+	  "name": "Keen Edge Oil",
+	  "rarity": "common",
+	  "duration_type": "temporary",
+	  "duration_floors": 2,
+	  "description": "A quick coat makes weapon strikes bite deeper.",
+	  "tags": ["martial", "weapon"],
+	  "icon_key": "attack",
+	  "modifiers": {"attack_bonus": 1}
+	},
+	"healers_brooch": {
+	  "name": "Healer's Brooch",
+	  "rarity": "common",
+	  "duration_type": "dungeon_bound",
+	  "description": "A tiny clasp that makes every potion feel carefully brewed.",
+	  "tags": ["healing", "utility"],
+	  "icon_key": "potion",
+	  "modifiers": {"potion_heal_bonus": 2}
+	},
+	"quickstep_charm": {
+	  "name": "Quickstep Charm",
+	  "rarity": "common",
+	  "duration_type": "temporary",
+	  "duration_floors": 2,
+	  "description": "A cord charm that urges your feet through danger.",
+	  "tags": ["movement", "utility"],
+	  "icon_key": "move",
+	  "modifiers": {"movement": 1}
+	},
+	"amulet_of_vigor": {
+	  "name": "Amulet of Vigor",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "A green-glass pendant that steadies breath and blood.",
+	  "tags": ["health"],
+	  "icon_key": "health",
+	  "modifiers": {"max_health": 4}
+	},
+	"duelist_gloves": {
+	  "name": "Duelist Gloves",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "Supple leather gloves cut for fast, accurate strikes.",
+	  "tags": ["martial", "speed"],
+	  "icon_key": "attack",
+	  "modifiers": {"attack_bonus": 1, "initiative_modifier": 1}
+	},
+	"wand_of_cinders": {
+	  "name": "Wand of Cinders",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "A soot-dark wand that flares when battle starts.",
+	  "tags": ["arcane", "fire"],
+	  "icon_key": "spell",
+	  "modifiers": {"spell_power": 2}
+	},
+	"lucky_coin": {
+	  "name": "Lucky Coin",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "Somehow, treasure always lands face up.",
+	  "tags": ["loot", "luck"],
+	  "icon_key": "gold",
+	  "modifiers": {"gold_bonus_percent": 25}
+	},
+	"scholars_lens": {
+	  "name": "Scholar's Lens",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "Every fight teaches a little more than it should.",
+	  "tags": ["xp", "arcane"],
+	  "icon_key": "mode",
+	  "modifiers": {"xp_bonus_percent": 15}
+	},
+	"giant_bane_grip": {
+	  "name": "Giant-Bane Grip",
+	  "rarity": "rare",
+	  "duration_type": "permanent",
+	  "description": "A weapon wrap said to remember impossible victories.",
+	  "tags": ["martial", "weapon"],
+	  "icon_key": "attack",
+	  "modifiers": {"attack_bonus": 2, "max_health": 3}
+	},
+	"moonleaf_cloak": {
+	  "name": "Moonleaf Cloak",
+	  "rarity": "rare",
+	  "duration_type": "dungeon_bound",
+	  "description": "A quiet cloak that seems to move before the wind does.",
+	  "tags": ["defense", "speed"],
+	  "icon_key": "defense",
+	  "modifiers": {"defense": 2, "initiative_modifier": 1}
+	},
+	"aether_prism": {
+	  "name": "Aether Prism",
+	  "rarity": "rare",
+	  "duration_type": "permanent",
+	  "description": "A faceted stone that catches spell-light from strange angles.",
+	  "tags": ["arcane", "spell"],
+	  "icon_key": "spell",
+	  "modifiers": {"spell_power": 3}
+	},
+	"boots_of_the_hare": {
+	  "name": "Boots of the Hare",
+	  "rarity": "rare",
+	  "duration_type": "dungeon_bound",
+	  "description": "Light boots with soles that never quite touch mud.",
+	  "tags": ["movement", "speed"],
+	  "icon_key": "move",
+	  "modifiers": {"movement": 1, "initiative_modifier": 2}
+	},
+	"sunward_periapt": {
+	  "name": "Sunward Periapt",
+	  "rarity": "very_rare",
+	  "duration_type": "permanent",
+	  "description": "A bright charm that makes wounds close cleaner.",
+	  "tags": ["health", "healing"],
+	  "icon_key": "health",
+	  "modifiers": {"max_health": 8, "potion_heal_bonus": 4}
+	},
+	"flameheart_talisman": {
+	  "name": "Flameheart Talisman",
+	  "rarity": "very_rare",
+	  "duration_type": "permanent",
+	  "description": "A pulsing talisman that rewards bold spellcasting.",
+	  "tags": ["arcane", "fire"],
+	  "icon_key": "spell",
+	  "modifiers": {"spell_power": 4, "defense": 1}
+	},
+	"kingsroad_aegis": {
+	  "name": "Kingsroad Aegis",
+	  "rarity": "very_rare",
+	  "duration_type": "permanent",
+	  "description": "An old royal charm, sturdy enough to make a shield jealous.",
+	  "tags": ["defense", "health"],
+	  "icon_key": "defense",
+	  "modifiers": {"max_health": 6, "defense": 3, "block_bonus": 1}
+	},
+	"starfallen_sigil": {
+	  "name": "Starfallen Sigil",
+	  "rarity": "legendary",
+	  "duration_type": "permanent",
+	  "description": "A silver mark that hums with patient, dangerous power.",
+	  "tags": ["legendary", "power"],
+	  "icon_key": "special",
+	  "modifiers": {"attack_bonus": 4, "spell_power": 4, "initiative_modifier": 2}
+	},
+	"heartwood_crown": {
+	  "name": "Heartwood Crown",
+	  "rarity": "legendary",
+	  "duration_type": "permanent",
+	  "description": "Living roots woven into a crown for anyone stubborn enough to survive them.",
+	  "tags": ["legendary", "health"],
+	  "icon_key": "health",
+	  "modifiers": {"max_health": 12, "defense": 4, "potion_heal_bonus": 6}
+	},
+	"ironroot_ring": {
+	  "name": "Ironroot Ring",
+	  "rarity": "common",
+	  "duration_type": "dungeon_bound",
+	  "description": "A rough wooden ring reinforced with a thin band of iron.",
+	  "tags": [
+		"defense",
+        "health"
+	  ],
+	  "icon_key": "defense",
+	  "modifiers": {
+		"max_health": 2
+	  }
+	},
+	"sparkwire_wrap": {
+	  "name": "Sparkwire Wrap",
+	  "rarity": "common",
+	  "duration_type": "temporary",
+	  "duration_floors": 2,
+	  "description": "Copper thread wound around a weapon grip to sharpen its first few strikes.",
+	  "tags": [
+		"martial",
+        "weapon"
+	  ],
+	  "icon_key": "attack",
+	  "modifiers": {
+		"attack_bonus": 1
+	  }
+	},
+	"menders_sachet": {
+	  "name": "Mender's Sachet",
+	  "rarity": "common",
+	  "duration_type": "temporary",
+	  "duration_floors": 3,
+	  "description": "A fragrant packet of bitter herbs tucked beside a potion flask.",
+	  "tags": [
+		"healing",
+        "utility"
+	  ],
+	  "icon_key": "potion",
+	  "modifiers": {
+		"potion_heal_bonus": 2
+	  }
+	},
+	"windknotted_thread": {
+	  "name": "Windknotted Thread",
+	  "rarity": "common",
+	  "duration_type": "temporary",
+	  "duration_floors": 2,
+	  "description": "A pale cord tied in seven knots, each tugging faintly toward open ground.",
+	  "tags": [
+		"movement",
+        "speed"
+	  ],
+	  "icon_key": "move",
+	  "modifiers": {
+		"initiative_modifier": 1
+	  }
+	},
+	"chalk_rune_tablet": {
+	  "name": "Chalk Rune Tablet",
+	  "rarity": "common",
+	  "duration_type": "temporary",
+	  "duration_floors": 2,
+	  "description": "A brittle slate covered in cramped formulae that brighten around active magic.",
+	  "tags": [
+		"arcane",
+        "spell"
+	  ],
+	  "icon_key": "spell",
+	  "modifiers": {
+		"spell_power": 1
+	  }
+	},
+	"scavengers_token": {
+	  "name": "Scavenger's Token",
+	  "rarity": "common",
+	  "duration_type": "dungeon_bound",
+	  "description": "A brass token passed between delvers who know where to look twice.",
+	  "tags": [
+		"loot",
+        "luck"
+	  ],
+	  "icon_key": "gold",
+	  "modifiers": {
+		"gold_bonus_percent": 10
+	  }
+	},
+	"drillmasters_whistle": {
+	  "name": "Drillmaster's Whistle",
+	  "rarity": "common",
+	  "duration_type": "dungeon_bound",
+	  "description": "Its shrill note has a way of making hard lessons stick.",
+	  "tags": [
+		"xp",
+        "martial"
+	  ],
+	  "icon_key": "mode",
+	  "modifiers": {
+		"xp_bonus_percent": 8
+	  }
+	},
+	"brambleguard_clasp": {
+	  "name": "Brambleguard Clasp",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "A thorn-shaped bronze clasp that seems to stiffen when danger draws near.",
+	  "tags": [
+		"defense",
+        "health"
+	  ],
+	  "icon_key": "defense",
+	  "modifiers": {
+		"defense": 1,
+		"max_health": 2
+	  }
+	},
+	"stormglass_bead": {
+	  "name": "Stormglass Bead",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "A cloudy blue bead with tiny flashes trapped beneath its surface.",
+	  "tags": [
+		"arcane",
+        "lightning"
+	  ],
+	  "icon_key": "spell",
+	  "modifiers": {
+		"spell_power": 2
+	  }
+	},
+	"cutpurses_favor": {
+	  "name": "Cutpurse's Favor",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "A crooked silver charm that makes loose coin strangely easy to notice.",
+	  "tags": [
+		"loot",
+        "luck"
+	  ],
+	  "icon_key": "gold",
+	  "modifiers": {
+		"gold_bonus_percent": 30
+	  }
+	},
+	"redstep_spurs": {
+	  "name": "Redstep Spurs",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "Small iron spurs that click once just before their wearer moves.",
+	  "tags": [
+		"movement",
+        "speed"
+	  ],
+	  "icon_key": "move",
+	  "modifiers": {
+		"movement": 1,
+		"initiative_modifier": 1
+	  }
+	},
+	"apothecarys_cup": {
+	  "name": "Apothecary's Cup",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "A tiny measuring cup engraved with ratios no modern herbalist recognizes.",
+	  "tags": [
+		"healing",
+        "utility"
+	  ],
+	  "icon_key": "potion",
+	  "modifiers": {
+		"potion_heal_bonus": 3
+	  }
+	},
+	"veterans_whetstone": {
+	  "name": "Veteran's Whetstone",
+	  "rarity": "uncommon",
+	  "duration_type": "temporary",
+	  "duration_floors": 3,
+	  "description": "A scarred stone polished smooth by blades that survived many campaigns.",
+	  "tags": [
+		"martial",
+        "weapon"
+	  ],
+	  "icon_key": "attack",
+	  "modifiers": {
+		"attack_bonus": 2
+	  }
+	},
+	"wayfinders_compass": {
+	  "name": "Wayfinder's Compass",
+	  "rarity": "uncommon",
+	  "duration_type": "dungeon_bound",
+	  "description": "Its needle ignores north and points instead toward momentum.",
+	  "tags": [
+		"movement",
+        "utility"
+	  ],
+	  "icon_key": "move",
+	  "modifiers": {
+		"initiative_modifier": 2
+	  }
+	},
+	"runebound_bracer": {
+	  "name": "Runebound Bracer",
+	  "rarity": "rare",
+	  "duration_type": "permanent",
+	  "description": "An old leather bracer inset with a rune that warms whenever steel is drawn.",
+	  "tags": [
+		"martial",
+        "defense"
+	  ],
+	  "icon_key": "attack",
+	  "modifiers": {
+		"attack_bonus": 2,
+		"defense": 1
+	  }
+	},
+	"glass_magus_eye": {
+	  "name": "Glass Magus Eye",
+	  "rarity": "rare",
+	  "duration_type": "permanent",
+	  "description": "A polished crystal lens that fractures spell-light into sharper patterns.",
+	  "tags": [
+		"arcane",
+        "spell"
+	  ],
+	  "icon_key": "spell",
+	  "modifiers": {
+		"spell_power": 3,
+		"initiative_modifier": 1
+	  }
+	},
+	"pilgrims_greaves": {
+	  "name": "Pilgrim's Greaves",
+	  "rarity": "rare",
+	  "duration_type": "dungeon_bound",
+	  "description": "Weathered greaves said to grow lighter the farther their wearer travels.",
+	  "tags": [
+		"movement",
+        "defense"
+	  ],
+	  "icon_key": "move",
+	  "modifiers": {
+		"movement": 1,
+		"defense": 2
+	  }
+	},
+	"gilded_beetle": {
+	  "name": "Gilded Beetle",
+	  "rarity": "rare",
+	  "duration_type": "permanent",
+	  "description": "A jeweled beetle figurine that always seems to turn up beside hidden valuables.",
+	  "tags": [
+		"loot",
+        "luck"
+	  ],
+	  "icon_key": "gold",
+	  "modifiers": {
+		"gold_bonus_percent": 50
+	  }
+	},
+	"saints_phial": {
+	  "name": "Saint's Phial",
+	  "rarity": "rare",
+	  "duration_type": "dungeon_bound",
+	  "description": "An empty crystal vial that somehow improves anything restorative poured nearby.",
+	  "tags": [
+		"healing",
+        "health"
+	  ],
+	  "icon_key": "potion",
+	  "modifiers": {
+		"max_health": 4,
+		"potion_heal_bonus": 4
+	  }
+	},
+	"war_scholars_codex": {
+	  "name": "War Scholar's Codex",
+	  "rarity": "rare",
+	  "duration_type": "permanent",
+	  "description": "A battered field manual annotated by generations of adventurers.",
+	  "tags": [
+		"xp",
+		"martial",
+        "arcane"
+	  ],
+	  "icon_key": "mode",
+	  "modifiers": {
+		"xp_bonus_percent": 25,
+		"attack_bonus": 1,
+		"spell_power": 1
+	  }
+	},
+	"blackoak_ward": {
+	  "name": "Blackoak Ward",
+	  "rarity": "rare",
+	  "duration_type": "dungeon_bound",
+	  "description": "A dark wooden token dense enough to feel more like stone than timber.",
+	  "tags": [
+		"defense",
+        "health"
+	  ],
+	  "icon_key": "defense",
+	  "modifiers": {
+		"defense": 3,
+		"max_health": 3
+	  }
+	},
+	"phoenix_ash_reliquary": {
+	  "name": "Phoenix-Ash Reliquary",
+	  "rarity": "very_rare",
+	  "duration_type": "permanent",
+	  "description": "A thumb-sized reliquary containing ash that never cools completely.",
+	  "tags": [
+		"arcane",
+		"fire",
+        "healing"
+	  ],
+	  "icon_key": "spell",
+	  "modifiers": {
+		"spell_power": 4,
+		"potion_heal_bonus": 3
+	  }
+	},
+	"wyvernscale_mantle": {
+	  "name": "Wyvernscale Mantle",
+	  "rarity": "very_rare",
+	  "duration_type": "permanent",
+	  "description": "Overlapping scales sewn into a shoulder mantle that turns blows with a dry hiss.",
+	  "tags": [
+		"defense",
+        "martial"
+	  ],
+	  "icon_key": "defense",
+	  "modifiers": {
+		"defense": 4,
+		"attack_bonus": 2
+	  }
+	},
+	"chronomancers_pin": {
+	  "name": "Chronomancer's Pin",
+	  "rarity": "very_rare",
+	  "duration_type": "permanent",
+	  "description": "The tiny hands on this silver pin occasionally twitch backward.",
+	  "tags": [
+		"speed",
+        "arcane"
+	  ],
+	  "icon_key": "special",
+	  "modifiers": {
+		"initiative_modifier": 4,
+		"spell_power": 2
+	  }
+	},
+	"deepdelvers_lantern": {
+	  "name": "Deepdelver's Lantern",
+	  "rarity": "very_rare",
+	  "duration_type": "dungeon_bound",
+	  "description": "A hooded lantern whose pale flame seems brightest near danger and treasure alike.",
+	  "tags": [
+		"loot",
+		"xp",
+        "utility"
+	  ],
+	  "icon_key": "gold",
+	  "modifiers": {
+		"gold_bonus_percent": 50,
+		"xp_bonus_percent": 25
+	  }
+	},
+	"titanblood_torc": {
+	  "name": "Titanblood Torc",
+	  "rarity": "very_rare",
+	  "duration_type": "permanent",
+	  "description": "A heavy bronze neck-ring that beats faintly like a second pulse.",
+	  "tags": [
+		"health",
+        "martial"
+	  ],
+	  "icon_key": "health",
+	  "modifiers": {
+		"max_health": 10,
+		"attack_bonus": 2
+	  }
+	},
+	"crown_of_the_first_flame": {
+	  "name": "Crown of the First Flame",
+	  "rarity": "legendary",
+	  "duration_type": "permanent",
+	  "description": "A blackened circlet crowned by an ember that has supposedly burned since magic first entered the world.",
+	  "tags": [
+		"legendary",
+		"arcane",
+        "fire"
+	  ],
+	  "icon_key": "special",
+	  "modifiers": {
+		"spell_power": 6,
+		"initiative_modifier": 2,
+		"max_health": 6
+	  }
+	},
+	"worldbreaker_gauntlet": {
+	  "name": "Worldbreaker Gauntlet",
+	  "rarity": "legendary",
+	  "duration_type": "permanent",
+	  "description": "A massive rune-marked gauntlet whose knuckles bear dents no mortal smith can explain.",
+	  "tags": [
+		"legendary",
+		"martial",
+        "power"
+	  ],
+	  "icon_key": "attack",
+	  "modifiers": {
+		"attack_bonus": 6,
+		"defense": 3,
+		"max_health": 6
+	  }
+	},
+	"fortune_eaters_idol": {
+	  "name": "Fortune-Eater's Idol",
+	  "rarity": "legendary",
+	  "duration_type": "permanent",
+	  "description": "A grinning golden idol that grows heavier after every victory.",
+	  "tags": [
+		"legendary",
+		"loot",
+		"xp",
+        "luck"
+	  ],
+	  "icon_key": "gold",
+	  "modifiers": {
+		"gold_bonus_percent": 100,
+		"xp_bonus_percent": 40,
+		"initiative_modifier": 2
+	  }
+	},
+	"aegis_of_the_last_king": {
+	  "name": "Aegis of the Last King",
+	  "rarity": "legendary",
+	  "duration_type": "permanent",
+	  "description": "A broken royal seal said to carry the stubbornness of a kingdom that refused to fall.",
+	  "tags": [
+		"legendary",
+		"defense",
+        "health"
+	  ],
+	  "icon_key": "defense",
+	  "modifiers": {
+		"defense": 6,
+		"max_health": 14,
+		"potion_heal_bonus": 4
+	  }
+	}
+  }
+}

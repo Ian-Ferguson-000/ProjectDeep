@@ -52,7 +52,7 @@ func _build_gear_options() -> void:
 		GearData.create(
 			"magic_missile_shield",
 			"Magic Missile and Shield",
-			1,
+			3,
 			true,
 			2,
 			"force_blast",
@@ -63,7 +63,7 @@ func _build_gear_options() -> void:
 		GearData.create(
 			"fireball_fire_shield",
 			"Fireball and Fire Shield",
-			3,
+			5,
 			false,
 			0,
 			"flamethrower",
@@ -74,7 +74,7 @@ func _build_gear_options() -> void:
 		GearData.create(
 			"lightning_flash_step",
 			"Lightning Bolt and Flash Step",
-			2,
+			3,
 			false,
 			0,
 			"shockwave",
@@ -151,6 +151,7 @@ func _ensure_input_actions() -> void:
 	_add_key_action("interact", [KEY_E, KEY_SPACE])
 	_add_key_action("special", [KEY_F])
 	_add_key_action("drink_potion", [KEY_Q])
+	_add_key_action("character_menu", [KEY_M])
 
 func _add_key_action(action: StringName, keys: Array[int]) -> void:
 	if not InputMap.has_action(action):

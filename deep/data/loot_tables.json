@@ -1,0 +1,10 @@
+{
+  "choice_count": 3,
+  "rarity_weights_by_floor": {
+	"1": {"common": 82, "uncommon": 17, "rare": 1, "very_rare": 0, "legendary": 0},
+	"2": {"common": 68, "uncommon": 27, "rare": 5, "very_rare": 0, "legendary": 0},
+	"3": {"common": 52, "uncommon": 35, "rare": 11, "very_rare": 2, "legendary": 0},
+	"4": {"common": 35, "uncommon": 40, "rare": 18, "very_rare": 6, "legendary": 1},
+	"5": {"common": 20, "uncommon": 37, "rare": 28, "very_rare": 12, "legendary": 3}
+  }
+}

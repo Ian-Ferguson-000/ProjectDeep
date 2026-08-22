@@ -14,9 +14,6 @@ const TAVERN_FLOOR_ATLAS := preload("res://assets/generated_maps/tavern_floor_wo
 const WOODEN_EXIT_DOOR := preload("res://assets/generated_ui/wooden_exit_door.png")
 const STRUCT_ATLAS := preload("res://assets/pixel_art/TX Struct.png")
 const PROPS_ATLAS := preload("res://assets/pixel_art/TX Props.png")
-const UI_BUTTON_NORMAL := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/1.png")
-const UI_BUTTON_HOVER := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/2.png")
-const UI_BUTTON_PRESSED := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/3.png")
 
 var controller: Node
 var run_state: RunState
@@ -36,6 +33,7 @@ var message := ""
 @onready var bartender_token: BoardPiece = $Board/Tokens/BartenderToken
 @onready var gear_rack_token: BoardPiece = $Board/Tokens/GearRackToken
 @onready var forest_door_token: BoardPiece = $Board/Tokens/ForestDoorToken
+@onready var ui_root: Control = $UI/Root
 @onready var status_label: Label = $UI/Root/StatusLabel
 @onready var detail_label: Label = $UI/Root/DialoguePanel/DetailLabel
 @onready var title_label: Label = $UI/Root/TitleLabel
@@ -45,6 +43,7 @@ var message := ""
 @onready var gear_title_label: Label = $UI/Root/DialoguePanel/GearTitleLabel
 @onready var gear_box: VBoxContainer = $UI/Root/DialoguePanel/GearButtons
 @onready var enter_button: Button = $UI/Root/DialoguePanel/EnterForestButton
+var gear_options_panel: PanelContainer
 
 func setup(game_controller: Node, state: RunState, options: Array[GearData], intro_message: String) -> void:
 	controller = game_controller
@@ -62,6 +61,7 @@ func _ready() -> void:
 	speaker_label.add_theme_font_size_override("font_size", 18)
 	enter_button.pressed.connect(_enter_forest)
 	_style_dialogue_panel()
+	_setup_gear_options_panel()
 	_style_button(enter_button)
 	_build_tavern_tilemaps()
 	_position_tavern_sprites()
@@ -96,14 +96,78 @@ func _refresh_ui() -> void:
 		run_state.deaths if run_state != null else 0,
 		gear_name,
 	]
+	if run_state != null:
+		status_label.text = "%s\n%s" % [status_label.text, run_state.get_profile_summary()]
+		if run_state.selected_class_id == "mage":
+			var evolution_name: String = run_state.get_current_evolution_name()
+			if not evolution_name.is_empty():
+				status_label.text = "%s\nPath: %s" % [status_label.text, evolution_name]
 	dialogue_label.text = message
 	if selected_gear != null:
+		var stat_damage: int = selected_gear.damage
+		if run_state != null:
+			var damage_bonus: int = run_state.get_derived_stat("spell_power") if run_state.selected_class_id == "mage" else run_state.get_derived_stat("attack_bonus")
+			stat_damage += damage_bonus
 		detail_label.text = "%s | %d dmg\n%s" % [
 			selected_gear.display_name,
-			selected_gear.damage,
+			stat_damage,
 			selected_gear.description,
 		]
 	_populate_gear_buttons()
+
+func _setup_gear_options_panel() -> void:
+	if ui_root == null or gear_options_panel != null:
+		return
+	gear_options_panel = PanelContainer.new()
+	gear_options_panel.name = "GearOptionsPanel"
+	gear_options_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	gear_options_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	gear_options_panel.offset_left = -560
+	gear_options_panel.offset_top = 18
+	gear_options_panel.offset_right = -24
+	gear_options_panel.offset_bottom = 258
+	gear_options_panel.add_theme_stylebox_override("panel", _tavern_panel_style())
+	ui_root.add_child(gear_options_panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	gear_options_panel.add_child(margin)
+
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 8)
+	margin.add_child(body)
+
+	# UI handoff: these controls are authored in the tavern scene for now, but
+	# the runtime panel owns their placement so future tavern layout passes can
+	# move the gear/spell selector without changing reward or run-start logic.
+	_move_control_to_parent(gear_title_label, body)
+	_move_control_to_parent(detail_label, body)
+	_move_control_to_parent(gear_box, body)
+	_move_control_to_parent(enter_button, body)
+
+	gear_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gear_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detail_label.custom_minimum_size = Vector2(0, 52)
+	detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	gear_box.custom_minimum_size = Vector2(0, 90)
+	gear_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gear_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	enter_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+func _move_control_to_parent(control: Control, new_parent: Control) -> void:
+	var old_parent: Node = control.get_parent()
+	if old_parent != null:
+		old_parent.remove_child(control)
+	new_parent.add_child(control)
+	control.set_anchors_preset(Control.PRESET_FULL_RECT)
+	control.offset_left = 0
+	control.offset_top = 0
+	control.offset_right = 0
+	control.offset_bottom = 0
 
 func _populate_gear_buttons() -> void:
 	if gear_box == null:
@@ -112,7 +176,11 @@ func _populate_gear_buttons() -> void:
 		child.queue_free()
 	for gear in gear_options:
 		var button := Button.new()
-		button.text = "%s  (%d dmg)" % [gear.display_name, gear.damage]
+		var shown_damage: int = gear.damage
+		if run_state != null:
+			var damage_bonus: int = run_state.get_derived_stat("spell_power") if run_state.selected_class_id == "mage" else run_state.get_derived_stat("attack_bonus")
+			shown_damage += damage_bonus
+		button.text = "%s  (%d dmg)" % [gear.display_name, shown_damage]
 		button.toggle_mode = true
 		button.button_pressed = selected_gear == gear
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -122,7 +190,7 @@ func _populate_gear_buttons() -> void:
 
 func _select_gear(gear: GearData) -> void:
 	selected_gear = gear
-	var class_type := run_state.selected_class_name if run_state != null else "Fighter"
+	var class_type: String = run_state.selected_class_name if run_state != null else "Fighter"
 	message = "The bartender nods. '%s. A fair answer for a %s.'" % [gear.display_name, class_type]
 	_refresh_ui()
 
@@ -293,6 +361,9 @@ func _grid_center(tile: Vector2i) -> Vector2:
 	return _grid_to_screen(tile) + Vector2(TILE_SIZE, TILE_SIZE) * 0.5
 
 func _style_dialogue_panel() -> void:
+	dialogue_panel.add_theme_stylebox_override("panel", _tavern_panel_style())
+
+func _tavern_panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.08, 0.06, 0.045, 0.92)
 	style.border_color = Color(0.62, 0.43, 0.24)
@@ -302,26 +373,10 @@ func _style_dialogue_panel() -> void:
 	style.set_content_margin(SIDE_RIGHT, 12)
 	style.set_content_margin(SIDE_TOP, 10)
 	style.set_content_margin(SIDE_BOTTOM, 10)
-	dialogue_panel.add_theme_stylebox_override("panel", style)
+	return style
 
 func _style_button(button: Button) -> void:
-	button.custom_minimum_size = Vector2(260, 34)
-	button.add_theme_stylebox_override("normal", _button_style(UI_BUTTON_NORMAL))
-	button.add_theme_stylebox_override("hover", _button_style(UI_BUTTON_HOVER))
-	button.add_theme_stylebox_override("pressed", _button_style(UI_BUTTON_PRESSED))
-	button.add_theme_stylebox_override("focus", _button_style(UI_BUTTON_HOVER))
-	button.add_theme_color_override("font_color", Color(0.20, 0.12, 0.07))
-	button.add_theme_color_override("font_hover_color", Color(0.10, 0.07, 0.04))
-	button.add_theme_color_override("font_pressed_color", Color(0.08, 0.05, 0.03))
-	button.add_theme_font_size_override("font_size", 15)
-
-func _button_style(texture: Texture2D) -> StyleBoxTexture:
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
-		style.set_texture_margin(side, 8.0)
-		style.set_content_margin(side, 10.0)
-	return style
+	FantasyButton.apply_light(button, 15, Vector2(260, 34))
 
 func _is_inside_grid(tile: Vector2i) -> bool:
 	return tile.x >= 0 and tile.y >= 0 and tile.x < GRID_W and tile.y < GRID_H

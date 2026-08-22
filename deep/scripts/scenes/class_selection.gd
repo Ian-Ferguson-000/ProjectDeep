@@ -1,8 +1,5 @@
 extends Control
 
-const UI_BUTTON_NORMAL := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/1.png")
-const UI_BUTTON_HOVER := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/2.png")
-const UI_BUTTON_PRESSED := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/3.png")
 const PLAYER_IDLE_DOWN := preload("res://assets/sprite_packs/Player/IDLE/idle_down.png")
 const FIRE_MAGE_SHEET := preload("res://assets/enemies/fire_mage/normalized_sheet.png")
 
@@ -122,19 +119,4 @@ func _panel_style() -> StyleBoxFlat:
 	return style
 
 func _style_button(button: Button) -> void:
-	button.add_theme_stylebox_override("normal", _button_style(UI_BUTTON_NORMAL))
-	button.add_theme_stylebox_override("hover", _button_style(UI_BUTTON_HOVER))
-	button.add_theme_stylebox_override("pressed", _button_style(UI_BUTTON_PRESSED))
-	button.add_theme_stylebox_override("focus", _button_style(UI_BUTTON_HOVER))
-	button.add_theme_color_override("font_color", Color(0.20, 0.12, 0.07))
-	button.add_theme_color_override("font_hover_color", Color(0.10, 0.07, 0.04))
-	button.add_theme_color_override("font_pressed_color", Color(0.08, 0.05, 0.03))
-	button.add_theme_font_size_override("font_size", 17)
-
-func _button_style(texture: Texture2D) -> StyleBoxTexture:
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
-		style.set_texture_margin(side, 8.0)
-		style.set_content_margin(side, 10.0)
-	return style
+	FantasyButton.apply_light(button, 17)
