@@ -219,8 +219,7 @@ func _make_class_panel(run_state: RunState) -> PanelContainer:
 	var class_line: String = "Master of elemental flames and arcane knowledge." if run_state.selected_class_id == "mage" else "Front-line survivor with strong arms and stronger resolve."
 	body.add_child(_make_label(run_state.selected_class_name, 18, Color(1.0, 0.86, 0.58), HORIZONTAL_ALIGNMENT_CENTER))
 	body.add_child(_make_wrapped_label(class_line, 13, Color(0.84, 0.70, 0.45)))
-	if run_state.selected_class_id == "mage":
-		body.add_child(_make_wrapped_label(run_state.get_progression_summary(), 10, Color(0.58, 0.87, 0.95)))
+	body.add_child(_make_wrapped_label(run_state.get_progression_summary(), 10, Color(0.58, 0.87, 0.95)))
 	body.add_child(_make_label("Starting Kit", 13, Color(0.91, 0.60, 0.26), HORIZONTAL_ALIGNMENT_CENTER))
 	var starter_text: String = "Fireball\nFlame Shield" if run_state.selected_class_id == "mage" else "Sword\nShield Brace"
 	body.add_child(_make_wrapped_label(starter_text, 12, Color(0.86, 0.78, 0.64)))

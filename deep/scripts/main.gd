@@ -4,6 +4,7 @@ const StartScreenScene := preload("res://scenes/start/StartScreen.tscn")
 const ClassSelectionScene := preload("res://scenes/class_selection/ClassSelection.tscn")
 const TavernScene := preload("res://scenes/tavern/Tavern.tscn")
 const ForestScene := preload("res://scenes/forest/Forest.tscn")
+const CryptScene := preload("res://scenes/crypt/Crypt.tscn")
 
 var run_state := RunState.new()
 var all_gear_options: Array[GearData] = []
@@ -111,8 +112,15 @@ func show_tavern(message: String = "") -> void:
 	add_child(tavern)
 
 func start_forest(gear: GearData) -> void:
-	run_state.start_new_run(gear)
+	run_state.start_new_run(gear, "forest")
 	_load_forest_floor()
+
+func start_crypt(gear: GearData) -> void:
+	if not run_state.is_crypt_unlocked():
+		show_tavern("The crypt door is sealed. Clear the Forest Dungeon and reach level 5.")
+		return
+	run_state.start_new_run(gear, "crypt")
+	_load_crypt_floor()
 
 func _load_forest_floor() -> void:
 	_clear_scene()
@@ -121,11 +129,25 @@ func _load_forest_floor() -> void:
 	forest.setup(self, run_state)
 	add_child(forest)
 
+func _load_crypt_floor() -> void:
+	_clear_scene()
+	var crypt := CryptScene.instantiate()
+	current_scene = crypt
+	crypt.setup(self, run_state)
+	add_child(crypt)
+
 func complete_forest_floor() -> void:
 	if run_state.advance_floor():
 		_load_forest_floor()
 	else:
+		run_state.mark_forest_cleared()
 		return_to_tavern("victory", "You escape the five-floor forest dungeon with %d gold. The bartender smiles like he expected it." % run_state.gold)
+
+func complete_crypt_floor() -> void:
+	if run_state.advance_floor():
+		_load_crypt_floor()
+	else:
+		return_to_tavern("victory", "You emerge from the seven-floor Stone Crypt with %d gold. The tavern lanterns seem warmer now." % run_state.gold)
 
 func return_to_tavern(outcome: String, message: String) -> void:
 	run_state.finish_run(outcome, message)

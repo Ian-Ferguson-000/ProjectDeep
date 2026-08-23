@@ -8,7 +8,7 @@
   },
   "props": {
 	"hp": {
-	  "rock": 3,
+	  "rock": 1,
 	  "barrel": 1,
 	  "campfire": 99
 	},

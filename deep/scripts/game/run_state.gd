@@ -27,6 +27,7 @@ const FALLBACK_DERIVED_CONFIG := {
 }
 
 var selected_gear: GearData
+var selected_gear_by_class: Dictionary = {}
 var selected_class_id: String = "fighter"
 var selected_class_name: String = "Fighter"
 var current_health: int = 12
@@ -37,6 +38,9 @@ var potions: int = 0
 var floor_seed: int = 1001
 var current_floor: int = 1
 var max_floors: int = 5
+var active_dungeon_id: String = "forest"
+var forest_cleared: bool = false
+var crypt_unlocked: bool = false
 var run_outcome: String = "The bartender polishes a glass and waits."
 var completed_runs: int = 0
 var deaths: int = 0
@@ -53,13 +57,20 @@ func _init() -> void:
 func set_class(class_id: String) -> void:
 	selected_class_id = class_id
 	selected_class_name = "Mage" if class_id == "mage" else "Fighter"
+	var stored_gear_value: Variant = selected_gear_by_class.get(selected_class_id, null)
+	selected_gear = stored_gear_value if stored_gear_value is GearData else null
 	_ensure_profiles()
 	_restore_permanent_inventory_for_active_class()
 	recalculate_derived_stats()
 	_sync_health_from_profile(true)
+	_sync_crypt_unlock()
 
-func start_new_run(gear: GearData) -> void:
+func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	selected_gear = gear
+	if selected_gear != null:
+		selected_gear_by_class[selected_class_id] = selected_gear
+	active_dungeon_id = dungeon_id
+	max_floors = 7 if active_dungeon_id == "crypt" else 5
 	_ensure_profiles()
 	_restore_permanent_inventory_for_active_class()
 	pending_chest_choices.clear()
@@ -71,7 +82,8 @@ func start_new_run(gear: GearData) -> void:
 	potions = 0
 	current_floor = 1
 	floor_seed += 37
-	run_outcome = "The forest door opens. The tavern falls quiet behind you."
+	run_outcome = "The crypt stairs breathe cold dust." if active_dungeon_id == "crypt" else "The forest door opens. The tavern falls quiet behind you."
+	_sync_crypt_unlock()
 
 func advance_floor() -> bool:
 	if current_floor >= max_floors:
@@ -90,7 +102,20 @@ func finish_run(outcome: String, message: String) -> void:
 	elif outcome == "death":
 		deaths += 1
 		_clear_permanent_inventory_for_active_class()
-	selected_gear = null
+	_sync_crypt_unlock()
+
+func set_selected_gear(gear: GearData) -> void:
+	selected_gear = gear
+	if selected_gear != null:
+		selected_gear_by_class[selected_class_id] = selected_gear
+
+func mark_forest_cleared() -> void:
+	forest_cleared = true
+	_sync_crypt_unlock()
+
+func is_crypt_unlocked() -> bool:
+	_sync_crypt_unlock()
+	return crypt_unlocked
 
 func heal(amount: int) -> void:
 	_sync_health_from_profile(false)
@@ -159,6 +184,7 @@ func gain_xp(amount: int, reason: String) -> Array[String]:
 		logs.append_array(_enqueue_progression_choices(profile, int(profile["level"])))
 	hero_profiles[selected_class_id] = profile
 	_sync_health_from_profile(false)
+	_sync_crypt_unlock()
 	pending_level_logs.append_array(logs)
 	return logs
 
@@ -314,16 +340,15 @@ func choose_progression_choice(choice_id: String) -> Array[String]:
 
 func get_progression_summary() -> String:
 	var profile: Dictionary = _active_profile()
-	if String(profile.get("class_id", selected_class_id)) != "mage":
-		return "No class evolution chosen."
+	var class_id: String = String(profile.get("class_id", selected_class_id))
 	var path: Array = _profile_array(profile, "evolution_path")
 	var upgrades: Array = _profile_array(profile, "ability_upgrades")
 	var path_names: Array[String] = []
 	for choice_id in path:
-		path_names.append(_progression_choice_name(String(choice_id)))
+		path_names.append(_progression_choice_name(String(choice_id), class_id))
 	var upgrade_names: Array[String] = []
 	for choice_id in upgrades:
-		upgrade_names.append(_progression_choice_name(String(choice_id)))
+		upgrade_names.append(_progression_choice_name(String(choice_id), class_id))
 	var path_text: String = "Unevolved" if path_names.is_empty() else " -> ".join(path_names)
 	var upgrade_text: String = "No ability upgrades" if upgrade_names.is_empty() else ", ".join(upgrade_names)
 	return "Path: %s\nUpgrades: %s" % [path_text, upgrade_text]
@@ -332,7 +357,7 @@ func get_current_evolution_name() -> String:
 	var path: Array = _profile_array(_active_profile(), "evolution_path")
 	if path.is_empty():
 		return ""
-	return _progression_choice_name(String(path[path.size() - 1]))
+	return _progression_choice_name(String(path[path.size() - 1]), selected_class_id)
 
 func get_progression_flag_value(flag_id: String) -> int:
 	var flags: Dictionary = _selected_progression_flags(_active_profile())
@@ -480,19 +505,21 @@ func _fallback_derived_config(class_id: String) -> Dictionary:
 
 func _enqueue_progression_choices(profile: Dictionary, level: int) -> Array[String]:
 	var logs: Array[String] = []
-	if String(profile.get("class_id", "")) != "mage":
+	var class_id: String = String(profile.get("class_id", ""))
+	var progression: Dictionary = GameBalance.get_class_progression(class_id)
+	if progression.is_empty():
 		return logs
 	var pending: Array = _profile_array(profile, "pending_progression_choices")
 	if _has_selected_progression_at_level(profile, "evolutions", level) and _has_selected_progression_at_level(profile, "ability_upgrades", level):
 		return logs
-	var evolution_choices: Array = GameBalance.get_evolution_choices("mage", level, profile)
+	var evolution_choices: Array = GameBalance.get_evolution_choices(class_id, level, profile)
 	if not _has_selected_progression_at_level(profile, "evolutions", level) and not evolution_choices.is_empty() and not _pending_choice_exists(pending, "evolution", level):
 		pending.append({"type": "evolution", "level": level, "choices": evolution_choices})
-		logs.append("Mage evolution unlocked at level %d." % level)
-	var ability_choices: Array = GameBalance.get_ability_upgrade_choices("mage", level, profile)
+		logs.append("%s evolution unlocked at level %d." % [String(profile.get("class_id", selected_class_name)).capitalize(), level])
+	var ability_choices: Array = GameBalance.get_ability_upgrade_choices(class_id, level, profile)
 	if not _has_selected_progression_at_level(profile, "ability_upgrades", level) and not ability_choices.is_empty() and not _pending_choice_exists(pending, "ability", level):
 		pending.append({"type": "ability", "level": level, "choices": ability_choices})
-		logs.append("Mage ability upgrade unlocked at level %d." % level)
+		logs.append("%s ability upgrade unlocked at level %d." % [String(profile.get("class_id", selected_class_name)).capitalize(), level])
 	profile["pending_progression_choices"] = pending
 	return logs
 
@@ -510,9 +537,10 @@ func _pending_choice_exists(pending: Array, choice_type: String, level: int) -> 
 	return false
 
 func _has_selected_progression_at_level(profile: Dictionary, list_key: String, level: int) -> bool:
+	var class_id: String = String(profile.get("class_id", selected_class_id))
 	var selected_ids: Array = _profile_array(profile, "evolution_path") if list_key == "evolutions" else _profile_array(profile, "ability_upgrades")
 	for choice_id in selected_ids:
-		var choice: Dictionary = GameBalance.get_progression_choice("mage", String(choice_id))
+		var choice: Dictionary = GameBalance.get_progression_choice(class_id, String(choice_id))
 		if int(choice.get("level", -1)) == level:
 			return true
 	return false
@@ -541,17 +569,17 @@ func _selected_progression_flags(profile: Dictionary) -> Dictionary:
 
 func _selected_progression_choices(profile: Dictionary) -> Array[Dictionary]:
 	var choices: Array[Dictionary] = []
-	if String(profile.get("class_id", "")) != "mage":
-		return choices
+	var class_id: String = String(profile.get("class_id", selected_class_id))
 	var selected_ids: Array = _profile_array(profile, "evolution_path") + _profile_array(profile, "ability_upgrades")
 	for choice_id in selected_ids:
-		var choice: Dictionary = GameBalance.get_progression_choice("mage", String(choice_id))
+		var choice: Dictionary = GameBalance.get_progression_choice(class_id, String(choice_id))
 		if not choice.is_empty():
 			choices.append(choice)
 	return choices
 
-func _progression_choice_name(choice_id: String) -> String:
-	var choice: Dictionary = GameBalance.get_progression_choice("mage", choice_id)
+func _progression_choice_name(choice_id: String, class_id: String = "") -> String:
+	var lookup_class_id: String = selected_class_id if class_id.is_empty() else class_id
+	var choice: Dictionary = GameBalance.get_progression_choice(lookup_class_id, choice_id)
 	return String(choice.get("name", choice_id.capitalize()))
 
 func _profile_array(profile: Dictionary, key: String) -> Array:
@@ -572,6 +600,21 @@ func _xp_required_for_level(level: int) -> int:
 
 func _max_level() -> int:
 	return GameBalance.get_max_level(MAX_HERO_LEVEL)
+
+func _sync_crypt_unlock() -> void:
+	if crypt_unlocked:
+		return
+	if forest_cleared and _highest_hero_level() >= 5:
+		crypt_unlocked = true
+
+func _highest_hero_level() -> int:
+	_ensure_profiles()
+	var highest := 1
+	for class_id in hero_profiles.keys():
+		var profile_value: Variant = hero_profiles[class_id]
+		if profile_value is Dictionary:
+			highest = maxi(highest, int(profile_value.get("level", 1)))
+	return highest
 
 func _sync_health_from_profile(reset_current: bool) -> void:
 	_ensure_profiles()

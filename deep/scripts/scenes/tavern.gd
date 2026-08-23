@@ -8,6 +8,7 @@ const ATLAS_TILE_SIZE := Vector2i(32, 32)
 const TILESCALE := 1.5
 const WOOD_TILE_SIZE := Vector2i(1254, 1254)
 const WOOD_TILESCALE := 0.03827751
+const BoardPieceScene := preload("res://scenes/components/BoardPiece.tscn")
 const PLAYER_IDLE_DOWN := preload("res://assets/sprite_packs/Player/IDLE/idle_down.png")
 const TAVERN_KEEPER := preload("res://assets/generated_characters/tavern_keeper.png")
 const TAVERN_FLOOR_ATLAS := preload("res://assets/generated_maps/tavern_floor_wood.png")
@@ -22,12 +23,14 @@ var selected_gear: GearData
 var player_pos := Vector2i(3, 5)
 var bartender_pos := Vector2i(6, 2)
 var door_pos := Vector2i(10, 2)
+var crypt_door_pos := Vector2i(10, 4)
 var message := ""
 
 @onready var ground_layer: TileMapLayer = $Board/GroundLayer
 @onready var wall_layer: TileMapLayer = $Board/WallLayer
 @onready var fixture_layer: TileMapLayer = $Board/FixtureLayer
 @onready var prop_sprites: Node2D = $Board/PropSprites
+@onready var tokens_root: Node2D = $Board/Tokens
 @onready var gear_desk_sprite: Sprite2D = $Board/PropSprites/GearDeskSprite
 @onready var player_token: BoardPiece = $Board/Tokens/PlayerToken
 @onready var bartender_token: BoardPiece = $Board/Tokens/BartenderToken
@@ -44,14 +47,16 @@ var message := ""
 @onready var gear_box: VBoxContainer = $UI/Root/DialoguePanel/GearButtons
 @onready var enter_button: Button = $UI/Root/DialoguePanel/EnterForestButton
 var gear_options_panel: PanelContainer
+var crypt_door_token: BoardPiece
 
 func setup(game_controller: Node, state: RunState, options: Array[GearData], intro_message: String) -> void:
 	controller = game_controller
 	run_state = state
 	gear_options = options
 	message = intro_message
-	if gear_options.size() > 0:
-		selected_gear = gear_options[0]
+	selected_gear = _remembered_gear_or_default()
+	if run_state != null and selected_gear != null:
+		run_state.set_selected_gear(selected_gear)
 	if is_inside_tree():
 		_refresh_ui()
 
@@ -63,6 +68,7 @@ func _ready() -> void:
 	_style_dialogue_panel()
 	_setup_gear_options_panel()
 	_style_button(enter_button)
+	_setup_crypt_door_token()
 	_build_tavern_tilemaps()
 	_position_tavern_sprites()
 	_configure_token_sprites()
@@ -88,6 +94,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _refresh_ui() -> void:
 	if status_label == null:
 		return
+	if crypt_door_token != null and run_state != null:
+		crypt_door_token.modulate = Color(0.55, 0.56, 0.68) if run_state.is_crypt_unlocked() else Color(0.28, 0.28, 0.32)
 	var gear_name := "None"
 	if selected_gear != null:
 		gear_name = selected_gear.display_name
@@ -98,10 +106,11 @@ func _refresh_ui() -> void:
 	]
 	if run_state != null:
 		status_label.text = "%s\n%s" % [status_label.text, run_state.get_profile_summary()]
-		if run_state.selected_class_id == "mage":
-			var evolution_name: String = run_state.get_current_evolution_name()
-			if not evolution_name.is_empty():
-				status_label.text = "%s\nPath: %s" % [status_label.text, evolution_name]
+		var crypt_state: String = "Crypt: Unlocked" if run_state.is_crypt_unlocked() else "Crypt: Locked - clear Forest and reach Lv 5"
+		status_label.text = "%s\n%s" % [status_label.text, crypt_state]
+		var evolution_name: String = run_state.get_current_evolution_name()
+		if not evolution_name.is_empty():
+			status_label.text = "%s\nPath: %s" % [status_label.text, evolution_name]
 	dialogue_label.text = message
 	if selected_gear != null:
 		var stat_damage: int = selected_gear.damage
@@ -190,9 +199,22 @@ func _populate_gear_buttons() -> void:
 
 func _select_gear(gear: GearData) -> void:
 	selected_gear = gear
+	if run_state != null:
+		run_state.set_selected_gear(gear)
 	var class_type: String = run_state.selected_class_name if run_state != null else "Fighter"
 	message = "The bartender nods. '%s. A fair answer for a %s.'" % [gear.display_name, class_type]
 	_refresh_ui()
+
+func _remembered_gear_or_default() -> GearData:
+	if run_state != null and run_state.selected_gear != null:
+		for gear in gear_options:
+			if gear == run_state.selected_gear:
+				return gear
+			if gear.id == run_state.selected_gear.id:
+				return gear
+	if gear_options.size() > 0:
+		return gear_options[0]
+	return null
 
 func _handle_tile_click(tile: Vector2i) -> void:
 	if tile == player_pos:
@@ -200,7 +222,7 @@ func _handle_tile_click(tile: Vector2i) -> void:
 		return
 	var delta := tile - player_pos
 	if abs(delta.x) + abs(delta.y) == 1:
-		if tile == bartender_pos or tile == door_pos:
+		if tile == bartender_pos or tile == door_pos or tile == crypt_door_pos:
 			_interact()
 		else:
 			_try_move(delta)
@@ -213,6 +235,8 @@ func _try_move(delta: Vector2i) -> void:
 		message = "The bartender says, '%s'" % _selection_prompt()
 	elif target == door_pos:
 		_enter_forest()
+	elif target == crypt_door_pos:
+		_enter_crypt()
 	else:
 		player_pos = target
 	_update_token_positions()
@@ -225,6 +249,8 @@ func _interact() -> void:
 		message = "The weapon rack hums with old victories." if _selected_class_id() == "fighter" else "The spell shelf flickers with patient firelight."
 	elif _is_adjacent(player_pos, door_pos):
 		_enter_forest()
+	elif _is_adjacent(player_pos, crypt_door_pos):
+		_enter_crypt()
 	else:
 		message = "The tavern floorboards creak. Somewhere, a contract waits."
 	_refresh_ui()
@@ -233,6 +259,15 @@ func _enter_forest() -> void:
 	if controller == null or selected_gear == null:
 		return
 	controller.start_forest(selected_gear)
+
+func _enter_crypt() -> void:
+	if controller == null or selected_gear == null or run_state == null:
+		return
+	if not run_state.is_crypt_unlocked():
+		message = "The crypt door is sealed. Clear the Forest Dungeon and reach level 5."
+		_refresh_ui()
+		return
+	controller.start_crypt(selected_gear)
 
 func _selection_prompt() -> String:
 	if _selected_class_id() == "mage":
@@ -311,6 +346,13 @@ func _position_tavern_sprites() -> void:
 	gear_desk_sprite.scale = Vector2(0.085, 0.085)
 	gear_desk_sprite.modulate = Color(0.95, 0.82, 0.58, 0.90)
 
+func _setup_crypt_door_token() -> void:
+	if tokens_root == null or crypt_door_token != null:
+		return
+	crypt_door_token = BoardPieceScene.instantiate()
+	crypt_door_token.name = "CryptDoorToken"
+	tokens_root.add_child(crypt_door_token)
+
 func _configure_token_sprites() -> void:
 	player_token.sprite_texture = PLAYER_IDLE_DOWN
 	player_token.sprite_region_enabled = true
@@ -342,6 +384,16 @@ func _configure_token_sprites() -> void:
 	forest_door_token.show_label = false
 	forest_door_token.show_panel = false
 
+	if crypt_door_token != null:
+		crypt_door_token.shape = BoardPiece.PieceShape.SQUARE
+		crypt_door_token.size = Vector2(42, 48)
+		crypt_door_token.sprite_texture = WOODEN_EXIT_DOOR
+		crypt_door_token.sprite_region_enabled = false
+		crypt_door_token.sprite_scale = Vector2(0.80, 0.80)
+		crypt_door_token.show_label = false
+		crypt_door_token.show_panel = false
+		crypt_door_token.modulate = Color(0.55, 0.56, 0.68) if run_state != null and run_state.is_crypt_unlocked() else Color(0.28, 0.28, 0.32)
+
 func _update_token_positions() -> void:
 	if player_token == null:
 		return
@@ -349,6 +401,8 @@ func _update_token_positions() -> void:
 	bartender_token.position = _grid_center(bartender_pos)
 	gear_rack_token.position = _grid_center(Vector2i(2, 2))
 	forest_door_token.position = _grid_center(door_pos)
+	if crypt_door_token != null:
+		crypt_door_token.position = _grid_center(crypt_door_pos)
 
 func _screen_to_grid(pos: Vector2) -> Vector2i:
 	var local := pos - ORIGIN

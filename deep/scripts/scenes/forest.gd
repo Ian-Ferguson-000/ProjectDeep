@@ -1,17 +1,20 @@
 extends Node2D
 
 const TILE_SIZE := 48
-const GRID_W := 16
-const GRID_H := 11
 const ORIGIN := Vector2(40, 150)
 const BoardPieceScene := preload("res://scenes/components/BoardPiece.tscn")
 const PLAYER_IDLE_DOWN := preload("res://assets/sprite_packs/Player/IDLE/idle_down.png")
 const FIRE_MAGE_SHEET := preload("res://assets/enemies/fire_mage/normalized_sheet.png")
 const WOLF_SHEET := preload("res://assets/enemies/feral_wolf/normalized_sheet.png")
 const KOBOLD_IDLE_SHEET := preload("res://assets/sprite_packs/Kobold/Sprites/with_outline/IDLE.png")
+const CRYPT_SKELETON := preload("res://assets/enemies/crypt/skeleton.png")
+const CRYPT_GHOUL := preload("res://assets/enemies/crypt/ghoul.png")
+const CRYPT_NECROMANCER := preload("res://assets/enemies/crypt/necromancer.png")
+const CRYPT_BOSS := preload("res://assets/enemies/crypt/crypt_boss.png")
 const GRASS_TILE_A := preload("res://assets/pixel_art/forest_art/grass1.jpeg")
 const GRASS_TILE_B := preload("res://assets/pixel_art/forest_art/grass2.jpg")
 const GRASS_TILE_C := preload("res://assets/pixel_art/forest_art/grass3.jpg")
+const CRYPT_STONE_TILE := preload("res://assets/pixel_art/TX Tileset Stone Ground.png")
 const FREEPACK_ATLAS := preload("res://assets/pixel_art/FreePack.png")
 const WOODEN_EXIT_DOOR := preload("res://assets/generated_ui/wooden_exit_door.png")
 const PROPS_ATLAS := preload("res://assets/pixel_art/TX Props.png")
@@ -22,7 +25,9 @@ const GRASS_TILE_DRAW_SIZE := 48.0
 const PLAYER_MOVE_ALLOWANCE := 3
 const FREE_ROAM_MOVE_ALLOWANCE := 99
 const ENEMY_MOVE_ALLOWANCE := 2
-const ENEMY_TURN_DELAY := 1.0
+const ENEMY_TURN_DELAY := 0.5
+const RIGHT_HUD_WIDTH := 330.0
+const RIGHT_HUD_GUTTER := 24.0
 const PLAYER_ACTOR_ID := -1
 const FIREBALL_FLIGHT := preload("res://assets/effect_packs/fireball/fireball_flight.png")
 const FIREBALL_IMPACT := preload("res://assets/effect_packs/fireball/fireball_impact.png")
@@ -156,6 +161,17 @@ var controller: Node
 var run_state: RunState
 var rng := RandomNumberGenerator.new()
 var fog_tile_textures: Array[Texture2D] = []
+var dungeon_id: String = "forest"
+var dungeon_title: String = "Forest Dungeon"
+var dungeon_floor_label: String = "Floor"
+var complete_floor_method: String = "complete_forest_floor"
+var victory_text_template: String = "You escape the forest with %d gold. The bartender smiles like he expected it."
+var grid_w: int = 16
+var grid_h: int = 11
+var tile_size: int = TILE_SIZE
+var use_follow_camera: bool = false
+var camera_ui_right_margin: float = 0.0
+var camera_ui_top_margin: float = 0.0
 
 var floor_cells: Dictionary = {}
 var critical_path: Dictionary = {}
@@ -230,10 +246,12 @@ var chest_choice_title_label: Label
 var chest_choice_subtitle_label: Label
 var chest_choice_cards: HBoxContainer
 var reward_choice_source: String = "chest"
+var follow_camera: Camera2D
 
 func setup(game_controller: Node, state: RunState) -> void:
 	controller = game_controller
 	run_state = state
+	_configure_dungeon_settings()
 	if run_state != null and run_state.selected_gear != null:
 		block_stacks = _gear_block_limit()
 	if is_inside_tree():
@@ -243,6 +261,8 @@ func setup(game_controller: Node, state: RunState) -> void:
 		_refresh_ui()
 
 func _ready() -> void:
+	_configure_dungeon_settings()
+	_setup_follow_camera()
 	title_label.add_theme_font_size_override("font_size", 24)
 	_style_health_bar()
 	_setup_combat_layout_ui()
@@ -255,13 +275,106 @@ func _ready() -> void:
 	_configure_player_sprite()
 	_refresh_ui()
 
+func _process(_delta: float) -> void:
+	_update_follow_camera()
+
+func _configure_dungeon_settings() -> void:
+	dungeon_id = "forest"
+	dungeon_title = "Forest Dungeon"
+	dungeon_floor_label = "Floor"
+	complete_floor_method = "complete_forest_floor"
+	victory_text_template = "You escape the forest with %d gold. The bartender smiles like he expected it."
+	grid_w = 16
+	grid_h = 11
+	tile_size = TILE_SIZE
+	use_follow_camera = false
+	camera_ui_right_margin = 0.0
+	camera_ui_top_margin = 0.0
+
+func _setup_follow_camera() -> void:
+	if not use_follow_camera or follow_camera != null:
+		return
+	follow_camera = Camera2D.new()
+	follow_camera.name = "PlayerFollowCamera"
+	follow_camera.position_smoothing_enabled = true
+	follow_camera.position_smoothing_speed = 8.0
+	add_child(follow_camera)
+	follow_camera.make_current()
+	_update_follow_camera(true)
+
+func _update_follow_camera(force: bool = false) -> void:
+	if not use_follow_camera or follow_camera == null:
+		return
+	var right_margin: float = _effective_camera_right_margin()
+	var top_margin: float = _effective_camera_top_margin()
+	follow_camera.offset = Vector2.ZERO
+	var target: Vector2 = _grid_center(player_pos) + Vector2(right_margin * 0.5, -top_margin * 0.5)
+	target = _clamped_camera_position(target)
+	if force:
+		follow_camera.reset_smoothing()
+		follow_camera.position = target
+	else:
+		follow_camera.position = target
+
+func _clamped_camera_position(target: Vector2) -> Vector2:
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var right_margin: float = _effective_camera_right_margin()
+	var top_margin: float = _effective_camera_top_margin()
+	var full_half_view: Vector2 = viewport_size * 0.5
+	var min_world: Vector2 = ORIGIN
+	var max_world: Vector2 = ORIGIN + Vector2(grid_w * tile_size, grid_h * tile_size)
+	var board_size: Vector2 = max_world - min_world
+	var clamped: Vector2 = target
+	var visible_width: float = maxf(320.0, viewport_size.x - right_margin)
+	var visible_height: float = maxf(260.0, viewport_size.y - top_margin)
+	if board_size.x <= visible_width:
+		clamped.x = min_world.x + board_size.x * 0.5 + right_margin * 0.5
+	else:
+		var min_camera_x: float = min_world.x + full_half_view.x
+		var max_camera_x: float = max_world.x - full_half_view.x + right_margin
+		clamped.x = clampf(target.x, min_camera_x, max_camera_x)
+	if board_size.y <= visible_height:
+		clamped.y = min_world.y + board_size.y * 0.5 - top_margin * 0.5
+	else:
+		var min_camera_y: float = min_world.y + full_half_view.y - top_margin
+		var max_camera_y: float = max_world.y - full_half_view.y
+		clamped.y = clampf(target.y, min_camera_y, max_camera_y)
+	return clamped
+
+func _effective_camera_right_margin() -> float:
+	var measured_margin: float = 0.0
+	var right_panel_node: Node = get_node_or_null("UI/Root/Columns/RightPanel")
+	if right_panel_node is Control:
+		var right_panel: Control = right_panel_node as Control
+		var rect: Rect2 = right_panel.get_global_rect()
+		var viewport_width: float = get_viewport_rect().size.x
+		if rect.size.x > 1.0 and rect.position.x < viewport_width:
+			measured_margin = viewport_width - rect.position.x
+	return maxf(camera_ui_right_margin, measured_margin + RIGHT_HUD_GUTTER)
+
+func _effective_camera_top_margin() -> float:
+	var measured_margin: float = 0.0
+	if initiative_panel != null and initiative_panel.is_inside_tree() and initiative_panel.visible:
+		var rect: Rect2 = initiative_panel.get_global_rect()
+		measured_margin = rect.position.y + rect.size.y
+	return maxf(camera_ui_top_margin, measured_margin + 10.0)
+
 func _setup_combat_layout_ui() -> void:
 	var ui_layer: CanvasLayer = $UI
 	var root: MarginContainer = $UI/Root
 	root.add_theme_constant_override("margin_top", 86)
 
 	var right_panel: VBoxContainer = $UI/Root/Columns/RightPanel
+	var left_panel: VBoxContainer = $UI/Root/Columns/LeftPanel
+	left_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_panel.custom_minimum_size = Vector2(RIGHT_HUD_WIDTH, 0)
+	right_panel.size_flags_horizontal = Control.SIZE_SHRINK_END
 	right_panel.add_theme_constant_override("separation", 8)
+	health_bar.custom_minimum_size = Vector2(210, 18)
+	health_value_label.custom_minimum_size = Vector2(64, 18)
+	minimap_panel.custom_minimum_size = Vector2(RIGHT_HUD_WIDTH, 154)
+	minimap_panel.size = minimap_panel.custom_minimum_size
+	log_label.custom_minimum_size = Vector2(RIGHT_HUD_WIDTH, 84)
 
 	initiative_panel = PanelContainer.new()
 	initiative_panel.name = "InitiativePanel"
@@ -298,6 +411,8 @@ func _setup_combat_layout_ui() -> void:
 
 	actions_panel = PanelContainer.new()
 	actions_panel.name = "ActionsPanel"
+	actions_panel.custom_minimum_size = Vector2(RIGHT_HUD_WIDTH, 0)
+	actions_panel.size_flags_horizontal = Control.SIZE_SHRINK_END
 	actions_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.14, 0.10, 0.06, 0.96), 5, Color(0.76, 0.55, 0.26)))
 	right_panel.add_child(actions_panel)
 	right_panel.move_child(actions_panel, log_index + 1)
@@ -424,7 +539,7 @@ func _setup_character_menu(ui_layer: CanvasLayer) -> void:
 func _setup_action_buttons() -> void:
 	move_button = Button.new()
 	move_button.name = "MoveButton"
-	move_button.pressed.connect(_select_action.bind("move"))
+	move_button.pressed.connect(_dash)
 	interact_button.pressed.connect(_select_action.bind("attack"))
 	special_button.pressed.connect(_select_action.bind("special"))
 	defend_button = Button.new()
@@ -433,7 +548,7 @@ func _setup_action_buttons() -> void:
 	end_turn_button = Button.new()
 	end_turn_button.name = "EndTurnButton"
 	end_turn_button.pressed.connect(_end_player_turn)
-	_configure_action_button(move_button, "move", "Dash", ICON_MOVE, "Dash up to three grid spaces.")
+	_configure_action_button(move_button, "move", "Dash", ICON_MOVE, "Spend your action to gain another full movement allowance.")
 	_configure_action_button(interact_button, "attack", "Attack", ICON_ATTACK, "Target an enemy with your basic attack.")
 	_configure_action_button(special_button, "special", "Special", ICON_SPECIAL, "Use your equipped special ability.")
 	_configure_action_button(potion_button, "potion", "Potion", ICON_POTION, "Drink a potion as your action.")
@@ -520,7 +635,8 @@ func _reset_generated_state() -> void:
 	boss_chamber_name = ""
 
 func _build_boss_chamber() -> void:
-	var chamber: Dictionary = BOSS_CHAMBERS[rng.randi_range(0, BOSS_CHAMBERS.size() - 1)]
+	var chamber_value: Variant = BOSS_CHAMBERS[rng.randi_range(0, BOSS_CHAMBERS.size() - 1)]
+	var chamber: Dictionary = chamber_value if chamber_value is Dictionary else {}
 	layout_type = "boss_%s" % String(chamber["id"])
 	boss_chamber_name = String(chamber["name"])
 	message = _floor_intro_message()
@@ -531,9 +647,9 @@ func _build_boss_chamber() -> void:
 
 func _carve_boss_chamber(chamber: Dictionary) -> void:
 	var rows: Array = chamber["rows"]
-	for y in range(mini(rows.size(), GRID_H)):
+	for y in range(mini(rows.size(), grid_h)):
 		var row: String = String(rows[y])
-		for x in range(mini(row.length(), GRID_W)):
+		for x in range(mini(row.length(), grid_w)):
 			var symbol: String = row.substr(x, 1)
 			if symbol == "#":
 				continue
@@ -560,7 +676,7 @@ func _apply_boss_chamber_symbol(symbol: String, tile: Vector2i) -> void:
 		"C":
 			chest = {"pos": tile, "opened": false}
 		"R":
-			props.append({"kind": "rock", "pos": tile, "hp": GameBalance.get_prop_hp("rock", 3)})
+			props.append({"kind": "rock", "pos": tile, "hp": GameBalance.get_prop_hp("rock", 1)})
 		"A":
 			props.append({"kind": "barrel", "pos": tile, "hp": GameBalance.get_prop_hp("barrel", 1)})
 		"F":
@@ -580,6 +696,10 @@ func _add_floor_enemy(tile: Vector2i, enemy_type: String) -> void:
 	_add_enemy(tile, enemy_type, max_health, damage, enemy_type == "elite_wolf", false)
 
 func _add_boss_enemy(tile: Vector2i) -> void:
+	if dungeon_id == "crypt":
+		var crypt_max_health: int = int(GameBalance.get_enemy_value("crypt_boss", "health", 32))
+		_add_enemy(tile, "crypt_boss", crypt_max_health, int(GameBalance.get_enemy_value("crypt_boss", "damage", 6)), true, true)
+		return
 	var max_health: int = int(GameBalance.get_enemy_value("boss_wolf", "health", 16))
 	_add_enemy(tile, "boss_wolf", max_health, int(GameBalance.get_enemy_value("boss_wolf", "damage", 5)), true, true)
 
@@ -598,8 +718,17 @@ func _add_enemy(tile: Vector2i, enemy_type: String, max_health: int, damage: int
 	enemy_id_counter += 1
 
 func _enemy_kind_for_type(enemy_type: String) -> String:
-	if enemy_type == "kobold":
-		return "kobold"
+	match enemy_type:
+		"kobold":
+			return "kobold"
+		"skeleton", "armored_skeleton":
+			return "skeleton"
+		"ghoul":
+			return "ghoul"
+		"necromancer":
+			return "necromancer"
+		"crypt_boss":
+			return "boss"
 	return "wolf"
 
 func _enemy_max_health(enemy_type: String) -> int:
@@ -637,11 +766,14 @@ func _choose_layout_type() -> String:
 	if floor_num <= 1:
 		return "linear"
 	if floor_num == 2:
-		return ["linear", "branching"][rng.randi_range(0, 1)]
+		var floor_two_layouts: Array[String] = ["linear", "branching"]
+		return floor_two_layouts[rng.randi_range(0, floor_two_layouts.size() - 1)]
 	if floor_num == 3:
-		return ["branching", "hub"][rng.randi_range(0, 1)]
+		var floor_three_layouts: Array[String] = ["branching", "hub"]
+		return floor_three_layouts[rng.randi_range(0, floor_three_layouts.size() - 1)]
 	if floor_num == 4:
-		return ["hub", "loop"][rng.randi_range(0, 1)]
+		var floor_four_layouts: Array[String] = ["hub", "loop"]
+		return floor_four_layouts[rng.randi_range(0, floor_four_layouts.size() - 1)]
 	return "arena"
 
 func _build_room_graph(kind: String) -> void:
@@ -748,13 +880,13 @@ func _mark_room_path(center: Vector2i, radius_x: int, radius_y: int) -> void:
 				critical_path[tile] = true
 
 func _carve_corridor(a: Vector2i, b: Vector2i, is_critical: bool = true) -> void:
-	var x_step := 1 if b.x >= a.x else -1
+	var x_step: int = 1 if b.x >= a.x else -1
 	for x in range(a.x, b.x + x_step, x_step):
 		var tile := Vector2i(x, a.y)
 		floor_cells[tile] = true
 		if is_critical:
 			critical_path[tile] = true
-	var y_step := 1 if b.y >= a.y else -1
+	var y_step: int = 1 if b.y >= a.y else -1
 	for y in range(a.y, b.y + y_step, y_step):
 		var tile := Vector2i(b.x, y)
 		floor_cells[tile] = true
@@ -782,7 +914,7 @@ func _place_traps() -> void:
 	if _current_floor() >= 5:
 		count += 1
 	for i in range(count):
-		var trap_pos := _pick_role_cell("trap", true) if i == 0 else _pick_floor_cell(true)
+		var trap_pos: Vector2i = _pick_role_cell("trap", true) if i == 0 else _pick_floor_cell(true)
 		traps.append({"pos": trap_pos, "sprung": false})
 
 func _place_enemies() -> void:
@@ -825,7 +957,7 @@ func _place_decorations() -> void:
 	_place_border_decorations(edge_kinds)
 	for i in range(10):
 		for attempt in range(160):
-			var tile := Vector2i(rng.randi_range(0, GRID_W - 1), rng.randi_range(0, GRID_H - 1))
+			var tile := Vector2i(rng.randi_range(0, grid_w - 1), rng.randi_range(0, grid_h - 1))
 			if floor_cells.has(tile) or _decoration_at(tile) or not _has_floor_neighbor(tile):
 				continue
 			_add_decoration(edge_kinds[rng.randi_range(0, edge_kinds.size() - 1)], tile, Vector2(rng.randf_range(-6.0, 6.0), rng.randf_range(-6.0, 8.0)))
@@ -835,8 +967,8 @@ func _add_decoration(kind: String, tile: Vector2i, offset: Vector2) -> void:
 	decorations.append({"kind": kind, "pos": tile, "offset": offset})
 
 func _place_border_decorations(edge_kinds: Array[String]) -> void:
-	for y in range(GRID_H):
-		for x in range(GRID_W):
+	for y in range(grid_h):
+		for x in range(grid_w):
 			var tile := Vector2i(x, y)
 			if floor_cells.has(tile) or _decoration_at(tile) or not _has_floor_neighbor(tile):
 				continue
@@ -1045,7 +1177,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if hover_panel != null and hover_panel.visible and hover_panel.get_global_rect().has_point(event.position):
 			return
-		var tile: Vector2i = _screen_to_grid(event.position)
+		var tile: Vector2i = _screen_to_grid(_viewport_to_world(event.position))
 		if _is_inside_grid(tile):
 			_hide_hover_context()
 			_handle_tile_click(tile)
@@ -1060,7 +1192,7 @@ func _handle_combat_hotkey(event: InputEvent) -> bool:
 		KEY_1:
 			if not _can_trigger_action_button(move_button):
 				return _reject_combat_hotkey()
-			_select_action("move")
+			_dash()
 			return true
 		KEY_2:
 			if not _can_trigger_action_button(interact_button):
@@ -1123,7 +1255,7 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		message = "That object blocks the way. Use its menu, or choose Attack and target it."
 		_refresh_ui()
 		return
-	if tile == chest["pos"]:
+	if _has_closed_chest() and tile == chest["pos"]:
 		message = "The chest blocks the way. Use Interact from its menu while adjacent."
 		_refresh_ui()
 		return
@@ -1131,7 +1263,7 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		message = "Dense trees block the way."
 		_refresh_ui()
 		return
-	var max_steps := FREE_ROAM_MOVE_ALLOWANCE if _is_free_roam() else movement_remaining
+	var max_steps: int = FREE_ROAM_MOVE_ALLOWANCE if _is_free_roam() else movement_remaining
 	var path := _find_path(player_pos, tile, max_steps)
 	if path.is_empty():
 		message = "That is beyond your remaining movement."
@@ -1170,7 +1302,7 @@ func _try_context_interaction(tile: Vector2i) -> bool:
 				message = "You inspect the %s. It blocks the path; attack it to clear the way." % prop_kind
 		_finish_player_action()
 		return true
-	if tile == chest["pos"]:
+	if _has_closed_chest() and tile == chest["pos"]:
 		var opened_choices: bool = _open_chest()
 		if opened_choices:
 			if not _is_free_roam():
@@ -1198,7 +1330,7 @@ func _update_hover_context(screen_pos: Vector2) -> void:
 		return
 	if hover_panel.visible and _hover_travel_rect().has_point(screen_pos):
 		return
-	var tile: Vector2i = _screen_to_grid(screen_pos)
+	var tile: Vector2i = _screen_to_grid(_viewport_to_world(screen_pos))
 	if not _is_inside_grid(tile):
 		_hide_hover_context()
 		return
@@ -1242,7 +1374,7 @@ func _sync_hover_context(tile: Vector2i, object: Dictionary) -> void:
 func _hover_panel_position_for_tile(tile: Vector2i) -> Vector2:
 	var viewport_size: Vector2 = get_viewport_rect().size
 	var panel_size: Vector2 = Vector2(320, 150)
-	var position: Vector2 = _grid_to_screen(tile) + Vector2(TILE_SIZE + 8, -8)
+	var position: Vector2 = _grid_to_viewport_screen(tile) + Vector2(tile_size + 8, -8)
 	position.x = minf(position.x, viewport_size.x - panel_size.x - 12.0)
 	position.y = minf(position.y, viewport_size.y - panel_size.y - 12.0)
 	position.x = maxf(12.0, position.x)
@@ -1252,7 +1384,7 @@ func _hover_panel_position_for_tile(tile: Vector2i) -> Vector2:
 func _hover_travel_rect() -> Rect2:
 	if hovered_tile == Vector2i(-999, -999) or hover_panel == null:
 		return Rect2()
-	var tile_rect := Rect2(_grid_to_screen(hovered_tile), Vector2(TILE_SIZE, TILE_SIZE))
+	var tile_rect := Rect2(_grid_to_viewport_screen(hovered_tile), Vector2(tile_size, tile_size))
 	var panel_rect := hover_panel.get_global_rect()
 	var left: float = minf(tile_rect.position.x, panel_rect.position.x)
 	var top: float = minf(tile_rect.position.y, panel_rect.position.y)
@@ -1289,7 +1421,7 @@ func _context_actions_for(object: Dictionary) -> Array[Dictionary]:
 			actions.append({"id": "interact", "label": "Interact", "enabled": adjacent and _can_use_player_controls(), "tooltip": "Move next to it first." if not adjacent else "Use this object."})
 		"prop":
 			actions.append({"id": "interact", "label": "Interact", "enabled": adjacent and _can_use_player_controls(), "tooltip": "Move next to it first." if not adjacent else "Inspect or use this object."})
-			actions.append({"id": "attack_object", "label": "Attack", "enabled": adjacent and _can_use_player_controls() and not has_used_action, "tooltip": "Move next to it first." if not adjacent else "Strike this obstacle."})
+			actions.append({"id": "attack_object", "label": "Attack", "enabled": adjacent and _can_use_player_controls() and not has_used_action and _is_destructible_prop_at(tile), "tooltip": "Move next to it first." if not adjacent else "Strike this obstacle."})
 		"npc":
 			actions.append({"id": "interact", "label": "Talk", "enabled": adjacent and _can_use_player_controls(), "tooltip": "Move next to them first." if not adjacent else "Start a conversation."})
 		"enemy":
@@ -1360,7 +1492,7 @@ func _object_at_tile(tile: Vector2i) -> Dictionary:
 			"detail": "HP %d/%d. Blocks movement and acts in initiative." % [int(enemy["hp"]), int(enemy.get("max_health", enemy["hp"]))],
 			"inspect": "%s watches your footing. HP %d/%d." % [enemy_name, int(enemy["hp"]), int(enemy.get("max_health", enemy["hp"]))],
 		}
-	if not bool(chest["opened"]) and tile == Vector2i(chest["pos"]):
+	if _has_closed_chest() and tile == Vector2i(chest["pos"]):
 		return {
 			"kind": "chest",
 			"pos": tile,
@@ -1449,6 +1581,10 @@ func _try_player_attack(tile: Vector2i) -> void:
 			message = "Move next to that object before attacking it."
 			_refresh_ui()
 			return
+		if not _is_destructible_prop(prop_index):
+			message = "That object is better used than broken."
+			_refresh_ui()
+			return
 		facing = _direction_to(tile)
 		_hit_prop(prop_index)
 		_finish_player_action()
@@ -1477,6 +1613,7 @@ func _try_player_special(tile: Vector2i) -> void:
 			_special_sweep()
 		"brace":
 			braced = true
+			block_stacks = maxi(block_stacks, _gear_block_limit() + _fighter_progression_value("brace_block_bonus"))
 			message = "You brace. The next enemy that closes in gets punished first."
 			_finish_player_action()
 		"force_blast":
@@ -1499,6 +1636,25 @@ func _select_action(action: String) -> void:
 		message = "Choose a %s target." % action
 	_refresh_ui()
 
+func _dash() -> void:
+	if not is_player_turn:
+		return
+	if _is_free_roam():
+		selected_action = "move"
+		message = "You move freely through the cleared area."
+		_refresh_ui()
+		return
+	if has_used_action:
+		message = "Your action is already spent."
+		_refresh_ui()
+		return
+	var dash_gain: int = _player_move_allowance()
+	movement_remaining += dash_gain
+	has_used_action = true
+	selected_action = "move"
+	message = "You Dash, gaining %d extra movement. %d movement remaining." % [dash_gain, movement_remaining]
+	_refresh_ui()
+
 func _defend() -> void:
 	if not is_player_turn:
 		return
@@ -1508,7 +1664,7 @@ func _defend() -> void:
 		return
 	is_defending = true
 	if run_state.selected_gear != null and run_state.selected_gear.defense_id == "block":
-		block_stacks = maxi(block_stacks, _gear_block_limit())
+		block_stacks = maxi(block_stacks, _gear_block_limit() + _fighter_progression_value("brace_block_bonus"))
 	if run_state.selected_gear != null and run_state.selected_gear.special_id == "brace":
 		braced = true
 	message = "You defend and hold your ground."
@@ -1547,7 +1703,7 @@ func _interact() -> void:
 	if _distance(player_pos, exit_pos) == 1:
 		_complete_floor()
 		return
-	if _distance(player_pos, chest["pos"]) == 1:
+	if _has_closed_chest() and _distance(player_pos, chest["pos"]) == 1:
 		var opened_choices: bool = _open_chest()
 		if opened_choices:
 			if not _is_free_roam():
@@ -1578,23 +1734,35 @@ func _use_special() -> void:
 	_select_action("special")
 
 func _special_charge_at(tile: Vector2i) -> void:
-	if not _is_straight_line_target(tile, 3):
-		message = "Charge needs a straight path up to 3 tiles."
+	var charge_range: int = 3 + _fighter_progression_value("charge_range_bonus")
+	if not _is_straight_line_target(tile, charge_range):
+		message = "Charge needs a straight path up to %d tiles." % charge_range
 		_refresh_ui()
 		return
 	var direction := _direction_to(tile)
 	facing = direction
 	var cursor := player_pos
-	for step in range(3):
+	var charge_damage: int = _player_gear_damage() + 1 + _fighter_progression_value("charge_damage_bonus")
+	for step in range(charge_range):
 		cursor += direction
 		if not floor_cells.has(cursor):
 			break
 		var enemy_index: int = _enemy_at(cursor)
 		if enemy_index != -1:
 			_play_attack_effect(player_pos, cursor)
-			_attack_enemy(enemy_index, _player_gear_damage() + 1)
+			_attack_enemy(enemy_index, charge_damage)
 			message = "You charge through the brush and crash into an enemy."
 			message = _append_log_lines(message, _consume_progression_logs())
+			_finish_player_action()
+			return
+		var prop_index: int = _prop_at(cursor)
+		if prop_index != -1:
+			if _is_destructible_prop(prop_index):
+				_play_attack_effect(player_pos, cursor)
+				_damage_prop(prop_index, charge_damage)
+				message = "You charge forward and splinter the obstacle."
+			else:
+				message = "Your charge stops short at the object."
 			_finish_player_action()
 			return
 		if not _is_walkable(cursor):
@@ -1606,16 +1774,22 @@ func _special_charge_at(tile: Vector2i) -> void:
 
 func _special_force_blast_at(tile: Vector2i) -> void:
 	var enemy_index: int = _enemy_at(tile)
+	var prop_index: int = _prop_at(tile)
 	var blast_range: int = 4 + _mage_progression_value("force_blast_range_bonus")
-	if not _is_straight_line_target(tile, blast_range, true) or enemy_index == -1 or not _has_clear_line(player_pos, tile, true):
-		message = "Force Blast needs a visible enemy in a straight line."
+	if not _is_straight_line_target(tile, blast_range, true) or (enemy_index == -1 and not _is_destructible_prop(prop_index)) or not _has_clear_line(player_pos, tile, true):
+		message = "Force Blast needs a visible target in a straight line."
 		_refresh_ui()
 		return
 	facing = _direction_to(tile)
-	var blast_origin: Vector2i = enemies[enemy_index]["pos"]
+	var blast_origin: Vector2i = tile
 	_play_projectile_effect(AETHER_HIT, player_pos, blast_origin)
-	_attack_enemy(enemy_index, _player_gear_damage() + 2)
-	var pushed := _push_enemy_from(blast_origin, facing, 2 + _mage_progression_value("force_blast_push_bonus"))
+	if enemy_index != -1:
+		_attack_enemy(enemy_index, _player_gear_damage() + 2)
+	else:
+		_damage_prop(prop_index, _player_gear_damage() + 2)
+	var pushed := false
+	if enemy_index != -1:
+		pushed = _push_enemy_from(blast_origin, facing, 2 + _mage_progression_value("force_blast_push_bonus"))
 	var splash_hits := 0
 	var splash_radius: int = 1 + _mage_progression_value("force_blast_splash_radius_bonus")
 	var splash_damage: int = maxi(1, _player_damage_bonus() + _mage_progression_value("force_blast_splash_bonus"))
@@ -1623,10 +1797,15 @@ func _special_force_blast_at(tile: Vector2i) -> void:
 		if _distance(enemies[i]["pos"], blast_origin) <= splash_radius:
 			_attack_enemy(i, splash_damage)
 			splash_hits += 1
-	var push_note := ", pushing a foe back" if pushed else ""
+	for i in range(props.size() - 1, -1, -1):
+		if _distance(props[i]["pos"], blast_origin) <= splash_radius and _is_destructible_prop(i):
+			_spawn_tile_effect(AETHER_HIT, props[i]["pos"])
+			_damage_prop(i, splash_damage, false)
+			splash_hits += 1
+	var push_note: String = ", pushing a foe back" if pushed else ""
 	var splash_note := ""
 	if splash_hits > 0:
-		splash_note = " and splashing %d nearby foe%s" % [splash_hits, "" if splash_hits == 1 else "s"]
+		splash_note = " and splashing %d nearby target%s" % [splash_hits, "" if splash_hits == 1 else "s"]
 	message = "Force Blast slams forward%s%s." % [push_note, splash_note]
 	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
@@ -1649,10 +1828,14 @@ func _special_flamethrower_at(tile: Vector2i) -> void:
 		if enemy_index != -1:
 			_attack_enemy(enemy_index, flame_damage)
 			hit_count += 1
+		var prop_index: int = _prop_at(target)
+		if _is_destructible_prop(prop_index):
+			_damage_prop(prop_index, flame_damage, false)
+			hit_count += 1
 	if hit_count == 0:
 		message = "Flamethrower scorches a bright line through empty brush."
 	else:
-		message = "Flamethrower burns %d foe%s in a line." % [hit_count, "" if hit_count == 1 else "s"]
+		message = "Flamethrower burns %d target%s in a line." % [hit_count, "" if hit_count == 1 else "s"]
 	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
@@ -1741,7 +1924,7 @@ func _find_path_through_floor(start: Vector2i, goal: Vector2i) -> Array[Vector2i
 
 func _valid_move_tiles() -> Array[Vector2i]:
 	var tiles: Array[Vector2i] = []
-	var max_steps := FREE_ROAM_MOVE_ALLOWANCE if _is_free_roam() else movement_remaining
+	var max_steps: int = FREE_ROAM_MOVE_ALLOWANCE if _is_free_roam() else movement_remaining
 	for tile in floor_cells.keys():
 		var cell := Vector2i(tile)
 		if cell != player_pos and _find_path(player_pos, cell, max_steps).size() > 0:
@@ -1754,6 +1937,10 @@ func _valid_attack_tiles() -> Array[Vector2i]:
 		var tile: Vector2i = enemy["pos"]
 		if _is_valid_basic_attack_target(tile, _enemy_at(tile)):
 			tiles.append(tile)
+	for prop in props:
+		var tile: Vector2i = prop["pos"]
+		if _distance(player_pos, tile) == 1 and _is_destructible_prop_at(tile):
+			tiles.append(tile)
 	return tiles
 
 func _valid_special_tiles() -> Array[Vector2i]:
@@ -1765,10 +1952,10 @@ func _valid_special_tiles() -> Array[Vector2i]:
 			tiles.append(player_pos)
 		"charge", "flamethrower":
 			var directions: Array[Vector2i] = _cardinal_directions()
-			var max_range := 3
+			var max_range: int = 3 + _fighter_progression_value("charge_range_bonus")
 			if run_state.selected_gear.special_id == "flamethrower":
 				directions = _eight_directions()
-				max_range += _mage_progression_value("flamethrower_range_bonus")
+				max_range = 3 + _mage_progression_value("flamethrower_range_bonus")
 			for direction in directions:
 				for step in range(1, max_range + 1):
 					var tile: Vector2i = player_pos + direction * step
@@ -1779,6 +1966,10 @@ func _valid_special_tiles() -> Array[Vector2i]:
 			for enemy in enemies:
 				var tile: Vector2i = enemy["pos"]
 				if _is_straight_line_target(tile, blast_range, true) and _has_clear_line(player_pos, tile, true):
+					tiles.append(tile)
+			for prop in props:
+				var tile: Vector2i = prop["pos"]
+				if _is_destructible_prop_at(tile) and _is_straight_line_target(tile, blast_range, true) and _has_clear_line(player_pos, tile, true):
 					tiles.append(tile)
 	return tiles
 
@@ -1858,7 +2049,7 @@ func _initiative_summary() -> String:
 	var parts: Array[String] = []
 	for i in range(initiative_order.size()):
 		var actor: Dictionary = initiative_order[i]
-		var prefix := ">" if i == current_actor_index else ""
+		var prefix: String = ">" if i == current_actor_index else ""
 		parts.append("%s%s:%d" % [prefix, actor["name"], int(actor["initiative"])])
 	return " ".join(parts)
 
@@ -1904,6 +2095,11 @@ func _mage_progression_value(flag_id: String) -> int:
 		return 0
 	return run_state.get_progression_flag_value(flag_id)
 
+func _fighter_progression_value(flag_id: String) -> int:
+	if run_state == null or run_state.selected_class_id != "fighter":
+		return 0
+	return run_state.get_progression_flag_value(flag_id)
+
 func _enemy_xp_reward(enemy: Dictionary) -> int:
 	var base_reward: int = int(GameBalance.get_enemy_value(_enemy_type(enemy), "xp", 15))
 	if run_state == null:
@@ -1922,7 +2118,7 @@ func _award_floor_clear_xp() -> Array[String]:
 	floor_clear_xp_awarded = true
 	var base_reward: int = int(GameBalance.get_combat_value(["xp", "floor_clear"], 40))
 	var reward: int = run_state.apply_reward_bonus(base_reward, "xp")
-	return run_state.gain_xp(reward, "Floor %d cleared" % _current_floor())
+	return run_state.gain_xp(reward, "%s %d cleared" % [dungeon_floor_label, _current_floor()])
 
 func _consume_progression_logs() -> Array[String]:
 	var logs: Array[String] = progression_log_buffer.duplicate()
@@ -1949,7 +2145,7 @@ func _set_combat_buttons_enabled() -> void:
 		defend_button.disabled = true
 		end_turn_button.disabled = true
 		return
-	move_button.disabled = movement_remaining <= 0
+	move_button.disabled = has_used_action
 	interact_button.disabled = has_used_action
 	special_button.disabled = has_used_action
 	potion_button.disabled = has_used_action or run_state == null or run_state.potions <= 0
@@ -1958,15 +2154,22 @@ func _set_combat_buttons_enabled() -> void:
 
 func _special_sweep() -> void:
 	var hit_count := 0
+	var sweep_range: int = 1 + _fighter_progression_value("sweep_reach_bonus")
+	var sweep_damage: int = _player_gear_damage() + _fighter_progression_value("sweep_damage_bonus")
 	for i in range(enemies.size() - 1, -1, -1):
-		if _distance(player_pos, enemies[i]["pos"]) == 1:
+		if _line_distance(player_pos, enemies[i]["pos"]) <= sweep_range:
 			_spawn_tile_effect(AETHER_HIT, enemies[i]["pos"])
-			_attack_enemy(i, _player_gear_damage())
+			_attack_enemy(i, sweep_damage)
+			hit_count += 1
+	for i in range(props.size() - 1, -1, -1):
+		if _line_distance(player_pos, props[i]["pos"]) <= sweep_range and _is_destructible_prop(i):
+			_spawn_tile_effect(AETHER_HIT, props[i]["pos"])
+			_damage_prop(i, sweep_damage, false)
 			hit_count += 1
 	if hit_count == 0:
 		message = "You sweep the greatsword through empty air."
 	else:
-		message = "Your greatsword sweep catches %d foe%s." % [hit_count, "" if hit_count == 1 else "s"]
+		message = "Your greatsword sweep catches %d target%s." % [hit_count, "" if hit_count == 1 else "s"]
 	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
@@ -1981,10 +2184,15 @@ func _special_shockwave() -> void:
 			_spawn_tile_effect(AETHER_HIT, enemies[i]["pos"])
 			_attack_enemy(i, shock_damage)
 			hit_count += 1
+	for i in range(props.size() - 1, -1, -1):
+		if _distance(player_pos, props[i]["pos"]) == 1 and _is_destructible_prop(i):
+			_spawn_tile_effect(AETHER_HIT, props[i]["pos"])
+			_damage_prop(i, shock_damage, false)
+			hit_count += 1
 	if hit_count == 0:
 		message = "Shockwave cracks around you, but catches no one."
 	else:
-		message = "Shockwave stuns %d adjacent foe%s." % [hit_count, "" if hit_count == 1 else "s"]
+		message = "Shockwave hits %d adjacent target%s." % [hit_count, "" if hit_count == 1 else "s"]
 	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
@@ -2020,18 +2228,44 @@ func _attack_enemy(index: int, damage: int) -> void:
 		message = "Hit %s for %d. It has %d health left." % [_enemy_display_name(enemy), damage, enemy["hp"]]
 
 func _hit_prop(index: int) -> void:
-	var prop: Dictionary = props[index]
-	if prop["kind"] == "campfire":
-		_use_campfire()
+	if index < 0 or index >= props.size():
 		return
-	prop["hp"] -= 1
-	if prop["hp"] <= 0:
-		message = "The %s breaks. Something clinks in the grass." % prop["kind"]
-		run_state.gold += int(GameBalance.get_combat_value(["props", "break_gold"], 1))
+	if not _is_destructible_prop(index):
+		var prop: Dictionary = props[index]
+		if prop["kind"] == "campfire":
+			_use_campfire()
+		else:
+			message = "That object will not break from a strike."
+		return
+	_damage_prop(index, 1)
+
+func _is_destructible_prop_at(tile: Vector2i) -> bool:
+	return _is_destructible_prop(_prop_at(tile))
+
+func _is_destructible_prop(index: int) -> bool:
+	if index < 0 or index >= props.size():
+		return false
+	var prop: Dictionary = props[index]
+	var kind: String = String(prop.get("kind", ""))
+	return kind == "barrel" or kind == "rock"
+
+func _damage_prop(index: int, damage: int, announce: bool = true) -> bool:
+	if index < 0 or index >= props.size() or not _is_destructible_prop(index):
+		return false
+	var prop: Dictionary = props[index]
+	var prop_kind: String = String(prop["kind"])
+	prop["hp"] = int(prop.get("hp", GameBalance.get_prop_hp(prop_kind, 1))) - maxi(1, damage)
+	if int(prop["hp"]) <= 0:
+		if announce:
+			message = "The %s breaks. Something clinks in the grass." % prop_kind
+		if run_state != null:
+			run_state.gold += int(GameBalance.get_combat_value(["props", "break_gold"], 1))
 		props.remove_at(index)
-	else:
-		props[index] = prop
-		message = "The %s cracks." % prop["kind"]
+		return true
+	props[index] = prop
+	if announce:
+		message = "The %s cracks." % prop_kind
+	return false
 
 func _use_campfire() -> void:
 	if _is_free_roam():
@@ -2062,11 +2296,12 @@ func _resolve_tile() -> void:
 		if item["pos"] == player_pos:
 			_apply_loot_item(item)
 			loot.erase(item)
-	for trap in traps:
+	for i in range(traps.size() - 1, -1, -1):
+		var trap: Dictionary = traps[i]
 		if trap["pos"] == player_pos and not trap["sprung"]:
-			trap["sprung"] = true
 			_apply_damage(3)
 			message = "A root-snare trap snaps shut for 3 damage."
+			traps.remove_at(i)
 
 func _resolve_enemy_actor_turn(enemy_id: int) -> void:
 	await get_tree().create_timer(ENEMY_TURN_DELAY).timeout
@@ -2084,13 +2319,19 @@ func _resolve_enemy_actor_turn(enemy_id: int) -> void:
 		is_resolving_enemy_turn = false
 		_advance_to_next_actor()
 		return
+	if _enemy_can_ranged_cast(index):
+		_enemy_ranged_cast(index)
+		_refresh_ui()
+		is_resolving_enemy_turn = false
+		_advance_to_next_actor()
+		return
 	_enemy_move_toward_player(index)
 	index = _enemy_index_by_id(enemy_id)
 	if index != -1 and _distance(enemies[index]["pos"], player_pos) == 1:
 		if not _brace_hits_enemy(index):
 			_enemy_attack(index)
 	elif index != -1:
-		message = "%s prowls closer." % _enemy_display_name(enemies[index])
+		message = "%s advances through the dark." % _enemy_display_name(enemies[index])
 	_refresh_ui()
 	is_resolving_enemy_turn = false
 	_advance_to_next_actor()
@@ -2130,12 +2371,44 @@ func _enemy_initiative_modifier(enemy: Dictionary) -> int:
 func _enemy_movement(enemy: Dictionary) -> int:
 	return int(GameBalance.get_enemy_value(_enemy_type(enemy), "movement", ENEMY_MOVE_ALLOWANCE))
 
+func _enemy_can_ranged_cast(index: int) -> bool:
+	if index < 0 or index >= enemies.size():
+		return false
+	var enemy_type: String = _enemy_type(enemies[index])
+	if enemy_type != "necromancer" and enemy_type != "crypt_boss":
+		return false
+	var distance: int = _line_distance(enemies[index]["pos"], player_pos)
+	if distance <= 1 or distance > int(GameBalance.get_enemy_value(enemy_type, "range", 4)):
+		return false
+	var from_tile: Vector2i = enemies[index]["pos"]
+	var aligned: bool = from_tile.x == player_pos.x or from_tile.y == player_pos.y or abs(from_tile.x - player_pos.x) == abs(from_tile.y - player_pos.y)
+	return aligned and _has_clear_line(from_tile, player_pos, true)
+
+func _enemy_ranged_cast(index: int) -> void:
+	var enemy: Dictionary = enemies[index]
+	var damage: int = int(enemy["damage"])
+	if is_defending:
+		damage = maxi(0, damage - 1 - (run_state.get_derived_stat("defense") if run_state != null else 0))
+	if damage > 0:
+		_apply_damage(damage)
+	if _enemy_type(enemy) == "crypt_boss" and rng.randi_range(1, 4) == 1:
+		movement_remaining = 0
+	message = "%s hurls grave-light for %d damage." % [_enemy_display_name(enemy), damage]
+
 func _enemy_sprite_key(enemy: Dictionary) -> String:
 	match _enemy_type(enemy):
 		"kobold":
 			return "kobold"
 		"blood_wolf":
 			return "blood_wolf"
+		"skeleton", "armored_skeleton":
+			return "skeleton"
+		"ghoul":
+			return "ghoul"
+		"necromancer":
+			return "necromancer"
+		"crypt_boss":
+			return "crypt_boss"
 	return "wolf"
 
 func _enemy_label(enemy: Dictionary) -> String:
@@ -2148,6 +2421,16 @@ func _enemy_label(enemy: Dictionary) -> String:
 			return "E"
 		"boss_wolf":
 			return "W"
+		"skeleton":
+			return "S"
+		"armored_skeleton":
+			return "A"
+		"ghoul":
+			return "G"
+		"necromancer":
+			return "N"
+		"crypt_boss":
+			return "C"
 	return "W"
 
 func _enemy_color(enemy: Dictionary) -> Color:
@@ -2158,13 +2441,19 @@ func _enemy_color(enemy: Dictionary) -> Color:
 			return Color(0.62, 0.05, 0.07)
 		"elite_wolf", "boss_wolf":
 			return Color(0.56, 0.14, 0.14)
+		"skeleton", "armored_skeleton":
+			return Color(0.72, 0.70, 0.62)
+		"ghoul":
+			return Color(0.33, 0.54, 0.34)
+		"necromancer", "crypt_boss":
+			return Color(0.38, 0.24, 0.58)
 	return Color(0.45, 0.12, 0.12)
 
 func _brace_hits_enemy(index: int) -> bool:
 	if not braced:
 		return false
 	braced = false
-	_attack_enemy(index, _player_gear_damage() + 1)
+	_attack_enemy(index, _player_gear_damage() + 1 + _fighter_progression_value("brace_retaliate_bonus"))
 	message = "Brace lands before the enemy can strike."
 	return true
 
@@ -2198,7 +2487,7 @@ func _enemy_attack(index: int) -> void:
 func _apply_damage(amount: int) -> void:
 	run_state.hurt(amount)
 	if run_state.current_health <= 0:
-		message = "You fall beneath the trees."
+		message = "You fall among the crypt stones." if dungeon_id == "crypt" else "You fall beneath the trees."
 
 func _complete_floor() -> void:
 	if exit_door != null:
@@ -2210,11 +2499,11 @@ func _on_exit_door_entered(_door: ExitDoor) -> void:
 	_finish_floor()
 
 func _finish_floor() -> void:
-	if controller != null and controller.has_method("complete_forest_floor"):
-		controller.complete_forest_floor()
+	if controller != null and controller.has_method(complete_floor_method):
+		controller.call(complete_floor_method)
 		return
 	var final_gold := run_state.gold
-	controller.return_to_tavern("victory", "You escape the forest with %d gold. The bartender smiles like he expected it." % final_gold)
+	controller.return_to_tavern("victory", victory_text_template % final_gold)
 
 func _die() -> void:
 	controller.return_to_tavern("death", "You wake at the tavern table. The bartender says, 'Again, then?'")
@@ -2229,12 +2518,30 @@ func _build_board_tiles() -> void:
 	# Art handoff: this paints ambient ground across the full dungeon rectangle.
 	# Walkability stays in floor_cells; border decorations communicate playable paths.
 	# Non-walkable cells get a fog overlay below decor to separate overgrowth from path.
-	for y in range(GRID_H):
-		for x in range(GRID_W):
+	for y in range(grid_h):
+		for x in range(grid_w):
 			var tile := Vector2i(x, y)
-			_add_grass_sprite(tile)
+			if dungeon_id == "crypt":
+				_add_crypt_stone_sprite(tile)
+			else:
+				_add_grass_sprite(tile)
 			if not floor_cells.has(tile):
 				_add_fog_sprite(tile)
+
+func _add_crypt_stone_sprite(tile: Vector2i) -> void:
+	var sprite := Sprite2D.new()
+	sprite.name = "CryptStone_%d_%d" % [tile.x, tile.y]
+	sprite.texture = CRYPT_STONE_TILE
+	sprite.region_enabled = true
+	var atlas_x: int = abs(tile.x * 3 + tile.y * 5) % 4
+	var atlas_y: int = abs(tile.x * 7 + tile.y * 2) % 2
+	sprite.region_rect = Rect2(atlas_x * ATLAS_TILE_SIZE, atlas_y * ATLAS_TILE_SIZE, ATLAS_TILE_SIZE, ATLAS_TILE_SIZE)
+	sprite.centered = false
+	sprite.position = Vector2(tile) * tile_size
+	sprite.scale = Vector2(float(tile_size) / float(ATLAS_TILE_SIZE), float(tile_size) / float(ATLAS_TILE_SIZE))
+	sprite.modulate = Color(0.58, 0.60, 0.64) if floor_cells.has(tile) else Color(0.28, 0.29, 0.33)
+	sprite.z_index = 0
+	ground_layer.add_child(sprite)
 
 func _add_grass_sprite(tile: Vector2i) -> void:
 	var texture: Texture2D = _grass_texture_for(tile)
@@ -2242,8 +2549,8 @@ func _add_grass_sprite(tile: Vector2i) -> void:
 	sprite.name = "Grass_%d_%d" % [tile.x, tile.y]
 	sprite.texture = texture
 	sprite.centered = false
-	sprite.position = Vector2(tile) * TILE_SIZE
-	sprite.scale = Vector2(GRASS_TILE_DRAW_SIZE / float(texture.get_width()), GRASS_TILE_DRAW_SIZE / float(texture.get_height()))
+	sprite.position = Vector2(tile) * tile_size
+	sprite.scale = Vector2(float(tile_size) / float(texture.get_width()), float(tile_size) / float(texture.get_height()))
 	sprite.z_index = 0
 	ground_layer.add_child(sprite)
 
@@ -2253,7 +2560,7 @@ func _add_fog_sprite(tile: Vector2i) -> void:
 	sprite.name = "Fog_%d_%d" % [tile.x, tile.y]
 	sprite.texture = texture
 	sprite.centered = false
-	sprite.position = Vector2(tile) * TILE_SIZE
+	sprite.position = Vector2(tile) * tile_size
 	sprite.z_index = 1
 	ground_layer.add_child(sprite)
 
@@ -2274,9 +2581,9 @@ func _fog_texture_for(tile: Vector2i) -> Texture2D:
 
 func _build_fog_tile_textures() -> void:
 	for variant in range(3):
-		var image: Image = Image.create(TILE_SIZE, TILE_SIZE, false, Image.FORMAT_RGBA8)
-		for y in range(TILE_SIZE):
-			for x in range(TILE_SIZE):
+		var image: Image = Image.create(tile_size, tile_size, false, Image.FORMAT_RGBA8)
+		for y in range(tile_size):
+			for x in range(tile_size):
 				var wave: float = sin(float(x + variant * 17) * 0.17) + cos(float(y + variant * 23) * 0.13)
 				var drift: float = sin(float(x + y + variant * 31) * 0.07)
 				var alpha: float = 0.36 + wave * 0.035 + drift * 0.025
@@ -2351,13 +2658,25 @@ func _apply_decoration_sprite(sprite: Sprite2D, kind: String) -> void:
 			sprite.region_rect = Rect2(4, 431, 33, 30)
 			sprite.scale = Vector2(0.82, 0.82)
 			sprite.offset = Vector2(0, 8)
+		"crypt_pillar":
+			sprite.texture = STRUCT_ATLAS
+			sprite.region_rect = _atlas_region(2, 0)
+			sprite.scale = Vector2(1.32, 1.32)
+			sprite.modulate = Color(0.66, 0.68, 0.72)
+			sprite.offset = Vector2(0, -3)
+		"bone_pile":
+			sprite.texture = PROPS_ATLAS
+			sprite.region_rect = _atlas_region(0, 8)
+			sprite.scale = Vector2(1.15, 1.15)
+			sprite.modulate = Color(0.82, 0.78, 0.66)
+			sprite.offset = Vector2(0, 8)
 		_:
 			sprite.region_rect = Rect2(96, 196, 32, 29)
 			sprite.scale = Vector2(0.72, 0.72)
 			sprite.offset = Vector2(0, 7)
 
 func _configure_player_sprite() -> void:
-	var is_mage := run_state != null and run_state.selected_class_id == "mage"
+	var is_mage: bool = run_state != null and run_state.selected_class_id == "mage"
 	player_token.sprite_texture = FIRE_MAGE_SHEET if is_mage else PLAYER_IDLE_DOWN
 	player_token.sprite_region_enabled = true
 	player_token.sprite_region = Rect2(0, 0, 96, 80)
@@ -2368,10 +2687,11 @@ func _configure_player_sprite() -> void:
 func _refresh_ui() -> void:
 	if hud_label == null or run_state == null:
 		return
+	_update_follow_camera()
 	health_bar.max_value = run_state.max_health
 	health_bar.value = run_state.current_health
 	health_value_label.text = "%d/%d" % [run_state.current_health, run_state.max_health]
-	title_label.text = "Forest Dungeon - Floor %d/%d" % [_current_floor(), _max_floors()]
+	title_label.text = "%s - %s %d/%d" % [dungeon_title, dungeon_floor_label, _current_floor(), _max_floors()]
 	action_label.text = "%s | %s" % [_turn_status(), _layout_display_name()]
 	hud_label.text = ""
 	hud_label.visible = false
@@ -2528,8 +2848,9 @@ func _sync_reward_choice_copy() -> void:
 		var pending_choice: Dictionary = run_state.get_pending_progression_choice() if run_state != null else {}
 		var choice_type: String = String(pending_choice.get("type", "ability"))
 		var level: int = int(pending_choice.get("level", run_state.get_level() if run_state != null else 1))
-		chest_choice_title_label.text = "Choose Mage Evolution" if choice_type == "evolution" else "Choose Ability Upgrade"
-		chest_choice_subtitle_label.text = "Level %d unlock. Choose one path; it will persist on this Mage." % level
+		var class_type: String = run_state.selected_class_name if run_state != null else "Hero"
+		chest_choice_title_label.text = "Choose %s Evolution" % class_type if choice_type == "evolution" else "Choose Ability Upgrade"
+		chest_choice_subtitle_label.text = "Level %d unlock. Choose one path; it will persist on this %s." % [level, class_type]
 	else:
 		chest_choice_title_label.text = "Choose One Relic"
 		chest_choice_subtitle_label.text = "The chest opens with three offerings. Claim one boon for the road ahead."
@@ -2733,6 +3054,8 @@ func _choose_chest_reward(item_id: String) -> void:
 		return
 	var is_starter_reward: bool = reward_choice_source == "starter"
 	var logs: Array[String] = run_state.choose_starter_item(item_id) if is_starter_reward else run_state.choose_chest_item(item_id)
+	if not is_starter_reward:
+		_clear_claimed_chest()
 	message = _append_log_lines("The relic settles into your pack.", logs)
 	if chest_choice_backdrop != null:
 		chest_choice_backdrop.visible = false
@@ -2749,6 +3072,12 @@ func _choose_chest_reward(item_id: String) -> void:
 	_refresh_ui()
 	if not is_starter_reward and not _is_free_roam():
 		_finish_player_action()
+
+func _clear_claimed_chest() -> void:
+	chest = {"pos": Vector2i(-1, -1), "opened": true}
+
+func _has_closed_chest() -> bool:
+	return chest.has("pos") and not bool(chest.get("opened", false)) and Vector2i(chest["pos"]) != Vector2i(-1, -1)
 
 func _choose_progression_reward(choice_id: String) -> void:
 	if run_state == null:
@@ -2848,7 +3177,7 @@ func _modifier_text(item: Dictionary) -> String:
 	for key in modifiers.keys():
 		var value: int = int(modifiers[key])
 		var label: String = _modifier_label(String(key))
-		var prefix := "+" if value >= 0 else ""
+		var prefix: String = "+" if value >= 0 else ""
 		parts.append("%s%s %s" % [prefix, value, label])
 	if parts.is_empty():
 		return "No visible effect"
@@ -2862,7 +3191,7 @@ func _modifier_chip_texts(item: Dictionary) -> Array[String]:
 	var modifiers: Dictionary = modifiers_value
 	for key in modifiers.keys():
 		var value: int = int(modifiers[key])
-		var prefix := "+" if value >= 0 else ""
+		var prefix: String = "+" if value >= 0 else ""
 		chips.append("%s%s %s" % [prefix, value, _modifier_label(String(key))])
 	if chips.is_empty():
 		chips.append("No visible effect")
@@ -2934,6 +3263,18 @@ func _progression_flag_label(flag_id: String) -> String:
 			return "Splash Radius"
 		"force_blast_range_bonus":
 			return "Force Range"
+		"charge_damage_bonus":
+			return "Charge Damage"
+		"charge_range_bonus":
+			return "Charge Range"
+		"sweep_damage_bonus":
+			return "Sweep Damage"
+		"sweep_reach_bonus":
+			return "Sweep Reach"
+		"brace_retaliate_bonus":
+			return "Brace Strike"
+		"brace_block_bonus":
+			return "Brace Block"
 	return flag_id.capitalize()
 
 func _item_icon_texture(icon_key: String) -> Texture2D:
@@ -3004,7 +3345,7 @@ func _make_reward_primary_modifier(row_data: Dictionary, rarity: String) -> VBox
 	column.add_theme_constant_override("separation", 0)
 
 	var value: int = int(row_data.get("value", 0))
-	var prefix := "+" if value >= 0 else ""
+	var prefix: String = "+" if value >= 0 else ""
 	var value_label := Label.new()
 	value_label.text = "%s%d" % [prefix, value]
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -3042,7 +3383,7 @@ func _make_reward_modifier_row(row_data: Dictionary, rarity: String, row_count: 
 		stat_font_size = 8
 
 	var value: int = int(row_data.get("value", 0))
-	var prefix := "+" if value >= 0 else ""
+	var prefix: String = "+" if value >= 0 else ""
 	var value_label := Label.new()
 	value_label.text = "%s%d" % [prefix, value]
 	value_label.custom_minimum_size = Vector2(52, 0)
@@ -3165,8 +3506,18 @@ func _actor_portrait_texture(actor: Dictionary) -> Texture2D:
 	if String(actor["kind"]) == "player":
 		return _player_portrait_texture()
 	var enemy_index: int = _enemy_index_by_id(int(actor["id"]))
-	if enemy_index != -1 and _enemy_type(enemies[enemy_index]) == "kobold":
-		return _make_atlas_texture(KOBOLD_IDLE_SHEET, Rect2(0, 0, 74, 96))
+	if enemy_index != -1:
+		match _enemy_type(enemies[enemy_index]):
+			"kobold":
+				return _make_atlas_texture(KOBOLD_IDLE_SHEET, Rect2(0, 0, 74, 96))
+			"skeleton", "armored_skeleton":
+				return CRYPT_SKELETON
+			"ghoul":
+				return CRYPT_GHOUL
+			"necromancer":
+				return CRYPT_NECROMANCER
+			"crypt_boss":
+				return CRYPT_BOSS
 	return _make_atlas_texture(WOLF_SHEET, Rect2(0, 0, 96, 80))
 
 func _actor_portrait_modulate(actor: Dictionary) -> Color:
@@ -3175,6 +3526,8 @@ func _actor_portrait_modulate(actor: Dictionary) -> Color:
 	var enemy_index: int = _enemy_index_by_id(int(actor["id"]))
 	if enemy_index != -1 and _enemy_type(enemies[enemy_index]) == "blood_wolf":
 		return Color(1.15, 0.45, 0.45)
+	if enemy_index != -1 and _enemy_type(enemies[enemy_index]) == "armored_skeleton":
+		return Color(0.88, 0.94, 1.05)
 	return Color.WHITE
 
 func _make_atlas_texture(texture: Texture2D, region: Rect2) -> AtlasTexture:
@@ -3227,7 +3580,7 @@ func _sync_board_nodes() -> void:
 		_add_marker(item["kind"].capitalize(), item["pos"], _loot_label(item["kind"]), Color(0.93, 0.75, 0.28), item["kind"])
 	for prop in props:
 		_add_marker(prop["kind"].capitalize(), prop["pos"], _prop_label(prop["kind"]), _prop_color(prop["kind"]), prop["kind"])
-	if not chest["opened"]:
+	if not bool(chest.get("opened", false)):
 		_add_marker("LockedChest", chest["pos"], "C", Color(0.63, 0.38, 0.14), "chest")
 	if secret["found"]:
 		_add_marker("HiddenCache", secret["pos"], "$", Color(0.78, 0.73, 0.43), "secret")
@@ -3260,6 +3613,19 @@ func _apply_sprite_to_piece(piece: BoardPiece, sprite_key: String) -> void:
 			piece.modulate = Color(1.15, 0.45, 0.45)
 		"kobold":
 			_set_piece_sprite(piece, KOBOLD_IDLE_SHEET, Rect2(0, 0, 74, 96), Vector2(0.50, 0.50))
+		"skeleton":
+			# Sprite fit targets are presentation-only tile footprints.
+			# Replace enemy PNGs freely, then tune these sizes so art stays inside one map tile.
+			_set_fitted_piece_sprite(piece, CRYPT_SKELETON, Vector2(28, 31))
+		"armored_skeleton":
+			_set_fitted_piece_sprite(piece, CRYPT_SKELETON, Vector2(30, 33))
+			piece.modulate = Color(0.88, 0.94, 1.05)
+		"ghoul":
+			_set_fitted_piece_sprite(piece, CRYPT_GHOUL, Vector2(32, 31))
+		"necromancer":
+			_set_fitted_piece_sprite(piece, CRYPT_NECROMANCER, Vector2(30, 35))
+		"crypt_boss":
+			_set_fitted_piece_sprite(piece, CRYPT_BOSS, Vector2(36, 36))
 		"rock":
 			_set_fitted_piece_sprite(piece, ROCK_SPRITE, Vector2(38, 34))
 		"barrel":
@@ -3298,8 +3664,8 @@ func _set_full_piece_sprite(piece: BoardPiece, texture: Texture2D, scale: Vector
 
 func _set_fitted_piece_sprite(piece: BoardPiece, texture: Texture2D, target_size: Vector2) -> void:
 	var safe_size: Vector2 = Vector2(
-		clampf(target_size.x, 8.0, TILE_SIZE),
-		clampf(target_size.y, 8.0, TILE_SIZE)
+		clampf(target_size.x, 8.0, tile_size),
+		clampf(target_size.y, 8.0, tile_size)
 	)
 	var scale: Vector2 = Vector2(
 		safe_size.x / float(texture.get_width()),
@@ -3318,16 +3684,34 @@ func _atlas_region(x: int, y: int) -> Rect2:
 	return Rect2(x * ATLAS_TILE_SIZE, y * ATLAS_TILE_SIZE, ATLAS_TILE_SIZE, ATLAS_TILE_SIZE)
 
 func _add_enemy_health_bar(piece: BoardPiece, enemy: Dictionary) -> void:
-	var bar := ProgressBar.new()
-	bar.name = "HealthBar"
-	bar.position = Vector2(-22, -32)
-	bar.size = Vector2(44, 7)
-	bar.max_value = int(enemy.get("max_health", 4))
-	bar.value = int(enemy["hp"])
-	bar.show_percentage = false
-	bar.add_theme_stylebox_override("background", _flat_style(Color(0.13, 0.04, 0.03), 1, Color(0.04, 0.02, 0.02)))
-	bar.add_theme_stylebox_override("fill", _flat_style(Color(0.76, 0.12, 0.10), 1, Color(0.97, 0.45, 0.33)))
-	piece.add_child(bar)
+	var bar_width: float = clampf(tile_size * 0.62, 24.0, 34.0)
+	var bar_height: float = 2.0
+	var max_health: int = max(1, int(enemy.get("max_health", 4)))
+	var current_health: int = clampi(int(enemy.get("hp", max_health)), 0, max_health)
+	var health_ratio: float = float(current_health) / float(max_health)
+	var fill_width: float = 0.0 if current_health <= 0 else maxf(1.0, floorf(bar_width * health_ratio))
+
+	var bar_root := Node2D.new()
+	bar_root.name = "HealthBar"
+	bar_root.position = Vector2(-bar_width * 0.5, -tile_size * 0.38)
+
+	var background := ColorRect.new()
+	background.name = "Background"
+	background.position = Vector2.ZERO
+	background.size = Vector2(bar_width, bar_height)
+	background.color = Color(0.10, 0.02, 0.02, 0.62)
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar_root.add_child(background)
+
+	var fill := ColorRect.new()
+	fill.name = "Fill"
+	fill.position = Vector2.ZERO
+	fill.size = Vector2(fill_width, bar_height)
+	fill.color = Color(0.86, 0.08, 0.06, 0.90)
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar_root.add_child(fill)
+
+	piece.add_child(bar_root)
 
 func _style_health_bar() -> void:
 	if health_bar == null:
@@ -3428,8 +3812,8 @@ func _build_minimap_state() -> Dictionary:
 	for trap in traps:
 		trap_tiles.append(trap["pos"])
 	return {
-		"width": GRID_W,
-		"height": GRID_H,
+		"width": grid_w,
+		"height": grid_h,
 		"floor_cells": floor_cells.keys(),
 		"player": player_pos,
 		"exit": exit_pos,
@@ -3437,7 +3821,7 @@ func _build_minimap_state() -> Dictionary:
 		"props": prop_tiles,
 		"loot": loot_tiles,
 		"traps": trap_tiles,
-		"chest": chest["pos"],
+		"chest": chest["pos"] if _has_closed_chest() else Vector2i(-1, -1),
 		"secret": secret["pos"],
 		"secret_found": secret["found"],
 		"layout": layout_type,
@@ -3469,7 +3853,9 @@ func _pick_role_cell(role: String, avoid_path: bool) -> Vector2i:
 
 func _pick_cell_in_rooms(room_ids: Array, avoid_path: bool) -> Vector2i:
 	for attempt in range(120):
-		var room: Dictionary = room_graph[room_ids[rng.randi_range(0, room_ids.size() - 1)]]
+		var room_index: int = int(room_ids[rng.randi_range(0, room_ids.size() - 1)])
+		var room_value: Variant = room_graph[room_index]
+		var room: Dictionary = room_value if room_value is Dictionary else {}
 		var center: Vector2i = room["center"]
 		var radius: Vector2i = room["radius"]
 		var tile := Vector2i(
@@ -3510,7 +3896,7 @@ func _flash_step_back(attack_direction: Vector2i) -> bool:
 func _reserved(tile: Vector2i) -> bool:
 	if tile == player_pos or tile == exit_pos:
 		return true
-	if chest.has("pos") and tile == chest["pos"]:
+	if chest.has("pos") and not bool(chest.get("opened", false)) and tile == chest["pos"]:
 		return true
 	if secret.has("pos") and tile == secret["pos"]:
 		return true
@@ -3559,7 +3945,8 @@ func _step_toward(from_tile: Vector2i, to_tile: Vector2i) -> Vector2i:
 	return from_tile
 
 func _is_walkable(tile: Vector2i) -> bool:
-	return floor_cells.has(tile) and _prop_at(tile) == -1 and tile != chest["pos"] and _enemy_at(tile) == -1
+	var chest_blocks: bool = chest.has("pos") and not bool(chest.get("opened", false)) and tile == chest["pos"]
+	return floor_cells.has(tile) and _prop_at(tile) == -1 and not chest_blocks and _enemy_at(tile) == -1
 
 func _prop_at(tile: Vector2i) -> int:
 	for i in range(props.size()):
@@ -3575,16 +3962,22 @@ func _enemy_at(tile: Vector2i) -> int:
 
 func _screen_to_grid(pos: Vector2) -> Vector2i:
 	var local := pos - ORIGIN
-	return Vector2i(floori(local.x / TILE_SIZE), floori(local.y / TILE_SIZE))
+	return Vector2i(floori(local.x / float(tile_size)), floori(local.y / float(tile_size)))
+
+func _viewport_to_world(pos: Vector2) -> Vector2:
+	return get_viewport().get_canvas_transform().affine_inverse() * pos
+
+func _grid_to_viewport_screen(tile: Vector2i) -> Vector2:
+	return get_viewport().get_canvas_transform() * _grid_to_screen(tile)
 
 func _grid_to_screen(tile: Vector2i) -> Vector2:
-	return ORIGIN + Vector2(tile) * TILE_SIZE
+	return ORIGIN + Vector2(tile) * tile_size
 
 func _grid_center(tile: Vector2i) -> Vector2:
-	return _grid_to_screen(tile) + Vector2(TILE_SIZE, TILE_SIZE) * 0.5
+	return _grid_to_screen(tile) + Vector2(tile_size, tile_size) * 0.5
 
 func _is_inside_grid(tile: Vector2i) -> bool:
-	return tile.x >= 0 and tile.y >= 0 and tile.x < GRID_W and tile.y < GRID_H
+	return tile.x >= 0 and tile.y >= 0 and tile.x < grid_w and tile.y < grid_h
 
 func _distance(a: Vector2i, b: Vector2i) -> int:
 	return abs(a.x - b.x) + abs(a.y - b.y)
