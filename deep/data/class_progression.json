@@ -1,310 +1,310 @@
 {
   "mage": {
-    "evolution_levels": [5, 10, 15, 20],
-    "ability_upgrade_levels": [3, 7, 9, 11, 13, 17, 19],
-    "evolutions": [
-      {
-        "id": "pyromancer",
-        "level": 5,
-        "name": "Pyromancer",
-        "description": "Bind your spellcraft to living flame. Fire spells hit harder and Fire Shield burns brighter.",
-        "modifiers": {"spell_power": 1},
-        "flags": {"fire_shield_retaliate_bonus": 1}
-      },
-      {
-        "id": "stormcaller",
-        "level": 5,
-        "name": "Stormcaller",
-        "description": "Let thunder answer your footwork. Lightning magic favors speed, stun, and sudden angles.",
-        "modifiers": {"initiative_modifier": 1, "movement": 1},
-        "flags": {"shockwave_damage_bonus": 1}
-      },
-      {
-        "id": "arcanist",
-        "level": 5,
-        "name": "Arcanist",
-        "description": "Shape raw force with careful sigils. Force magic pushes farther and protects the caster.",
-        "modifiers": {"spell_power": 1, "defense": 1},
-        "flags": {"force_blast_push_bonus": 1}
-      },
-      {
-        "id": "cinder_savant",
-        "level": 10,
-        "requires": "pyromancer",
-        "name": "Cinder Savant",
-        "description": "Your fire clings to the air after impact, punishing clustered enemies.",
-        "modifiers": {"spell_power": 1},
-        "flags": {"flamethrower_damage_bonus": 1}
-      },
-      {
-        "id": "tempest_savant",
-        "level": 10,
-        "requires": "stormcaller",
-        "name": "Tempest Savant",
-        "description": "Every shock leaves a path open. Control spells grant stronger tempo.",
-        "modifiers": {"initiative_modifier": 1},
-        "flags": {"shockwave_stun_bonus": 1}
-      },
-      {
-        "id": "sigil_savant",
-        "level": 10,
-        "requires": "arcanist",
-        "name": "Sigil Savant",
-        "description": "Your force sigils fracture on impact, catching more foes in the blast.",
-        "modifiers": {"defense": 1},
-        "flags": {"force_blast_splash_bonus": 1}
-      },
-      {
-        "id": "inferno_adept",
-        "level": 15,
-        "requires": "pyromancer",
-        "name": "Inferno Adept",
-        "description": "The line between torch and wildfire becomes a choice.",
-        "modifiers": {"spell_power": 2},
-        "flags": {"flamethrower_range_bonus": 1}
-      },
-      {
-        "id": "thunder_adept",
-        "level": 15,
-        "requires": "stormcaller",
-        "name": "Thunder Adept",
-        "description": "Your shockwaves hit with the force of a breaking stormfront.",
-        "modifiers": {"movement": 1},
-        "flags": {"shockwave_damage_bonus": 1}
-      },
-      {
-        "id": "aether_adept",
-        "level": 15,
-        "requires": "arcanist",
-        "name": "Aether Adept",
-        "description": "Force bolts travel farther before the pattern collapses.",
-        "modifiers": {"spell_power": 1, "defense": 1},
-        "flags": {"force_blast_range_bonus": 1}
-      },
-      {
-        "id": "phoenix_heart",
-        "level": 20,
-        "requires": "pyromancer",
-        "name": "Phoenix Heart",
-        "description": "Flame keeps you standing when the forest should have swallowed you.",
-        "modifiers": {"max_health": 8, "spell_power": 2},
-        "flags": {"fire_shield_retaliate_bonus": 2}
-      },
-      {
-        "id": "storm_avatar",
-        "level": 20,
-        "requires": "stormcaller",
-        "name": "Storm Avatar",
-        "description": "You move like lightning and leave thunder behind.",
-        "modifiers": {"initiative_modifier": 2, "movement": 1},
-        "flags": {"shockwave_stun_bonus": 1}
-      },
-      {
-        "id": "arch_sigilist",
-        "level": 20,
-        "requires": "arcanist",
-        "name": "Arch Sigilist",
-        "description": "Your warding geometry turns force into armor and impact.",
-        "modifiers": {"spell_power": 2, "defense": 2},
-        "flags": {"force_blast_splash_bonus": 1}
-      }
-    ],
-    "ability_upgrades": [
-      {
-        "id": "trained_evocation",
-        "level": 3,
-        "name": "Trained Evocation",
-        "description": "Your basic spells become cleaner, louder, and harder to shrug off.",
-        "modifiers": {"spell_power": 1}
-      },
-      {
-        "id": "quickened_rituals",
-        "level": 3,
-        "name": "Quickened Rituals",
-        "description": "You prepare gestures while moving, entering each round a half-step ahead.",
-        "modifiers": {"initiative_modifier": 1}
-      },
-      {
-        "id": "warding_cantrip",
-        "level": 3,
-        "name": "Warding Cantrip",
-        "description": "A small shield-sign hangs near your shoulder.",
-        "modifiers": {"defense": 1}
-      },
-      {
-        "id": "long_tongue_flame",
-        "level": 7,
-        "requires": "pyromancer",
-        "name": "Long-Tongue Flame",
-        "description": "Flamethrower reaches one tile farther.",
-        "flags": {"flamethrower_range_bonus": 1}
-      },
-      {
-        "id": "hotter_core",
-        "level": 7,
-        "requires": "pyromancer",
-        "name": "Hotter Core",
-        "description": "Flamethrower and fire retaliation gain damage.",
-        "modifiers": {"spell_power": 1},
-        "flags": {"flamethrower_damage_bonus": 1, "fire_shield_retaliate_bonus": 1}
-      },
-      {
-        "id": "flash_conduit",
-        "level": 7,
-        "requires": "stormcaller",
-        "name": "Flash Conduit",
-        "description": "Shockwave hits harder and your step quickens.",
-        "modifiers": {"movement": 1},
-        "flags": {"shockwave_damage_bonus": 1}
-      },
-      {
-        "id": "rolling_thunder",
-        "level": 7,
-        "requires": "stormcaller",
-        "name": "Rolling Thunder",
-        "description": "Shockwave stun lasts longer against enemies caught beside you.",
-        "flags": {"shockwave_stun_bonus": 1}
-      },
-      {
-        "id": "deep_impact",
-        "level": 7,
-        "requires": "arcanist",
-        "name": "Deep Impact",
-        "description": "Force Blast pushes enemies farther.",
-        "flags": {"force_blast_push_bonus": 1}
-      },
-      {
-        "id": "fracture_sigil",
-        "level": 7,
-        "requires": "arcanist",
-        "name": "Fracture Sigil",
-        "description": "Force Blast splash deals more damage.",
-        "flags": {"force_blast_splash_bonus": 1}
-      },
-      {
-        "id": "firebreak",
-        "level": 9,
-        "requires": "pyromancer",
-        "name": "Firebreak",
-        "description": "Fire Shield burns attackers harder.",
-        "modifiers": {"defense": 1},
-        "flags": {"fire_shield_retaliate_bonus": 1}
-      },
-      {
-        "id": "storm_stride",
-        "level": 9,
-        "requires": "stormcaller",
-        "name": "Storm Stride",
-        "description": "Lightning magic sharpens your movement and initiative.",
-        "modifiers": {"initiative_modifier": 1, "movement": 1}
-      },
-      {
-        "id": "widened_burst",
-        "level": 9,
-        "requires": "arcanist",
-        "name": "Widened Burst",
-        "description": "Force Blast catches enemies one step farther from impact.",
-        "flags": {"force_blast_splash_radius_bonus": 1}
-      },
-      {
-        "id": "greater_pyromancy",
-        "level": 11,
-        "requires": "pyromancer",
-        "name": "Greater Pyromancy",
-        "description": "Every fire pattern carries more heat.",
-        "modifiers": {"spell_power": 2}
-      },
-      {
-        "id": "greater_stormcraft",
-        "level": 11,
-        "requires": "stormcaller",
-        "name": "Greater Stormcraft",
-        "description": "Your lightning patterns are faster and more reliable.",
-        "modifiers": {"spell_power": 1, "initiative_modifier": 1}
-      },
-      {
-        "id": "greater_arcanum",
-        "level": 11,
-        "requires": "arcanist",
-        "name": "Greater Arcanum",
-        "description": "Force and warding signs reinforce each other.",
-        "modifiers": {"spell_power": 1, "defense": 1}
-      },
-      {
-        "id": "wildfire_line",
-        "level": 13,
-        "requires": "pyromancer",
-        "name": "Wildfire Line",
-        "description": "Flamethrower gains damage and reach.",
-        "flags": {"flamethrower_range_bonus": 1, "flamethrower_damage_bonus": 1}
-      },
-      {
-        "id": "storm_ring",
-        "level": 13,
-        "requires": "stormcaller",
-        "name": "Storm Ring",
-        "description": "Shockwave hits harder and holds enemies longer.",
-        "flags": {"shockwave_damage_bonus": 1, "shockwave_stun_bonus": 1}
-      },
-      {
-        "id": "aether_lance",
-        "level": 13,
-        "requires": "arcanist",
-        "name": "Aether Lance",
-        "description": "Force Blast gains reach and impact.",
-        "flags": {"force_blast_range_bonus": 1, "force_blast_push_bonus": 1}
-      },
-      {
-        "id": "ashen_mastery",
-        "level": 17,
-        "requires": "pyromancer",
-        "name": "Ashen Mastery",
-        "description": "Fire damage and survival rise together.",
-        "modifiers": {"max_health": 4, "spell_power": 2}
-      },
-      {
-        "id": "tempest_mastery",
-        "level": 17,
-        "requires": "stormcaller",
-        "name": "Tempest Mastery",
-        "description": "Speed becomes defense when thunder surrounds you.",
-        "modifiers": {"initiative_modifier": 2, "defense": 1}
-      },
-      {
-        "id": "sigil_mastery",
-        "level": 17,
-        "requires": "arcanist",
-        "name": "Sigil Mastery",
-        "description": "Your force magic lands with exacting pressure.",
-        "modifiers": {"spell_power": 2, "defense": 1}
-      },
-      {
-        "id": "crown_of_flame",
-        "level": 19,
-        "requires": "pyromancer",
-        "name": "Crown of Flame",
-        "description": "The fire answers before you finish speaking.",
-        "modifiers": {"spell_power": 2},
-        "flags": {"flamethrower_damage_bonus": 1}
-      },
-      {
-        "id": "crown_of_storms",
-        "level": 19,
-        "requires": "stormcaller",
-        "name": "Crown of Storms",
-        "description": "Every stunned foe hears the next thunderclap coming.",
-        "modifiers": {"spell_power": 1, "initiative_modifier": 2},
-        "flags": {"shockwave_damage_bonus": 1}
-      },
-      {
-        "id": "crown_of_sigil",
-        "level": 19,
-        "requires": "arcanist",
-        "name": "Crown of Sigils",
-        "description": "Force patterns widen, deepen, and hold their shape.",
-        "modifiers": {"spell_power": 2},
-        "flags": {"force_blast_splash_bonus": 1}
-      }
-    ]
+	"evolution_levels": [5, 10, 15, 20],
+	"ability_upgrade_levels": [3, 7, 9, 11, 13, 17, 19],
+	"evolutions": [
+	  {
+		"id": "pyromancer",
+		"level": 5,
+		"name": "Pyromancer",
+		"description": "Bind your spellcraft to living flame. Fire spells hit harder and Fire Shield burns brighter.",
+		"modifiers": {"spell_power": 1},
+		"flags": {"fire_shield_retaliate_bonus": 1}
+	  },
+	  {
+		"id": "stormcaller",
+		"level": 5,
+		"name": "Stormcaller",
+		"description": "Let thunder answer your footwork. Lightning magic favors speed, stun, and sudden angles.",
+		"modifiers": {"initiative_modifier": 1, "movement": 1},
+		"flags": {"shockwave_damage_bonus": 1}
+	  },
+	  {
+		"id": "arcanist",
+		"level": 5,
+		"name": "Arcanist",
+		"description": "Shape raw force with careful sigils. Force magic pushes farther and protects the caster.",
+		"modifiers": {"spell_power": 1, "defense": 1},
+		"flags": {"force_blast_push_bonus": 1}
+	  },
+	  {
+		"id": "cinder_savant",
+		"level": 10,
+		"requires": "pyromancer",
+		"name": "Cinder Savant",
+		"description": "Your fire clings to the air after impact, punishing clustered enemies.",
+		"modifiers": {"spell_power": 1},
+		"flags": {"flamethrower_damage_bonus": 1}
+	  },
+	  {
+		"id": "tempest_savant",
+		"level": 10,
+		"requires": "stormcaller",
+		"name": "Tempest Savant",
+		"description": "Every shock leaves a path open. Control spells grant stronger tempo.",
+		"modifiers": {"initiative_modifier": 1},
+		"flags": {"shockwave_stun_bonus": 1}
+	  },
+	  {
+		"id": "sigil_savant",
+		"level": 10,
+		"requires": "arcanist",
+		"name": "Sigil Savant",
+		"description": "Your force sigils fracture on impact, catching more foes in the blast.",
+		"modifiers": {"defense": 1},
+		"flags": {"force_blast_splash_bonus": 1}
+	  },
+	  {
+		"id": "inferno_adept",
+		"level": 15,
+		"requires": "pyromancer",
+		"name": "Inferno Adept",
+		"description": "The line between torch and wildfire becomes a choice.",
+		"modifiers": {"spell_power": 2},
+		"flags": {"flamethrower_range_bonus": 1}
+	  },
+	  {
+		"id": "thunder_adept",
+		"level": 15,
+		"requires": "stormcaller",
+		"name": "Thunder Adept",
+		"description": "Your shockwaves hit with the force of a breaking stormfront.",
+		"modifiers": {"movement": 1},
+		"flags": {"shockwave_damage_bonus": 1}
+	  },
+	  {
+		"id": "aether_adept",
+		"level": 15,
+		"requires": "arcanist",
+		"name": "Aether Adept",
+		"description": "Force bolts travel farther before the pattern collapses.",
+		"modifiers": {"spell_power": 1, "defense": 1},
+		"flags": {"force_blast_range_bonus": 1}
+	  },
+	  {
+		"id": "phoenix_heart",
+		"level": 20,
+		"requires": "pyromancer",
+		"name": "Phoenix Heart",
+		"description": "Flame keeps you standing when the forest should have swallowed you.",
+		"modifiers": {"max_health": 8, "spell_power": 2},
+		"flags": {"fire_shield_retaliate_bonus": 2}
+	  },
+	  {
+		"id": "storm_avatar",
+		"level": 20,
+		"requires": "stormcaller",
+		"name": "Storm Avatar",
+		"description": "You move like lightning and leave thunder behind.",
+		"modifiers": {"initiative_modifier": 2, "movement": 1},
+		"flags": {"shockwave_stun_bonus": 1}
+	  },
+	  {
+		"id": "arch_sigilist",
+		"level": 20,
+		"requires": "arcanist",
+		"name": "Arch Sigilist",
+		"description": "Your warding geometry turns force into armor and impact.",
+		"modifiers": {"spell_power": 2, "defense": 2},
+		"flags": {"force_blast_splash_bonus": 1}
+	  }
+	],
+	"ability_upgrades": [
+	  {
+		"id": "trained_evocation",
+		"level": 3,
+		"name": "Trained Evocation",
+		"description": "Your basic spells become cleaner, louder, and harder to shrug off.",
+		"modifiers": {"spell_power": 1}
+	  },
+	  {
+		"id": "quickened_rituals",
+		"level": 3,
+		"name": "Quickened Rituals",
+		"description": "You prepare gestures while moving, entering each round a half-step ahead.",
+		"modifiers": {"initiative_modifier": 1}
+	  },
+	  {
+		"id": "warding_cantrip",
+		"level": 3,
+		"name": "Warding Cantrip",
+		"description": "A small shield-sign hangs near your shoulder.",
+		"modifiers": {"defense": 1}
+	  },
+	  {
+		"id": "long_tongue_flame",
+		"level": 7,
+		"requires": "pyromancer",
+		"name": "Long-Tongue Flame",
+		"description": "Flamethrower reaches one tile farther.",
+		"flags": {"flamethrower_range_bonus": 1}
+	  },
+	  {
+		"id": "hotter_core",
+		"level": 7,
+		"requires": "pyromancer",
+		"name": "Hotter Core",
+		"description": "Flamethrower and fire retaliation gain damage.",
+		"modifiers": {"spell_power": 1},
+		"flags": {"flamethrower_damage_bonus": 1, "fire_shield_retaliate_bonus": 1}
+	  },
+	  {
+		"id": "flash_conduit",
+		"level": 7,
+		"requires": "stormcaller",
+		"name": "Flash Conduit",
+		"description": "Shockwave hits harder and your step quickens.",
+		"modifiers": {"movement": 1},
+		"flags": {"shockwave_damage_bonus": 1}
+	  },
+	  {
+		"id": "rolling_thunder",
+		"level": 7,
+		"requires": "stormcaller",
+		"name": "Rolling Thunder",
+		"description": "Shockwave stun lasts longer against enemies caught beside you.",
+		"flags": {"shockwave_stun_bonus": 1}
+	  },
+	  {
+		"id": "deep_impact",
+		"level": 7,
+		"requires": "arcanist",
+		"name": "Deep Impact",
+		"description": "Force Blast pushes enemies farther.",
+		"flags": {"force_blast_push_bonus": 1}
+	  },
+	  {
+		"id": "fracture_sigil",
+		"level": 7,
+		"requires": "arcanist",
+		"name": "Fracture Sigil",
+		"description": "Force Blast splash deals more damage.",
+		"flags": {"force_blast_splash_bonus": 1}
+	  },
+	  {
+		"id": "firebreak",
+		"level": 9,
+		"requires": "pyromancer",
+		"name": "Firebreak",
+		"description": "Fire Shield burns attackers harder.",
+		"modifiers": {"defense": 1},
+		"flags": {"fire_shield_retaliate_bonus": 1}
+	  },
+	  {
+		"id": "storm_stride",
+		"level": 9,
+		"requires": "stormcaller",
+		"name": "Storm Stride",
+		"description": "Lightning magic sharpens your movement and initiative.",
+		"modifiers": {"initiative_modifier": 1, "movement": 1}
+	  },
+	  {
+		"id": "widened_burst",
+		"level": 9,
+		"requires": "arcanist",
+		"name": "Widened Burst",
+		"description": "Force Blast catches enemies one step farther from impact.",
+		"flags": {"force_blast_splash_radius_bonus": 1}
+	  },
+	  {
+		"id": "greater_pyromancy",
+		"level": 11,
+		"requires": "pyromancer",
+		"name": "Greater Pyromancy",
+		"description": "Every fire pattern carries more heat.",
+		"modifiers": {"spell_power": 2}
+	  },
+	  {
+		"id": "greater_stormcraft",
+		"level": 11,
+		"requires": "stormcaller",
+		"name": "Greater Stormcraft",
+		"description": "Your lightning patterns are faster and more reliable.",
+		"modifiers": {"spell_power": 1, "initiative_modifier": 1}
+	  },
+	  {
+		"id": "greater_arcanum",
+		"level": 11,
+		"requires": "arcanist",
+		"name": "Greater Arcanum",
+		"description": "Force and warding signs reinforce each other.",
+		"modifiers": {"spell_power": 1, "defense": 1}
+	  },
+	  {
+		"id": "wildfire_line",
+		"level": 13,
+		"requires": "pyromancer",
+		"name": "Wildfire Line",
+		"description": "Flamethrower gains damage and reach.",
+		"flags": {"flamethrower_range_bonus": 1, "flamethrower_damage_bonus": 1}
+	  },
+	  {
+		"id": "storm_ring",
+		"level": 13,
+		"requires": "stormcaller",
+		"name": "Storm Ring",
+		"description": "Shockwave hits harder and holds enemies longer.",
+		"flags": {"shockwave_damage_bonus": 1, "shockwave_stun_bonus": 1}
+	  },
+	  {
+		"id": "aether_lance",
+		"level": 13,
+		"requires": "arcanist",
+		"name": "Aether Lance",
+		"description": "Force Blast gains reach and impact.",
+		"flags": {"force_blast_range_bonus": 1, "force_blast_push_bonus": 1}
+	  },
+	  {
+		"id": "ashen_mastery",
+		"level": 17,
+		"requires": "pyromancer",
+		"name": "Ashen Mastery",
+		"description": "Fire damage and survival rise together.",
+		"modifiers": {"max_health": 4, "spell_power": 2}
+	  },
+	  {
+		"id": "tempest_mastery",
+		"level": 17,
+		"requires": "stormcaller",
+		"name": "Tempest Mastery",
+		"description": "Speed becomes defense when thunder surrounds you.",
+		"modifiers": {"initiative_modifier": 2, "defense": 1}
+	  },
+	  {
+		"id": "sigil_mastery",
+		"level": 17,
+		"requires": "arcanist",
+		"name": "Sigil Mastery",
+		"description": "Your force magic lands with exacting pressure.",
+		"modifiers": {"spell_power": 2, "defense": 1}
+	  },
+	  {
+		"id": "crown_of_flame",
+		"level": 19,
+		"requires": "pyromancer",
+		"name": "Crown of Flame",
+		"description": "The fire answers before you finish speaking.",
+		"modifiers": {"spell_power": 2},
+		"flags": {"flamethrower_damage_bonus": 1}
+	  },
+	  {
+		"id": "crown_of_storms",
+		"level": 19,
+		"requires": "stormcaller",
+		"name": "Crown of Storms",
+		"description": "Every stunned foe hears the next thunderclap coming.",
+		"modifiers": {"spell_power": 1, "initiative_modifier": 2},
+		"flags": {"shockwave_damage_bonus": 1}
+	  },
+	  {
+		"id": "crown_of_sigil",
+		"level": 19,
+		"requires": "arcanist",
+		"name": "Crown of Sigils",
+		"description": "Force patterns widen, deepen, and hold their shape.",
+		"modifiers": {"spell_power": 2},
+		"flags": {"force_blast_splash_bonus": 1}
+	  }
+	]
   }
 }

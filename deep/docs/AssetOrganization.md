@@ -7,41 +7,41 @@ This project is still using a mix of imported asset packs, generated art, and ea
 ```text
 assets/
   source_packs/
-    humble_paper_ui/
-    legacy_pixel_art/
-    effect_packs/
+	humble_paper_ui/
+	legacy_pixel_art/
+	effect_packs/
   game/
-    shared/
-      ui/
-        icons/
-        buttons/
-      characters/
-        player/
-        enemies/
-        npcs/
-      vfx/
-        fire/
-        force/
-    dungeons/
-      forest/
-        tiles/
-          ground/
-          walls/
-          overlays/
-        decor/
-          border/
-          floor/
-          landmarks/
-        interactables/
-          loot/
-          traps/
-          doors/
-          chests/
-        minimap/
-      tavern/
-        tiles/
-        decor/
-        characters/
+	shared/
+	  ui/
+		icons/
+		buttons/
+	  characters/
+		player/
+		enemies/
+		npcs/
+	  vfx/
+		fire/
+		force/
+	dungeons/
+	  forest/
+		tiles/
+		  ground/
+		  walls/
+		  overlays/
+		decor/
+		  border/
+		  floor/
+		  landmarks/
+		interactables/
+		  loot/
+		  traps/
+		  doors/
+		  chests/
+		minimap/
+	  tavern/
+		tiles/
+		decor/
+		characters/
 ```
 
 ## Migration Rules
