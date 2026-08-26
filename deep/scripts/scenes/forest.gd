@@ -160,7 +160,6 @@ const BOSS_CHAMBERS := [
 var controller: Node
 var run_state: RunState
 var rng := RandomNumberGenerator.new()
-var fog_tile_textures: Array[Texture2D] = []
 var dungeon_id: String = "forest"
 var dungeon_title: String = "Forest Dungeon"
 var dungeon_floor_label: String = "Floor"
@@ -185,6 +184,26 @@ var facing := Vector2i.RIGHT
 var block_stacks := 0
 var braced := false
 var is_defending := false
+var armed_reaction := ""
+var empowered := false
+var is_hidden := false
+var retribution_armed := false
+var retribution_stored := 0
+var marked_enemy_id := -1
+var companion: Dictionary = {}
+var player_attack_count := 0
+var player_spell_count_floor := 0
+var incoming_hit_count := 0
+var tiles_moved_this_turn := 0
+var last_target_id := -1
+var studied_target_ids: Dictionary = {}
+var item_limits_used: Dictionary = {}
+var next_attack_item_bonuses: Dictionary = {}
+var temporary_aegis := 0
+var stored_spell_damage := 0
+var last_player_hit_round := -1
+var was_below_half_health := false
+var seen_enemy_types: Dictionary = {}
 var selected_action := "move"
 var movement_remaining := PLAYER_MOVE_ALLOWANCE
 var has_used_action := false
@@ -252,8 +271,7 @@ func setup(game_controller: Node, state: RunState) -> void:
 	controller = game_controller
 	run_state = state
 	_configure_dungeon_settings()
-	if run_state != null and run_state.selected_gear != null:
-		block_stacks = _gear_block_limit()
+	block_stacks = 0
 	if is_inside_tree():
 		_generate()
 		_build_board_tiles()
@@ -539,7 +557,7 @@ func _setup_character_menu(ui_layer: CanvasLayer) -> void:
 func _setup_action_buttons() -> void:
 	move_button = Button.new()
 	move_button.name = "MoveButton"
-	move_button.pressed.connect(_dash)
+	move_button.pressed.connect(_select_action.bind("movement"))
 	interact_button.pressed.connect(_select_action.bind("attack"))
 	special_button.pressed.connect(_select_action.bind("special"))
 	defend_button = Button.new()
@@ -548,11 +566,11 @@ func _setup_action_buttons() -> void:
 	end_turn_button = Button.new()
 	end_turn_button.name = "EndTurnButton"
 	end_turn_button.pressed.connect(_end_player_turn)
-	_configure_action_button(move_button, "move", "Dash", ICON_MOVE, "Spend your action to gain another full movement allowance.")
+	_configure_action_button(move_button, "move", "Movement", ICON_MOVE, "Use your class movement ability.")
 	_configure_action_button(interact_button, "attack", "Attack", ICON_ATTACK, "Target an enemy with your basic attack.")
-	_configure_action_button(special_button, "special", "Special", ICON_SPECIAL, "Use your equipped special ability.")
+	_configure_action_button(special_button, "special", "Special", ICON_SPECIAL, "Spend class resource on your special ability.")
 	_configure_action_button(potion_button, "potion", "Potion", ICON_POTION, "Drink a potion as your action.")
-	_configure_action_button(defend_button, "defend", "Defend", ICON_DEFEND, "Hold position and reduce incoming damage.")
+	_configure_action_button(defend_button, "defend", "Defensive", ICON_DEFEND, "Arm your class reaction until your next turn.")
 	_configure_action_button(end_turn_button, "end", "End", ICON_END_TURN, "Pass to the next actor.")
 	for button: Button in _action_buttons():
 		_reparent_to_actions_grid(button)
@@ -627,6 +645,26 @@ func _reset_generated_state() -> void:
 	selected_action = "move"
 	has_used_action = false
 	is_defending = false
+	armed_reaction = ""
+	empowered = false
+	is_hidden = false
+	retribution_armed = false
+	retribution_stored = 0
+	marked_enemy_id = -1
+	companion.clear()
+	player_attack_count = 0
+	player_spell_count_floor = 0
+	incoming_hit_count = 0
+	tiles_moved_this_turn = 0
+	last_target_id = -1
+	studied_target_ids.clear()
+	item_limits_used.clear()
+	next_attack_item_bonuses.clear()
+	temporary_aegis = 0
+	stored_spell_damage = 0
+	last_player_hit_round = -1
+	was_below_half_health = false
+	seen_enemy_types.clear()
 	movement_remaining = PLAYER_MOVE_ALLOWANCE
 	round_number = 1
 	current_actor_index = 0
@@ -1060,9 +1098,13 @@ func _begin_player_turn() -> void:
 	is_player_turn = true
 	is_resolving_enemy_turn = false
 	is_defending = false
+	armed_reaction = ""
+	if retribution_armed:
+		_release_retribution()
 	selected_action = "move"
 	has_used_action = false
 	movement_remaining = _player_move_allowance()
+	tiles_moved_this_turn = 0
 	if round_number == 1:
 		message = "Initiative: %s\nRound %d: Your turn. Dash up to %d tiles, then choose an action." % [_initiative_roll_summary(), round_number, movement_remaining]
 	else:
@@ -1192,7 +1234,7 @@ func _handle_combat_hotkey(event: InputEvent) -> bool:
 		KEY_1:
 			if not _can_trigger_action_button(move_button):
 				return _reject_combat_hotkey()
-			_dash()
+			_select_action("movement")
 			return true
 		KEY_2:
 			if not _can_trigger_action_button(interact_button):
@@ -1243,6 +1285,8 @@ func _handle_tile_click(tile: Vector2i) -> void:
 			_try_player_attack(tile)
 		"special":
 			_try_player_special(tile)
+		"movement":
+			_try_class_movement(tile)
 		_:
 			_try_player_move_or_interact(tile)
 
@@ -1271,6 +1315,7 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		return
 	if path.size() > 1:
 		facing = path[1] - player_pos
+	tiles_moved_this_turn += maxi(0, path.size() - 1)
 	player_pos = tile
 	if _is_free_roam():
 		movement_remaining = FREE_ROAM_MOVE_ALLOWANCE
@@ -1286,6 +1331,7 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		_complete_floor()
 		return
 	_refresh_ui()
+	_finish_turn_if_exhausted()
 
 func _try_context_interaction(tile: Vector2i) -> bool:
 	if has_used_action and not _is_free_roam():
@@ -1328,13 +1374,16 @@ func _update_hover_context(screen_pos: Vector2) -> void:
 		return
 	if hover_panel.visible and hover_panel.get_global_rect().has_point(screen_pos):
 		return
-	if hover_panel.visible and _hover_travel_rect().has_point(screen_pos):
-		return
 	var tile: Vector2i = _screen_to_grid(_viewport_to_world(screen_pos))
 	if not _is_inside_grid(tile):
 		_hide_hover_context()
 		return
 	var object: Dictionary = _object_at_tile(tile)
+	if not object.is_empty() and tile != hovered_tile:
+		hovered_tile = tile
+		hovered_object = object
+		_sync_hover_context(tile, object)
+		return
 	if object.is_empty():
 		_hide_hover_context()
 		return
@@ -1374,23 +1423,12 @@ func _sync_hover_context(tile: Vector2i, object: Dictionary) -> void:
 func _hover_panel_position_for_tile(tile: Vector2i) -> Vector2:
 	var viewport_size: Vector2 = get_viewport_rect().size
 	var panel_size: Vector2 = Vector2(320, 150)
-	var position: Vector2 = _grid_to_viewport_screen(tile) + Vector2(tile_size + 8, -8)
+	var position: Vector2 = _grid_to_viewport_screen(tile) + Vector2(tile_size, -8)
 	position.x = minf(position.x, viewport_size.x - panel_size.x - 12.0)
 	position.y = minf(position.y, viewport_size.y - panel_size.y - 12.0)
 	position.x = maxf(12.0, position.x)
 	position.y = maxf(12.0, position.y)
 	return position
-
-func _hover_travel_rect() -> Rect2:
-	if hovered_tile == Vector2i(-999, -999) or hover_panel == null:
-		return Rect2()
-	var tile_rect := Rect2(_grid_to_viewport_screen(hovered_tile), Vector2(tile_size, tile_size))
-	var panel_rect := hover_panel.get_global_rect()
-	var left: float = minf(tile_rect.position.x, panel_rect.position.x)
-	var top: float = minf(tile_rect.position.y, panel_rect.position.y)
-	var right: float = maxf(tile_rect.position.x + tile_rect.size.x, panel_rect.position.x + panel_rect.size.x)
-	var bottom: float = maxf(tile_rect.position.y + tile_rect.size.y, panel_rect.position.y + panel_rect.size.y)
-	return Rect2(Vector2(left, top), Vector2(right - left, bottom - top)).grow(18.0)
 
 func _style_context_button(button: Button) -> void:
 	_apply_flat_ui_button(button, 12, Vector2(84, 34))
@@ -1471,8 +1509,11 @@ func _pickup_loot_at(tile: Vector2i) -> void:
 func _apply_loot_item(item: Dictionary) -> void:
 	match String(item["kind"]):
 		"gold":
-			run_state.gold += int(item["amount"])
-			message = "Picked up %d gold." % int(item["amount"])
+			var amount := int(item["amount"])
+			run_state.gold += amount
+			if amount >= 10:
+				_apply_item_trigger("large_gold_pickup", {"amount": amount})
+			message = "Picked up %d gold." % amount
 		"potion":
 			run_state.potions += 1
 			message = "Picked up a potion."
@@ -1594,10 +1635,7 @@ func _try_player_attack(tile: Vector2i) -> void:
 		_refresh_ui()
 		return
 	facing = _direction_to(tile)
-	_play_attack_effect(player_pos, tile)
-	_attack_enemy(enemy_index, _player_gear_damage())
-	if run_state.selected_class_id == "mage":
-		message = "Your spell strikes from across the clearing."
+	_execute_class_basic(tile, enemy_index)
 	message = _append_log_lines(message, _consume_progression_logs())
 	_finish_player_action()
 
@@ -1606,25 +1644,190 @@ func _try_player_special(tile: Vector2i) -> void:
 		message = "Your action is already spent."
 		_refresh_ui()
 		return
-	match run_state.selected_gear.special_id:
-		"charge":
-			_special_charge_at(tile)
-		"sweep":
-			_special_sweep()
-		"brace":
-			braced = true
-			block_stacks = maxi(block_stacks, _gear_block_limit() + _fighter_progression_value("brace_block_bonus"))
-			message = "You brace. The next enemy that closes in gets punished first."
-			_finish_player_action()
-		"force_blast":
-			_special_force_blast_at(tile)
-		"flamethrower":
-			_special_flamethrower_at(tile)
-		"shockwave":
-			_special_shockwave()
+	var action := GameBalance.get_class_action(run_state.selected_class_id, "special")
+	var cost := int(action.get("cost", 2))
+	if run_state.class_resource < cost:
+		message = "%s needs %d %s." % [String(action.get("name", "Special")), cost, run_state.get_class_resource_name()]
+		_refresh_ui()
+		return
+	if _execute_class_special(tile):
+		run_state.spend_class_resource(cost)
+
+func _execute_class_basic(tile: Vector2i, enemy_index: int) -> void:
+	var class_id := run_state.selected_class_id
+	var damage := _player_gear_damage() + (1 if empowered else 0)
+	_play_attack_effect(player_pos, tile)
+	match class_id:
+		"healer":
+			var target_id := int(enemies[enemy_index].get("id", -1))
+			_attack_enemy(enemy_index, maxi(1, damage - 1))
+			var surviving_index := _enemy_index_by_id(target_id)
+			if surviving_index != -1:
+				enemies[surviving_index]["slowed"] = 2 if empowered else 1
+			message = "Binding Light slows its target."
+			run_state.gain_class_resource()
+		"tank":
+			_attack_enemy(enemy_index, damage)
+			var pushed := _push_enemy_from(tile, facing, 1)
+			if pushed:
+				run_state.gain_class_resource()
+			message = "Shield Bash staggers%s." % (" and pushes the target" if pushed else " the target")
+		"phantom":
+			_attack_enemy(enemy_index, damage)
+			var behind := tile + facing
+			var second := _enemy_at(behind)
+			if second != -1:
+				_attack_enemy(second, maxi(1, damage - 1))
+				run_state.gain_class_resource()
+			message = "Pierce slips through armor%s." % (" and the enemy behind" if second != -1 else "")
+			is_hidden = false
+		"summoner":
+			marked_enemy_id = int(enemies[enemy_index].get("id", -1))
+			if _companion_active():
+				_companion_attack_marked()
+			else:
+				_attack_enemy(enemy_index, maxi(1, damage - 1))
+				run_state.gain_class_resource()
+			message = "The target is marked for your bonded wolf."
+		"mage":
+			_attack_enemy(enemy_index, damage)
+			if _distance(player_pos, tile) >= 3:
+				run_state.gain_class_resource()
+			message = "Arcane Missile strikes across the battlefield."
 		_:
-			message = "This gear has no special yet."
-			_refresh_ui()
+			_attack_enemy(enemy_index, damage)
+			run_state.gain_class_resource()
+			message = "Slash builds Momentum."
+	empowered = false
+
+func _execute_class_special(tile: Vector2i) -> bool:
+	match run_state.selected_class_id:
+		"warrior":
+			if tile != player_pos and _distance(player_pos, tile) > 1:
+				message = "Cleave uses your current facing or an adjacent direction."
+				_refresh_ui()
+				return false
+			if tile != player_pos:
+				facing = _direction_to(tile)
+			var side := Vector2i(-facing.y, facing.x)
+			var hit := 0
+			for target in [player_pos + facing, player_pos + facing + side, player_pos + facing - side]:
+				var index := _enemy_at(target)
+				if index != -1:
+					_attack_enemy(index, _player_gear_damage() + (1 if empowered else 0))
+					hit += 1
+			message = "Cleave catches %d target%s." % [hit, "" if hit == 1 else "s"]
+		"mage":
+			var cannon_range := 4 + run_state.get_derived_stat("range") + run_state.get_contextual_item_modifier("range", {"damage_type":"arcane","spell_attack":true,"area_attack":true})
+			if not _is_straight_line_target(tile, cannon_range, true):
+				message = "Arcane Cannon needs a direction within %d tiles." % cannon_range
+				_refresh_ui()
+				return false
+			facing = _direction_to(tile)
+			var hits := 0
+			for step in range(1, cannon_range + 1):
+				var target := player_pos + facing * step
+				if not floor_cells.has(target): break
+				_spawn_tile_effect(AETHER_HIT, target)
+				var index := _enemy_at(target)
+				if index != -1:
+					_attack_enemy(index, _player_gear_damage() + 2 + (1 if empowered else 0))
+					hits += 1
+			message = "Arcane Cannon tears through %d target%s." % [hits, "" if hits == 1 else "s"]
+		"healer":
+			empowered = true
+			message = "Empower charges your next Basic or Special."
+		"tank":
+			retribution_armed = true
+			retribution_stored = 0
+			message = "Retribution stores half of incoming damage."
+		"phantom":
+			var index := _enemy_at(tile)
+			if index == -1 or _distance(player_pos, tile) != 1:
+				message = "Assassinate requires an adjacent enemy."
+				_refresh_ui()
+				return false
+			var enemy: Dictionary = enemies[index]
+			var isolated := _adjacent_enemy_count(tile) <= 1
+			var low := int(enemy["hp"]) * 2 <= int(enemy["max_health"])
+			var bonus := 3 if isolated or low or is_hidden else 0
+			_attack_enemy(index, _player_gear_damage() + 3 + bonus)
+			is_hidden = false
+			message = "Assassinate exploits a fatal opening."
+		"summoner":
+			if not _companion_active():
+				if _distance(player_pos, tile) > 1 or not _is_walkable(tile):
+					message = "Summon the wolf onto an adjacent open tile."
+					_refresh_ui()
+					return false
+				companion = {"pos": tile, "hp": 8, "max_health": 8}
+				message = "Your bonded wolf answers the call."
+			else:
+				if not _companion_attack_marked(true):
+					message = "Mark a living target before ordering Pounce."
+					_refresh_ui()
+					return false
+				message = "The bonded wolf pounces on the marked target."
+		_:
+			return false
+	empowered = false
+	_finish_player_action()
+	return true
+
+func _try_class_movement(tile: Vector2i) -> void:
+	if has_used_action:
+		message = "Your action is already spent."
+		_refresh_ui()
+		return
+	var distance := _distance(player_pos, tile)
+	var movement_origin := player_pos
+	var movement_range_bonus := run_state.get_contextual_item_modifier("range", {"movement_ability":true})
+	match run_state.selected_class_id:
+		"warrior":
+			_special_charge_at(tile)
+			return
+		"mage":
+			if distance < 1 or distance > 3 + movement_range_bonus or not _is_walkable(tile):
+				message = "Blink needs an open destination within three tiles."
+				_refresh_ui(); return
+			player_pos = tile
+			message = "You Blink through intervening terrain."
+		"healer":
+			if distance < 1 or distance > 3 + movement_range_bonus or _find_path(player_pos, tile, 3 + movement_range_bonus).is_empty():
+				message = "Dash needs a reachable tile within three steps."
+				_refresh_ui(); return
+			player_pos = tile
+			if distance >= 2: run_state.heal(2)
+			message = "You Dash and recover vitality."
+		"tank":
+			if distance < 1 or distance > 3 + movement_range_bonus or not _is_walkable(tile):
+				message = "Leap needs an open landing tile within three spaces."
+				_refresh_ui(); return
+			player_pos = tile
+			for i in range(enemies.size() - 1, -1, -1):
+				if _distance(player_pos, enemies[i]["pos"]) == 1:
+					enemies[i]["taunted"] = 1
+					_attack_enemy(i, maxi(1, _player_gear_damage() - 1))
+			message = "You Leap into the fray and taunt nearby foes."
+		"phantom":
+			if distance < 2 or distance > 3 + movement_range_bonus or not _is_walkable(tile):
+				message = "Shadowstep needs an open destination two or three spaces away."
+				_refresh_ui(); return
+			player_pos = tile
+			is_hidden = true
+			message = "You emerge Hidden from a Shadowstep."
+		"summoner":
+			if not _companion_active() or distance < 1 or distance > 5 + movement_range_bonus or not _is_walkable(tile):
+				message = "Mount needs your wolf and an open destination within five spaces."
+				_refresh_ui(); return
+			var old := player_pos
+			player_pos = tile
+			companion["pos"] = old if _is_walkable(old) else _nearest_open_tile(player_pos)
+			message = "You Mount and sprint with your bonded wolf."
+	_resolve_tile()
+	tiles_moved_this_turn += _distance(movement_origin, player_pos)
+	_apply_item_trigger("land_unengaged", {"adjacent_enemies": _adjacent_enemy_count(player_pos)})
+	_finish_player_action()
 
 func _select_action(action: String) -> void:
 	if not is_player_turn:
@@ -1663,15 +1866,13 @@ func _defend() -> void:
 		_refresh_ui()
 		return
 	is_defending = true
-	if run_state.selected_gear != null and run_state.selected_gear.defense_id == "block":
-		block_stacks = maxi(block_stacks, _gear_block_limit() + _fighter_progression_value("brace_block_bonus"))
-	if run_state.selected_gear != null and run_state.selected_gear.special_id == "brace":
-		braced = true
-	message = "You defend and hold your ground."
+	armed_reaction = String(GameBalance.get_class_action(run_state.selected_class_id, "defensive").get("id", ""))
+	message = "%s is armed until your next turn." % String(GameBalance.get_class_action(run_state.selected_class_id, "defensive").get("name", "Defense"))
 	_finish_player_action()
 
 func _finish_player_action() -> void:
 	has_used_action = true
+	selected_action = "move"
 	if _enter_free_roam_if_clear():
 		_open_pending_progression_choice_if_needed()
 		return
@@ -1682,7 +1883,12 @@ func _finish_player_action() -> void:
 		selected_action = "move"
 		_refresh_ui()
 		return
-	_end_player_turn()
+	_refresh_ui()
+	_finish_turn_if_exhausted()
+
+func _finish_turn_if_exhausted() -> void:
+	if is_player_turn and not _is_free_roam() and has_used_action and movement_remaining <= 0:
+		_end_player_turn()
 
 func _end_player_turn() -> void:
 	if not is_player_turn:
@@ -1842,8 +2048,9 @@ func _special_flamethrower_at(tile: Vector2i) -> void:
 func _is_valid_basic_attack_target(tile: Vector2i, enemy_index: int) -> bool:
 	if enemy_index == -1:
 		return false
-	if run_state != null and run_state.selected_class_id == "mage":
-		return _can_ranged_attack(tile, enemy_index)
+	if run_state != null and run_state.selected_class_id in ["mage", "healer", "summoner"]:
+		var range_limit := (4 if run_state.selected_class_id == "mage" else 3) + run_state.get_derived_stat("range")
+		return _line_distance(player_pos, tile) <= range_limit and _has_clear_line(player_pos, tile, true)
 	return _distance(player_pos, tile) == 1
 
 func _is_straight_line_target(tile: Vector2i, max_range: int, allow_diagonal: bool = false) -> bool:
@@ -1945,32 +2152,44 @@ func _valid_attack_tiles() -> Array[Vector2i]:
 
 func _valid_special_tiles() -> Array[Vector2i]:
 	var tiles: Array[Vector2i] = []
-	if run_state == null or run_state.selected_gear == null:
+	if run_state == null:
 		return tiles
-	match run_state.selected_gear.special_id:
-		"sweep", "brace", "shockwave":
+	match run_state.selected_class_id:
+		"warrior", "healer", "tank":
 			tiles.append(player_pos)
-		"charge", "flamethrower":
-			var directions: Array[Vector2i] = _cardinal_directions()
-			var max_range: int = 3 + _fighter_progression_value("charge_range_bonus")
-			if run_state.selected_gear.special_id == "flamethrower":
-				directions = _eight_directions()
-				max_range = 3 + _mage_progression_value("flamethrower_range_bonus")
-			for direction in directions:
-				for step in range(1, max_range + 1):
-					var tile: Vector2i = player_pos + direction * step
-					if floor_cells.has(tile):
-						tiles.append(tile)
-		"force_blast":
-			var blast_range: int = 4 + _mage_progression_value("force_blast_range_bonus")
+		"mage":
+			var cannon_range := 4 + run_state.get_derived_stat("range") + run_state.get_contextual_item_modifier("range", {"damage_type":"arcane","spell_attack":true,"area_attack":true})
+			for direction in _eight_directions():
+				for step in range(1, cannon_range + 1):
+					var tile := player_pos + direction * step
+					if floor_cells.has(tile): tiles.append(tile)
+		"phantom":
 			for enemy in enemies:
 				var tile: Vector2i = enemy["pos"]
-				if _is_straight_line_target(tile, blast_range, true) and _has_clear_line(player_pos, tile, true):
-					tiles.append(tile)
-			for prop in props:
-				var tile: Vector2i = prop["pos"]
-				if _is_destructible_prop_at(tile) and _is_straight_line_target(tile, blast_range, true) and _has_clear_line(player_pos, tile, true):
-					tiles.append(tile)
+				if _distance(player_pos, tile) == 1: tiles.append(tile)
+		"summoner":
+			if _companion_active():
+				var index := _enemy_index_by_id(marked_enemy_id)
+				if index != -1: tiles.append(Vector2i(enemies[index]["pos"]))
+			else:
+				for direction in _eight_directions():
+					var tile := player_pos + direction
+					if _is_walkable(tile): tiles.append(tile)
+	return tiles
+
+func _valid_class_movement_tiles() -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	var max_range := 3
+	if run_state.selected_class_id == "summoner": max_range = 5
+	max_range += run_state.get_contextual_item_modifier("range", {"movement_ability":true})
+	for tile in floor_cells.keys():
+		var target := Vector2i(tile)
+		if target == player_pos or not _is_walkable(target): continue
+		var distance := _distance(player_pos, target)
+		if distance > max_range: continue
+		if run_state.selected_class_id == "phantom" and distance < 2: continue
+		if run_state.selected_class_id in ["mage", "tank", "phantom"] or not _find_path(player_pos, target, max_range).is_empty():
+			tiles.append(target)
 	return tiles
 
 func _add_highlight_markers() -> void:
@@ -1985,6 +2204,9 @@ func _add_highlight_markers() -> void:
 		"special":
 			tiles = _valid_special_tiles()
 			color = Color(0.48, 0.28, 0.95, 0.46)
+		"movement":
+			tiles = _valid_class_movement_tiles()
+			color = Color(0.18, 0.70, 0.82, 0.44)
 		_:
 			if _is_free_roam():
 				return
@@ -2066,9 +2288,9 @@ func _can_use_player_controls() -> bool:
 func _player_damage_bonus() -> int:
 	if run_state == null:
 		return 0
-	if run_state.selected_class_id == "mage":
-		return run_state.get_derived_stat("spell_power")
-	return run_state.get_derived_stat("attack_bonus")
+	if run_state.selected_class_id in ["mage", "healer", "summoner"]:
+		return run_state.get_derived_stat("spell_potency")
+	return run_state.get_derived_stat("attack_power")
 
 func _player_gear_damage() -> int:
 	if run_state == null or run_state.selected_gear == null:
@@ -2096,7 +2318,7 @@ func _mage_progression_value(flag_id: String) -> int:
 	return run_state.get_progression_flag_value(flag_id)
 
 func _fighter_progression_value(flag_id: String) -> int:
-	if run_state == null or run_state.selected_class_id != "fighter":
+	if run_state == null or run_state.selected_class_id != "warrior":
 		return 0
 	return run_state.get_progression_flag_value(flag_id)
 
@@ -2118,6 +2340,7 @@ func _award_floor_clear_xp() -> Array[String]:
 	floor_clear_xp_awarded = true
 	var base_reward: int = int(GameBalance.get_combat_value(["xp", "floor_clear"], 40))
 	var reward: int = run_state.apply_reward_bonus(base_reward, "xp")
+	_apply_item_trigger("floor_clear")
 	return run_state.gain_xp(reward, "%s %d cleared" % [dungeon_floor_label, _current_floor()])
 
 func _consume_progression_logs() -> Array[String]:
@@ -2147,7 +2370,8 @@ func _set_combat_buttons_enabled() -> void:
 		return
 	move_button.disabled = has_used_action
 	interact_button.disabled = has_used_action
-	special_button.disabled = has_used_action
+	var special_cost := int(GameBalance.get_class_action(run_state.selected_class_id, "special").get("cost", 2)) if run_state != null else 2
+	special_button.disabled = has_used_action or run_state == null or run_state.class_resource < special_cost
 	potion_button.disabled = has_used_action or run_state == null or run_state.potions <= 0
 	defend_button.disabled = has_used_action
 	end_turn_button.disabled = false
@@ -2208,24 +2432,115 @@ func _drink_potion() -> void:
 	else:
 		run_state.potions -= 1
 		var heal_amount: int = int(GameBalance.get_combat_value(["healing", "potion_base"], 5)) + run_state.get_derived_stat("potion_heal_bonus")
+		var health_before := run_state.current_health
 		run_state.heal(heal_amount)
+		_apply_item_trigger("potion")
+		if health_before + heal_amount > run_state.max_health:
+			_apply_item_trigger("overheal", {"amount": health_before + heal_amount - run_state.max_health})
 		message = "You drink a potion and recover %d health." % heal_amount
 		_finish_player_action()
 	_refresh_ui()
 
-func _attack_enemy(index: int, damage: int) -> void:
+func _attack_enemy(index: int, damage: int, damage_type: String = "") -> void:
+	if index < 0 or index >= enemies.size():
+		return
 	var enemy: Dictionary = enemies[index]
-	enemy["hp"] -= damage
+	var enemy_type := _enemy_type(enemy)
+	var target_id := int(enemy.get("id", -1))
+	var resolved_type := _player_damage_type() if damage_type.is_empty() else damage_type
+	var spell_attack := run_state.selected_class_id in ["mage", "healer", "summoner"]
+	var context := {
+		"attack_index": player_attack_count,
+		"spell_index_floor": player_spell_count_floor,
+		"damage_type": resolved_type,
+		"spell_attack": spell_attack,
+		"area_attack": selected_action == "special",
+		"distance": _distance(player_pos, Vector2i(enemy["pos"])),
+		"moved": tiles_moved_this_turn > 0,
+		"tiles_moved": tiles_moved_this_turn,
+		"isolated_target": _adjacent_enemy_count(Vector2i(enemy["pos"])) <= 1,
+		"elite_target": bool(enemy.get("elite", false)) or bool(enemy.get("boss", false)),
+		"unrevealed": is_hidden or player_attack_count == 0,
+		"repeated_target": last_target_id == target_id,
+		"studied_target": studied_target_ids.has(target_id),
+		"first_enemy_type": not seen_enemy_types.has(enemy_type),
+		"adjacent_enemies": _adjacent_enemy_count(player_pos),
+		"range_bonus": run_state.get_derived_stat("range"),
+	}
+	var contextual_power_stat := "spell_potency" if spell_attack else "attack_power"
+	damage += run_state.get_contextual_item_modifier(contextual_power_stat, context)
+	damage += int(next_attack_item_bonuses.get(contextual_power_stat, 0))
+	if spell_attack:
+		damage += stored_spell_damage
+		stored_spell_damage = 0
+	var defenses := {
+		"armor_class": int(GameBalance.get_enemy_combat_stat(enemy_type, "armor_class", 10)),
+		"evasion": int(GameBalance.get_enemy_combat_stat(enemy_type, "evasion", 9)),
+		"threshold": maxi(0, int(GameBalance.get_enemy_combat_stat(enemy_type, "threshold", 0)) - int(enemy.get("threshold_shred", 0))),
+		"aegis_all": int(GameBalance.get_enemy_combat_stat(enemy_type, "aegis_all", 0)),
+	}
+	defenses["aegis_%s" % resolved_type] = int(GameBalance.get_enemy_combat_stat(enemy_type, "aegis_%s" % resolved_type, 0))
+	var roll := rng.randi_range(1, 20)
+	var accuracy := run_state.get_derived_stat("accuracy") + run_state.get_contextual_item_modifier("accuracy", context) + int(next_attack_item_bonuses.get("accuracy", 0))
+	var penetration := run_state.get_derived_stat("penetration") + run_state.get_contextual_item_modifier("penetration", context) + int(next_attack_item_bonuses.get("penetration", 0))
+	next_attack_item_bonuses.clear()
+	var result := CombatResolver.resolve_attack(roll, accuracy, damage, penetration, resolved_type, defenses)
+	if not bool(result["hit"]) and int(result["evasion"]) - int(result["attack_total"]) <= 2:
+		for effect in run_state.get_active_item_effects("near_miss"):
+			result = CombatResolver.resolve_attack(roll, accuracy + int(effect.get("accuracy", 0)), damage, penetration, resolved_type, defenses)
+	if not bool(result["hit"]) and _can_use_limited_item_effect("miss", "combat"):
+		for effect in run_state.get_active_item_effects("miss"):
+			if bool(effect.get("reroll", false)):
+				result = CombatResolver.resolve_attack(rng.randi_range(1, 20), accuracy, damage, penetration, resolved_type, defenses)
+				_mark_item_effect_used(effect, "combat")
+				break
+	player_attack_count += 1
+	if spell_attack: player_spell_count_floor += 1
+	last_target_id = target_id
+	if not bool(result["hit"]):
+		if roll == 1:
+			for effect in run_state.get_active_item_effects("critical_miss"):
+				var cost := int(effect.get("spend_gold_reroll", 0))
+				if cost > 0 and run_state.gold >= cost:
+					run_state.gold -= cost
+					result = CombatResolver.resolve_attack(rng.randi_range(1, 20), accuracy, damage, penetration, resolved_type, defenses)
+					break
+	if not bool(result["hit"]):
+		message = "%s avoids the attack (%d vs Evasion %d)." % [_enemy_display_name(enemy), int(result["attack_total"]), int(result["evasion"])]
+		return
+	var dealt := int(result["damage"])
+	if dealt <= 0:
+		_apply_item_trigger("absorbed_attack", {"enemy_index": index, "damage_type": resolved_type, "prevented": damage})
+		if bool(result.get("blocked_by_threshold", false)):
+			_apply_item_trigger("threshold_block", {"enemy_index": index, "damage_type": resolved_type})
+		message = "%s's defenses absorb the attack." % _enemy_display_name(enemy)
+		return
+	if last_player_hit_round != round_number:
+		last_player_hit_round = round_number
+		for effect in run_state.get_active_item_effects("first_hit_round"):
+			var bonus_type := String(effect.get("damage_type", resolved_type))
+			var bonus_defenses := defenses.duplicate()
+			bonus_defenses["aegis_%s" % bonus_type] = int(GameBalance.get_enemy_combat_stat(enemy_type, "aegis_%s" % bonus_type, 0))
+			var bonus_result := CombatResolver.resolve_attack(roll, accuracy, int(effect.get("bonus_damage", 0)), penetration, bonus_type, bonus_defenses)
+			dealt += int(bonus_result.get("damage", 0))
+	studied_target_ids[target_id] = true
+	seen_enemy_types[enemy_type] = true
+	if roll == 20:
+		_apply_item_trigger("critical_hit", {"enemy_index": index})
+	if not spell_attack:
+		_apply_item_trigger("martial_hit", {"enemy_index": index})
+	enemy["hp"] -= dealt
 	if enemy["hp"] <= 0:
 		var reward: int = _enemy_gold_reward(enemy)
 		var xp_reward: int = _enemy_xp_reward(enemy)
 		message = "%s falls. You gain %d gold." % [_enemy_display_name(enemy), reward]
 		run_state.gold += reward
+		_apply_item_trigger("kill_at_full_health" if run_state.current_health == run_state.max_health else "kill", {"enemy_index": index})
 		progression_log_buffer.append_array(run_state.gain_xp(xp_reward, "%s defeated" % _enemy_display_name(enemy)))
 		enemies.remove_at(index)
 	else:
 		enemies[index] = enemy
-		message = "Hit %s for %d. It has %d health left." % [_enemy_display_name(enemy), damage, enemy["hp"]]
+		message = "Hit %s for %d %s damage. It has %d health left." % [_enemy_display_name(enemy), dealt, resolved_type, enemy["hp"]]
 
 func _hit_prop(index: int) -> void:
 	if index < 0 or index >= props.size():
@@ -2369,7 +2684,11 @@ func _enemy_initiative_modifier(enemy: Dictionary) -> int:
 	return int(GameBalance.get_enemy_value(_enemy_type(enemy), "initiative_modifier", 0))
 
 func _enemy_movement(enemy: Dictionary) -> int:
-	return int(GameBalance.get_enemy_value(_enemy_type(enemy), "movement", ENEMY_MOVE_ALLOWANCE))
+	var movement := int(GameBalance.get_enemy_value(_enemy_type(enemy), "movement", ENEMY_MOVE_ALLOWANCE))
+	if int(enemy.get("slowed", 0)) > 0:
+		movement = maxi(1, movement - 1)
+		enemy["slowed"] = int(enemy["slowed"]) - 1
+	return movement
 
 func _enemy_can_ranged_cast(index: int) -> bool:
 	if index < 0 or index >= enemies.size():
@@ -2386,13 +2705,19 @@ func _enemy_can_ranged_cast(index: int) -> bool:
 
 func _enemy_ranged_cast(index: int) -> void:
 	var enemy: Dictionary = enemies[index]
-	var damage: int = int(enemy["damage"])
-	if is_defending:
-		damage = maxi(0, damage - 1 - (run_state.get_derived_stat("defense") if run_state != null else 0))
+	var result := _resolve_enemy_attack_roll(enemy)
+	var damage := int(result["damage"])
+	if bool(result["reaction_eligible"]):
+		damage = _resolve_class_reaction(index, damage, true)
+	if not bool(result["hit"]):
+		message = "%s's grave-light misses (%d vs Evasion %d)." % [_enemy_display_name(enemy), int(result["attack_total"]), int(result["evasion"])]
+		return
 	if damage > 0:
 		_apply_damage(damage)
 	if _enemy_type(enemy) == "crypt_boss" and rng.randi_range(1, 4) == 1:
 		movement_remaining = 0
+		var push_direction := Vector2i(_sign_int(player_pos.x - Vector2i(enemy["pos"]).x), _sign_int(player_pos.y - Vector2i(enemy["pos"]).y))
+		_apply_forced_player_move(push_direction, 2)
 	message = "%s hurls grave-light for %d damage." % [_enemy_display_name(enemy), damage]
 
 func _enemy_sprite_key(enemy: Dictionary) -> String:
@@ -2461,33 +2786,220 @@ func _enemy_attack(index: int) -> void:
 	if index < 0 or index >= enemies.size():
 		return
 	var enemy: Dictionary = enemies[index]
-	var damage: int = int(enemy["damage"])
-	var attack_direction: Vector2i = Vector2i(_sign_int(enemy["pos"].x - player_pos.x), _sign_int(enemy["pos"].y - player_pos.y))
-	var defense_bonus: int = run_state.get_derived_stat("defense") if run_state != null else 0
-	if is_defending:
-		damage = maxi(0, damage - 1 - defense_bonus)
-		message = "Your defensive stance softens the hit."
+	var result := _resolve_enemy_attack_roll(enemy)
+	var damage := int(result["damage"])
+	if bool(result["reaction_eligible"]):
+		damage = _resolve_class_reaction(index, damage, false)
+	if not bool(result["hit"]):
+		message = "%s misses (%d vs Evasion %d)." % [_enemy_display_name(enemy), int(result["attack_total"]), int(result["evasion"])]
+		return
 	if block_stacks > 0:
 		block_stacks -= 1
 		damage = maxi(0, damage - 1)
 		message = "Your shield absorbs part of the blow."
 	if damage > 0:
 		_apply_damage(damage)
-	if run_state != null and run_state.selected_gear != null:
-		match run_state.selected_gear.defense_id:
-			"retaliate":
-				var retaliate_damage: int = 1 + _mage_progression_value("fire_shield_retaliate_bonus")
-				_attack_enemy(index, retaliate_damage)
-				message = "Fire Shield lashes back for %d damage." % retaliate_damage
-				message = _append_log_lines(message, _consume_progression_logs())
-			"flash_step":
-				if _flash_step_back(attack_direction):
-					message = "Flash Step snaps you backward from the blow."
+		if retribution_armed:
+			retribution_stored += int(ceil(float(damage) * 0.5))
+
+func _resolve_enemy_attack_roll(enemy: Dictionary) -> Dictionary:
+	var enemy_type := _enemy_type(enemy)
+	var accuracy := int(GameBalance.get_enemy_combat_stat(enemy_type, "accuracy", 2))
+	var penetration := int(GameBalance.get_enemy_combat_stat(enemy_type, "penetration", 0))
+	var damage_type := String(GameBalance.get_enemy_combat_stat(enemy_type, "damage_type", "physical"))
+	return CombatResolver.resolve_attack(rng.randi_range(1, 20), accuracy, int(enemy["damage"]), penetration, damage_type, _player_defenses())
+
+func _player_defenses() -> Dictionary:
+	var stats: Dictionary = {}
+	var context := {
+		"damage_type": "",
+		"incoming_hit_index": incoming_hit_count,
+		"moved": tiles_moved_this_turn > 0,
+		"tiles_moved": tiles_moved_this_turn,
+		"unrevealed": is_hidden or player_attack_count == 0,
+		"adjacent_enemies": _adjacent_enemy_count(player_pos),
+	}
+	for key in ["armor_class", "evasion", "threshold", "aegis_all"]:
+		stats[key] = run_state.get_derived_stat(key) + run_state.get_contextual_item_modifier(key, context)
+	for damage_type in CombatResolver.DAMAGE_TYPES:
+		var typed_context := context.duplicate()
+		typed_context["damage_type"] = damage_type
+		stats["aegis_%s" % damage_type] = run_state.get_derived_stat("aegis_%s" % damage_type) + run_state.get_contextual_item_modifier("aegis_%s" % damage_type, typed_context) + temporary_aegis
+	return CombatResolver.defense_snapshot(stats)
+
+func _player_damage_type() -> String:
+	match run_state.selected_class_id:
+		"mage": return "arcane"
+		"healer": return "radiant"
+		"phantom": return "necrotic"
+	return "physical"
 
 func _apply_damage(amount: int) -> void:
+	incoming_hit_count += 1
+	var was_low := run_state.current_health * 2 <= run_state.max_health
+	if amount >= run_state.current_health:
+		for effect in run_state.get_active_item_effects("lethal_damage"):
+			var limit := String(effect.get("limit", "floor"))
+			if not _can_use_item_effect(effect, limit):
+				continue
+			run_state.current_health = maxi(1, int(effect.get("survive", 1)))
+			_mark_item_effect_used(effect, limit)
+			var retaliation := int(effect.get("retaliate", 0))
+			for i in range(enemies.size() - 1, -1, -1):
+				if _distance(player_pos, Vector2i(enemies[i]["pos"])) == 1:
+					_attack_enemy(i, retaliation, String(effect.get("damage_type", "fire")))
+			message = "%s prevents a lethal blow." % String(effect.get("source_item_name", "A relic"))
+			return
 	run_state.hurt(amount)
+	temporary_aegis = 0
+	var now_low := run_state.current_health * 2 <= run_state.max_health
+	if not was_low and now_low:
+		_apply_item_trigger("cross_low_health")
 	if run_state.current_health <= 0:
 		message = "You fall among the crypt stones." if dungeon_id == "crypt" else "You fall beneath the trees."
+
+func _apply_item_trigger(trigger: String, context: Dictionary = {}) -> void:
+	for effect in run_state.get_active_item_effects(trigger):
+		if effect.has("damage_type") and context.has("damage_type") and String(effect["damage_type"]) != String(context["damage_type"]):
+			continue
+		if effect.has("minimum") and int(context.get("amount", 0)) < int(effect["minimum"]):
+			continue
+		var limit := String(effect.get("limit", ""))
+		if not limit.is_empty() and not _can_use_item_effect(effect, limit):
+			continue
+		if effect.has("heal"):
+			run_state.heal(int(effect["heal"]))
+		if effect.has("resource"):
+			run_state.gain_class_resource(int(effect["resource"]))
+		if effect.has("gold"):
+			run_state.gold += int(effect["gold"])
+		if effect.has("xp"):
+			progression_log_buffer.append_array(run_state.gain_xp(int(effect["xp"]), String(effect.get("source_item_name", "item effect"))))
+		if effect.has("temporary_aegis"):
+			temporary_aegis = maxi(temporary_aegis, int(effect["temporary_aegis"]))
+		if effect.has("temporary_aegis_cap"):
+			temporary_aegis = maxi(temporary_aegis, mini(int(effect["temporary_aegis_cap"]), int(context.get("amount", 0))))
+		if effect.has("next_attack") and effect["next_attack"] is Dictionary:
+			for stat_id in effect["next_attack"].keys():
+				next_attack_item_bonuses[stat_id] = int(next_attack_item_bonuses.get(stat_id, 0)) + int(effect["next_attack"][stat_id])
+		if effect.has("store_prevented_spell_damage"):
+			stored_spell_damage += int(floor(float(context.get("prevented", 0)) * float(effect["store_prevented_spell_damage"])))
+		if effect.has("gold_per_unopened_secret"):
+			var unopened := 0
+			if _has_closed_chest(): unopened += 1
+			if secret.has("found") and not bool(secret.get("found", true)): unopened += 1
+			run_state.gold += unopened * int(effect["gold_per_unopened_secret"])
+		if String(effect.get("cleanse", "")) == "slow":
+			movement_remaining = maxi(movement_remaining, _player_move_allowance())
+		var enemy_index := int(context.get("enemy_index", -1))
+		if effect.has("retaliate") and enemy_index >= 0 and enemy_index < enemies.size():
+			_attack_enemy(enemy_index, int(effect["retaliate"]), String(effect.get("damage_type", "physical")))
+		if effect.has("shred_threshold") and enemy_index >= 0 and enemy_index < enemies.size():
+			enemies[enemy_index]["threshold_shred"] = int(enemies[enemy_index].get("threshold_shred", 0)) + int(effect["shred_threshold"])
+		if not limit.is_empty():
+			_mark_item_effect_used(effect, limit)
+
+func _apply_forced_player_move(direction: Vector2i, distance: int) -> int:
+	var reduction := 0
+	for effect in run_state.get_active_item_effects("forced_move"):
+		reduction += int(effect.get("reduce_tiles", 0))
+	var remaining := maxi(0, distance - reduction)
+	var moved := 0
+	for step in range(remaining):
+		var target := player_pos + direction
+		if not _is_walkable(target):
+			break
+		player_pos = target
+		moved += 1
+	return moved
+
+func _item_effect_key(effect: Dictionary, limit: String) -> String:
+	return "%s:%s:%s:%d" % [limit, String(effect.get("source_item_id", "")), String(effect.get("trigger", effect.get("condition", ""))), round_number if limit == "turn" else 0]
+
+func _can_use_item_effect(effect: Dictionary, limit: String) -> bool:
+	return not item_limits_used.has(_item_effect_key(effect, limit))
+
+func _can_use_limited_item_effect(trigger: String, limit: String) -> bool:
+	for effect in run_state.get_active_item_effects(trigger):
+		if _can_use_item_effect(effect, limit):
+			return true
+	return false
+
+func _mark_item_effect_used(effect: Dictionary, limit: String) -> void:
+	item_limits_used[_item_effect_key(effect, limit)] = true
+
+func _resolve_class_reaction(enemy_index: int, damage: int, ranged: bool) -> int:
+	if armed_reaction.is_empty():
+		return damage
+	var reaction := armed_reaction
+	armed_reaction = ""
+	is_defending = false
+	for effect in run_state.get_active_item_effects("reaction"):
+		if bool(effect.get("double_aegis", false)):
+			damage = maxi(0, damage - run_state.get_derived_stat("aegis_all"))
+	_apply_item_trigger("reaction", {"enemy_index": enemy_index})
+	if not ranged:
+		_apply_item_trigger("melee_reaction", {"enemy_index": enemy_index})
+	match reaction:
+		"parry":
+			if not ranged and enemy_index >= 0 and enemy_index < enemies.size():
+				_attack_enemy(enemy_index, _player_gear_damage())
+				run_state.gain_class_resource()
+				message = "Parry negates the blow and counters."
+				return 0
+			return maxi(0, damage - 1)
+		"repel":
+			if not ranged and enemy_index >= 0 and enemy_index < enemies.size():
+				var enemy_pos: Vector2i = enemies[enemy_index]["pos"]
+				_push_enemy_from(enemy_pos, Vector2i(_sign_int(enemy_pos.x - player_pos.x), _sign_int(enemy_pos.y - player_pos.y)), 2)
+			message = "Repel throws the threat away."
+			return maxi(0, damage - 2)
+		"recover":
+			var lost := damage
+			call_deferred("_recover_recent_damage", int(ceil(float(lost) * 0.5)))
+			message = "Recover catches the wound before it settles."
+			return damage
+		"guard":
+			run_state.gain_class_resource()
+			message = "Guard absorbs the worst of the hit."
+			return maxi(0, damage - 2 - run_state.get_derived_stat("defense"))
+		"evade":
+			_evade_from_enemy(enemy_index)
+			run_state.gain_class_resource()
+			message = "Evade leaves the attack cutting empty air."
+			return 0
+		"cover":
+			if _companion_active():
+				var absorbed := _damage_companion(damage)
+				message = "Your bonded wolf intercepts the hit."
+				return maxi(0, damage - absorbed)
+	return damage
+
+func _recover_recent_damage(amount: int) -> void:
+	if run_state != null and run_state.current_health > 0:
+		run_state.heal(amount)
+		_refresh_ui()
+
+func _evade_from_enemy(enemy_index: int) -> void:
+	if enemy_index < 0 or enemy_index >= enemies.size(): return
+	var origin: Vector2i = enemies[enemy_index]["pos"]
+	var best := player_pos
+	var best_distance := _distance(best, origin)
+	for direction in _eight_directions():
+		var tile := player_pos + direction
+		if _is_walkable(tile) and _distance(tile, origin) > best_distance:
+			best = tile
+			best_distance = _distance(tile, origin)
+	player_pos = best
+
+func _release_retribution() -> void:
+	retribution_armed = false
+	if retribution_stored <= 0: return
+	for i in range(enemies.size() - 1, -1, -1):
+		if _distance(player_pos, enemies[i]["pos"]) == 1:
+			_attack_enemy(i, retribution_stored)
+	message = "Retribution releases %d stored damage." % retribution_stored
+	retribution_stored = 0
 
 func _complete_floor() -> void:
 	if exit_door != null:
@@ -2515,18 +3027,23 @@ func _build_board_tiles() -> void:
 	ground_layer.scale = Vector2.ONE
 	ground_layer.clear()
 	_clear_children_now(ground_layer)
-	# Art handoff: this paints ambient ground across the full dungeon rectangle.
-	# Walkability stays in floor_cells; border decorations communicate playable paths.
-	# Non-walkable cells get a fog overlay below decor to separate overgrowth from path.
-	for y in range(grid_h):
-		for x in range(grid_w):
-			var tile := Vector2i(x, y)
-			if dungeon_id == "crypt":
-				_add_crypt_stone_sprite(tile)
-			else:
-				_add_grass_sprite(tile)
-			if not floor_cells.has(tile):
-				_add_fog_sprite(tile)
+	var backdrop := Polygon2D.new()
+	backdrop.name = "DungeonBlackBackdrop"
+	backdrop.polygon = PackedVector2Array([
+		Vector2(-100000, -100000),
+		Vector2(100000, -100000),
+		Vector2(100000, 100000),
+		Vector2(-100000, 100000),
+	])
+	backdrop.color = Color.BLACK
+	backdrop.z_index = -1
+	ground_layer.add_child(backdrop)
+	for tile_value: Variant in floor_cells.keys():
+		var tile: Vector2i = tile_value
+		if dungeon_id == "crypt":
+			_add_crypt_stone_sprite(tile)
+		else:
+			_add_grass_sprite(tile)
 
 func _add_crypt_stone_sprite(tile: Vector2i) -> void:
 	var sprite := Sprite2D.new()
@@ -2539,7 +3056,7 @@ func _add_crypt_stone_sprite(tile: Vector2i) -> void:
 	sprite.centered = false
 	sprite.position = Vector2(tile) * tile_size
 	sprite.scale = Vector2(float(tile_size) / float(ATLAS_TILE_SIZE), float(tile_size) / float(ATLAS_TILE_SIZE))
-	sprite.modulate = Color(0.58, 0.60, 0.64) if floor_cells.has(tile) else Color(0.28, 0.29, 0.33)
+	sprite.modulate = Color(0.58, 0.60, 0.64)
 	sprite.z_index = 0
 	ground_layer.add_child(sprite)
 
@@ -2554,16 +3071,6 @@ func _add_grass_sprite(tile: Vector2i) -> void:
 	sprite.z_index = 0
 	ground_layer.add_child(sprite)
 
-func _add_fog_sprite(tile: Vector2i) -> void:
-	var texture: Texture2D = _fog_texture_for(tile)
-	var sprite := Sprite2D.new()
-	sprite.name = "Fog_%d_%d" % [tile.x, tile.y]
-	sprite.texture = texture
-	sprite.centered = false
-	sprite.position = Vector2(tile) * tile_size
-	sprite.z_index = 1
-	ground_layer.add_child(sprite)
-
 func _grass_texture_for(tile: Vector2i) -> Texture2D:
 	var index: int = abs(tile.x * 7 + tile.y * 11) % 2
 	match index:
@@ -2572,23 +3079,6 @@ func _grass_texture_for(tile: Vector2i) -> Texture2D:
 		1:
 			return GRASS_TILE_B
 	return GRASS_TILE_C
-
-func _fog_texture_for(tile: Vector2i) -> Texture2D:
-	if fog_tile_textures.is_empty():
-		_build_fog_tile_textures()
-	var index: int = abs(tile.x * 13 + tile.y * 17) % fog_tile_textures.size()
-	return fog_tile_textures[index]
-
-func _build_fog_tile_textures() -> void:
-	for variant in range(3):
-		var image: Image = Image.create(tile_size, tile_size, false, Image.FORMAT_RGBA8)
-		for y in range(tile_size):
-			for x in range(tile_size):
-				var wave: float = sin(float(x + variant * 17) * 0.17) + cos(float(y + variant * 23) * 0.13)
-				var drift: float = sin(float(x + y + variant * 31) * 0.07)
-				var alpha: float = 0.36 + wave * 0.035 + drift * 0.025
-				image.set_pixel(x, y, Color(0.03, 0.04, 0.04, clampf(alpha, 0.28, 0.46)))
-		fog_tile_textures.append(ImageTexture.create_from_image(image))
 
 func _build_decorations() -> void:
 	if decorations_root == null:
@@ -2676,8 +3166,9 @@ func _apply_decoration_sprite(sprite: Sprite2D, kind: String) -> void:
 			sprite.offset = Vector2(0, 7)
 
 func _configure_player_sprite() -> void:
-	var is_mage: bool = run_state != null and run_state.selected_class_id == "mage"
-	player_token.sprite_texture = FIRE_MAGE_SHEET if is_mage else PLAYER_IDLE_DOWN
+	var class_data := GameBalance.get_base_class(run_state.selected_class_id) if run_state != null else {}
+	var sprite_path := String(class_data.get("sprite", ""))
+	player_token.sprite_texture = load(sprite_path) if not sprite_path.is_empty() else PLAYER_IDLE_DOWN
 	player_token.sprite_region_enabled = true
 	player_token.sprite_region = Rect2(0, 0, 96, 80)
 	player_token.sprite_scale = Vector2(0.58, 0.58)
@@ -2692,7 +3183,12 @@ func _refresh_ui() -> void:
 	health_bar.value = run_state.current_health
 	health_value_label.text = "%d/%d" % [run_state.current_health, run_state.max_health]
 	title_label.text = "%s - %s %d/%d" % [dungeon_title, dungeon_floor_label, _current_floor(), _max_floors()]
-	action_label.text = "%s | %s" % [_turn_status(), _layout_display_name()]
+	var resource_text := "%s %d/%d" % [run_state.get_class_resource_name(), run_state.class_resource, run_state.get_class_resource_max()]
+	var states: Array[String] = []
+	if not armed_reaction.is_empty(): states.append("Reaction: %s" % armed_reaction.capitalize())
+	if empowered: states.append("Empowered")
+	if is_hidden: states.append("Hidden")
+	action_label.text = "%s | %s | %s%s" % [_turn_status(), _layout_display_name(), resource_text, " | " + ", ".join(states) if not states.is_empty() else ""]
 	hud_label.text = ""
 	hud_label.visible = false
 	log_label.text = message
@@ -2766,13 +3262,40 @@ func _make_initiative_token(actor: Dictionary, active: bool) -> PanelContainer:
 	return token
 
 func _sync_action_panel() -> void:
+	var actions: Dictionary = GameBalance.get_base_class(run_state.selected_class_id).get("actions", {}) if run_state != null else {}
+	if not actions.is_empty():
+		move_button.text = "1 %s" % _class_action_name(actions, "movement")
+		interact_button.text = "2 %s" % _class_action_name(actions, "basic")
+		var special_data: Dictionary = actions.get("special", {})
+		special_button.text = "3 %s (%d)" % [String(special_data.get("name", "Special")), int(special_data.get("cost", 2))]
+		defend_button.text = "5 %s" % _class_action_name(actions, "defensive")
+		move_button.tooltip_text = _class_action_tooltip(actions, "movement", "1")
+		interact_button.tooltip_text = _class_action_tooltip(actions, "basic", "2")
+		special_button.tooltip_text = _class_action_tooltip(actions, "special", "3")
+		defend_button.tooltip_text = _class_action_tooltip(actions, "defensive", "5")
+	potion_button.tooltip_text = "Drink a potion to restore health. Uses your action. (4)"
+	end_turn_button.tooltip_text = "End your turn and surrender any unused action or movement. (Enter)"
 	_set_combat_buttons_enabled()
-	_set_button_selected(move_button, selected_action == "move")
+	_set_button_selected(move_button, selected_action == "movement")
 	_set_button_selected(interact_button, selected_action == "attack")
 	_set_button_selected(special_button, selected_action == "special")
 	_set_button_selected(potion_button, false)
-	_set_button_selected(defend_button, is_defending)
+	_set_button_selected(defend_button, not armed_reaction.is_empty())
 	_set_button_selected(end_turn_button, false)
+
+func _class_action_name(actions: Dictionary, slot: String) -> String:
+	var value: Variant = actions.get(slot, {})
+	return String(value.get("name", slot.capitalize())) if value is Dictionary else slot.capitalize()
+
+func _class_action_tooltip(actions: Dictionary, slot: String, hotkey: String) -> String:
+	var value: Variant = actions.get(slot, {})
+	if not (value is Dictionary):
+		return "%s (%s)" % [slot.capitalize(), hotkey]
+	var action: Dictionary = value
+	var description: String = String(action.get("description", action.get("name", slot.capitalize())))
+	if slot == "special":
+		return "%s Costs %d %s. (%s)" % [description, int(action.get("cost", 2)), run_state.get_class_resource_name(), hotkey]
+	return "%s (%s)" % [description, hotkey]
 
 func _is_blocking_modal_open() -> bool:
 	return (chest_choice_panel != null and chest_choice_panel.visible) or (character_menu_panel != null and character_menu_panel.visible)
@@ -2894,9 +3417,11 @@ func _make_chest_choice_card(item_id: String) -> PanelContainer:
 	body.add_child(_make_reward_modifier_section(item, rarity))
 
 	var description := Label.new()
-	description.text = String(item.get("description", "A strange relic."))
+	var flavor := String(item.get("description", "A strange relic."))
+	var rules_text := String(item.get("rules_text", ""))
+	description.text = flavor if rules_text.is_empty() else "%s\n\n%s" % [flavor, rules_text]
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.custom_minimum_size = Vector2(0, 70)
+	description.custom_minimum_size = Vector2(0, 96)
 	description.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	description.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -3098,8 +3623,7 @@ func _choose_progression_reward(choice_id: String) -> void:
 	if combat_started and not is_player_turn and not is_resolving_enemy_turn:
 		_begin_current_actor_turn()
 		return
-	if is_player_turn and has_used_action and not _is_free_roam():
-		_end_player_turn()
+	_finish_turn_if_exhausted()
 
 func _rarity_name(rarity: String) -> String:
 	var rarities: Dictionary = GameBalance.get_item_rarities()
@@ -3225,6 +3749,23 @@ func _modifier_label(stat_id: String) -> String:
 			return "Max HP"
 		"attack_bonus":
 			return "Attack"
+		"accuracy": return "Accuracy"
+		"penetration": return "Penetration"
+		"attack_power": return "Attack Power"
+		"spell_potency": return "Spell Potency"
+		"armor_class": return "Armor Class"
+		"evasion": return "Evasion"
+		"threshold": return "Threshold"
+		"aegis_all": return "Aegis"
+		"aegis_physical": return "Physical Aegis"
+		"aegis_fire": return "Fire Aegis"
+		"aegis_cold": return "Cold Aegis"
+		"aegis_lightning": return "Lightning Aegis"
+		"aegis_arcane": return "Arcane Aegis"
+		"aegis_radiant": return "Radiant Aegis"
+		"aegis_necrotic": return "Necrotic Aegis"
+		"aegis_poison": return "Poison Aegis"
+		"range": return "Range"
 		"spell_power":
 			return "Spell"
 		"defense":
@@ -3498,8 +4039,11 @@ func _set_button_selected(button: Button, selected: bool) -> void:
 		button.modulate = Color(1.0, 1.0, 1.0)
 
 func _player_portrait_texture() -> Texture2D:
-	if run_state != null and run_state.selected_class_id == "mage":
-		return _make_atlas_texture(FIRE_MAGE_SHEET, Rect2(0, 0, 96, 80))
+	if run_state != null:
+		var class_data := GameBalance.get_base_class(run_state.selected_class_id)
+		var texture: Texture2D = load(String(class_data.get("sprite", "")))
+		if texture != null:
+			return _make_atlas_texture(texture, Rect2(0, 0, 96, 80))
 	return _make_atlas_texture(PLAYER_IDLE_DOWN, Rect2(0, 0, 96, 80))
 
 func _actor_portrait_texture(actor: Dictionary) -> Texture2D:
@@ -3589,6 +4133,10 @@ func _sync_board_nodes() -> void:
 		var enemy_piece: BoardPiece = _make_piece("Enemy_%d" % i, enemies[i]["pos"], _enemy_label(enemies[i]), _enemy_color(enemies[i]), BoardPiece.PieceShape.CIRCLE, _enemy_sprite_key(enemies[i]))
 		_add_enemy_health_bar(enemy_piece, enemies[i])
 		enemies_root.add_child(enemy_piece)
+	if _companion_active():
+		var companion_piece := _make_piece("BondedWolf", Vector2i(companion["pos"]), "W", Color(0.83, 0.62, 0.24), BoardPiece.PieceShape.CIRCLE, "bonded_wolf")
+		_add_enemy_health_bar(companion_piece, companion)
+		enemies_root.add_child(companion_piece)
 	if minimap_panel != null:
 		minimap_panel.set_map_state(_build_minimap_state())
 
@@ -3606,6 +4154,9 @@ func _make_piece(node_name: String, tile: Vector2i, label: String, color: Color,
 
 func _apply_sprite_to_piece(piece: BoardPiece, sprite_key: String) -> void:
 	match sprite_key:
+		"bonded_wolf":
+			var wolf_texture: Texture2D = load("res://assets/classes/wolf_companion/sheet.png")
+			_set_piece_sprite(piece, wolf_texture, Rect2(0, 0, 96, 80), Vector2(0.58, 0.58))
 		"wolf":
 			_set_piece_sprite(piece, WOLF_SHEET, Rect2(0, 0, 96, 80), Vector2(0.58, 0.58))
 		"blood_wolf":
@@ -3946,7 +4497,55 @@ func _step_toward(from_tile: Vector2i, to_tile: Vector2i) -> Vector2i:
 
 func _is_walkable(tile: Vector2i) -> bool:
 	var chest_blocks: bool = chest.has("pos") and not bool(chest.get("opened", false)) and tile == chest["pos"]
-	return floor_cells.has(tile) and _prop_at(tile) == -1 and not chest_blocks and _enemy_at(tile) == -1
+	var companion_blocks := _companion_active() and Vector2i(companion["pos"]) == tile
+	return floor_cells.has(tile) and _prop_at(tile) == -1 and not chest_blocks and _enemy_at(tile) == -1 and not companion_blocks
+
+func _companion_active() -> bool:
+	return not companion.is_empty() and int(companion.get("hp", 0)) > 0 and companion.has("pos")
+
+func _damage_companion(amount: int) -> int:
+	if not _companion_active(): return 0
+	var reduction := 1 if _distance(Vector2i(companion["pos"]), player_pos) == 1 else 0
+	var applied := maxi(0, amount - reduction)
+	companion["hp"] = maxi(0, int(companion["hp"]) - applied)
+	if int(companion["hp"]) <= 0:
+		companion.clear()
+	return amount
+
+func _companion_attack_marked(pounce: bool = false) -> bool:
+	if not _companion_active(): return false
+	var index := _enemy_index_by_id(marked_enemy_id)
+	if index == -1: return false
+	var target: Vector2i = enemies[index]["pos"]
+	var wolf_pos: Vector2i = companion["pos"]
+	if pounce and _distance(wolf_pos, target) <= 4:
+		companion["pos"] = _nearest_open_adjacent(target)
+	elif _distance(wolf_pos, target) > 1:
+		var next := _step_toward(wolf_pos, target)
+		if next != wolf_pos: companion["pos"] = next
+	if _distance(Vector2i(companion["pos"]), target) == 1:
+		_attack_enemy(index, 3 if pounce else 2)
+		run_state.gain_class_resource()
+		return true
+	return pounce
+
+func _nearest_open_adjacent(origin: Vector2i) -> Vector2i:
+	for direction in _eight_directions():
+		var tile := origin + direction
+		if _is_walkable(tile): return tile
+	return Vector2i(companion.get("pos", player_pos))
+
+func _nearest_open_tile(origin: Vector2i) -> Vector2i:
+	for direction in _eight_directions():
+		var tile := origin + direction
+		if _is_walkable(tile): return tile
+	return origin
+
+func _adjacent_enemy_count(origin: Vector2i) -> int:
+	var count := 0
+	for enemy in enemies:
+		if _distance(origin, Vector2i(enemy["pos"])) == 1: count += 1
+	return count
 
 func _prop_at(tile: Vector2i) -> int:
 	for i in range(props.size()):

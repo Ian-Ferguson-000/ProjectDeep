@@ -25,7 +25,7 @@ func _build_gear_options() -> void:
 			2,
 			"charge",
 			"Reliable defense. Special: Charge in your facing direction and strike the first enemy.",
-			"fighter",
+			"warrior",
 			"block"
 		),
 		GearData.create(
@@ -36,7 +36,7 @@ func _build_gear_options() -> void:
 			0,
 			"sweep",
 			"Heavy damage with no shield. Special: Sweep all adjacent enemies.",
-			"fighter",
+			"warrior",
 			"none"
 		),
 		GearData.create(
@@ -47,7 +47,7 @@ func _build_gear_options() -> void:
 			1,
 			"brace",
 			"Defensive reach. Special: Brace to hit the next enemy that approaches.",
-			"fighter",
+			"warrior",
 			"block"
 		),
 		GearData.create(
@@ -83,6 +83,10 @@ func _build_gear_options() -> void:
 			"mage",
 			"flash_step"
 		),
+		GearData.create("sunwood_staff", "Sunwood Staff", 2, false, 0, "", "Wisdom focus. Your class kit supplies Binding Light, Empower, Recover, and Dash.", "healer", "none"),
+		GearData.create("tower_shield", "Tower Shield and Mace", 2, true, 2, "", "Heavy protection for Shield Bash, Retribution, Guard, and Leap.", "tank", "block"),
+		GearData.create("spectral_dagger", "Spectral Dagger", 3, false, 0, "", "A precise weapon for Pierce, Assassinate, Evade, and Shadowstep.", "phantom", "none"),
+		GearData.create("bond_staff", "Bondkeeper Staff", 2, false, 0, "", "A ritual focus for commanding and protecting your bonded wolf.", "summoner", "none"),
 	]
 
 func show_start_screen() -> void:

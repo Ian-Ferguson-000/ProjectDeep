@@ -170,14 +170,18 @@ func _make_stats_section(run_state: RunState, derived_stats: Dictionary) -> Pane
 	stats_grid.add_child(_make_stat_tile(ICON_MODE, "WIS %d" % int(stats.get("wis", 0)), "Wisdom"))
 	stats_grid.add_child(_make_stat_tile(ICON_SPECIAL, "CHA %d" % int(stats.get("cha", 0)), "Charisma"))
 
-	var damage_bonus: int = int(derived_stats.get("spell_power", 0)) if run_state.selected_class_id == "mage" else int(derived_stats.get("attack_bonus", 0))
-	var damage_label: String = "Spell Power" if run_state.selected_class_id == "mage" else "Attack Bonus"
-	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Damage +%d" % damage_bonus, damage_label))
-	stats_grid.add_child(_make_stat_tile(ICON_DEFEND, "Defense +%d" % int(derived_stats.get("defense", 0)), "Defense"))
+	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Accuracy +%d" % int(derived_stats.get("accuracy", 0)), "Attack rolls"))
+	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Pen +%d" % int(derived_stats.get("penetration", 0)), "Penetration"))
+	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Power +%d" % int(derived_stats.get("attack_power", 0)), "Martial damage"))
+	stats_grid.add_child(_make_stat_tile(ICON_SPELL, "Potency +%d" % int(derived_stats.get("spell_potency", 0)), "Spell damage"))
+	stats_grid.add_child(_make_stat_tile(ICON_DEFEND, "AC %d" % int(derived_stats.get("armor_class", 10)), "Reaction window"))
+	stats_grid.add_child(_make_stat_tile(ICON_MOVE, "Evasion %d" % int(derived_stats.get("evasion", 10)), "Hit avoidance"))
+	stats_grid.add_child(_make_stat_tile(ICON_DEFEND, "Threshold %d" % int(derived_stats.get("threshold", 0)), "Minimum damaging hit"))
+	stats_grid.add_child(_make_stat_tile(ICON_DEFEND, "Aegis %d" % int(derived_stats.get("aegis_all", 0)), "All damage reduction"))
+	stats_grid.add_child(_make_stat_tile(ICON_SPELL, "Range +%d" % int(derived_stats.get("range", 0)), "Attack reach"))
 	stats_grid.add_child(_make_stat_tile(ICON_INIT, "Init +%d" % int(derived_stats.get("initiative_modifier", 0)), "Initiative"))
 	stats_grid.add_child(_make_stat_tile(ICON_POTION, "Potion +%d" % int(derived_stats.get("potion_heal_bonus", 0)), "Potion Effect"))
 	stats_grid.add_child(_make_stat_tile(ICON_MOVE, "Move +%d" % int(derived_stats.get("movement", 0)), "Movement"))
-	stats_grid.add_child(_make_stat_tile(ICON_DEFEND, "Block +%d" % int(derived_stats.get("block_bonus", 0)), "Block Chance"))
 	return panel
 
 func _make_relics_section(relic_entries: Array[Dictionary]) -> PanelContainer:
@@ -216,14 +220,20 @@ func _make_tip_panel() -> PanelContainer:
 func _make_class_panel(run_state: RunState) -> PanelContainer:
 	var panel := _make_side_panel("CLASS", 140)
 	var body: VBoxContainer = panel.get_child(0) as VBoxContainer
-	var class_line: String = "Master of elemental flames and arcane knowledge." if run_state.selected_class_id == "mage" else "Front-line survivor with strong arms and stronger resolve."
+	var class_data := GameBalance.get_base_class(run_state.selected_class_id)
+	var class_line: String = String(class_data.get("description", "A hero with a distinct combat discipline."))
 	body.add_child(_make_label(run_state.selected_class_name, 18, Color(1.0, 0.86, 0.58), HORIZONTAL_ALIGNMENT_CENTER))
 	body.add_child(_make_wrapped_label(class_line, 13, Color(0.84, 0.70, 0.45)))
 	body.add_child(_make_wrapped_label(run_state.get_progression_summary(), 10, Color(0.58, 0.87, 0.95)))
 	body.add_child(_make_label("Starting Kit", 13, Color(0.91, 0.60, 0.26), HORIZONTAL_ALIGNMENT_CENTER))
-	var starter_text: String = "Fireball\nFlame Shield" if run_state.selected_class_id == "mage" else "Sword\nShield Brace"
+	var actions: Dictionary = class_data.get("actions", {})
+	var starter_text: String = "%s\n%s\n%s\n%s" % [_menu_action_name(actions, "basic"), _menu_action_name(actions, "special"), _menu_action_name(actions, "defensive"), _menu_action_name(actions, "movement")]
 	body.add_child(_make_wrapped_label(starter_text, 12, Color(0.86, 0.78, 0.64)))
 	return panel
+
+func _menu_action_name(actions: Dictionary, slot: String) -> String:
+	var value: Variant = actions.get(slot, {})
+	return String(value.get("name", slot.capitalize())) if value is Dictionary else slot.capitalize()
 
 func _make_resistance_panel() -> PanelContainer:
 	var panel := _make_side_panel("RESISTANCES", 108)
@@ -447,6 +457,10 @@ func _relic_tooltip_text(entry: Dictionary, item: Dictionary, rarity: String) ->
 	if not description.is_empty():
 		lines.append("")
 		lines.append(description)
+	var rules_text := String(item.get("rules_text", ""))
+	if not rules_text.is_empty():
+		lines.append("")
+		lines.append(rules_text)
 	return "\n".join(lines)
 
 func _modifier_label(stat_id: String) -> String:
@@ -455,6 +469,24 @@ func _modifier_label(stat_id: String) -> String:
 			return "Max HP"
 		"attack_bonus":
 			return "Attack"
+		"accuracy":
+			return "Accuracy"
+		"penetration":
+			return "Penetration"
+		"attack_power":
+			return "Attack Power"
+		"spell_potency":
+			return "Spell Potency"
+		"armor_class":
+			return "Armor Class"
+		"evasion":
+			return "Evasion"
+		"threshold":
+			return "Threshold"
+		"aegis_all":
+			return "Aegis"
+		"range":
+			return "Range"
 		"spell_power":
 			return "Spell"
 		"defense":

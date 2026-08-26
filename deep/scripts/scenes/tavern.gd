@@ -115,7 +115,7 @@ func _refresh_ui() -> void:
 	if selected_gear != null:
 		var stat_damage: int = selected_gear.damage
 		if run_state != null:
-			var damage_bonus: int = run_state.get_derived_stat("spell_power") if run_state.selected_class_id == "mage" else run_state.get_derived_stat("attack_bonus")
+			var damage_bonus: int = run_state.get_derived_stat(_class_damage_stat())
 			stat_damage += damage_bonus
 		detail_label.text = "%s | %d dmg\n%s" % [
 			selected_gear.display_name,
@@ -187,7 +187,7 @@ func _populate_gear_buttons() -> void:
 		var button := Button.new()
 		var shown_damage: int = gear.damage
 		if run_state != null:
-			var damage_bonus: int = run_state.get_derived_stat("spell_power") if run_state.selected_class_id == "mage" else run_state.get_derived_stat("attack_bonus")
+			var damage_bonus: int = run_state.get_derived_stat(_class_damage_stat())
 			shown_damage += damage_bonus
 		button.text = "%s  (%d dmg)" % [gear.display_name, shown_damage]
 		button.toggle_mode = true
@@ -201,8 +201,13 @@ func _select_gear(gear: GearData) -> void:
 	selected_gear = gear
 	if run_state != null:
 		run_state.set_selected_gear(gear)
-	var class_type: String = run_state.selected_class_name if run_state != null else "Fighter"
+	var class_type: String = run_state.selected_class_name if run_state != null else "Warrior"
 	message = "The bartender nods. '%s. A fair answer for a %s.'" % [gear.display_name, class_type]
+
+func _class_damage_stat() -> String:
+	if run_state != null and run_state.selected_class_id in ["mage", "healer", "summoner"]:
+		return "spell_potency"
+	return "attack_power"
 	_refresh_ui()
 
 func _remembered_gear_or_default() -> GearData:
@@ -246,7 +251,7 @@ func _interact() -> void:
 	if _is_adjacent(player_pos, bartender_pos):
 		message = "The bartender says, '%s'" % _selection_prompt()
 	elif _is_adjacent(player_pos, Vector2i(2, 2)):
-		message = "The weapon rack hums with old victories." if _selected_class_id() == "fighter" else "The spell shelf flickers with patient firelight."
+		message = "The class armory presents equipment suited to %s." % run_state.selected_class_name
 	elif _is_adjacent(player_pos, door_pos):
 		_enter_forest()
 	elif _is_adjacent(player_pos, crypt_door_pos):
@@ -276,7 +281,7 @@ func _selection_prompt() -> String:
 
 func _selected_class_id() -> String:
 	if run_state == null:
-		return "fighter"
+		return "warrior"
 	return run_state.selected_class_id
 
 func _build_tavern_tilemaps() -> void:

@@ -7,7 +7,7 @@ class_name GearData
 @export var has_block: bool = false
 @export var block_limit: int = 0
 @export var special_id: String = ""
-@export var class_id: String = "fighter"
+@export var class_id: String = "warrior"
 @export var defense_id: String = ""
 @export_multiline var description: String = ""
 
@@ -19,7 +19,7 @@ static func create(
 	gear_block_limit: int,
 	gear_special_id: String,
 	gear_description: String,
-	gear_class_id: String = "fighter",
+	gear_class_id: String = "warrior",
 	gear_defense_id: String = ""
 ) -> GearData:
 	var gear := GearData.new()

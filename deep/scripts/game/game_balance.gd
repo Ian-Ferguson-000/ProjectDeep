@@ -7,6 +7,8 @@ const ENEMY_PATH := "res://data/enemy_balance.json"
 const ITEMS_PATH := "res://data/items.json"
 const LOOT_TABLES_PATH := "res://data/loot_tables.json"
 const CLASS_PROGRESSION_PATH := "res://data/class_progression.json"
+const CLASSES_PATH := "res://data/classes.json"
+const ITEM_EFFECTS_PATH := "res://data/item_effects.json"
 
 static var _progression: Dictionary = {}
 static var _combat: Dictionary = {}
@@ -14,6 +16,8 @@ static var _enemies: Dictionary = {}
 static var _items: Dictionary = {}
 static var _loot_tables: Dictionary = {}
 static var _class_progression: Dictionary = {}
+static var _classes: Dictionary = {}
+static var _item_effects: Dictionary = {}
 static var _loaded := false
 
 static func get_progression() -> Dictionary:
@@ -30,11 +34,27 @@ static func get_enemy_value(enemy_type: String, stat: String, fallback: Variant)
 	var enemy: Dictionary = enemy_value if enemy_value is Dictionary else {}
 	return enemy.get(stat, fallback)
 
+static func get_enemy_combat_stat(enemy_type: String, stat: String, fallback: Variant) -> Variant:
+	_load_all()
+	var defaults_value: Variant = _enemies.get("defaults", {})
+	var defaults: Dictionary = defaults_value if defaults_value is Dictionary else {}
+	return get_enemy_value(enemy_type, stat, defaults.get(stat, fallback))
+
 static func get_items() -> Dictionary:
 	_load_all()
 	var items_value: Variant = _items.get("items", {})
 	if items_value is Dictionary:
-		return items_value
+		var merged: Dictionary = items_value.duplicate(true)
+		for item_id in _item_effects.keys():
+			if not merged.has(item_id) or not (merged[item_id] is Dictionary):
+				continue
+			var item: Dictionary = merged[item_id]
+			var upgrade_value: Variant = _item_effects[item_id]
+			if upgrade_value is Dictionary:
+				for key in upgrade_value.keys():
+					item[key] = upgrade_value[key]
+			merged[item_id] = item
+		return merged
 	return {}
 
 static func get_item(item_id: String) -> Dictionary:
@@ -70,12 +90,37 @@ static func get_prop_hp(kind: String, fallback: int) -> int:
 
 static func get_class_data(class_id: String) -> Dictionary:
 	_load_all()
+	class_id = normalize_class_id(class_id)
 	var classes_value: Variant = _progression.get("classes", {})
 	var classes: Dictionary = classes_value if classes_value is Dictionary else {}
-	var class_value: Variant = classes.get(class_id, classes.get("fighter", {}))
+	var class_value: Variant = classes.get(class_id, classes.get("warrior", classes.get("fighter", {})))
 	if class_value is Dictionary:
 		return class_value
 	return {}
+
+static func normalize_class_id(class_id: String) -> String:
+	return "warrior" if class_id == "fighter" else class_id
+
+static func get_base_classes() -> Dictionary:
+	_load_all()
+	var value: Variant = _classes.get("classes", {})
+	return value if value is Dictionary else {}
+
+static func get_base_class(class_id: String) -> Dictionary:
+	var classes := get_base_classes()
+	var value: Variant = classes.get(normalize_class_id(class_id), {})
+	return value if value is Dictionary else {}
+
+static func get_class_action(class_id: String, slot: String) -> Dictionary:
+	var class_data := get_base_class(class_id)
+	var actions_value: Variant = class_data.get("actions", {})
+	var actions: Dictionary = actions_value if actions_value is Dictionary else {}
+	var value: Variant = actions.get(slot, {})
+	return value if value is Dictionary else {}
+
+static func get_class_resource_max() -> int:
+	_load_all()
+	return int(_classes.get("resource_max", 3))
 
 static func get_xp_thresholds() -> Array:
 	_load_all()
@@ -90,6 +135,7 @@ static func get_max_level(fallback: int = 20) -> int:
 
 static func get_class_progression(class_id: String) -> Dictionary:
 	_load_all()
+	class_id = "fighter" if normalize_class_id(class_id) == "warrior" else normalize_class_id(class_id)
 	var progression_value: Variant = _class_progression.get(class_id, {})
 	if progression_value is Dictionary:
 		return progression_value
@@ -125,6 +171,8 @@ static func _load_all() -> void:
 	_items = _load_json(ITEMS_PATH)
 	_loot_tables = _load_json(LOOT_TABLES_PATH)
 	_class_progression = _load_json(CLASS_PROGRESSION_PATH)
+	_classes = _load_json(CLASSES_PATH)
+	_item_effects = _load_json(ITEM_EFFECTS_PATH)
 
 static func _load_json(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

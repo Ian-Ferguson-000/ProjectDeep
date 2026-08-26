@@ -1,4 +1,13 @@
 {
+  "defaults": {
+    "accuracy": 2,
+    "penetration": 0,
+    "armor_class": 10,
+    "evasion": 9,
+    "threshold": 0,
+    "aegis_all": 0,
+    "damage_type": "physical"
+  },
   "normal_wolf": {
     "display_name": "Wolf",
     "short_name": "Wolf",
@@ -77,7 +86,11 @@
     "xp": 32,
     "gold": 6,
     "initiative_modifier": -1,
-    "movement": 1
+    "movement": 1,
+    "armor_class": 14,
+    "evasion": 7,
+    "threshold": 2,
+    "aegis_physical": 1
   },
   "ghoul": {
     "display_name": "Ghoul",
@@ -89,7 +102,10 @@
     "xp": 24,
     "gold": 5,
     "initiative_modifier": 2,
-    "movement": 3
+    "movement": 3,
+    "accuracy": 3,
+    "evasion": 12,
+    "damage_type": "necrotic"
   },
   "necromancer": {
     "display_name": "Necromancer",
@@ -102,7 +118,11 @@
     "gold": 8,
     "initiative_modifier": 1,
     "movement": 1,
-    "range": 4
+    "range": 4,
+    "accuracy": 4,
+    "penetration": 1,
+    "damage_type": "necrotic",
+    "aegis_necrotic": 2
   },
   "crypt_boss": {
     "display_name": "Crypt Lord",
@@ -113,6 +133,13 @@
     "gold": 22,
     "initiative_modifier": 1,
     "movement": 1,
-    "range": 5
+    "range": 5,
+    "accuracy": 6,
+    "penetration": 2,
+    "armor_class": 15,
+    "evasion": 11,
+    "threshold": 2,
+    "aegis_necrotic": 3,
+    "damage_type": "necrotic"
   }
 }

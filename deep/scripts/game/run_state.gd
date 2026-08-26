@@ -4,11 +4,11 @@ class_name RunState
 const MAX_HERO_LEVEL := 20
 const FALLBACK_XP_THRESHOLDS := [0, 0, 100, 220, 380, 580, 820, 1100, 1420, 1780, 2180, 2620, 3100, 3620, 4180, 4780, 5420, 6100, 6820, 7580, 8380]
 const FALLBACK_CLASS_STATS := {
-	"fighter": {"str": 16, "dex": 12, "con": 15, "int": 8, "wis": 10, "cha": 10},
+	"warrior": {"str": 16, "dex": 12, "con": 15, "int": 8, "wis": 10, "cha": 10},
 	"mage": {"str": 8, "dex": 14, "con": 11, "int": 16, "wis": 12, "cha": 10},
 }
 const FALLBACK_DERIVED_CONFIG := {
-	"fighter": {
+	"warrior": {
 		"max_health": {"base": 12, "per_level": 3, "stat": "con"},
 		"attack_bonus": {"stat": "str", "stat_offset": -2, "min": 1, "per_levels": 4},
 		"spell_power": {"flat": 0},
@@ -28,8 +28,9 @@ const FALLBACK_DERIVED_CONFIG := {
 
 var selected_gear: GearData
 var selected_gear_by_class: Dictionary = {}
-var selected_class_id: String = "fighter"
-var selected_class_name: String = "Fighter"
+var selected_class_id: String = "warrior"
+var selected_class_name: String = "Warrior"
+var class_resource: int = 0
 var current_health: int = 12
 var max_health: int = 12
 var gold: int = 0
@@ -55,8 +56,10 @@ func _init() -> void:
 	_sync_health_from_profile(true)
 
 func set_class(class_id: String) -> void:
-	selected_class_id = class_id
-	selected_class_name = "Mage" if class_id == "mage" else "Fighter"
+	selected_class_id = GameBalance.normalize_class_id(class_id)
+	var class_data := GameBalance.get_base_class(selected_class_id)
+	selected_class_name = String(class_data.get("name", selected_class_id.capitalize()))
+	class_resource = 0
 	var stored_gear_value: Variant = selected_gear_by_class.get(selected_class_id, null)
 	selected_gear = stored_gear_value if stored_gear_value is GearData else null
 	_ensure_profiles()
@@ -81,6 +84,7 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	keys = 0
 	potions = 0
 	current_floor = 1
+	class_resource = 0
 	floor_seed += 37
 	run_outcome = "The crypt stairs breathe cold dust." if active_dungeon_id == "crypt" else "The forest door opens. The tavern falls quiet behind you."
 	_sync_crypt_unlock()
@@ -89,6 +93,7 @@ func advance_floor() -> bool:
 	if current_floor >= max_floors:
 		return false
 	current_floor += 1
+	class_resource = 0
 	_tick_inventory_floor_durations()
 	return true
 
@@ -147,8 +152,54 @@ func get_derived_stat(stat_id: String) -> int:
 	var derived: Dictionary = derived_value if derived_value is Dictionary else {}
 	return int(derived.get(stat_id, 0))
 
+func get_class_resource_name() -> String:
+	return String(GameBalance.get_base_class(selected_class_id).get("resource", "Power"))
+
+func get_class_resource_max() -> int:
+	return GameBalance.get_class_resource_max()
+
+func gain_class_resource(amount: int = 1) -> int:
+	class_resource = clampi(class_resource + amount, 0, get_class_resource_max())
+	return class_resource
+
+func spend_class_resource(amount: int) -> bool:
+	if class_resource < amount:
+		return false
+	class_resource -= amount
+	return true
+
 func get_active_item_modifier_value(stat_id: String) -> int:
 	return int(get_active_item_modifiers().get(stat_id, 0))
+
+func get_active_item_effects(trigger: String = "") -> Array[Dictionary]:
+	var effects: Array[Dictionary] = []
+	for entry in inventory_items:
+		var item := GameBalance.get_item(String(entry.get("id", "")))
+		var effect_values: Variant = item.get("effects", [])
+		if not (effect_values is Array):
+			continue
+		for effect_value in effect_values:
+			if not (effect_value is Dictionary):
+				continue
+			var effect: Dictionary = effect_value
+			if trigger.is_empty() or String(effect.get("trigger", "")) == trigger:
+				var copy := effect.duplicate(true)
+				copy["source_item_id"] = String(entry.get("id", ""))
+				copy["source_item_name"] = String(item.get("name", entry.get("id", "Item")))
+				effects.append(copy)
+	return effects
+
+func get_contextual_item_modifier(stat_id: String, context: Dictionary = {}) -> int:
+	var total := 0
+	for effect in get_active_item_effects():
+		if not effect.has("condition") or not _item_condition_matches(effect, context):
+			continue
+		var modifiers_value: Variant = effect.get("modifiers", {})
+		if modifiers_value is Dictionary:
+			total += int(modifiers_value.get(stat_id, 0))
+		if stat_id == "penetration" and effect.has("penetration_from_range"):
+			total += int(floor(float(context.get("range_bonus", 0)) * float(effect["penetration_from_range"])))
+	return total
 
 func apply_reward_bonus(base_amount: int, reward_type: String) -> int:
 	var modifier_id := "%s_bonus_percent" % reward_type
@@ -364,10 +415,12 @@ func get_progression_flag_value(flag_id: String) -> int:
 	return int(flags.get(flag_id, 0))
 
 func _ensure_profiles() -> void:
-	if not hero_profiles.has("fighter"):
-		hero_profiles["fighter"] = _create_profile("fighter")
-	if not hero_profiles.has("mage"):
-		hero_profiles["mage"] = _create_profile("mage")
+	if hero_profiles.has("fighter") and not hero_profiles.has("warrior"):
+		hero_profiles["warrior"] = hero_profiles["fighter"]
+		hero_profiles.erase("fighter")
+	for class_id in GameBalance.get_base_classes().keys():
+		if not hero_profiles.has(class_id):
+			hero_profiles[class_id] = _create_profile(String(class_id))
 	for class_id in hero_profiles.keys():
 		var profile_value: Variant = hero_profiles[class_id]
 		var profile: Dictionary = profile_value if profile_value is Dictionary else {}
@@ -400,8 +453,9 @@ func _create_profile(class_id: String) -> Dictionary:
 
 func _base_stats_for_class(class_id: String) -> Dictionary:
 	var class_data: Dictionary = GameBalance.get_class_data(class_id)
-	var fallback_value: Variant = FALLBACK_CLASS_STATS.get(class_id, FALLBACK_CLASS_STATS["fighter"])
-	var fighter_fallback_value: Variant = FALLBACK_CLASS_STATS["fighter"]
+	class_id = GameBalance.normalize_class_id(class_id)
+	var fallback_value: Variant = FALLBACK_CLASS_STATS.get(class_id, FALLBACK_CLASS_STATS["warrior"])
+	var fighter_fallback_value: Variant = FALLBACK_CLASS_STATS["warrior"]
 	var fighter_fallback: Dictionary = fighter_fallback_value if fighter_fallback_value is Dictionary else {}
 	var fallback: Dictionary = fallback_value if fallback_value is Dictionary else fighter_fallback
 	var stats_value: Variant = class_data.get("base_stats", fallback)
@@ -410,8 +464,8 @@ func _base_stats_for_class(class_id: String) -> Dictionary:
 
 func _active_profile() -> Dictionary:
 	_ensure_profiles()
-	var profile_value: Variant = hero_profiles.get(selected_class_id, hero_profiles["fighter"])
-	var fighter_profile_value: Variant = hero_profiles["fighter"]
+	var profile_value: Variant = hero_profiles.get(selected_class_id, hero_profiles["warrior"])
+	var fighter_profile_value: Variant = hero_profiles["warrior"]
 	var fighter_profile: Dictionary = fighter_profile_value if fighter_profile_value is Dictionary else {}
 	var profile: Dictionary = profile_value if profile_value is Dictionary else fighter_profile
 	return profile
@@ -449,7 +503,7 @@ func _derive_stats(class_id: String, level: int, stats: Dictionary) -> Dictionar
 	var class_data: Dictionary = GameBalance.get_class_data(class_id)
 	var derived_value: Variant = class_data.get("derived", _fallback_derived_config(class_id))
 	var derived_config: Dictionary = derived_value if derived_value is Dictionary else _fallback_derived_config(class_id)
-	return {
+	var legacy := {
 		"max_health": _derive_stat_value(derived_config.get("max_health", {}), level, stats, true),
 		"attack_bonus": _derive_stat_value(derived_config.get("attack_bonus", {}), level, stats, false),
 		"spell_power": _derive_stat_value(derived_config.get("spell_power", {}), level, stats, false),
@@ -459,18 +513,50 @@ func _derive_stats(class_id: String, level: int, stats: Dictionary) -> Dictionar
 		"movement": 0,
 		"block_bonus": 0,
 	}
+	var strength := _stat_modifier(int(stats.get("str", 10)))
+	var dexterity := _stat_modifier(int(stats.get("dex", 10)))
+	var constitution := _stat_modifier(int(stats.get("con", 10)))
+	var intellect := _stat_modifier(int(stats.get("int", 10)))
+	var wisdom := _stat_modifier(int(stats.get("wis", 10)))
+	var martial_accuracy := maxi(strength, dexterity)
+	var magic_accuracy := maxi(intellect, wisdom)
+	legacy["accuracy"] = maxi(martial_accuracy, magic_accuracy) + int(floori(float(level - 1) / 4.0))
+	legacy["penetration"] = int(floori(float(level - 1) / 6.0))
+	legacy["attack_power"] = int(legacy["attack_bonus"])
+	legacy["spell_potency"] = int(legacy["spell_power"])
+	legacy["armor_class"] = 9 + maxi(0, constitution)
+	legacy["evasion"] = 10 + dexterity
+	legacy["threshold"] = maxi(0, constitution)
+	legacy["aegis_all"] = 0
+	for damage_type in CombatResolver.DAMAGE_TYPES:
+		legacy["aegis_%s" % damage_type] = 0
+	legacy["range"] = 0
+	legacy["critical_range"] = 20
+	return legacy
 
 func _apply_inventory_modifiers_to_derived(derived_stats: Dictionary) -> void:
 	var modifiers: Dictionary = get_active_item_modifiers()
 	for key in modifiers.keys():
 		if String(key).ends_with("_bonus_percent"):
 			continue
-		derived_stats[String(key)] = int(derived_stats.get(String(key), 0)) + int(modifiers[key])
+		_apply_derived_modifier(derived_stats, String(key), int(modifiers[key]))
 
 func _apply_progression_modifiers_to_derived(profile: Dictionary, derived_stats: Dictionary) -> void:
 	var modifiers: Dictionary = _selected_progression_modifiers(profile)
 	for key in modifiers.keys():
-		derived_stats[String(key)] = int(derived_stats.get(String(key), 0)) + int(modifiers[key])
+		_apply_derived_modifier(derived_stats, String(key), int(modifiers[key]))
+
+func _apply_derived_modifier(derived_stats: Dictionary, stat_id: String, amount: int) -> void:
+	derived_stats[stat_id] = int(derived_stats.get(stat_id, 0)) + amount
+	match stat_id:
+		"attack_bonus":
+			derived_stats["attack_power"] = int(derived_stats.get("attack_power", 0)) + amount
+		"spell_power":
+			derived_stats["spell_potency"] = int(derived_stats.get("spell_potency", 0)) + amount
+		"defense":
+			derived_stats["armor_class"] = int(derived_stats.get("armor_class", 10)) + amount
+		"block_bonus":
+			derived_stats["threshold"] = int(derived_stats.get("threshold", 0)) + amount
 
 func _derive_stat_value(config_value: Variant, level: int, stats: Dictionary, include_level_base: bool) -> int:
 	if not (config_value is Dictionary):
@@ -498,7 +584,7 @@ func _fallback_growth_rules(class_id: String) -> Array:
 	return [{"stat": "str", "every": 2}, {"stat": "con", "every": 3}, {"stat": "dex", "every": 5}, {"stat": "wis", "every": 7}]
 
 func _fallback_derived_config(class_id: String) -> Dictionary:
-	var fallback_value: Variant = FALLBACK_DERIVED_CONFIG.get(class_id, FALLBACK_DERIVED_CONFIG["fighter"])
+	var fallback_value: Variant = FALLBACK_DERIVED_CONFIG.get(class_id, FALLBACK_DERIVED_CONFIG["warrior"])
 	if fallback_value is Dictionary:
 		return fallback_value
 	return {}
@@ -590,6 +676,34 @@ func _profile_array(profile: Dictionary, key: String) -> Array:
 
 func _stat_modifier(value: int) -> int:
 	return int(floori(float(value - 10) / 2.0))
+
+func _item_condition_matches(effect: Dictionary, context: Dictionary) -> bool:
+	var condition := String(effect.get("condition", ""))
+	if effect.has("damage_type") and String(effect["damage_type"]) != String(context.get("damage_type", "")):
+		return false
+	match condition:
+		"always": return true
+		"first_attack": return int(context.get("attack_index", 0)) == 0
+		"first_spell_floor": return int(context.get("spell_index_floor", 0)) == 0
+		"low_health": return current_health * 2 <= max_health
+		"moved": return bool(context.get("moved", false))
+		"moved_far": return int(context.get("tiles_moved", 0)) >= 2
+		"stationary": return int(context.get("tiles_moved", 0)) == 0
+		"isolated_target": return bool(context.get("isolated_target", false))
+		"elite_target": return bool(context.get("elite_target", false))
+		"unrevealed": return bool(context.get("unrevealed", false))
+		"area_attack": return bool(context.get("area_attack", false))
+		"surrounded": return int(context.get("adjacent_enemies", 0)) >= 2
+		"close_spell": return bool(context.get("spell_attack", false)) and int(context.get("distance", 99)) <= 2
+		"first_incoming_hit": return int(context.get("incoming_hit_index", 0)) == 0
+		"unengaged": return int(context.get("adjacent_enemies", 0)) == 0
+		"movement_ability": return bool(context.get("movement_ability", false))
+		"repeated_target": return bool(context.get("repeated_target", false))
+		"spell_attack": return bool(context.get("spell_attack", false))
+		"studied_target": return bool(context.get("studied_target", false))
+		"first_enemy_type": return bool(context.get("first_enemy_type", false))
+		"damage_type": return true
+	return false
 
 func _xp_required_for_level(level: int) -> int:
 	var thresholds: Array = GameBalance.get_xp_thresholds()
