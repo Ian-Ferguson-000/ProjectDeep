@@ -1,0 +1,15 @@
+{
+  "base_capacity": 4,
+  "consumables": {
+    "healing_potion": {"name":"Healing Potion","rarity":"common","description":"Restore 5 health plus Potion Healing bonuses.","icon":"res://assets/pixel_art/potion.png","effects":{"heal":5,"item_trigger":"potion"}},
+    "greater_healing_potion": {"name":"Greater Healing Potion","rarity":"uncommon","description":"Restore 9 health plus Potion Healing bonuses.","icon":"res://assets/pixel_art/potion.png","effects":{"heal":9,"item_trigger":"potion"}},
+    "focus_tonic": {"name":"Focus Tonic","rarity":"uncommon","description":"Restore 2 points of your class resource.","icon":"res://assets/pixel_art/spellnode.png","effects":{"resource":2}},
+    "smoke_vial": {"name":"Smoke Vial","rarity":"uncommon","description":"Become Hidden until you attack or an adjacent enemy reveals you.","icon":"res://assets/pixel_art/potion.png","effects":{"hidden":true}},
+    "warding_draught": {"name":"Warding Draught","rarity":"uncommon","description":"Gain 3 temporary Aegis against the next damaging hit.","icon":"res://assets/pixel_art/potion.png","effects":{"temporary_aegis":3}},
+    "fleet_draught": {"name":"Fleet Draught","rarity":"uncommon","description":"Gain 2 ordinary movement this turn without spending another action.","icon":"res://assets/pixel_art/potion.png","effects":{"movement":2}},
+    "haste_potion": {"name":"Potion of Haste","rarity":"rare","description":"Double your remaining movement and gain one additional action this turn.","icon":"res://assets/pixel_art/potion.png","effects":{"movement_multiplier":2,"extra_actions":1}},
+    "fury_potion": {"name":"Potion of Fury","rarity":"rare","description":"Your next attack deals double damage.","icon":"res://assets/pixel_art/potion.png","effects":{"next_attack_damage_multiplier":2}},
+    "resource_elixir": {"name":"Resource Elixir","rarity":"rare","description":"Completely fill your class resource meter.","icon":"res://assets/pixel_art/spellnode.png","effects":{"resource_fill":true}},
+    "true_strike_tonic": {"name":"True-Strike Tonic","rarity":"rare","description":"Gain +8 Accuracy on your next attack.","icon":"res://assets/pixel_art/potion.png","effects":{"next_attack_accuracy":8}}
+  }
+}

@@ -1,6 +1,6 @@
 [gd_scene format=4 uid="uid://d3gnhcl0abl4k"]
 
-[ext_resource type="Script" uid="uid://cexlmxfwfw1v6" path="res://scripts/scenes/tavern.gd" id="1_tavern"]
+[ext_resource type="Script" uid="uid://dks18kg2jj6ct" path="res://scripts/scenes/tavern.gd" id="1_tavern"]
 [ext_resource type="PackedScene" path="res://scenes/components/BoardPiece.tscn" id="2_piece_scene"]
 [ext_resource type="Texture2D" uid="uid://d0pjoqifoktv6" path="res://assets/pixel_art/TX Tileset Grass.png" id="2_rknsa"]
 [ext_resource type="Texture2D" uid="uid://5exu5nbjtrx" path="res://assets/generated_characters/tavern_keeper.png" id="3_keeper"]

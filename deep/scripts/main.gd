@@ -108,11 +108,11 @@ func choose_class(class_id: String) -> void:
 	var class_type := run_state.selected_class_name
 	show_tavern("The hearth is warm. The bartender lays out %s choices for the road ahead." % class_type)
 
-func show_tavern(message: String = "") -> void:
+func show_tavern(message: String = "", arrival_summary: Dictionary = {}) -> void:
 	_clear_scene()
 	var tavern := TavernScene.instantiate()
 	current_scene = tavern
-	tavern.setup(self, run_state, _gear_options_for_class(run_state.selected_class_id), message)
+	tavern.setup(self, run_state, _gear_options_for_class(run_state.selected_class_id), message, arrival_summary)
 	add_child(tavern)
 
 func start_forest(gear: GearData) -> void:
@@ -125,6 +125,12 @@ func start_crypt(gear: GearData) -> void:
 		return
 	run_state.start_new_run(gear, "crypt")
 	_load_crypt_floor()
+
+func start_dungeon(dungeon_id: String, gear: GearData) -> void:
+	match dungeon_id:
+		"forest": start_forest(gear)
+		"crypt": start_crypt(gear)
+		_: show_tavern("That expedition is not yet available.")
 
 func _load_forest_floor() -> void:
 	_clear_scene()
@@ -141,21 +147,34 @@ func _load_crypt_floor() -> void:
 	add_child(crypt)
 
 func complete_forest_floor() -> void:
+	var favor_logs := run_state.record_dungeon_floor_clear("forest", run_state.current_floor, run_state.current_floor >= run_state.max_floors)
 	if run_state.advance_floor():
 		_load_forest_floor()
 	else:
 		run_state.mark_forest_cleared()
-		return_to_tavern("victory", "You escape the five-floor forest dungeon with %d gold. The bartender smiles like he expected it." % run_state.gold)
+		return_to_tavern("victory", "You escape the five-floor forest dungeon with %d gold. Thistle Fen has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
 
 func complete_crypt_floor() -> void:
+	var favor_logs := run_state.record_dungeon_floor_clear("crypt", run_state.current_floor, run_state.current_floor >= run_state.max_floors)
 	if run_state.advance_floor():
 		_load_crypt_floor()
 	else:
-		return_to_tavern("victory", "You emerge from the seven-floor Stone Crypt with %d gold. The tavern lanterns seem warmer now." % run_state.gold)
+		return_to_tavern("victory", "You emerge from the seven-floor Stone Crypt with %d gold. Sister Caldris has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
 
 func return_to_tavern(outcome: String, message: String) -> void:
+	var changes: Array[String] = []
+	var message_lines := message.split("\n", false)
+	for index in range(1, message_lines.size()): changes.append(String(message_lines[index]))
+	var summary := {
+		"outcome": outcome,
+		"headline": String(message_lines[0]) if not message_lines.is_empty() else message,
+		"dungeon": run_state.active_dungeon_id,
+		"depth": run_state.current_floor,
+		"gold": run_state.gold,
+		"changes": changes,
+	}
 	run_state.finish_run(outcome, message)
-	show_tavern(message)
+	show_tavern(message, summary)
 
 func _gear_options_for_class(class_id: String) -> Array[GearData]:
 	var options: Array[GearData] = []
@@ -178,6 +197,11 @@ func _ensure_input_actions() -> void:
 	_add_key_action("special", [KEY_F])
 	_add_key_action("drink_potion", [KEY_Q])
 	_add_key_action("character_menu", [KEY_M])
+	_add_joypad_action("move_up", JOY_BUTTON_DPAD_UP)
+	_add_joypad_action("move_down", JOY_BUTTON_DPAD_DOWN)
+	_add_joypad_action("move_left", JOY_BUTTON_DPAD_LEFT)
+	_add_joypad_action("move_right", JOY_BUTTON_DPAD_RIGHT)
+	_add_joypad_action("interact", JOY_BUTTON_A)
 
 func _add_key_action(action: StringName, keys: Array[int]) -> void:
 	if not InputMap.has_action(action):
@@ -193,3 +217,9 @@ func _action_has_key(action: StringName, key: int) -> bool:
 		if event is InputEventKey and event.physical_keycode == key:
 			return true
 	return false
+
+func _add_joypad_action(action: StringName, button_index: JoyButton) -> void:
+	if not InputMap.has_action(action): InputMap.add_action(action)
+	for existing in InputMap.action_get_events(action):
+		if existing is InputEventJoypadButton and existing.button_index == button_index: return
+	var event := InputEventJoypadButton.new(); event.button_index = button_index; InputMap.action_add_event(action,event)

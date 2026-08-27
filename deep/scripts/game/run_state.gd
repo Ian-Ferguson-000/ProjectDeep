@@ -50,9 +50,18 @@ var pending_level_logs: Array[String] = []
 var inventory_items: Array[Dictionary] = []
 var pending_chest_choices: Array[String] = []
 var starter_reward_claimed: bool = false
+var merchant_progress: Dictionary = {}
+var pending_shop_items: Array[String] = []
+var pending_shop_potions: int = 0
+var pending_shop_keys: int = 0
+var purchased_favor_offers: Dictionary = {}
+var merchant_offer_stock: Dictionary = {}
+var consumable_items: Array[String] = []
+var pending_shop_consumables: Array[String] = []
 
 func _init() -> void:
 	_ensure_profiles()
+	_ensure_merchant_progress()
 	_sync_health_from_profile(true)
 
 func set_class(class_id: String) -> void:
@@ -83,6 +92,18 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	gold = 0
 	keys = 0
 	potions = 0
+	keys += pending_shop_keys
+	consumable_items.clear()
+	for consumable_id in pending_shop_consumables:
+		add_consumable(consumable_id)
+	for legacy_index in range(pending_shop_potions):
+		add_consumable("healing_potion")
+	for item_id in pending_shop_items:
+		add_inventory_item(item_id, 1)
+	pending_shop_items.clear()
+	pending_shop_potions = 0
+	pending_shop_consumables.clear()
+	pending_shop_keys = 0
 	current_floor = 1
 	class_resource = 0
 	floor_seed += 37
@@ -156,11 +177,101 @@ func get_class_resource_name() -> String:
 	return String(GameBalance.get_base_class(selected_class_id).get("resource", "Power"))
 
 func get_class_resource_max() -> int:
-	return GameBalance.get_class_resource_max()
+	return int(GameBalance.get_class_resource_rules(selected_class_id).get("max", GameBalance.get_class_resource_max()))
+
+func get_class_resource_explanation() -> String:
+	var rules := GameBalance.get_class_resource_rules(selected_class_id)
+	var gains: Array[String] = []
+	for entry in rules.get("gain", []): gains.append(String(entry))
+	return "%s (max %d). Gain: %s. Specials cost %d." % [get_class_resource_name(), get_class_resource_max(), "; ".join(gains), int(rules.get("special_cost", 2))]
+
+func get_attribute_growth_explanation(stat_id: String) -> String:
+	for rule in GameBalance.get_class_data(selected_class_id).get("stat_growth", []):
+		if rule is Dictionary and String(rule.get("stat", "")) == stat_id:
+			return "+%d every %d levels" % [int(rule.get("amount", 1)), int(rule.get("every", 1))]
+	return "No scheduled class growth"
+
+func get_stat_breakdown(stat_id: String) -> Dictionary:
+	var profile := _active_profile()
+	var stats := get_stats()
+	var progression := int(_selected_progression_modifiers(profile).get(stat_id, 0))
+	var item := get_active_item_modifier_value(stat_id)
+	var final := get_derived_stat(stat_id)
+	var lookup_id := "attack_bonus" if stat_id == "attack_power" else ("spell_power" if stat_id == "spell_potency" else stat_id)
+	var config: Dictionary = GameBalance.get_class_data(selected_class_id).get("derived", {}).get(lookup_id, {})
+	var attribute := String(config.get("stat", ""))
+	if stat_id == "accuracy":
+		var best := -99
+		for candidate in GameBalance.get_class_data(selected_class_id).get("primary", {}).get("accuracy", []):
+			var modifier := _stat_modifier(int(stats.get(String(candidate), 10)))
+			if modifier > best: best = modifier; attribute = String(candidate)
+	var attribute_value := int(stats.get(attribute, 0)) if not attribute.is_empty() else 0
+	return {"attribute":attribute,"attribute_value":attribute_value,"attribute_modifier":_stat_modifier(attribute_value) if not attribute.is_empty() else 0,"base_and_level":final-progression-item,"progression":progression,"item":item,"final":final,"formula":String(config.get("explanation", _derived_formula_explanation(stat_id)))}
+
+func get_action_modifier_breakdown(slot: String, context: Dictionary = {}) -> Dictionary:
+	var action_bonus := 0
+	var conditional_bonus := 0
+	var ignored: Array = []
+	for value in GameBalance.get_class_action(selected_class_id, slot).get("modifiers", []):
+		if not (value is Dictionary): continue
+		var modifier: Dictionary = value
+		var condition := String(modifier.get("condition", "always"))
+		var matches := condition == "always"
+		if condition == "adjacent_enemies_at_least": matches = int(context.get("adjacent_enemies", 0)) >= int(modifier.get("value", 0))
+		elif condition == "target_status": matches = bool(context.get("target_%s" % String(modifier.get("status", "")), false))
+		elif condition == "target_threshold_at_least": matches = int(context.get("target_threshold", 0)) >= int(modifier.get("value", 1))
+		elif condition == "coordinated_wolf_attack": matches = bool(context.get("coordinated_wolf_attack", false))
+		if matches:
+			if modifier.has("ignore"): ignored.append_array(modifier.get("ignore", []))
+			elif condition == "always": action_bonus += int(modifier.get("amount", 0))
+			else: conditional_bonus += int(modifier.get("amount", 0))
+	return {"action_bonus":action_bonus,"conditional_bonus":conditional_bonus,"ignore":ignored}
+
+func _derived_formula_explanation(stat_id: String) -> String:
+	match stat_id:
+		"accuracy": return "Best primary Accuracy attribute modifier + 1 every 4 levels"
+		"penetration": return "1 every 6 levels"
+		"armor_class": return "9 + positive CON modifier"
+		"evasion": return "10 + DEX modifier"
+		"threshold": return "Positive CON modifier"
+	return "Class formula + progression + items"
 
 func gain_class_resource(amount: int = 1) -> int:
 	class_resource = clampi(class_resource + amount, 0, get_class_resource_max())
 	return class_resource
+
+func get_consumable_capacity() -> int:
+	return GameBalance.get_consumable_base_capacity() + get_derived_stat("consumable_capacity")
+
+func get_consumables() -> Array[String]:
+	_migrate_legacy_potions()
+	return consumable_items.duplicate()
+
+func add_consumable(consumable_id: String) -> bool:
+	if GameBalance.get_consumable(consumable_id).is_empty() or consumable_items.size() >= get_consumable_capacity():
+		return false
+	consumable_items.append(consumable_id)
+	_sync_legacy_potion_count()
+	return true
+
+func remove_consumable_at(index: int) -> String:
+	_migrate_legacy_potions()
+	if index < 0 or index >= consumable_items.size():
+		return ""
+	var consumed := consumable_items[index]
+	consumable_items.remove_at(index)
+	_sync_legacy_potion_count()
+	return consumed
+
+func _migrate_legacy_potions() -> void:
+	var represented := consumable_items.count("healing_potion")
+	while represented < potions and consumable_items.size() < get_consumable_capacity():
+		consumable_items.append("healing_potion")
+		represented += 1
+	_sync_legacy_potion_count()
+
+func _sync_legacy_potion_count() -> void:
+	potions = consumable_items.count("healing_potion")
 
 func spend_class_resource(amount: int) -> bool:
 	if class_resource < amount:
@@ -205,6 +316,165 @@ func apply_reward_bonus(base_amount: int, reward_type: String) -> int:
 	var modifier_id := "%s_bonus_percent" % reward_type
 	var bonus_percent: int = get_active_item_modifier_value(modifier_id)
 	return maxi(0, int(round(float(base_amount) * (1.0 + float(bonus_percent) / 100.0))))
+
+func _ensure_merchant_progress() -> void:
+	for merchant_id in GameBalance.get_merchants().keys():
+		if merchant_progress.has(merchant_id):
+			continue
+		merchant_progress[merchant_id] = {
+			"lifetime_favor": 0,
+			"available_favor": 0,
+			"highest_depth": 0,
+			"boss_cleared": false,
+			"recruited": merchant_id == "tavern",
+		}
+
+func get_merchant_progress(merchant_id: String) -> Dictionary:
+	_ensure_merchant_progress()
+	var value: Variant = merchant_progress.get(merchant_id, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+func get_merchant_rank(merchant_id: String) -> int:
+	var progress := get_merchant_progress(merchant_id)
+	var requirements := GameBalance.get_merchant_rank_requirements()
+	var rank := 0
+	for i in range(requirements.size()):
+		var value: Variant = requirements[i]
+		if not (value is Dictionary):
+			continue
+		var requirement: Dictionary = value
+		if int(progress.get("lifetime_favor", 0)) < int(requirement.get("favor", 0)):
+			continue
+		if int(progress.get("highest_depth", 0)) < int(requirement.get("depth", 0)):
+			continue
+		if bool(requirement.get("boss_clear", false)) and not bool(progress.get("boss_cleared", false)):
+			continue
+		rank = i
+	return rank
+
+func is_merchant_recruited(merchant_id: String) -> bool:
+	return bool(get_merchant_progress(merchant_id).get("recruited", false))
+
+func record_dungeon_floor_clear(dungeon_id: String, depth: int, boss_clear: bool = false) -> Array[String]:
+	_ensure_merchant_progress()
+	var logs: Array[String] = []
+	for merchant_id in [dungeon_id, "tavern"]:
+		if not merchant_progress.has(merchant_id):
+			continue
+		var progress: Dictionary = merchant_progress[merchant_id]
+		var old_depth := int(progress.get("highest_depth", 0))
+		var favor_gain := 1
+		if depth > old_depth:
+			progress["highest_depth"] = depth
+			favor_gain = 3 + depth
+		if boss_clear and merchant_id == dungeon_id:
+			favor_gain += 10
+			progress["boss_cleared"] = true
+			progress["recruited"] = true
+		progress["lifetime_favor"] = int(progress.get("lifetime_favor", 0)) + favor_gain
+		progress["available_favor"] = int(progress.get("available_favor", 0)) + favor_gain
+		merchant_progress[merchant_id] = progress
+		logs.append("+%d %s Favor." % [favor_gain, String(GameBalance.get_merchant(merchant_id).get("name", merchant_id.capitalize()))])
+	return logs
+
+func get_merchant_offers(merchant_id: String, location: String) -> Array[Dictionary]:
+	var merchant := GameBalance.get_merchant(merchant_id)
+	var rank := get_merchant_rank(merchant_id)
+	var result: Array[Dictionary] = []
+	var stock: Variant = merchant.get("stock", [])
+	if not (stock is Array):
+		return result
+	for value in stock:
+		if not (value is Dictionary):
+			continue
+		var offer: Dictionary = value.duplicate(true)
+		var offer_id := String(offer.get("offer_id", ""))
+		var offer_location := String(offer.get("location", "both"))
+		var location_matches := offer_location == "both" or offer_location == location or (location == "tavern" and offer_location == "favor")
+		if not location_matches:
+			continue
+		offer["unlocked"] = rank >= int(offer.get("min_rank", 0))
+		offer["claimed"] = purchased_favor_offers.has(offer_id)
+		if offer.has("gold") and location == "tavern":
+			offer["base_gold"] = int(offer["gold"])
+			var price_factor := 1.0 - minf(0.20, float(rank) * 0.05)
+			if merchant_id != "tavern":
+				price_factor = 1.20 - minf(0.12, float(rank) * 0.03)
+			offer["gold"] = maxi(1, int(round(float(offer["gold"]) * price_factor)))
+		if String(offer.get("kind", "")) == "item":
+			var item := GameBalance.get_item(String(offer.get("item_id", "")))
+			offer["name"] = String(item.get("name", offer.get("item_id", "Item")))
+			offer["description"] = String(item.get("description", ""))
+			offer["rules_text"] = String(item.get("rules_text", ""))
+			offer["rarity"] = String(item.get("rarity", "common"))
+		elif String(offer.get("kind", "")) == "consumable":
+			var consumable := GameBalance.get_consumable(String(offer.get("consumable_id", "")))
+			offer["rarity"] = String(consumable.get("rarity", "common"))
+		else:
+			offer["rarity"] = String(offer.get("rarity", "common"))
+		var stock_key := _merchant_stock_key(merchant_id, offer_id)
+		var max_stock := 1 if int(offer.get("favor", 0)) > 0 else GameBalance.get_merchant_stock_for_rarity(String(offer["rarity"]))
+		if not merchant_offer_stock.has(stock_key): merchant_offer_stock[stock_key] = max_stock
+		offer["max_stock"] = max_stock
+		offer["stock_remaining"] = maxi(0, int(merchant_offer_stock.get(stock_key, max_stock)))
+		offer["sold"] = bool(offer["claimed"]) or int(offer["stock_remaining"]) <= 0
+		result.append(offer)
+	return result
+
+func purchase_merchant_offer(merchant_id: String, offer_id: String, location: String) -> Array[String]:
+	var logs: Array[String] = []
+	if location == "tavern" and not is_merchant_recruited(merchant_id):
+		return ["That merchant has not joined the tavern yet."]
+	var chosen: Dictionary = {}
+	for offer in get_merchant_offers(merchant_id, location):
+		if String(offer.get("offer_id", "")) == offer_id:
+			chosen = offer
+			break
+	if chosen.is_empty() or not bool(chosen.get("unlocked", false)):
+		return ["That offer is still locked."]
+	if bool(chosen.get("claimed", false)):
+		return ["That unique Favor reward has already been claimed."]
+	if bool(chosen.get("sold", false)):
+		return ["That offer is sold out."]
+	if String(chosen.get("kind", "")) == "consumable":
+		var held_count := pending_shop_consumables.size() if location == "tavern" else get_consumables().size()
+		if held_count >= get_consumable_capacity():
+			return ["Your Consumables slots are full."]
+	var favor_cost := int(chosen.get("favor", 0))
+	var gold_cost := int(chosen.get("gold", 0))
+	if favor_cost > 0:
+		if purchased_favor_offers.has(offer_id):
+			return ["That unique Favor reward has already been claimed."]
+		var progress: Dictionary = merchant_progress[merchant_id]
+		if int(progress.get("available_favor", 0)) < favor_cost:
+			return ["Not enough Favor."]
+		progress["available_favor"] = int(progress["available_favor"]) - favor_cost
+		merchant_progress[merchant_id] = progress
+		purchased_favor_offers[offer_id] = true
+	elif gold < gold_cost:
+		return ["Not enough gold."]
+	else:
+		gold -= gold_cost
+	var kind := String(chosen.get("kind", "item"))
+	match kind:
+		"consumable":
+			var consumable_id := String(chosen.get("consumable_id", "healing_potion"))
+			if location == "tavern": pending_shop_consumables.append(consumable_id)
+			else: add_consumable(consumable_id)
+		"key":
+			if location == "tavern": pending_shop_keys += 1
+			else: keys += 1
+		_:
+			var item_id := String(chosen.get("item_id", ""))
+			if location == "tavern": pending_shop_items.append(item_id)
+			else: logs.append_array(add_inventory_item(item_id, current_floor))
+	var stock_key := _merchant_stock_key(merchant_id, offer_id)
+	merchant_offer_stock[stock_key] = maxi(0, int(chosen.get("stock_remaining", 1)) - 1)
+	logs.push_front("Purchased %s for %d %s." % [String(chosen.get("name", offer_id)), favor_cost if favor_cost > 0 else gold_cost, "Favor" if favor_cost > 0 else "gold"])
+	return logs
+
+func _merchant_stock_key(merchant_id: String, offer_id: String) -> String:
+	return "%s:%s" % [merchant_id, offer_id]
 
 func get_profile_summary() -> String:
 	var profile: Dictionary = _active_profile()
@@ -326,7 +596,7 @@ func get_active_item_modifiers() -> Dictionary:
 	return modifiers
 
 func get_resource_summary() -> String:
-	return "Gold %d | Keys %d | Potions %d" % [gold, keys, potions]
+	return "Gold %d | Keys %d | Consumables %d/%d" % [gold, keys, get_consumables().size(), get_consumable_capacity()]
 
 func consume_pending_level_logs() -> Array[String]:
 	var logs: Array[String] = []
@@ -518,9 +788,12 @@ func _derive_stats(class_id: String, level: int, stats: Dictionary) -> Dictionar
 	var constitution := _stat_modifier(int(stats.get("con", 10)))
 	var intellect := _stat_modifier(int(stats.get("int", 10)))
 	var wisdom := _stat_modifier(int(stats.get("wis", 10)))
-	var martial_accuracy := maxi(strength, dexterity)
-	var magic_accuracy := maxi(intellect, wisdom)
-	legacy["accuracy"] = maxi(martial_accuracy, magic_accuracy) + int(floori(float(level - 1) / 4.0))
+	var modifiers := {"str":strength,"dex":dexterity,"con":constitution,"int":intellect,"wis":wisdom,"cha":_stat_modifier(int(stats.get("cha", 10)))}
+	var primary_accuracy: Array = class_data.get("primary", {}).get("accuracy", [])
+	var accuracy_modifier := -99
+	for stat_id in primary_accuracy: accuracy_modifier = maxi(accuracy_modifier, int(modifiers.get(String(stat_id), -99)))
+	if accuracy_modifier == -99: accuracy_modifier = maxi(maxi(strength, dexterity), maxi(intellect, wisdom))
+	legacy["accuracy"] = accuracy_modifier + int(floori(float(level - 1) / 4.0))
 	legacy["penetration"] = int(floori(float(level - 1) / 6.0))
 	legacy["attack_power"] = int(legacy["attack_bonus"])
 	legacy["spell_potency"] = int(legacy["spell_power"])
@@ -808,12 +1081,13 @@ func _item_ids_for_rarity(items: Dictionary, rarity: String) -> Array[String]:
 	var ids: Array[String] = []
 	for item_id in items.keys():
 		var item_value: Variant = items[item_id]
-		if item_value is Dictionary and String(item_value.get("rarity", "common")) == rarity:
+		if item_value is Dictionary and not GameBalance.is_favor_exclusive_item(String(item_id)) and String(item_value.get("rarity", "common")) == rarity:
 			ids.append(String(item_id))
 	return ids
 
 func _all_item_ids(items: Dictionary) -> Array[String]:
 	var ids: Array[String] = []
 	for item_id in items.keys():
-		ids.append(String(item_id))
+		if not GameBalance.is_favor_exclusive_item(String(item_id)):
+			ids.append(String(item_id))
 	return ids

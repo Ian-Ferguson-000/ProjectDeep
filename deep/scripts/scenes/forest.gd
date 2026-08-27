@@ -64,6 +64,7 @@ const ACTION_HOTKEYS := {
 	"potion": "4",
 	"defend": "5",
 	"end": "Enter",
+	"cancel": "Esc",
 }
 # Boss chamber handoff: floor 5 uses these fixed 16x11 character maps instead
 # of procedural room graphs. Designers can tune room flow by editing symbols here:
@@ -207,6 +208,9 @@ var seen_enemy_types: Dictionary = {}
 var selected_action := "move"
 var movement_remaining := PLAYER_MOVE_ALLOWANCE
 var has_used_action := false
+var bonus_actions_remaining := 0
+var next_consumable_damage_multiplier := 1
+var next_consumable_accuracy_bonus := 0
 var is_player_turn := false
 var is_resolving_enemy_turn := false
 var combat_started := false
@@ -217,6 +221,13 @@ var current_actor_index := 0
 var initiative_order: Array[Dictionary] = []
 var enemy_id_counter := 1
 var effects_root: Node2D
+const MAX_COMBAT_LOG_ENTRIES := 200
+var combat_log_entries: Array[Dictionary] = []
+var combat_log_backdrop: ColorRect
+var combat_log_panel: PanelContainer
+var combat_log_text: RichTextLabel
+var merchant_shop_panel: MerchantShopPanel
+var dungeon_merchant: Dictionary = {}
 
 var enemies: Array[Dictionary] = []
 var props: Array[Dictionary] = []
@@ -248,6 +259,7 @@ var message := "The forest arranges itself into a dangerous little board."
 var move_button: Button
 var defend_button: Button
 var end_turn_button: Button
+var cancel_action_button: Button
 var initiative_panel: PanelContainer
 var initiative_tracker: HBoxContainer
 var actions_panel: PanelContainer
@@ -266,6 +278,10 @@ var chest_choice_subtitle_label: Label
 var chest_choice_cards: HBoxContainer
 var reward_choice_source: String = "chest"
 var follow_camera: Camera2D
+var consumables_backdrop: ColorRect
+var consumables_panel: PanelContainer
+var consumables_box: VBoxContainer
+var hovered_action_preview := ""
 
 func setup(game_controller: Node, state: RunState) -> void:
 	controller = game_controller
@@ -284,8 +300,11 @@ func _ready() -> void:
 	title_label.add_theme_font_size_override("font_size", 24)
 	_style_health_bar()
 	_setup_combat_layout_ui()
+	_setup_combat_log_ui()
+	_setup_dungeon_shop_ui()
+	_setup_consumables_ui()
 	_setup_action_buttons()
-	potion_button.pressed.connect(_drink_potion)
+	potion_button.pressed.connect(_open_consumables)
 	exit_door.door_entered.connect(_on_exit_door_entered)
 	_generate()
 	_build_board_tiles()
@@ -393,6 +412,14 @@ func _setup_combat_layout_ui() -> void:
 	minimap_panel.custom_minimum_size = Vector2(RIGHT_HUD_WIDTH, 154)
 	minimap_panel.size = minimap_panel.custom_minimum_size
 	log_label.custom_minimum_size = Vector2(RIGHT_HUD_WIDTH, 84)
+	log_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	log_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	log_label.tooltip_text = "Open the detailed combat log"
+	log_label.gui_input.connect(_on_combat_log_input)
+	log_label.add_theme_stylebox_override("normal", _flat_style(Color(0.10, 0.075, 0.045, 0.92), 4, Color(0.58, 0.39, 0.17)))
+	log_label.add_theme_color_override("font_color", Color(0.94, 0.84, 0.67))
+	log_label.add_theme_constant_override("outline_size", 1)
+	log_label.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.03))
 
 	initiative_panel = PanelContainer.new()
 	initiative_panel.name = "InitiativePanel"
@@ -498,6 +525,268 @@ func _setup_combat_layout_ui() -> void:
 	_setup_chest_choice_modal(ui_layer)
 	_setup_character_menu(ui_layer)
 
+func _setup_combat_log_ui() -> void:
+	var ui_layer: CanvasLayer = $UI
+	combat_log_backdrop = ColorRect.new()
+	combat_log_backdrop.name = "CombatLogBackdrop"
+	combat_log_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	combat_log_backdrop.color = Color(0.025, 0.018, 0.012, 0.78)
+	combat_log_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	combat_log_backdrop.visible = false
+	combat_log_backdrop.gui_input.connect(_on_combat_log_backdrop_input)
+	ui_layer.add_child(combat_log_backdrop)
+
+	combat_log_panel = PanelContainer.new()
+	combat_log_panel.name = "CombatLogPanel"
+	combat_log_panel.set_anchors_preset(Control.PRESET_CENTER)
+	combat_log_panel.position = Vector2(-360, -270)
+	combat_log_panel.size = Vector2(720, 540)
+	combat_log_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	combat_log_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.09, 0.065, 0.04, 0.99), 8, Color(0.84, 0.62, 0.27)))
+	combat_log_backdrop.add_child(combat_log_panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	combat_log_panel.add_child(margin)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 10)
+	margin.add_child(body)
+	var header := HBoxContainer.new()
+	body.add_child(header)
+	var title := Label.new()
+	title.text = "Detailed Combat Log"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1.0, 0.82, 0.42))
+	header.add_child(title)
+	var close_button := Button.new()
+	close_button.text = "Close"
+	close_button.pressed.connect(_hide_combat_log)
+	_apply_flat_ui_button(close_button, 13, Vector2(82, 34))
+	header.add_child(close_button)
+	var help := Label.new()
+	help.text = "Attack rolls exceed Evasion to hit. Rolls at or below AC can provoke an armed reaction. Penetration reduces Threshold and Aegis."
+	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	help.add_theme_color_override("font_color", Color(0.76, 0.70, 0.61))
+	body.add_child(help)
+	combat_log_text = RichTextLabel.new()
+	combat_log_text.bbcode_enabled = true
+	combat_log_text.fit_content = false
+	combat_log_text.scroll_active = true
+	combat_log_text.selection_enabled = true
+	combat_log_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	combat_log_text.add_theme_font_size_override("normal_font_size", 14)
+	combat_log_text.add_theme_color_override("default_color", Color(0.93, 0.87, 0.77))
+	body.add_child(combat_log_text)
+
+func _setup_dungeon_shop_ui() -> void:
+	merchant_shop_panel = MerchantShopPanel.new()
+	merchant_shop_panel.name = "DungeonMerchantShop"
+	merchant_shop_panel.purchase_completed.connect(_on_dungeon_shop_purchase)
+	$UI.add_child(merchant_shop_panel)
+
+func _open_dungeon_shop() -> void:
+	if merchant_shop_panel == null or run_state == null:
+		return
+	merchant_shop_panel.setup(run_state, dungeon_id, "dungeon")
+	merchant_shop_panel.open()
+
+func _on_dungeon_shop_purchase(purchase_message: String) -> void:
+	message = purchase_message
+	_refresh_ui()
+
+func _setup_consumables_ui() -> void:
+	consumables_backdrop = ColorRect.new()
+	consumables_backdrop.name = "ConsumablesBackdrop"
+	consumables_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	consumables_backdrop.color = Color(0.025, 0.018, 0.012, 0.76)
+	consumables_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	consumables_backdrop.visible = false
+	$UI.add_child(consumables_backdrop)
+	consumables_panel = PanelContainer.new()
+	consumables_panel.set_anchors_preset(Control.PRESET_CENTER)
+	consumables_panel.position = Vector2(-270, -230)
+	consumables_panel.size = Vector2(540, 460)
+	consumables_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.09, 0.065, 0.04, 0.99), 8, Color(0.80, 0.58, 0.26)))
+	consumables_backdrop.add_child(consumables_panel)
+	var margin := MarginContainer.new()
+	for side in ["left", "right", "top", "bottom"]: margin.add_theme_constant_override("margin_%s" % side, 16)
+	consumables_panel.add_child(margin)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 10)
+	margin.add_child(body)
+	var header := HBoxContainer.new()
+	body.add_child(header)
+	var title := Label.new()
+	title.text = "Choose a Consumable"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1.0, 0.83, 0.43))
+	header.add_child(title)
+	var close := Button.new()
+	close.text = "Cancel"
+	close.pressed.connect(_close_consumables)
+	_apply_flat_ui_button(close, 13, Vector2(84, 34))
+	header.add_child(close)
+	var capacity_label := Label.new()
+	capacity_label.name = "CapacityLabel"
+	capacity_label.add_theme_color_override("font_color", Color(0.78, 0.72, 0.63))
+	body.add_child(capacity_label)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	body.add_child(scroll)
+	consumables_box = VBoxContainer.new()
+	consumables_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	consumables_box.add_theme_constant_override("separation", 8)
+	scroll.add_child(consumables_box)
+
+func _open_consumables() -> void:
+	if not is_player_turn or has_used_action:
+		message = "Your action is already spent."
+		_refresh_ui()
+		return
+	if run_state.get_consumables().is_empty():
+		message = "Your Consumables slots are empty."
+		_refresh_ui()
+		return
+	_rebuild_consumables_menu()
+	consumables_backdrop.visible = true
+	consumables_backdrop.move_to_front()
+
+func _close_consumables() -> void:
+	if consumables_backdrop != null:
+		consumables_backdrop.visible = false
+
+func _rebuild_consumables_menu() -> void:
+	var ids := run_state.get_consumables()
+	var capacity_label := consumables_panel.find_child("CapacityLabel", true, false) as Label
+	if capacity_label != null:
+		capacity_label.text = "%d/%d slots filled. Using one consumes your action." % [ids.size(), run_state.get_consumable_capacity()]
+	for child in consumables_box.get_children(): child.queue_free()
+	for index in range(ids.size()):
+		var consumable_id := String(ids[index])
+		var data := GameBalance.get_consumable(consumable_id)
+		var button := Button.new()
+		button.text = "%s\n%s" % [String(data.get("name", consumable_id.capitalize())), String(data.get("description", ""))]
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.custom_minimum_size = Vector2(0, 58)
+		var icon_path := String(data.get("icon", ""))
+		if ResourceLoader.exists(icon_path):
+			button.icon = _normalized_consumable_icon(icon_path, 32)
+			button.expand_icon = false
+		button.pressed.connect(_use_consumable.bind(index))
+		_apply_flat_ui_button(button, 13, Vector2.ZERO)
+		consumables_box.add_child(button)
+
+func _normalized_consumable_icon(icon_path: String, max_size: int) -> Texture2D:
+	var source: Texture2D = load(icon_path)
+	if source == null: return null
+	var image := source.get_image()
+	if image == null or image.is_empty(): return source
+	var source_size := image.get_size()
+	var scale_factor := minf(1.0, float(max_size) / float(maxi(source_size.x, source_size.y)))
+	var target_size := Vector2i(maxi(1, roundi(source_size.x * scale_factor)), maxi(1, roundi(source_size.y * scale_factor)))
+	image.resize(target_size.x, target_size.y, Image.INTERPOLATE_NEAREST)
+	return ImageTexture.create_from_image(image)
+
+func _use_consumable(index: int) -> void:
+	var ids := run_state.get_consumables()
+	if index < 0 or index >= ids.size():
+		return
+	var consumable_id := String(ids[index])
+	var data := GameBalance.get_consumable(consumable_id)
+	var effects: Dictionary = data.get("effects", {})
+	var notes: Array[String] = []
+	if effects.has("heal"):
+		var heal_amount := int(effects["heal"]) + run_state.get_derived_stat("potion_heal_bonus")
+		var before := run_state.current_health
+		run_state.heal(heal_amount)
+		notes.append("restored %d health" % (run_state.current_health - before))
+		if before + heal_amount > run_state.max_health:
+			_apply_item_trigger("overheal", {"amount": before + heal_amount - run_state.max_health})
+	if effects.has("resource"):
+		var before_resource := run_state.class_resource
+		run_state.gain_class_resource(int(effects["resource"]))
+		notes.append("restored %d %s" % [run_state.class_resource - before_resource, run_state.get_class_resource_name()])
+	if bool(effects.get("hidden", false)):
+		is_hidden = true
+		notes.append("granted Hidden")
+	if effects.has("temporary_aegis"):
+		temporary_aegis += int(effects["temporary_aegis"])
+		notes.append("granted %d temporary Aegis" % int(effects["temporary_aegis"]))
+	if effects.has("movement"):
+		movement_remaining += int(effects["movement"])
+		notes.append("granted %d movement" % int(effects["movement"]))
+	if effects.has("movement_multiplier"):
+		var old_movement := movement_remaining
+		movement_remaining *= maxi(1, int(effects["movement_multiplier"]))
+		notes.append("doubled movement from %d to %d" % [old_movement, movement_remaining])
+	if effects.has("extra_actions"):
+		bonus_actions_remaining += maxi(0, int(effects["extra_actions"]))
+		notes.append("granted %d additional action" % int(effects["extra_actions"]))
+	if effects.has("next_attack_damage_multiplier"):
+		next_consumable_damage_multiplier = maxi(next_consumable_damage_multiplier, int(effects["next_attack_damage_multiplier"]))
+		notes.append("granted x%d damage to the next attack" % next_consumable_damage_multiplier)
+	if bool(effects.get("resource_fill", false)):
+		var before_fill := run_state.class_resource
+		run_state.gain_class_resource(run_state.get_class_resource_max())
+		notes.append("restored %d %s" % [run_state.class_resource - before_fill, run_state.get_class_resource_name()])
+	if effects.has("next_attack_accuracy"):
+		next_consumable_accuracy_bonus += int(effects["next_attack_accuracy"])
+		notes.append("granted +%d Accuracy to the next attack" % int(effects["next_attack_accuracy"]))
+	var item_trigger := String(effects.get("item_trigger", ""))
+	if not item_trigger.is_empty(): _apply_item_trigger(item_trigger)
+	run_state.remove_consumable_at(index)
+	_close_consumables()
+	message = "Used %s: %s." % [String(data.get("name", consumable_id.capitalize())), ", ".join(notes)]
+	_finish_player_action()
+
+func _on_combat_log_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_show_combat_log()
+
+func _on_combat_log_backdrop_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_hide_combat_log()
+
+func _show_combat_log() -> void:
+	if combat_log_backdrop == null:
+		return
+	_rebuild_combat_log_text()
+	combat_log_backdrop.visible = true
+	combat_log_backdrop.move_to_front()
+
+func _hide_combat_log() -> void:
+	if combat_log_backdrop != null:
+		combat_log_backdrop.visible = false
+
+func _rebuild_combat_log_text() -> void:
+	if combat_log_text == null:
+		return
+	if combat_log_entries.is_empty():
+		combat_log_text.text = "[color=#b7aa92]No attacks have been resolved on this floor yet.[/color]"
+		return
+	var lines: Array[String] = []
+	for entry in combat_log_entries:
+		var tint := String(entry.get("color", "#e7d8bd"))
+		lines.append("[color=#9a7b4a]Round %d[/color]  [color=%s][b]%s[/b][/color]\n%s" % [
+			int(entry.get("round", round_number)), tint, String(entry.get("summary", "Combat event")), String(entry.get("details", ""))
+		])
+	combat_log_text.text = "\n\n".join(lines)
+	combat_log_text.scroll_to_line(maxi(0, combat_log_text.get_line_count() - 1))
+
+func _record_combat_event(summary: String, details: String, color: String = "#e7d8bd") -> void:
+	combat_log_entries.append({"round": round_number, "summary": summary, "details": details, "color": color})
+	if combat_log_entries.size() > MAX_COMBAT_LOG_ENTRIES:
+		combat_log_entries.pop_front()
+	if combat_log_backdrop != null and combat_log_backdrop.visible:
+		_rebuild_combat_log_text()
+
 func _setup_chest_choice_modal(ui_layer: CanvasLayer) -> void:
 	chest_choice_backdrop = ColorRect.new()
 	chest_choice_backdrop.name = "ChestChoiceBackdrop"
@@ -566,12 +855,16 @@ func _setup_action_buttons() -> void:
 	end_turn_button = Button.new()
 	end_turn_button.name = "EndTurnButton"
 	end_turn_button.pressed.connect(_end_player_turn)
+	cancel_action_button = Button.new()
+	cancel_action_button.name = "CancelActionButton"
+	cancel_action_button.pressed.connect(_cancel_selected_action)
 	_configure_action_button(move_button, "move", "Movement", ICON_MOVE, "Use your class movement ability.")
 	_configure_action_button(interact_button, "attack", "Attack", ICON_ATTACK, "Target an enemy with your basic attack.")
 	_configure_action_button(special_button, "special", "Special", ICON_SPECIAL, "Spend class resource on your special ability.")
-	_configure_action_button(potion_button, "potion", "Potion", ICON_POTION, "Drink a potion as your action.")
+	_configure_action_button(potion_button, "potion", "Consumables", ICON_POTION, "Choose a held consumable to use as your action.")
 	_configure_action_button(defend_button, "defend", "Defensive", ICON_DEFEND, "Arm your class reaction until your next turn.")
 	_configure_action_button(end_turn_button, "end", "End", ICON_END_TURN, "Pass to the next actor.")
+	_configure_action_button(cancel_action_button, "cancel", "Cancel", ICON_MODE, "Cancel targeting without spending your action.")
 	for button: Button in _action_buttons():
 		_reparent_to_actions_grid(button)
 	_style_action_buttons()
@@ -587,6 +880,9 @@ func _configure_action_button(button: Button, action_id: String, label: String, 
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.add_theme_constant_override("icon_max_width", 22)
 	button.add_theme_constant_override("icon_separation", 4)
+	if action_id in ["move", "attack", "special"]:
+		button.mouse_entered.connect(_preview_action_range.bind("movement" if action_id == "move" else action_id))
+		button.mouse_exited.connect(_clear_action_range_preview)
 
 func _reparent_to_actions_grid(button: Button) -> void:
 	if actions_grid == null or button == null:
@@ -621,6 +917,7 @@ func _generate() -> void:
 		_place_loot()
 		_place_traps()
 		_place_enemies()
+	_place_dungeon_merchant()
 	_place_decorations()
 	_start_combat()
 
@@ -635,6 +932,8 @@ func _reset_generated_state() -> void:
 	traps.clear()
 	decorations.clear()
 	progression_log_buffer.clear()
+	combat_log_entries.clear()
+	_hide_combat_log()
 	initiative_order.clear()
 	enemy_id_counter = 1
 	combat_started = false
@@ -665,6 +964,7 @@ func _reset_generated_state() -> void:
 	last_player_hit_round = -1
 	was_below_half_health = false
 	seen_enemy_types.clear()
+	dungeon_merchant.clear()
 	movement_remaining = PLAYER_MOVE_ALLOWANCE
 	round_number = 1
 	current_actor_index = 0
@@ -938,6 +1238,9 @@ func _place_props() -> void:
 	for kind in kinds:
 		props.append({"kind": kind, "pos": _pick_floor_cell(false), "hp": GameBalance.get_prop_hp(kind, 2 if kind != "campfire" else 99)})
 
+func _place_dungeon_merchant() -> void:
+	dungeon_merchant = {"id": dungeon_id, "pos": _pick_floor_cell(true)}
+
 func _place_loot() -> void:
 	loot.append({"kind": "gold", "pos": _pick_floor_cell(true), "amount": 6 + _current_floor() * 2})
 	loot.append({"kind": "potion", "pos": _pick_floor_cell(true), "amount": 1})
@@ -1103,6 +1406,7 @@ func _begin_player_turn() -> void:
 		_release_retribution()
 	selected_action = "move"
 	has_used_action = false
+	bonus_actions_remaining = 0
 	movement_remaining = _player_move_allowance()
 	tiles_moved_this_turn = 0
 	if round_number == 1:
@@ -1193,8 +1497,21 @@ func _input(event: InputEvent) -> void:
 		_update_hover_context(event.position)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if consumables_backdrop != null and consumables_backdrop.visible and event.is_action_pressed("ui_cancel"):
+		_close_consumables()
+		return
+	if consumables_backdrop != null and consumables_backdrop.visible:
+		return
+	if combat_log_backdrop != null and combat_log_backdrop.visible and event.is_action_pressed("ui_cancel"):
+		_hide_combat_log()
+		return
+	if combat_log_backdrop != null and combat_log_backdrop.visible:
+		return
 	if event.is_action_pressed("character_menu"):
 		_toggle_character_menu()
+		return
+	if event.is_action_pressed("ui_cancel") and selected_action in ["attack", "special", "movement"]:
+		_cancel_selected_action()
 		return
 	if _is_blocking_modal_open():
 		return
@@ -1207,7 +1524,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("interact"):
 		_select_action("attack")
 	elif event.is_action_pressed("drink_potion"):
-		_drink_potion()
+		_open_consumables()
 	elif event.is_action_pressed("move_up"):
 		_take_directional_action(Vector2i.UP)
 	elif event.is_action_pressed("move_down"):
@@ -1249,7 +1566,7 @@ func _handle_combat_hotkey(event: InputEvent) -> bool:
 		KEY_4:
 			if not _can_trigger_action_button(potion_button):
 				return _reject_combat_hotkey()
-			_drink_potion()
+			_open_consumables()
 			return true
 		KEY_5:
 			if not _can_trigger_action_button(defend_button):
@@ -1303,6 +1620,10 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		message = "The chest blocks the way. Use Interact from its menu while adjacent."
 		_refresh_ui()
 		return
+	if not dungeon_merchant.is_empty() and tile == Vector2i(dungeon_merchant["pos"]):
+		message = "The merchant's stall blocks the path. Open their shop from the context menu."
+		_refresh_ui()
+		return
 	if not _is_walkable(tile):
 		message = "Dense trees block the way."
 		_refresh_ui()
@@ -1334,6 +1655,9 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 	_finish_turn_if_exhausted()
 
 func _try_context_interaction(tile: Vector2i) -> bool:
+	if not dungeon_merchant.is_empty() and tile == Vector2i(dungeon_merchant["pos"]):
+		_open_dungeon_shop()
+		return true
 	if has_used_action and not _is_free_roam():
 		return false
 	if _prop_at(tile) != -1:
@@ -1363,8 +1687,8 @@ func _try_context_interaction(tile: Vector2i) -> bool:
 	if _distance(player_pos, secret["pos"]) <= 1 and not secret["found"]:
 		secret["found"] = true
 		run_state.gold += 9
-		run_state.potions += 1
-		message = "You brush aside leaves and find a hidden cache: 9 gold and a potion."
+		var stored_potion := run_state.add_consumable("healing_potion")
+		message = "You brush aside leaves and find a hidden cache: 9 gold%s." % (" and a Healing Potion" if stored_potion else "; the potion is left behind because your slots are full")
 		_finish_player_action()
 		return true
 	return false
@@ -1462,6 +1786,8 @@ func _context_actions_for(object: Dictionary) -> Array[Dictionary]:
 			actions.append({"id": "attack_object", "label": "Attack", "enabled": adjacent and _can_use_player_controls() and not has_used_action and _is_destructible_prop_at(tile), "tooltip": "Move next to it first." if not adjacent else "Strike this obstacle."})
 		"npc":
 			actions.append({"id": "interact", "label": "Talk", "enabled": adjacent and _can_use_player_controls(), "tooltip": "Move next to them first." if not adjacent else "Start a conversation."})
+		"merchant":
+			actions.append({"id": "interact", "label": "Shop", "enabled": adjacent and _can_use_player_controls(), "tooltip": "Move next to the stall first." if not adjacent else "Browse this merchant's stock."})
 		"enemy":
 			var enemy_index: int = _enemy_at(tile)
 			actions.append({"id": "attack", "label": "Attack", "enabled": _can_use_player_controls() and _is_valid_basic_attack_target(tile, enemy_index), "tooltip": "Select a valid target."})
@@ -1499,14 +1825,14 @@ func _pickup_loot_at(tile: Vector2i) -> void:
 		var item_pos: Vector2i = item["pos"]
 		if item_pos != tile:
 			continue
-		_apply_loot_item(item)
-		loot.erase(item)
+		if _apply_loot_item(item):
+			loot.erase(item)
 		_refresh_ui()
 		return
 	message = "There is nothing to pick up there."
 	_refresh_ui()
 
-func _apply_loot_item(item: Dictionary) -> void:
+func _apply_loot_item(item: Dictionary) -> bool:
 	match String(item["kind"]):
 		"gold":
 			var amount := int(item["amount"])
@@ -1515,11 +1841,15 @@ func _apply_loot_item(item: Dictionary) -> void:
 				_apply_item_trigger("large_gold_pickup", {"amount": amount})
 			message = "Picked up %d gold." % amount
 		"potion":
-			run_state.potions += 1
-			message = "Picked up a potion."
+			if run_state.add_consumable("healing_potion"):
+				message = "Picked up a Healing Potion."
+			else:
+				message = "Your Consumables slots are full."
+				return false
 		"key":
 			run_state.keys += 1
 			message = "Picked up a key."
+	return true
 
 func _object_at_tile(tile: Vector2i) -> Dictionary:
 	var enemy_index: int = _enemy_at(tile)
@@ -1532,6 +1862,15 @@ func _object_at_tile(tile: Vector2i) -> Dictionary:
 			"title": enemy_name,
 			"detail": "HP %d/%d. Blocks movement and acts in initiative." % [int(enemy["hp"]), int(enemy.get("max_health", enemy["hp"]))],
 			"inspect": "%s watches your footing. HP %d/%d." % [enemy_name, int(enemy["hp"]), int(enemy.get("max_health", enemy["hp"]))],
+		}
+	if not dungeon_merchant.is_empty() and tile == Vector2i(dungeon_merchant["pos"]):
+		var merchant := GameBalance.get_merchant(dungeon_id)
+		return {
+			"kind": "merchant",
+			"pos": tile,
+			"title": String(merchant.get("name", "Dungeon Merchant")),
+			"detail": "%s. Gold %d; Favor %d." % [String(merchant.get("title", "Merchant")), run_state.gold, int(run_state.get_merchant_progress(dungeon_id).get("available_favor", 0))],
+			"inspect": String(merchant.get("description", "A merchant waits beside a compact traveling stall.")),
 		}
 	if _has_closed_chest() and tile == Vector2i(chest["pos"]):
 		return {
@@ -1603,7 +1942,7 @@ func _loot_object(item: Dictionary) -> Dictionary:
 		"gold":
 			title = "%d Gold" % int(item["amount"])
 		"potion":
-			title = "Potion"
+			title = "Healing Potion"
 			inspect = "A corked potion waits in the grass."
 		"key":
 			title = "Key"
@@ -1839,6 +2178,26 @@ func _select_action(action: String) -> void:
 		message = "Choose a %s target." % action
 	_refresh_ui()
 
+func _cancel_selected_action() -> void:
+	if selected_action not in ["attack", "special", "movement"]:
+		return
+	selected_action = "move"
+	hovered_action_preview = ""
+	message = "Targeting cancelled. Your action is still available."
+	_refresh_ui()
+
+func _preview_action_range(action: String) -> void:
+	if not is_player_turn or has_used_action:
+		return
+	hovered_action_preview = action
+	_sync_board_nodes()
+
+func _clear_action_range_preview() -> void:
+	if hovered_action_preview.is_empty():
+		return
+	hovered_action_preview = ""
+	_sync_board_nodes()
+
 func _dash() -> void:
 	if not is_player_turn:
 		return
@@ -1873,6 +2232,9 @@ func _defend() -> void:
 func _finish_player_action() -> void:
 	has_used_action = true
 	selected_action = "move"
+	if bonus_actions_remaining > 0:
+		bonus_actions_remaining -= 1
+		has_used_action = false
 	if _enter_free_roam_if_clear():
 		_open_pending_progression_choice_if_needed()
 		return
@@ -1921,8 +2283,8 @@ func _interact() -> void:
 	if _distance(player_pos, secret["pos"]) <= 1 and not secret["found"]:
 		secret["found"] = true
 		run_state.gold += 9
-		run_state.potions += 1
-		message = "You brush aside leaves and find a hidden cache: 9 gold and a potion."
+		var stored_potion := run_state.add_consumable("healing_potion")
+		message = "You brush aside leaves and find a hidden cache: 9 gold%s." % (" and a Healing Potion" if stored_potion else "; the potion is left behind because your slots are full")
 		_finish_player_action()
 		return
 	for i in range(props.size()):
@@ -2048,8 +2410,9 @@ func _special_flamethrower_at(tile: Vector2i) -> void:
 func _is_valid_basic_attack_target(tile: Vector2i, enemy_index: int) -> bool:
 	if enemy_index == -1:
 		return false
-	if run_state != null and run_state.selected_class_id in ["mage", "healer", "summoner"]:
-		var range_limit := (4 if run_state.selected_class_id == "mage" else 3) + run_state.get_derived_stat("range")
+	var target_data: Dictionary = GameBalance.get_class_action(run_state.selected_class_id, "basic").get("targeting", {}) if run_state != null else {}
+	if String(target_data.get("type", "enemy")) in ["line_of_sight_enemy", "enemy_or_tile"]:
+		var range_limit := int(target_data.get("range", 1)) + run_state.get_derived_stat("range")
 		return _line_distance(player_pos, tile) <= range_limit and _has_clear_line(player_pos, tile, true)
 	return _distance(player_pos, tile) == 1
 
@@ -2062,12 +2425,18 @@ func _is_straight_line_target(tile: Vector2i, max_range: int, allow_diagonal: bo
 	return allow_diagonal and abs(tile.x - player_pos.x) == abs(tile.y - player_pos.y)
 
 func _has_clear_line(from_tile: Vector2i, to_tile: Vector2i, allow_target_enemy: bool) -> bool:
-	var direction := Vector2i(_sign_int(to_tile.x - from_tile.x), _sign_int(to_tile.y - from_tile.y))
-	var cursor := from_tile + direction
-	while cursor != to_tile:
+	var delta := to_tile - from_tile
+	var steps := maxi(abs(delta.x), abs(delta.y))
+	if steps <= 0:
+		return false
+	var visited: Dictionary = {}
+	for step in range(1, steps):
+		var cursor := from_tile + Vector2i(roundi(float(delta.x * step) / float(steps)), roundi(float(delta.y * step) / float(steps)))
+		if visited.has(cursor):
+			continue
+		visited[cursor] = true
 		if not floor_cells.has(cursor) or _prop_at(cursor) != -1 or _enemy_at(cursor) != -1:
 			return false
-		cursor += direction
 	if allow_target_enemy:
 		return floor_cells.has(to_tile)
 	return _is_walkable(to_tile)
@@ -2150,6 +2519,43 @@ func _valid_attack_tiles() -> Array[Vector2i]:
 			tiles.append(tile)
 	return tiles
 
+func _basic_range_preview_tiles() -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	if run_state == null:
+		return tiles
+	var target_data: Dictionary = GameBalance.get_class_action(run_state.selected_class_id, "basic").get("targeting", {})
+	var ranged := String(target_data.get("type", "enemy")) in ["line_of_sight_enemy", "enemy_or_tile"]
+	var range_limit := int(target_data.get("range", 1)) + run_state.get_derived_stat("range") if ranged else 1
+	for value in floor_cells.keys():
+		var tile := Vector2i(value)
+		if tile == player_pos:
+			continue
+		if ranged:
+			if _line_distance(player_pos, tile) <= range_limit and _has_clear_line(player_pos, tile, true): tiles.append(tile)
+		elif _distance(player_pos, tile) == 1:
+			tiles.append(tile)
+	return tiles
+
+func _range_preview_tiles(action: String) -> Array[Vector2i]:
+	match action:
+		"attack": return _basic_range_preview_tiles()
+		"special": return _special_range_preview_tiles()
+		"movement": return _valid_class_movement_tiles()
+	return []
+
+func _special_range_preview_tiles() -> Array[Vector2i]:
+	if run_state == null:
+		return []
+	if run_state.selected_class_id in ["healer", "tank"]:
+		return []
+	if run_state.selected_class_id == "warrior":
+		var tiles: Array[Vector2i] = []
+		for direction in _eight_directions():
+			var tile := player_pos + direction
+			if floor_cells.has(tile): tiles.append(tile)
+		return tiles
+	return _valid_special_tiles()
+
 func _valid_special_tiles() -> Array[Vector2i]:
 	var tiles: Array[Vector2i] = []
 	if run_state == null:
@@ -2195,6 +2601,16 @@ func _valid_class_movement_tiles() -> Array[Vector2i]:
 func _add_highlight_markers() -> void:
 	if not is_player_turn:
 		return
+	if not hovered_action_preview.is_empty() and hovered_action_preview != selected_action:
+		var preview_color := Color(0.72, 0.78, 0.92, 0.14)
+		match hovered_action_preview:
+			"attack": preview_color = Color(0.95, 0.34, 0.24, 0.14)
+			"special": preview_color = Color(0.58, 0.38, 0.96, 0.14)
+			"movement": preview_color = Color(0.24, 0.76, 0.86, 0.14)
+		for preview_tile in _range_preview_tiles(hovered_action_preview):
+			_add_highlight_marker(preview_tile, preview_color, "Preview")
+		if selected_action == "move":
+			return
 	var tiles: Array[Vector2i] = []
 	var color := Color(0.24, 0.52, 0.95, 0.42)
 	match selected_action:
@@ -2214,8 +2630,8 @@ func _add_highlight_markers() -> void:
 	for tile in tiles:
 		_add_highlight_marker(tile, color)
 
-func _add_highlight_marker(tile: Vector2i, color: Color) -> void:
-	var highlight: BoardPiece = _make_piece("Highlight_%d_%d" % [tile.x, tile.y], tile, "", color, BoardPiece.PieceShape.SQUARE)
+func _add_highlight_marker(tile: Vector2i, color: Color, prefix: String = "Highlight") -> void:
+	var highlight: BoardPiece = _make_piece("%s_%d_%d" % [prefix, tile.x, tile.y], tile, "", color, BoardPiece.PieceShape.SQUARE)
 	highlight.size = Vector2(42, 42)
 	highlight.show_label = false
 	highlight.show_panel = true
@@ -2364,17 +2780,19 @@ func _set_combat_buttons_enabled() -> void:
 		move_button.disabled = false
 		interact_button.disabled = false
 		special_button.disabled = true
-		potion_button.disabled = run_state == null or run_state.potions <= 0
+		potion_button.disabled = run_state == null or run_state.get_consumables().is_empty()
 		defend_button.disabled = true
 		end_turn_button.disabled = true
+		cancel_action_button.disabled = selected_action not in ["attack", "special", "movement"]
 		return
 	move_button.disabled = has_used_action
 	interact_button.disabled = has_used_action
 	var special_cost := int(GameBalance.get_class_action(run_state.selected_class_id, "special").get("cost", 2)) if run_state != null else 2
 	special_button.disabled = has_used_action or run_state == null or run_state.class_resource < special_cost
-	potion_button.disabled = has_used_action or run_state == null or run_state.potions <= 0
+	potion_button.disabled = has_used_action or run_state == null or run_state.get_consumables().is_empty()
 	defend_button.disabled = has_used_action
 	end_turn_button.disabled = false
+	cancel_action_button.disabled = selected_action not in ["attack", "special", "movement"]
 
 func _special_sweep() -> void:
 	var hit_count := 0
@@ -2421,30 +2839,14 @@ func _special_shockwave() -> void:
 	_finish_player_action()
 
 func _drink_potion() -> void:
-	if not is_player_turn:
-		return
-	if has_used_action:
-		message = "Your action is already spent."
-		_refresh_ui()
-		return
-	if run_state.potions <= 0:
-		message = "No potion waits at your belt."
-	else:
-		run_state.potions -= 1
-		var heal_amount: int = int(GameBalance.get_combat_value(["healing", "potion_base"], 5)) + run_state.get_derived_stat("potion_heal_bonus")
-		var health_before := run_state.current_health
-		run_state.heal(heal_amount)
-		_apply_item_trigger("potion")
-		if health_before + heal_amount > run_state.max_health:
-			_apply_item_trigger("overheal", {"amount": health_before + heal_amount - run_state.max_health})
-		message = "You drink a potion and recover %d health." % heal_amount
-		_finish_player_action()
-	_refresh_ui()
+	_open_consumables()
 
-func _attack_enemy(index: int, damage: int, damage_type: String = "") -> void:
+func _attack_enemy(index: int, damage: int, damage_type: String = "", action_slot_override: String = "") -> void:
 	if index < 0 or index >= enemies.size():
 		return
 	var enemy: Dictionary = enemies[index]
+	damage *= next_consumable_damage_multiplier
+	next_consumable_damage_multiplier = 1
 	var enemy_type := _enemy_type(enemy)
 	var target_id := int(enemy.get("id", -1))
 	var resolved_type := _player_damage_type() if damage_type.is_empty() else damage_type
@@ -2466,6 +2868,7 @@ func _attack_enemy(index: int, damage: int, damage_type: String = "") -> void:
 		"first_enemy_type": not seen_enemy_types.has(enemy_type),
 		"adjacent_enemies": _adjacent_enemy_count(player_pos),
 		"range_bonus": run_state.get_derived_stat("range"),
+		"target_slowed": int(enemy.get("slowed", 0)) > 0,
 	}
 	var contextual_power_stat := "spell_potency" if spell_attack else "attack_power"
 	damage += run_state.get_contextual_item_modifier(contextual_power_stat, context)
@@ -2480,9 +2883,32 @@ func _attack_enemy(index: int, damage: int, damage_type: String = "") -> void:
 		"aegis_all": int(GameBalance.get_enemy_combat_stat(enemy_type, "aegis_all", 0)),
 	}
 	defenses["aegis_%s" % resolved_type] = int(GameBalance.get_enemy_combat_stat(enemy_type, "aegis_%s" % resolved_type, 0))
+	context["target_threshold"] = int(defenses["threshold"])
+	var action_slot := action_slot_override
+	var coordinated_wolf_attack := action_slot == "coordinated_basic"
+	if coordinated_wolf_attack: action_slot = "basic"
+	if action_slot.is_empty(): action_slot = "special" if selected_action == "special" else "basic"
+	context["coordinated_wolf_attack"] = coordinated_wolf_attack
+	var action_modifiers := run_state.get_action_modifier_breakdown(action_slot, context)
+	for ignored_defense in action_modifiers.get("ignore", []):
+		if String(ignored_defense) == "threshold": defenses["threshold"] = 0
+		elif String(ignored_defense) == "aegis":
+			defenses["aegis_all"] = 0; defenses["aegis_%s" % resolved_type] = 0
 	var roll := rng.randi_range(1, 20)
-	var accuracy := run_state.get_derived_stat("accuracy") + run_state.get_contextual_item_modifier("accuracy", context) + int(next_attack_item_bonuses.get("accuracy", 0))
-	var penetration := run_state.get_derived_stat("penetration") + run_state.get_contextual_item_modifier("penetration", context) + int(next_attack_item_bonuses.get("penetration", 0))
+	var base_accuracy := run_state.get_derived_stat("accuracy")
+	var action_accuracy := int(action_modifiers.get("action_bonus", 0))
+	var conditional_accuracy := int(action_modifiers.get("conditional_bonus", 0))
+	var item_accuracy := run_state.get_contextual_item_modifier("accuracy", context) + int(next_attack_item_bonuses.get("accuracy", 0)) + next_consumable_accuracy_bonus
+	next_consumable_accuracy_bonus = 0
+	var accuracy := base_accuracy + action_accuracy + conditional_accuracy + item_accuracy
+	var base_penetration := run_state.get_derived_stat("penetration")
+	var action_penetration := 0
+	if GameBalance.get_class_action(run_state.selected_class_id, action_slot).get("modifiers", []).size() > 0:
+		for modifier in GameBalance.get_class_action(run_state.selected_class_id, action_slot).get("modifiers", []):
+			if modifier is Dictionary and String(modifier.get("stat", "")) == "penetration":
+				action_penetration = int(action_modifiers.get("action_bonus", 0)) + int(action_modifiers.get("conditional_bonus", 0)); action_accuracy = 0; conditional_accuracy = 0; accuracy = base_accuracy + item_accuracy
+	var item_penetration := run_state.get_contextual_item_modifier("penetration", context) + int(next_attack_item_bonuses.get("penetration", 0))
+	var penetration := base_penetration + action_penetration + item_penetration
 	next_attack_item_bonuses.clear()
 	var result := CombatResolver.resolve_attack(roll, accuracy, damage, penetration, resolved_type, defenses)
 	if not bool(result["hit"]) and int(result["evasion"]) - int(result["attack_total"]) <= 2:
@@ -2505,8 +2931,12 @@ func _attack_enemy(index: int, damage: int, damage_type: String = "") -> void:
 					run_state.gold -= cost
 					result = CombatResolver.resolve_attack(rng.randi_range(1, 20), accuracy, damage, penetration, resolved_type, defenses)
 					break
+	result["accuracy_breakdown"] = {"base":base_accuracy,"action":action_accuracy,"conditional":conditional_accuracy,"item":item_accuracy,"final":int(result.get("accuracy", accuracy))}
+	result["penetration_breakdown"] = {"base":base_penetration,"action":action_penetration,"item":item_penetration,"final":int(result.get("penetration", penetration))}
+	result["action_name"] = String(GameBalance.get_class_action(run_state.selected_class_id, action_slot).get("name", action_slot.capitalize()))
 	if not bool(result["hit"]):
 		message = "%s avoids the attack (%d vs Evasion %d)." % [_enemy_display_name(enemy), int(result["attack_total"]), int(result["evasion"])]
+		_record_attack_result("You", _enemy_display_name(enemy), result, 0)
 		return
 	var dealt := int(result["damage"])
 	if dealt <= 0:
@@ -2514,6 +2944,7 @@ func _attack_enemy(index: int, damage: int, damage_type: String = "") -> void:
 		if bool(result.get("blocked_by_threshold", false)):
 			_apply_item_trigger("threshold_block", {"enemy_index": index, "damage_type": resolved_type})
 		message = "%s's defenses absorb the attack." % _enemy_display_name(enemy)
+		_record_attack_result("You", _enemy_display_name(enemy), result, 0)
 		return
 	if last_player_hit_round != round_number:
 		last_player_hit_round = round_number
@@ -2529,7 +2960,10 @@ func _attack_enemy(index: int, damage: int, damage_type: String = "") -> void:
 		_apply_item_trigger("critical_hit", {"enemy_index": index})
 	if not spell_attack:
 		_apply_item_trigger("martial_hit", {"enemy_index": index})
+	var target_tile := Vector2i(enemy["pos"])
 	enemy["hp"] -= dealt
+	_spawn_damage_popup(target_tile, dealt, resolved_type)
+	_record_attack_result("You", _enemy_display_name(enemy), result, dealt)
 	if enemy["hp"] <= 0:
 		var reward: int = _enemy_gold_reward(enemy)
 		var xp_reward: int = _enemy_xp_reward(enemy)
@@ -2541,6 +2975,56 @@ func _attack_enemy(index: int, damage: int, damage_type: String = "") -> void:
 	else:
 		enemies[index] = enemy
 		message = "Hit %s for %d %s damage. It has %d health left." % [_enemy_display_name(enemy), dealt, resolved_type, enemy["hp"]]
+
+func _record_attack_result(attacker: String, defender: String, result: Dictionary, final_damage: int) -> void:
+	var hit := bool(result.get("hit", false))
+	var blocked := bool(result.get("blocked_by_threshold", false))
+	var outcome := "%d damage" % final_damage if final_damage > 0 else ("Threshold blocked" if blocked else ("Miss" if not hit else "No damage"))
+	var summary := "%s → %s: %s" % [attacker, defender, outcome]
+	var effective_threshold := maxi(0, int(result.get("threshold", 0)) - int(result.get("penetration", 0)))
+	var effective_aegis := maxi(0, int(result.get("aegis", 0)) - int(result.get("penetration", 0)))
+	var reaction_note := "yes" if bool(result.get("reaction_eligible", false)) else "no"
+	var accuracy_parts: Dictionary = result.get("accuracy_breakdown", {})
+	var penetration_parts: Dictionary = result.get("penetration_breakdown", {})
+	var details := "Action: %s\nRoll: %d + Accuracy %d = %d; Evasion %d; AC %d (reaction eligible: %s).\nAccuracy: base %d + action %d + conditional %d + items %d = %d.\nDamage: %d %s; Penetration %d (base %d + action %d + items %d); effective Threshold %d; effective Aegis %d; final %d." % [
+		String(result.get("action_name", "Attack")),
+		int(result.get("roll", 0)), int(result.get("accuracy", 0)), int(result.get("attack_total", 0)), int(result.get("evasion", 0)), int(result.get("armor_class", 0)), reaction_note,
+		int(accuracy_parts.get("base", result.get("accuracy", 0))), int(accuracy_parts.get("action", 0)), int(accuracy_parts.get("conditional", 0)), int(accuracy_parts.get("item", 0)), int(accuracy_parts.get("final", result.get("accuracy", 0))),
+		int(result.get("raw_damage", 0)), String(result.get("damage_type", "physical")), int(result.get("penetration", 0)), int(penetration_parts.get("base", result.get("penetration", 0))), int(penetration_parts.get("action", 0)), int(penetration_parts.get("item", 0)), effective_threshold, effective_aegis, final_damage
+	]
+	var resolved_damage := int(result.get("damage", 0))
+	if final_damage != resolved_damage:
+		details += "\nPost-roll reactions, blocks, triggered bonuses, or survival effects changed %d resolved damage to %d applied damage." % [resolved_damage, final_damage]
+	_record_combat_event(summary, details, "#f2c15b" if attacker == "You" else "#ef7770")
+
+func _spawn_damage_popup(tile: Vector2i, amount: int, damage_type: String) -> void:
+	if amount <= 0:
+		return
+	var popup := Label.new()
+	popup.text = "-%d" % amount
+	popup.position = _grid_center(tile) + Vector2(-18, -34)
+	popup.z_index = 100
+	popup.add_theme_font_size_override("font_size", 22)
+	popup.add_theme_constant_override("outline_size", 5)
+	popup.add_theme_color_override("font_outline_color", Color(0.08, 0.03, 0.02, 0.96))
+	popup.add_theme_color_override("font_color", _damage_popup_color(damage_type))
+	_get_effects_root().add_child(popup)
+	var tween := create_tween().set_parallel(true)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(popup, "position", popup.position + Vector2(0, -38), 0.85)
+	tween.tween_property(popup, "modulate:a", 0.0, 0.85).set_delay(0.18)
+	tween.chain().tween_callback(popup.queue_free)
+
+func _damage_popup_color(damage_type: String) -> Color:
+	match damage_type:
+		"fire": return Color(1.0, 0.36, 0.12)
+		"cold": return Color(0.45, 0.88, 1.0)
+		"lightning": return Color(1.0, 0.90, 0.25)
+		"arcane": return Color(0.72, 0.45, 1.0)
+		"radiant": return Color(1.0, 0.95, 0.62)
+		"necrotic": return Color(0.55, 0.90, 0.42)
+		"poison": return Color(0.52, 0.92, 0.25)
+	return Color(1.0, 0.84, 0.62)
 
 func _hit_prop(index: int) -> void:
 	if index < 0 or index >= props.size():
@@ -2711,14 +3195,20 @@ func _enemy_ranged_cast(index: int) -> void:
 		damage = _resolve_class_reaction(index, damage, true)
 	if not bool(result["hit"]):
 		message = "%s's grave-light misses (%d vs Evasion %d)." % [_enemy_display_name(enemy), int(result["attack_total"]), int(result["evasion"])]
+		_record_attack_result(_enemy_display_name(enemy), "You", result, 0)
 		return
+	var health_before := run_state.current_health
 	if damage > 0:
 		_apply_damage(damage)
+	var applied_damage := maxi(0, health_before - run_state.current_health)
+	if applied_damage > 0:
+		_spawn_damage_popup(player_pos, applied_damage, String(result.get("damage_type", "necrotic")))
+	_record_attack_result(_enemy_display_name(enemy), "You", result, applied_damage)
 	if _enemy_type(enemy) == "crypt_boss" and rng.randi_range(1, 4) == 1:
 		movement_remaining = 0
 		var push_direction := Vector2i(_sign_int(player_pos.x - Vector2i(enemy["pos"]).x), _sign_int(player_pos.y - Vector2i(enemy["pos"]).y))
 		_apply_forced_player_move(push_direction, 2)
-	message = "%s hurls grave-light for %d damage." % [_enemy_display_name(enemy), damage]
+	message = "%s hurls grave-light for %d damage." % [_enemy_display_name(enemy), applied_damage]
 
 func _enemy_sprite_key(enemy: Dictionary) -> String:
 	match _enemy_type(enemy):
@@ -2792,15 +3282,23 @@ func _enemy_attack(index: int) -> void:
 		damage = _resolve_class_reaction(index, damage, false)
 	if not bool(result["hit"]):
 		message = "%s misses (%d vs Evasion %d)." % [_enemy_display_name(enemy), int(result["attack_total"]), int(result["evasion"])]
+		_record_attack_result(_enemy_display_name(enemy), "You", result, 0)
 		return
 	if block_stacks > 0:
 		block_stacks -= 1
 		damage = maxi(0, damage - 1)
 		message = "Your shield absorbs part of the blow."
+	var health_before := run_state.current_health
 	if damage > 0:
 		_apply_damage(damage)
+	var applied_damage := maxi(0, health_before - run_state.current_health)
+	if applied_damage > 0:
+		_spawn_damage_popup(player_pos, applied_damage, String(result.get("damage_type", "physical")))
 		if retribution_armed:
-			retribution_stored += int(ceil(float(damage) * 0.5))
+			retribution_stored += int(ceil(float(applied_damage) * 0.5))
+	_record_attack_result(_enemy_display_name(enemy), "You", result, applied_damage)
+	if applied_damage > 0 and run_state.current_health > 0:
+		message = "%s hits you for %d %s damage." % [_enemy_display_name(enemy), applied_damage, String(result.get("damage_type", "physical"))]
 
 func _resolve_enemy_attack_roll(enemy: Dictionary) -> Dictionary:
 	var enemy_type := _enemy_type(enemy)
@@ -3191,12 +3689,20 @@ func _refresh_ui() -> void:
 	action_label.text = "%s | %s | %s%s" % [_turn_status(), _layout_display_name(), resource_text, " | " + ", ".join(states) if not states.is_empty() else ""]
 	hud_label.text = ""
 	hud_label.visible = false
-	log_label.text = message
+	log_label.text = _compact_combat_log_text()
 	_sync_initiative_tracker()
 	_sync_action_panel()
 	_sync_board_nodes()
 	if character_menu_panel != null and character_menu_panel.visible:
 		_sync_character_menu()
+
+func _compact_combat_log_text() -> String:
+	var lines: Array[String] = [message]
+	var start := maxi(0, combat_log_entries.size() - 2)
+	for i in range(start, combat_log_entries.size()):
+		lines.append(String(combat_log_entries[i].get("summary", "")))
+	lines.append("[ Click for attack rolls and calculations ]")
+	return "\n".join(lines)
 
 func _sync_initiative_tracker() -> void:
 	if initiative_tracker == null:
@@ -3273,7 +3779,8 @@ func _sync_action_panel() -> void:
 		interact_button.tooltip_text = _class_action_tooltip(actions, "basic", "2")
 		special_button.tooltip_text = _class_action_tooltip(actions, "special", "3")
 		defend_button.tooltip_text = _class_action_tooltip(actions, "defensive", "5")
-	potion_button.tooltip_text = "Drink a potion to restore health. Uses your action. (4)"
+	potion_button.text = "4 Consumables (%d/%d)" % [run_state.get_consumables().size(), run_state.get_consumable_capacity()]
+	potion_button.tooltip_text = "Choose a held consumable. Using one spends your action. (4)"
 	end_turn_button.tooltip_text = "End your turn and surrender any unused action or movement. (Enter)"
 	_set_combat_buttons_enabled()
 	_set_button_selected(move_button, selected_action == "movement")
@@ -3282,23 +3789,17 @@ func _sync_action_panel() -> void:
 	_set_button_selected(potion_button, false)
 	_set_button_selected(defend_button, not armed_reaction.is_empty())
 	_set_button_selected(end_turn_button, false)
+	_set_button_selected(cancel_action_button, false)
 
 func _class_action_name(actions: Dictionary, slot: String) -> String:
 	var value: Variant = actions.get(slot, {})
 	return String(value.get("name", slot.capitalize())) if value is Dictionary else slot.capitalize()
 
 func _class_action_tooltip(actions: Dictionary, slot: String, hotkey: String) -> String:
-	var value: Variant = actions.get(slot, {})
-	if not (value is Dictionary):
-		return "%s (%s)" % [slot.capitalize(), hotkey]
-	var action: Dictionary = value
-	var description: String = String(action.get("description", action.get("name", slot.capitalize())))
-	if slot == "special":
-		return "%s Costs %d %s. (%s)" % [description, int(action.get("cost", 2)), run_state.get_class_resource_name(), hotkey]
-	return "%s (%s)" % [description, hotkey]
+	return "%s\nHotkey: %s" % [GameBalance.get_action_tooltip(run_state.selected_class_id, slot), hotkey]
 
 func _is_blocking_modal_open() -> bool:
-	return (chest_choice_panel != null and chest_choice_panel.visible) or (character_menu_panel != null and character_menu_panel.visible)
+	return (consumables_backdrop != null and consumables_backdrop.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (combat_log_backdrop != null and combat_log_backdrop.visible) or (chest_choice_panel != null and chest_choice_panel.visible) or (character_menu_panel != null and character_menu_panel.visible)
 
 func _toggle_character_menu() -> void:
 	if chest_choice_panel != null and chest_choice_panel.visible:
@@ -4137,6 +4638,16 @@ func _sync_board_nodes() -> void:
 		var companion_piece := _make_piece("BondedWolf", Vector2i(companion["pos"]), "W", Color(0.83, 0.62, 0.24), BoardPiece.PieceShape.CIRCLE, "bonded_wolf")
 		_add_enemy_health_bar(companion_piece, companion)
 		enemies_root.add_child(companion_piece)
+	if not dungeon_merchant.is_empty():
+		var merchant_id := String(dungeon_merchant.get("id", dungeon_id))
+		var merchant_data := GameBalance.get_merchant(merchant_id)
+		var merchant_piece := _make_piece("DungeonMerchant", Vector2i(dungeon_merchant["pos"]), "$", Color(0.76, 0.58, 0.25), BoardPiece.PieceShape.CIRCLE)
+		var portrait_path := String(merchant_data.get("portrait", ""))
+		if ResourceLoader.exists(portrait_path):
+			_set_fitted_piece_sprite(merchant_piece, load(portrait_path), Vector2(38, 44))
+			merchant_piece.show_label = false
+			merchant_piece.show_panel = false
+		enemies_root.add_child(merchant_piece)
 	if minimap_panel != null:
 		minimap_panel.set_map_state(_build_minimap_state())
 
@@ -4280,7 +4791,7 @@ func _style_action_buttons() -> void:
 		_apply_flat_ui_button(button, 13, Vector2(0, 38))
 
 func _action_buttons() -> Array[Button]:
-	return [move_button, interact_button, special_button, potion_button, defend_button, end_turn_button]
+	return [move_button, interact_button, special_button, potion_button, defend_button, end_turn_button, cancel_action_button]
 
 func _on_reward_card_gui_input(event: InputEvent, item_id: String) -> void:
 	if reward_choice_source == "progression":
@@ -4498,7 +5009,8 @@ func _step_toward(from_tile: Vector2i, to_tile: Vector2i) -> Vector2i:
 func _is_walkable(tile: Vector2i) -> bool:
 	var chest_blocks: bool = chest.has("pos") and not bool(chest.get("opened", false)) and tile == chest["pos"]
 	var companion_blocks := _companion_active() and Vector2i(companion["pos"]) == tile
-	return floor_cells.has(tile) and _prop_at(tile) == -1 and not chest_blocks and _enemy_at(tile) == -1 and not companion_blocks
+	var merchant_blocks := not dungeon_merchant.is_empty() and Vector2i(dungeon_merchant["pos"]) == tile
+	return floor_cells.has(tile) and _prop_at(tile) == -1 and not chest_blocks and _enemy_at(tile) == -1 and not companion_blocks and not merchant_blocks
 
 func _companion_active() -> bool:
 	return not companion.is_empty() and int(companion.get("hp", 0)) > 0 and companion.has("pos")
@@ -4524,7 +5036,8 @@ func _companion_attack_marked(pounce: bool = false) -> bool:
 		var next := _step_toward(wolf_pos, target)
 		if next != wolf_pos: companion["pos"] = next
 	if _distance(Vector2i(companion["pos"]), target) == 1:
-		_attack_enemy(index, 3 if pounce else 2)
+		# The override identifies this as Mark / Command for data-driven bonuses.
+		_attack_enemy(index, 3 if pounce else 2, "physical", "coordinated_basic")
 		run_state.gain_class_resource()
 		return true
 	return pounce

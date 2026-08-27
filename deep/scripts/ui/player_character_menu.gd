@@ -132,7 +132,7 @@ func _make_header(run_state: RunState, portrait: Texture2D, gear_name: String) -
 	resource_row.add_child(_make_icon_text(ICON_HEALTH, "HP %d/%d" % [run_state.current_health, run_state.max_health]))
 	resource_row.add_child(_make_icon_text(ICON_GOLD, "Gold %d" % run_state.gold))
 	resource_row.add_child(_make_icon_text(ICON_KEY, "Keys %d" % run_state.keys))
-	resource_row.add_child(_make_icon_text(ICON_POTION, "Potions %d" % run_state.potions))
+	resource_row.add_child(_make_icon_text(ICON_POTION, "Consumables %d/%d" % [run_state.get_consumables().size(), run_state.get_consumable_capacity()]))
 
 	var gear_label := _make_label("Gear: %s" % gear_name, 15, Color(0.58, 0.87, 0.95), HORIZONTAL_ALIGNMENT_LEFT)
 	details.add_child(gear_label)
@@ -163,15 +163,15 @@ func _make_stats_section(run_state: RunState, derived_stats: Dictionary) -> Pane
 	body.add_child(stats_grid)
 
 	var stats: Dictionary = run_state.get_stats()
-	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "STR %d" % int(stats.get("str", 0)), "Strength"))
-	stats_grid.add_child(_make_stat_tile(ICON_MOVE, "DEX %d" % int(stats.get("dex", 0)), "Dexterity"))
-	stats_grid.add_child(_make_stat_tile(ICON_DEFEND, "CON %d" % int(stats.get("con", 0)), "Constitution"))
-	stats_grid.add_child(_make_stat_tile(ICON_SPELL, "INT %d" % int(stats.get("int", 0)), "Intelligence"))
-	stats_grid.add_child(_make_stat_tile(ICON_MODE, "WIS %d" % int(stats.get("wis", 0)), "Wisdom"))
-	stats_grid.add_child(_make_stat_tile(ICON_SPECIAL, "CHA %d" % int(stats.get("cha", 0)), "Charisma"))
+	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "STR %d" % int(stats.get("str", 0)), "Strength", run_state.get_attribute_growth_explanation("str")))
+	stats_grid.add_child(_make_stat_tile(ICON_MOVE, "DEX %d" % int(stats.get("dex", 0)), "Dexterity", run_state.get_attribute_growth_explanation("dex")))
+	stats_grid.add_child(_make_stat_tile(ICON_DEFEND, "CON %d" % int(stats.get("con", 0)), "Constitution", run_state.get_attribute_growth_explanation("con")))
+	stats_grid.add_child(_make_stat_tile(ICON_SPELL, "INT %d" % int(stats.get("int", 0)), "Intelligence", run_state.get_attribute_growth_explanation("int")))
+	stats_grid.add_child(_make_stat_tile(ICON_MODE, "WIS %d" % int(stats.get("wis", 0)), "Wisdom", run_state.get_attribute_growth_explanation("wis")))
+	stats_grid.add_child(_make_stat_tile(ICON_SPECIAL, "CHA %d" % int(stats.get("cha", 0)), "Charisma", run_state.get_attribute_growth_explanation("cha")))
 
-	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Accuracy +%d" % int(derived_stats.get("accuracy", 0)), "Attack rolls"))
-	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Pen +%d" % int(derived_stats.get("penetration", 0)), "Penetration"))
+	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Accuracy +%d" % int(derived_stats.get("accuracy", 0)), "Attack rolls", _breakdown_tooltip(run_state, "accuracy")))
+	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Pen +%d" % int(derived_stats.get("penetration", 0)), "Penetration", _breakdown_tooltip(run_state, "penetration")))
 	stats_grid.add_child(_make_stat_tile(ICON_ATTACK, "Power +%d" % int(derived_stats.get("attack_power", 0)), "Martial damage"))
 	stats_grid.add_child(_make_stat_tile(ICON_SPELL, "Potency +%d" % int(derived_stats.get("spell_potency", 0)), "Spell damage"))
 	stats_grid.add_child(_make_stat_tile(ICON_DEFEND, "AC %d" % int(derived_stats.get("armor_class", 10)), "Reaction window"))
@@ -224,11 +224,18 @@ func _make_class_panel(run_state: RunState) -> PanelContainer:
 	var class_line: String = String(class_data.get("description", "A hero with a distinct combat discipline."))
 	body.add_child(_make_label(run_state.selected_class_name, 18, Color(1.0, 0.86, 0.58), HORIZONTAL_ALIGNMENT_CENTER))
 	body.add_child(_make_wrapped_label(class_line, 13, Color(0.84, 0.70, 0.45)))
+	var resource_rules := _make_wrapped_label(run_state.get_class_resource_explanation(), 11, Color(0.91, 0.76, 0.42))
+	resource_rules.tooltip_text = run_state.get_class_resource_explanation()
+	body.add_child(resource_rules)
 	body.add_child(_make_wrapped_label(run_state.get_progression_summary(), 10, Color(0.58, 0.87, 0.95)))
 	body.add_child(_make_label("Starting Kit", 13, Color(0.91, 0.60, 0.26), HORIZONTAL_ALIGNMENT_CENTER))
 	var actions: Dictionary = class_data.get("actions", {})
 	var starter_text: String = "%s\n%s\n%s\n%s" % [_menu_action_name(actions, "basic"), _menu_action_name(actions, "special"), _menu_action_name(actions, "defensive"), _menu_action_name(actions, "movement")]
-	body.add_child(_make_wrapped_label(starter_text, 12, Color(0.86, 0.78, 0.64)))
+	var kit_label := _make_wrapped_label(starter_text, 12, Color(0.86, 0.78, 0.64))
+	var action_tips: Array[String] = []
+	for slot in ["basic", "special", "defensive", "movement"]: action_tips.append("%s\n%s" % [_menu_action_name(actions, slot), GameBalance.get_action_tooltip(run_state.selected_class_id, slot)])
+	kit_label.tooltip_text = "\n\n".join(action_tips)
+	body.add_child(kit_label)
 	return panel
 
 func _menu_action_name(actions: Dictionary, slot: String) -> String:
@@ -275,10 +282,11 @@ func _make_side_panel(title: String, height: int) -> PanelContainer:
 	body.add_child(_make_section_title(title))
 	return panel
 
-func _make_stat_tile(icon: Texture2D, title: String, subtitle: String) -> PanelContainer:
+func _make_stat_tile(icon: Texture2D, title: String, subtitle: String, detail: String = "") -> PanelContainer:
 	# Visual handoff: stat rows intentionally use a flat style so future artists
 	# can replace only the section frame without fighting nested textures.
 	var tile := PanelContainer.new()
+	tile.tooltip_text = detail if not detail.is_empty() else subtitle
 	tile.custom_minimum_size = Vector2(190, 48)
 	tile.add_theme_stylebox_override("panel", _flat_panel_style(
 		Color(0.07, 0.055, 0.04, 0.76),
@@ -302,6 +310,13 @@ func _make_stat_tile(icon: Texture2D, title: String, subtitle: String) -> PanelC
 	text.add_child(_make_label(title, 16, Color(1.0, 0.91, 0.72), HORIZONTAL_ALIGNMENT_LEFT))
 	text.add_child(_make_label(subtitle, 11, Color(0.82, 0.62, 0.36), HORIZONTAL_ALIGNMENT_LEFT))
 	return tile
+
+func _breakdown_tooltip(run_state: RunState, stat_id: String) -> String:
+	var value := run_state.get_stat_breakdown(stat_id)
+	var attribute := String(value.get("attribute", ""))
+	var source := ""
+	if not attribute.is_empty(): source = "\n%s %d gives modifier %+d." % [attribute.to_upper(), int(value.get("attribute_value", 0)), int(value.get("attribute_modifier", 0))]
+	return "%s%s\nClass/level: %+d · Progression: %+d · Items: %+d\nFinal: %d" % [String(value.get("formula", "")), source, int(value.get("base_and_level", 0)), int(value.get("progression", 0)), int(value.get("item", 0)), int(value.get("final", 0))]
 
 func _make_relic_slot(entry: Dictionary) -> PanelContainer:
 	var occupied: bool = not entry.is_empty()

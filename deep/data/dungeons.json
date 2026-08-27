@@ -1,0 +1,27 @@
+{
+  "order": ["forest", "crypt"],
+  "dungeons": {
+    "forest": {
+      "name": "Verdant Forest",
+      "subtitle": "The Briarway",
+      "description": "A five-floor woodland descent of beasts, traps, tangled paths, and living wards.",
+      "floors": 5,
+      "difficulty": "Novice",
+      "accent": "65a85f",
+      "merchant_id": "forest",
+      "unlock": {"type":"always"},
+      "unlock_text": "Available from the beginning."
+    },
+    "crypt": {
+      "name": "Stone Crypt",
+      "subtitle": "The Ossuary Depths",
+      "description": "A seven-floor burial complex of restless dead, curses, sealed chambers, and necrotic hazards.",
+      "floors": 7,
+      "difficulty": "Veteran",
+      "accent": "8e83b8",
+      "merchant_id": "crypt",
+      "unlock": {"type":"crypt_progression"},
+      "unlock_text": "Clear the Verdant Forest and reach hero level 5."
+    }
+  }
+}
