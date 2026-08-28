@@ -18,9 +18,17 @@ func _run() -> void:
 		_expect(tavern.backdrop != null and tavern.top_hud != null, "missing backdrop or HUD at %s"%viewport_size,failures)
 		_expect(tavern.results_backdrop.visible and tavern.results_text.text.contains("Forest cleared"),"structured results missing at %s"%viewport_size,failures)
 		_expect(tavern._grid_center(Vector2i(9,8)).x > 0 and tavern._grid_center(Vector2i(9,8)).x < viewport_size.x,"grid failed responsive centering at %s"%viewport_size,failures)
+		var floor_path: Array[Vector2i] = tavern._find_navigation_path(tavern.player_pos,Vector2i(12,7))
+		_expect(not floor_path.is_empty() and floor_path[floor_path.size()-1] == Vector2i(12,7),"click navigation could not route across Tavern floor",failures)
+		var gate_station: Dictionary = tavern._station_at(Vector2i(13,1)); var gate_approach: Vector2i = tavern._best_station_approach(Vector2i(13,1))
+		_expect(not gate_station.is_empty() and gate_approach != Vector2i(-1,-1) and tavern._distance(gate_approach,Vector2i(13,1))==1,"click navigation could not approach expedition gate",failures)
 		tavern._open_dungeon_selector()
-		_expect(tavern.expedition_list.get_child_count()==2,"dungeon selector did not list registered dungeons",failures)
+		var dungeon_button_count := 0
+		for entry in tavern.expedition_list.get_children():
+			if entry is Button: dungeon_button_count += 1
+		_expect(dungeon_button_count==3,"dungeon selector did not list registered dungeons",failures)
 		_expect(tavern.expedition_list.find_child("ForestDungeonButton",false,false) != null,"Forest selector entry missing",failures)
+		_expect(tavern.expedition_list.find_child("AshenFarmsteadDungeonButton",false,false) != null,"Farmstead selector entry missing",failures)
 		_expect(tavern.expedition_list.find_child("CryptDungeonButton",false,false) != null,"Crypt selector entry missing",failures)
 		tavern._close_modal(tavern.expedition_backdrop)
 		tavern._close_modal(tavern.results_backdrop)
@@ -31,7 +39,7 @@ func _run() -> void:
 		_expect(tavern.expedition_backdrop.visible and not tavern.expedition_launch.disabled,"Forest confirmation failed",failures)
 		tavern._close_modal(tavern.expedition_backdrop)
 		tavern._open_expedition("crypt")
-		_expect(tavern.expedition_launch.disabled and tavern.expedition_detail.text.contains("LOCKED"),"locked Crypt gate failed",failures)
+		_expect(not tavern.expedition_launch.disabled and tavern.expedition_detail.text.contains("Testing unlock active"),"testing unlock did not enable Crypt",failures)
 		tavern.free()
 	for class_id in CLASS_IDS:
 		var class_state := RunState.new(); class_state.set_class(class_id)

@@ -12,6 +12,7 @@ const ITEM_EFFECTS_PATH := "res://data/item_effects.json"
 const MERCHANTS_PATH := "res://data/merchants.json"
 const CONSUMABLES_PATH := "res://data/consumables.json"
 const DUNGEONS_PATH := "res://data/dungeons.json"
+const FIELD_ROOMS_PATH := "res://data/field_rooms.json"
 
 static var _progression: Dictionary = {}
 static var _combat: Dictionary = {}
@@ -24,6 +25,7 @@ static var _item_effects: Dictionary = {}
 static var _merchants: Dictionary = {}
 static var _consumables: Dictionary = {}
 static var _dungeons: Dictionary = {}
+static var _field_rooms: Dictionary = {}
 static var _loaded := false
 
 static func get_progression() -> Dictionary:
@@ -228,6 +230,13 @@ static func get_dungeon_order() -> Array:
 	var value: Variant = _dungeons.get("order", [])
 	return value.duplicate() if value is Array else get_dungeons().keys()
 
+static func get_field_room_templates(signature: String) -> Array[Dictionary]:
+	_load_all()
+	var result: Array[Dictionary] = []
+	for value in _field_rooms.get("templates", []):
+		if value is Dictionary and String(value.get("signature", "")) == signature: result.append(value.duplicate(true))
+	return result
+
 static func get_xp_thresholds() -> Array:
 	_load_all()
 	var thresholds: Variant = _progression.get("xp_thresholds", [])
@@ -246,6 +255,10 @@ static func get_class_progression(class_id: String) -> Dictionary:
 	if progression_value is Dictionary:
 		return progression_value
 	return {}
+
+static func are_all_dungeons_unlocked_for_testing() -> bool:
+	_load_all()
+	return bool(_dungeons.get("unlock_all_for_testing", false))
 
 static func get_evolution_choices(class_id: String, level: int, profile: Dictionary) -> Array:
 	return _class_choices_for_level(class_id, "evolutions", level, profile)
@@ -282,6 +295,7 @@ static func _load_all() -> void:
 	_merchants = _load_json(MERCHANTS_PATH)
 	_consumables = _load_json(CONSUMABLES_PATH)
 	_dungeons = _load_json(DUNGEONS_PATH)
+	_field_rooms = _load_json(FIELD_ROOMS_PATH)
 
 static func _load_json(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

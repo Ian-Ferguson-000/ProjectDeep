@@ -31,6 +31,9 @@ func _render_map() -> void:
 		return
 	_clear_children(cells_root)
 	_clear_children(markers_root)
+	if String(map_state.get("mode", "tiles")) == "field":
+		_render_field_map()
+		return
 
 	var width := int(map_state.get("width", 1))
 	var height := int(map_state.get("height", 1))
@@ -54,6 +57,35 @@ func _render_map() -> void:
 		_add_marker(Vector2i(map_state.get("secret", Vector2i.ZERO)), origin, scale, Color(0.84, 0.77, 0.43), 5.2)
 	_add_marker(Vector2i(map_state.get("exit", Vector2i.ZERO)), origin, scale, Color(0.30, 0.90, 0.42), 6.0)
 	_add_marker(Vector2i(map_state.get("player", Vector2i.ZERO)), origin, scale, Color(0.30, 0.64, 1.0), 6.4)
+
+func _render_field_map() -> void:
+	title_label.text = "FIELD MAP"
+	var rooms: Array = map_state.get("rooms", [])
+	if rooms.is_empty(): return
+	var min_x := 999; var min_y := 999; var max_x := -999; var max_y := -999
+	for room in rooms:
+		var pos := Vector2i(room.get("position", Vector2i.ZERO)); min_x = mini(min_x,pos.x); min_y = mini(min_y,pos.y); max_x = maxi(max_x,pos.x); max_y = maxi(max_y,pos.y)
+	var span := Vector2i(max_x-min_x+1,max_y-min_y+1)
+	var scale := minf(26.0, minf((background.size.x-24.0)/float(maxi(1,span.x)),(background.size.y-28.0)/float(maxi(1,span.y))))
+	var origin := (background.size-Vector2(span)*scale)*0.5-Vector2(min_x,min_y)*scale
+	for room in rooms:
+		if not bool(room.get("visited",false)): continue
+		var id := int(room.get("id",-1)); var pos := Vector2i(room.get("position",Vector2i.ZERO)); var center := origin+(Vector2(pos)+Vector2(0.5,0.5))*scale
+		for neighbor in Dictionary(room.get("neighbors",{})).values():
+			if int(neighbor) <= id or int(neighbor) >= rooms.size() or not bool(rooms[int(neighbor)].get("visited",false)): continue
+			var other := Vector2i(rooms[int(neighbor)].get("position",Vector2i.ZERO)); var line := ColorRect.new(); var other_center := origin+(Vector2(other)+Vector2(0.5,0.5))*scale
+			line.position = Vector2(minf(center.x,other_center.x),minf(center.y,other_center.y))-Vector2(2,2); line.size = Vector2(abs(center.x-other_center.x)+4,abs(center.y-other_center.y)+4); line.color=Color(0.48,0.34,0.20); cells_root.add_child(line)
+	for room in rooms:
+		if not bool(room.get("visited",false)): continue
+		var role := String(room.get("role","combat")); var color := Color(0.34,0.30,0.24)
+		if bool(room.get("cleared",false)): color=Color(0.32,0.58,0.34)
+		match role:
+			"shop": color=Color(0.88,0.68,0.22)
+			"treasure": color=Color(0.78,0.45,0.16)
+			"elite": color=Color(0.72,0.22,0.18)
+			"boss": color=Color(0.58,0.12,0.12)
+		if int(room.get("id",-1)) == int(map_state.get("current_room",-2)): color=Color(0.28,0.62,1.0) if not bool(map_state.get("doors_locked",false)) else Color(0.95,0.32,0.16)
+		_add_marker(Vector2i(room.get("position",Vector2i.ZERO)),origin,scale,color,12.0)
 
 func _add_cell(tile: Vector2i, origin: Vector2, scale: float, color: Color) -> void:
 	var rect := ColorRect.new()

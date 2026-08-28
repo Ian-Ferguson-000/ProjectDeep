@@ -619,6 +619,21 @@
 		"initiative_modifier": 2
 	  }
 	},
+	"charred_horseshoe": {
+	  "name": "Charred Horseshoe", "rarity": "common", "duration_type": "run",
+	  "description": "A smoke-black iron shoe that still remembers the open road.", "tags": ["farmstead","movement"],
+	  "icon_key": "movement", "modifiers": {"movement": 1}
+	},
+	"harvesters_gloves": {
+	  "name": "Harvester's Gloves", "rarity": "uncommon", "duration_type": "run",
+	  "description": "Thick gloves stitched with warding straw and sharpened copper thread.", "tags": ["farmstead","power"],
+	  "icon_key": "attack", "modifiers": {"attack_bonus": 2, "spell_power": 2}
+	},
+	"cinderheart_locket": {
+	  "name": "Cinderheart Locket", "rarity": "legendary", "duration_type": "permanent",
+	  "description": "A warm brass locket containing the last clean ember of the Farmstead.", "tags": ["farmstead","health","defense"],
+	  "icon_key": "health", "modifiers": {"max_health": 10, "defense": 3, "potion_heal_bonus": 2}
+	},
 	"aegis_of_the_last_king": {
 	  "name": "Aegis of the Last King",
 	  "rarity": "legendary",

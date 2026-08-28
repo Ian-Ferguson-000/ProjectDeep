@@ -10,6 +10,7 @@
     "haste_potion": {"name":"Potion of Haste","rarity":"rare","description":"Double your remaining movement and gain one additional action this turn.","icon":"res://assets/pixel_art/potion.png","effects":{"movement_multiplier":2,"extra_actions":1}},
     "fury_potion": {"name":"Potion of Fury","rarity":"rare","description":"Your next attack deals double damage.","icon":"res://assets/pixel_art/potion.png","effects":{"next_attack_damage_multiplier":2}},
     "resource_elixir": {"name":"Resource Elixir","rarity":"rare","description":"Completely fill your class resource meter.","icon":"res://assets/pixel_art/spellnode.png","effects":{"resource_fill":true}},
-    "true_strike_tonic": {"name":"True-Strike Tonic","rarity":"rare","description":"Gain +8 Accuracy on your next attack.","icon":"res://assets/pixel_art/potion.png","effects":{"next_attack_accuracy":8}}
+    "true_strike_tonic": {"name":"True-Strike Tonic","rarity":"rare","description":"Gain +8 Accuracy on your next attack.","icon":"res://assets/pixel_art/potion.png","effects":{"next_attack_accuracy":8}},
+    "firebreak_draught": {"name":"Firebreak Draught","rarity":"uncommon","description":"Gain 3 temporary Aegis against the next hit, brewed for the Farmstead's spreading fires.","icon":"res://assets/pixel_art/potion.png","effects":{"temporary_aegis":3}}
   }
 }

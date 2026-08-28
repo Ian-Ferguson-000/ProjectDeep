@@ -42,6 +42,8 @@ var max_floors: int = 5
 var active_dungeon_id: String = "forest"
 var forest_cleared: bool = false
 var crypt_unlocked: bool = false
+var completed_dungeons: Dictionary = {}
+var field_run: Dictionary = {}
 var run_outcome: String = "The bartender polishes a glass and waits."
 var completed_runs: int = 0
 var deaths: int = 0
@@ -82,7 +84,8 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	if selected_gear != null:
 		selected_gear_by_class[selected_class_id] = selected_gear
 	active_dungeon_id = dungeon_id
-	max_floors = 7 if active_dungeon_id == "crypt" else 5
+	var dungeon := GameBalance.get_dungeon(active_dungeon_id)
+	max_floors = int(dungeon.get("floors", 1))
 	_ensure_profiles()
 	_restore_permanent_inventory_for_active_class()
 	pending_chest_choices.clear()
@@ -107,7 +110,11 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	current_floor = 1
 	class_resource = 0
 	floor_seed += 37
-	run_outcome = "The crypt stairs breathe cold dust." if active_dungeon_id == "crypt" else "The forest door opens. The tavern falls quiet behind you."
+	field_run.clear()
+	if String(dungeon.get("dungeon_type", "mystery")) == "field":
+		var room_count: Dictionary = dungeon.get("room_count", {"min":10,"max":12})
+		field_run = FieldDungeonGenerator.generate(get_current_floor_seed(), int(room_count.get("min", 10)), int(room_count.get("max", 12)))
+	run_outcome = "%s opens. The tavern falls quiet behind you." % String(dungeon.get("name", active_dungeon_id.capitalize()))
 	_sync_crypt_unlock()
 
 func advance_floor() -> bool:
@@ -125,10 +132,60 @@ func finish_run(outcome: String, message: String) -> void:
 	run_outcome = message
 	if outcome == "victory":
 		completed_runs += 1
+		completed_dungeons[active_dungeon_id] = true
 	elif outcome == "death":
 		deaths += 1
 		_clear_permanent_inventory_for_active_class()
 	_sync_crypt_unlock()
+
+func has_completed_dungeon(dungeon_id: String) -> bool:
+	if dungeon_id == "forest" and forest_cleared: return true
+	return bool(completed_dungeons.get(dungeon_id, false))
+
+func is_dungeon_unlocked(dungeon_id: String) -> bool:
+	var dungeon := GameBalance.get_dungeon(dungeon_id)
+	if dungeon.is_empty(): return false
+	if GameBalance.are_all_dungeons_unlocked_for_testing(): return true
+	var unlock: Dictionary = dungeon.get("unlock", {})
+	match String(unlock.get("type", "always")):
+		"always": return true
+		"dungeon_clear":
+			if not has_completed_dungeon(String(unlock.get("dungeon_id", ""))): return false
+			return _highest_hero_level() >= int(unlock.get("min_level", 1))
+		"crypt_progression": return has_completed_dungeon("forest") and _highest_hero_level() >= 5
+	return false
+
+func get_field_room(room_id: int) -> Dictionary:
+	var rooms: Array = field_run.get("rooms", [])
+	if room_id < 0 or room_id >= rooms.size() or not (rooms[room_id] is Dictionary): return {}
+	return Dictionary(rooms[room_id]).duplicate(true)
+
+func update_field_room(room_id: int, changes: Dictionary) -> void:
+	var rooms: Array = field_run.get("rooms", [])
+	if room_id < 0 or room_id >= rooms.size(): return
+	var room: Dictionary = rooms[room_id]
+	for key in changes: room[key] = changes[key]
+	rooms[room_id] = room; field_run["rooms"] = rooms
+
+func enter_field_room(room_id: int, previous_room: int) -> void:
+	field_run["previous_room"] = previous_room; field_run["current_room"] = room_id
+	update_field_room(room_id, {"visited":true})
+
+func get_field_discovered_count() -> int:
+	var total := 0
+	for room in field_run.get("rooms", []):
+		if room is Dictionary and bool(room.get("visited", false)): total += 1
+	return total
+
+func get_field_cleared_count() -> int:
+	var total := 0
+	for room in field_run.get("rooms", []):
+		if room is Dictionary and bool(room.get("cleared", false)): total += 1
+	return total
+
+func get_field_progress_summary() -> String:
+	if field_run.is_empty(): return "No active field expedition"
+	return "%d/%d discovered · %d cleared%s" % [get_field_discovered_count(), int(field_run.get("room_count", 0)), get_field_cleared_count(), " · Boss defeated" if bool(field_run.get("boss_defeated", false)) else ""]
 
 func set_selected_gear(gear: GearData) -> void:
 	selected_gear = gear
@@ -989,10 +1046,7 @@ func _max_level() -> int:
 	return GameBalance.get_max_level(MAX_HERO_LEVEL)
 
 func _sync_crypt_unlock() -> void:
-	if crypt_unlocked:
-		return
-	if forest_cleared and _highest_hero_level() >= 5:
-		crypt_unlocked = true
+	crypt_unlocked = is_dungeon_unlocked("crypt") if not GameBalance.get_dungeon("crypt").is_empty() else forest_cleared and _highest_hero_level() >= 5
 
 func _highest_hero_level() -> int:
 	_ensure_profiles()

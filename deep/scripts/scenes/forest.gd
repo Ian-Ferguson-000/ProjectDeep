@@ -4665,6 +4665,15 @@ func _make_piece(node_name: String, tile: Vector2i, label: String, color: Color,
 
 func _apply_sprite_to_piece(piece: BoardPiece, sprite_key: String) -> void:
 	match sprite_key:
+		"ash_rat", "possessed_scarecrow", "ember_crow", "blighted_farmhand", "harvest_wretch":
+			var path := "res://assets/field/farmstead/%s.png" % sprite_key
+			if ResourceLoader.exists(path):
+				_set_fitted_piece_sprite(piece, load(path), Vector2(58, 58) if sprite_key != "harvest_wretch" else Vector2(76, 76)); piece.show_label = false; piece.show_panel = false
+			return
+		"hay_bale", "fence":
+			var prop_path := "res://assets/field/farmstead/%s.png" % sprite_key
+			if ResourceLoader.exists(prop_path): _set_fitted_piece_sprite(piece,load(prop_path),Vector2(54,48)); piece.show_label=false; piece.show_panel=false
+			return
 		"bonded_wolf":
 			var wolf_texture: Texture2D = load("res://assets/classes/wolf_companion/sheet.png")
 			_set_piece_sprite(piece, wolf_texture, Rect2(0, 0, 96, 80), Vector2(0.58, 0.58))

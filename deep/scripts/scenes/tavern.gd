@@ -19,6 +19,7 @@ var player_pos := Vector2i(9, 8)
 var layout: Dictionary = {}
 var stations: Array[Dictionary] = []
 var blocked_cells: Dictionary = {}
+var click_navigation_active := false
 var active_station: Dictionary = {}
 var backdrop_layer: CanvasLayer
 var backdrop: TextureRect
@@ -194,6 +195,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _modal_visible():
 		if event.is_action_pressed("ui_cancel"): _close_top_modal()
 		return
+	if click_navigation_active: return
 	if event.is_action_pressed("interact"): _interact()
 	elif event.is_action_pressed("move_up"): _try_move(Vector2i.UP)
 	elif event.is_action_pressed("move_down"): _try_move(Vector2i.DOWN)
@@ -213,10 +215,56 @@ func _try_move(delta: Vector2i) -> void:
 	_update_token_positions(); _refresh_ui()
 
 func _handle_tile_click(tile: Vector2i) -> void:
+	if click_navigation_active: return
 	var station := _station_at(tile)
-	if not station.is_empty() and _distance(player_pos,tile) <= 1: _activate_station(station); return
-	var delta := tile-player_pos
-	if abs(delta.x)+abs(delta.y)==1: _try_move(delta)
+	if not station.is_empty():
+		if _distance(player_pos,tile) <= 1: _activate_station(station); return
+		var approach := _best_station_approach(tile)
+		if approach == Vector2i(-1,-1): _show_dialogue("The Hearth","No clear route reaches that station."); return
+		_walk_click_path(_find_navigation_path(player_pos,approach),station)
+		return
+	if not _is_walkable(tile): _show_dialogue("The Hearth","Tables, walls, and occupied stalls block that route."); return
+	_walk_click_path(_find_navigation_path(player_pos,tile),{})
+
+func _walk_click_path(path: Array[Vector2i], station: Dictionary) -> void:
+	if path.is_empty():
+		if not station.is_empty() and _distance(player_pos,_station_position(station)) <= 1: _activate_station(station)
+		return
+	click_navigation_active = true
+	for step in path:
+		player_pos = step
+		var tween := create_tween(); tween.set_trans(Tween.TRANS_SINE); tween.set_ease(Tween.EASE_IN_OUT); tween.tween_property(player_token,"position",_grid_center(step),0.08)
+		await tween.finished
+	click_navigation_active = false
+	_update_token_positions(); _refresh_ui()
+	if not station.is_empty() and _distance(player_pos,_station_position(station)) <= 1: _activate_station(station)
+
+func _best_station_approach(station_tile: Vector2i) -> Vector2i:
+	var best := Vector2i(-1,-1); var best_length := 999
+	for delta in [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]:
+		var candidate: Vector2i = station_tile + Vector2i(delta)
+		if not _is_walkable(candidate): continue
+		var path := _find_navigation_path(player_pos,candidate)
+		if candidate == player_pos: return candidate
+		if not path.is_empty() and path.size() < best_length: best=candidate; best_length=path.size()
+	return best
+
+func _find_navigation_path(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
+	if from_tile == to_tile: return []
+	var frontier: Array[Vector2i] = [from_tile]
+	var came_from: Dictionary = {from_tile:from_tile}
+	while not frontier.is_empty():
+		var current: Vector2i = frontier.pop_front()
+		for delta in [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]:
+			var next: Vector2i = current + Vector2i(delta)
+			if came_from.has(next) or not _is_walkable(next): continue
+			came_from[next] = current
+			if next == to_tile:
+				var result: Array[Vector2i] = [next]; var cursor: Vector2i = current
+				while cursor != from_tile: result.push_front(cursor); cursor = Vector2i(came_from[cursor])
+				return result
+			frontier.append(next)
+	return []
 
 func _interact() -> void:
 	var station := _nearest_station()
@@ -255,13 +303,19 @@ func _update_armory_detail() -> void:
 func _open_dungeon_selector() -> void:
 	for child in expedition_list.get_children(): child.queue_free()
 	var first_button: Button
+	var current_category := ""
 	for dungeon_value in GameBalance.get_dungeon_order():
 		var dungeon_id := String(dungeon_value)
 		var dungeon := GameBalance.get_dungeon(dungeon_id)
 		if dungeon.is_empty(): continue
+		var category := String(dungeon.get("category", "Mystery"))
+		if category != current_category:
+			current_category = category
+			var heading := Label.new(); heading.text = "%s DUNGEONS" % category.to_upper(); heading.add_theme_font_size_override("font_size",16); heading.add_theme_color_override("font_color",Color(0.94,0.66,0.28)); expedition_list.add_child(heading)
 		var unlocked := _is_dungeon_unlocked(dungeon_id)
 		var button := Button.new(); button.name = "%sDungeonButton"%dungeon_id.to_pascal_case(); button.toggle_mode = true
-		button.text = "%s\n%s · %s%s"%[String(dungeon.get("name",dungeon_id.capitalize())),String(dungeon.get("difficulty","Unknown")),"%d floors"%int(dungeon.get("floors",1)),"" if unlocked else " · LOCKED"]
+		var format_text := "Single field · %d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "%d floors"%int(dungeon.get("floors",1))
+		button.text = "%s\n%s · %s%s"%[String(dungeon.get("name",dungeon_id.capitalize())),String(dungeon.get("difficulty","Unknown")),format_text,"" if unlocked else " · LOCKED"]
 		button.tooltip_text = String(dungeon.get("description","")); button.pressed.connect(_select_dungeon.bind(dungeon_id)); _style_button(button); expedition_list.add_child(button)
 		if first_button == null: first_button = button
 	var initial_id := expedition_id if GameBalance.get_dungeons().has(expedition_id) else String(GameBalance.get_dungeon_order()[0])
@@ -279,16 +333,15 @@ func _select_dungeon(dungeon_id: String) -> void:
 	var merchant_id := String(dungeon.get("merchant_id",dungeon_id))
 	var progress := run_state.get_merchant_progress(merchant_id)
 	expedition_title.text = "%s\n%s"%[String(dungeon.get("name",dungeon_id.capitalize())),String(dungeon.get("subtitle",""))]
-	expedition_detail.text = "%s · %s\n\n%s\n\nFloors: %d\nHighest depth: %d\nMerchant: %s%s\n\nClass: %s %s\nGear: %s (%d damage)\nConsumables: %d/%d\nGold carried: %d\n\n%s" % ["READY" if unlocked else "LOCKED",String(dungeon.get("difficulty","Unknown")),String(dungeon.get("description","")),int(dungeon.get("floors",1)),int(progress.get("highest_depth",0)),String(GameBalance.get_merchant(merchant_id).get("name",merchant_id.capitalize()))," · Recruited" if run_state.is_merchant_recruited(merchant_id) else "",run_state.selected_class_name,run_state.get_profile_summary(),selected_gear.display_name if selected_gear else "None",_gear_damage(selected_gear),run_state.get_consumables().size(),run_state.get_consumable_capacity(),run_state.gold,"Confirm to leave the safety of the Hearth." if unlocked else String(dungeon.get("unlock_text","This dungeon is locked."))]
+	var extent := "Single field: %d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "Floors: %d" % int(dungeon.get("floors",1))
+	if GameBalance.are_all_dungeons_unlocked_for_testing(): extent += " · Testing unlock active"
+	expedition_detail.text = "%s · %s\n\n%s\n\n%s\nHighest depth: %d\nMerchant: %s%s\n\nClass: %s %s\nGear: %s (%d damage)\nConsumables: %d/%d\nGold carried: %d\n\n%s" % ["READY" if unlocked else "LOCKED",String(dungeon.get("difficulty","Unknown")),String(dungeon.get("description","")),extent,int(progress.get("highest_depth",0)),String(GameBalance.get_merchant(merchant_id).get("name",merchant_id.capitalize()))," · Recruited" if run_state.is_merchant_recruited(merchant_id) else "",run_state.selected_class_name,run_state.get_profile_summary(),selected_gear.display_name if selected_gear else "None",_gear_damage(selected_gear),run_state.get_consumables().size(),run_state.get_consumable_capacity(),run_state.gold,"Confirm to leave the safety of the Hearth." if unlocked else String(dungeon.get("unlock_text","This dungeon is locked."))]
 	expedition_launch.disabled = not unlocked or selected_gear == null
 	for child in expedition_list.get_children():
 		if child is Button: child.button_pressed = child.name == "%sDungeonButton"%dungeon_id.to_pascal_case()
 
 func _is_dungeon_unlocked(dungeon_id: String) -> bool:
-	var unlock: Dictionary = GameBalance.get_dungeon(dungeon_id).get("unlock",{})
-	match String(unlock.get("type","always")):
-		"crypt_progression": return run_state.is_crypt_unlocked()
-	return true
+	return run_state.is_dungeon_unlocked(dungeon_id)
 
 func _launch_expedition() -> void:
 	_close_modal(expedition_backdrop)

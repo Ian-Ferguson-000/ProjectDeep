@@ -8,7 +8,7 @@
     {"id":"expedition_gate","type":"dungeon_selector","position":[13,1],"name":"Expedition Gate","prompt":"Choose a dungeon expedition"},
     {"id":"forest_merchant","type":"merchant","merchant_id":"forest","position":[2,3],"name":"Thistle Fen","prompt":"Browse Briarway stock","unlock":"merchant:forest"},
     {"id":"crypt_merchant","type":"merchant","merchant_id":"crypt","position":[15,3],"name":"Sister Caldris","prompt":"Browse Ossuary stock","unlock":"merchant:crypt"},
-    {"id":"west_vacant","type":"vacant","position":[2,6],"name":"Covered Stall","prompt":"Reserved for a future dungeon merchant"},
+    {"id":"farmstead_merchant","type":"merchant","merchant_id":"farmstead","position":[2,6],"name":"Orin Cinder","prompt":"Browse Ashfield stock","unlock":"merchant:farmstead"},
     {"id":"east_vacant","type":"vacant","position":[15,6],"name":"Covered Stall","prompt":"Reserved for a future dungeon merchant"}
   ]
 }

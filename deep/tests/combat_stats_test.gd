@@ -16,7 +16,7 @@ func _initialize() -> void:
 	var layered_aegis := CombatResolver.defense_snapshot({"aegis_all":2,"aegis_fire":3})
 	_expect(int(layered_aegis.aegis_fire) == 5, "Global and typed Aegis should stack", failures)
 	var items := GameBalance.get_items()
-	_expect(items.size() == 49, "expected all 49 upgraded items", failures)
+	_expect(items.size() == 52, "expected all 52 upgraded items", failures)
 	var seen_rules: Dictionary = {}
 	for item_id in items.keys():
 		var item: Dictionary = items[item_id]
@@ -40,7 +40,7 @@ func _initialize() -> void:
 	mantle.add_inventory_item("wyvernscale_mantle", 1)
 	_expect(mantle.get_derived_stat("aegis_poison") == 4, "Wyvernscale typed Aegis failed", failures)
 	if failures.is_empty():
-		print("Layered combat stats and 49-item uniqueness validation passed.")
+		print("Layered combat stats and 52-item uniqueness validation passed.")
 		quit(0)
 	else:
 		for failure in failures: push_error(failure)

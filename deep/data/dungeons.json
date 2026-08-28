@@ -1,27 +1,52 @@
 {
-  "order": ["forest", "crypt"],
+  "unlock_all_for_testing": true,
+  "order": ["forest", "ashen_farmstead", "crypt"],
   "dungeons": {
     "forest": {
       "name": "Verdant Forest",
       "subtitle": "The Briarway",
       "description": "A five-floor woodland descent of beasts, traps, tangled paths, and living wards.",
+      "category": "Mystery",
+      "dungeon_type": "mystery",
+      "runtime": "forest",
       "floors": 5,
       "difficulty": "Novice",
       "accent": "65a85f",
       "merchant_id": "forest",
       "unlock": {"type":"always"},
-      "unlock_text": "Available from the beginning."
+      "unlock_text": "Available from the beginning.",
+      "completion_unlocks": ["ashen_farmstead"]
+    },
+    "ashen_farmstead": {
+      "name": "Ashen Farmstead",
+      "subtitle": "The Cinder Fields",
+      "description": "A blighted farm of sealed encounters, scorched crops, possessed fieldhands, and a harvest that refuses to die.",
+      "category": "Field",
+      "dungeon_type": "field",
+      "runtime": "ashen_farmstead",
+      "floors": 1,
+      "room_count": {"min": 10, "max": 12},
+      "difficulty": "Adept",
+      "accent": "c56b35",
+      "merchant_id": "farmstead",
+      "theme": "ashen_farmstead",
+      "unlock": {"type":"dungeon_clear", "dungeon_id":"forest"},
+      "unlock_text": "Clear the Verdant Forest.",
+      "completion_unlocks": ["crypt"]
     },
     "crypt": {
       "name": "Stone Crypt",
       "subtitle": "The Ossuary Depths",
       "description": "A seven-floor burial complex of restless dead, curses, sealed chambers, and necrotic hazards.",
+      "category": "Mystery",
+      "dungeon_type": "mystery",
+      "runtime": "crypt",
       "floors": 7,
       "difficulty": "Veteran",
       "accent": "8e83b8",
       "merchant_id": "crypt",
-      "unlock": {"type":"crypt_progression"},
-      "unlock_text": "Clear the Verdant Forest and reach hero level 5."
+      "unlock": {"type":"dungeon_clear", "dungeon_id":"ashen_farmstead", "min_level":5},
+      "unlock_text": "Clear the Ashen Farmstead and reach hero level 5."
     }
   }
 }

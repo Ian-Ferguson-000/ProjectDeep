@@ -49,6 +49,21 @@
         {"offer_id":"heartwood_crown","kind":"item","item_id":"heartwood_crown","favor":55,"min_rank":4,"location":"favor"}
       ]
     },
+    "farmstead": {
+      "name": "Orin Cinder",
+      "title": "Ashfield Tinker",
+      "description": "A soot-streaked salvager trading harvest charms, firebreak tonics, and tools recovered from the blight.",
+      "portrait": "res://assets/field/farmstead/merchant_orin.png",
+      "dungeon_id": "ashen_farmstead",
+      "stock": [
+        {"offer_id":"farmstead_potion","kind":"consumable","consumable_id":"healing_potion","name":"Emberroot Tonic","description":"Gain one Healing Potion immediately.","gold":7,"min_rank":0,"location":"both"},
+        {"offer_id":"farmstead_firebreak","kind":"consumable","consumable_id":"firebreak_draught","name":"Firebreak Draught","description":"Gain a Firebreak Draught.","gold":13,"min_rank":1,"location":"both"},
+        {"offer_id":"farmstead_haste","kind":"consumable","consumable_id":"haste_potion","name":"Harvest Haste","description":"Double remaining movement and gain an action.","gold":24,"min_rank":2,"location":"both"},
+        {"offer_id":"charred_horseshoe","kind":"item","item_id":"charred_horseshoe","gold":18,"min_rank":0,"location":"both"},
+        {"offer_id":"harvesters_gloves","kind":"item","item_id":"harvesters_gloves","gold":31,"min_rank":1,"location":"both"},
+        {"offer_id":"cinderheart_locket","kind":"item","item_id":"cinderheart_locket","favor":55,"min_rank":4,"location":"favor"}
+      ]
+    },
     "crypt": {
       "name": "Sister Caldris",
       "title": "Ossuary Lamplighter",

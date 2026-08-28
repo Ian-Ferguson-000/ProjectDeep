@@ -5,6 +5,7 @@ const ClassSelectionScene := preload("res://scenes/class_selection/ClassSelectio
 const TavernScene := preload("res://scenes/tavern/Tavern.tscn")
 const ForestScene := preload("res://scenes/forest/Forest.tscn")
 const CryptScene := preload("res://scenes/crypt/Crypt.tscn")
+const AshenFarmsteadScene := preload("res://scenes/field/AshenFarmstead.tscn")
 
 var run_state := RunState.new()
 var all_gear_options: Array[GearData] = []
@@ -127,10 +128,21 @@ func start_crypt(gear: GearData) -> void:
 	_load_crypt_floor()
 
 func start_dungeon(dungeon_id: String, gear: GearData) -> void:
-	match dungeon_id:
-		"forest": start_forest(gear)
-		"crypt": start_crypt(gear)
-		_: show_tavern("That expedition is not yet available.")
+	if not run_state.is_dungeon_unlocked(dungeon_id):
+		show_tavern(String(GameBalance.get_dungeon(dungeon_id).get("unlock_text", "That expedition is locked.")))
+		return
+	run_state.start_new_run(gear, dungeon_id)
+	_load_active_dungeon()
+
+func _load_active_dungeon() -> void:
+	_clear_scene()
+	var scene: PackedScene
+	match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)):
+		"forest": scene = ForestScene
+		"crypt": scene = CryptScene
+		"ashen_farmstead": scene = AshenFarmsteadScene
+		_: show_tavern("That expedition runtime is not available."); return
+	var dungeon := scene.instantiate(); current_scene = dungeon; dungeon.setup(self, run_state); add_child(dungeon)
 
 func _load_forest_floor() -> void:
 	_clear_scene()
@@ -160,6 +172,10 @@ func complete_crypt_floor() -> void:
 		_load_crypt_floor()
 	else:
 		return_to_tavern("victory", "You emerge from the seven-floor Stone Crypt with %d gold. Sister Caldris has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
+
+func complete_ashen_farmstead() -> void:
+	var favor_logs := run_state.record_dungeon_floor_clear("farmstead", int(run_state.field_run.get("room_count", 1)), true)
+	return_to_tavern("victory", "The Harvest Wretch falls. You return from the Ashen Farmstead with %d gold. Orin Cinder has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
 
 func return_to_tavern(outcome: String, message: String) -> void:
 	var changes: Array[String] = []

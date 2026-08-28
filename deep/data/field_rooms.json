@@ -1,0 +1,23 @@
+{
+  "templates": [
+    {"id":"north_lane","signature":"N","background_id":"farmyard","obstacles":[[5,4],[10,6],[7,6]]},
+    {"id":"east_yard","signature":"E","background_id":"farmyard","obstacles":[[6,3],[6,7],[10,5]]},
+    {"id":"south_barn","signature":"S","background_id":"barn","obstacles":[[5,5],[10,4],[10,7]]},
+    {"id":"west_house","signature":"W","background_id":"cellar","obstacles":[[9,3],[9,7],[5,5]]},
+    {"id":"north_south_field","signature":"NS","background_id":"farmyard","obstacles":[[4,4],[11,4],[4,7],[11,7]]},
+    {"id":"north_south_orchard","signature":"NS","background_id":"farmyard","obstacles":[[5,3],[10,3],[5,6],[10,7]]},
+    {"id":"east_west_crossing","signature":"EW","background_id":"crossroads","obstacles":[[7,3],[8,7],[10,4]]},
+    {"id":"east_west_thresher","signature":"EW","background_id":"barn","obstacles":[[5,3],[8,4],[11,7],[6,7]]},
+    {"id":"north_east_granary","signature":"NE","background_id":"storehouse","obstacles":[[5,6],[9,6],[11,3]]},
+    {"id":"north_west_cellar","signature":"NW","background_id":"cellar","obstacles":[[10,6],[6,6],[4,3]]},
+    {"id":"south_east_farmhouse","signature":"ES","background_id":"cellar","obstacles":[[5,3],[9,3],[11,7]]},
+    {"id":"south_west_burned_field","signature":"SW","background_id":"harvest_field","obstacles":[[10,3],[6,3],[4,7]]},
+    {"id":"three_way_nes","signature":"NES","background_id":"crossroads","obstacles":[[5,5],[10,5],[8,7]]},
+    {"id":"three_way_nes_croft","signature":"NES","background_id":"farmyard","obstacles":[[4,6],[8,3],[11,6]]},
+    {"id":"three_way_new","signature":"NEW","background_id":"crossroads","obstacles":[[8,7],[5,4],[11,4]]},
+    {"id":"three_way_nsw","signature":"NSW","background_id":"farmyard","obstacles":[[10,5],[7,3],[7,7]]},
+    {"id":"three_way_esw","signature":"ESW","background_id":"storehouse","obstacles":[[8,3],[5,6],[11,6]]},
+    {"id":"ashen_crossroads","signature":"NESW","background_id":"crossroads","obstacles":[[6,3],[10,3],[6,7],[10,7]]},
+    {"id":"cinder_crossroads","signature":"NESW","background_id":"farmyard","obstacles":[[5,4],[11,4],[5,7],[11,7],[8,5]]}
+  ]
+}
