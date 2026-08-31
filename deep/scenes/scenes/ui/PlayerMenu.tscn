@@ -1,0 +1,233 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://cld5773sglkwh" path="res://scripts/codes/player_menu.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://xpc7phpxv61d" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/8 Shop/1.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://s27ailqgyqtl" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/1.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://crjuktar1ysep" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/9 Rewards/1.png" id="4"]
+
+[node name="PlayerMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+process_mode = 3
+script = ExtResource("1")
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03,0.02,0.02,0.78)
+
+[node name="Paper" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -560.0
+offset_top = -330.0
+offset_right = 560.0
+offset_bottom = 330.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Header" type="TextureRect" parent="Paper"]
+offset_left = 255.0
+offset_top = 10.0
+offset_right = 865.0
+offset_bottom = 105.0
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Paper/Header"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.23,0.12,0.06,1)
+theme_override_font_sizes/font_size = 30
+text = "ALCHEMIST'S FOLIO"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="Paper"]
+unique_name_in_owner = true
+offset_left = 980.0
+offset_top = 25.0
+offset_right = 1065.0
+offset_bottom = 68.0
+text = "Close"
+
+[node name="Tabs" type="TabContainer" parent="Paper"]
+unique_name_in_owner = true
+offset_left = 45.0
+offset_top = 105.0
+offset_right = 1075.0
+offset_bottom = 625.0
+theme_override_colors/font_selected_color = Color(0.2,0.38,0.22,1)
+theme_override_colors/font_unselected_color = Color(0.3,0.17,0.09,1)
+theme_override_font_sizes/font_size = 19
+
+[node name="Runes" type="Control" parent="Paper/Tabs"]
+[node name="RuneFilter" type="OptionButton" parent="Paper/Tabs/Runes"]
+unique_name_in_owner = true
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 350.0
+offset_bottom = 58.0
+item_count = 14
+popup/item_0/text = "All elements"
+popup/item_0/id = 0
+popup/item_1/text = "Spirit"
+popup/item_1/id = 1
+popup/item_2/text = "Fire"
+popup/item_2/id = 2
+popup/item_3/text = "Aether"
+popup/item_3/id = 3
+popup/item_4/text = "Lightning"
+popup/item_4/id = 4
+popup/item_5/text = "Burn"
+popup/item_5/id = 5
+popup/item_6/text = "Magnetism"
+popup/item_6/id = 6
+popup/item_7/text = "Void"
+popup/item_7/id = 7
+popup/item_8/text = "Force"
+popup/item_8/id = 8
+popup/item_9/text = "Wave"
+popup/item_9/id = 9
+popup/item_10/text = "Growth"
+popup/item_10/id = 10
+popup/item_11/text = "Earth"
+popup/item_11/id = 11
+popup/item_12/text = "Light"
+popup/item_12/id = 12
+popup/item_13/text = "Wind"
+popup/item_13/id = 13
+[node name="RuneScroll" type="ScrollContainer" parent="Paper/Tabs/Runes"]
+offset_left = 18.0
+offset_top = 70.0
+offset_right = 370.0
+offset_bottom = 460.0
+[node name="RuneList" type="VBoxContainer" parent="Paper/Tabs/Runes/RuneScroll"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(330,0)
+[node name="DetailPaper" type="TextureRect" parent="Paper/Tabs/Runes"]
+offset_left = 390.0
+offset_top = 18.0
+offset_right = 1005.0
+offset_bottom = 390.0
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 6
+[node name="RuneDetails" type="RichTextLabel" parent="Paper/Tabs/Runes/DetailPaper"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 25.0
+offset_right = -30.0
+offset_bottom = -25.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+[node name="RuneAction" type="Button" parent="Paper/Tabs/Runes"]
+unique_name_in_owner = true
+offset_left = 430.0
+offset_top = 410.0
+offset_right = 690.0
+offset_bottom = 462.0
+text = "Craft Rune"
+[node name="OpenSoulSpace" type="Button" parent="Paper/Tabs/Runes"]
+unique_name_in_owner = true
+offset_left = 710.0
+offset_top = 410.0
+offset_right = 970.0
+offset_bottom = 462.0
+text = "Open Soul Space [R]"
+
+[node name="Player Stats" type="Control" parent="Paper/Tabs"]
+[node name="StatsPaper" type="TextureRect" parent="Paper/Tabs/Player Stats"]
+offset_left = 80.0
+offset_top = 25.0
+offset_right = 950.0
+offset_bottom = 470.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 6
+[node name="StatsText" type="RichTextLabel" parent="Paper/Tabs/Player Stats/StatsPaper"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 50.0
+offset_top = 40.0
+offset_right = -50.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+theme_override_colors/default_color = Color(0.22,0.12,0.07,1)
+theme_override_font_sizes/normal_font_size = 18
+
+[node name="Resources" type="Control" parent="Paper/Tabs"]
+[node name="ResourceScroll" type="ScrollContainer" parent="Paper/Tabs/Resources"]
+offset_left = 90.0
+offset_top = 30.0
+offset_right = 940.0
+offset_bottom = 470.0
+[node name="ResourceList" type="VBoxContainer" parent="Paper/Tabs/Resources/ResourceScroll"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(820,0)
+theme_override_constants/separation = 12
+
+[node name="Enemy Journal" type="Control" parent="Paper/Tabs"]
+[node name="JournalScroll" type="ScrollContainer" parent="Paper/Tabs/Enemy Journal"]
+offset_left = 18.0
+offset_top = 25.0
+offset_right = 365.0
+offset_bottom = 470.0
+[node name="JournalList" type="VBoxContainer" parent="Paper/Tabs/Enemy Journal/JournalScroll"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(325,0)
+[node name="JournalPaper" type="TextureRect" parent="Paper/Tabs/Enemy Journal"]
+offset_left = 385.0
+offset_top = 20.0
+offset_right = 1005.0
+offset_bottom = 475.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 6
+[node name="JournalPortrait" type="TextureRect" parent="Paper/Tabs/Enemy Journal/JournalPaper"]
+unique_name_in_owner = true
+offset_left = 35.0
+offset_top = 35.0
+offset_right = 245.0
+offset_bottom = 205.0
+expand_mode = 1
+stretch_mode = 5
+[node name="JournalDetails" type="RichTextLabel" parent="Paper/Tabs/Enemy Journal/JournalPaper"]
+unique_name_in_owner = true
+offset_left = 270.0
+offset_top = 35.0
+offset_right = 585.0
+offset_bottom = 420.0
+bbcode_enabled = true
+theme_override_colors/default_color = Color(0.22,0.12,0.07,1)
+theme_override_font_sizes/normal_font_size = 16

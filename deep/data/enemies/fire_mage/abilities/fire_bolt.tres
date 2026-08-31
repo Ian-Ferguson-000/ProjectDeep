@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyAbility" format=3]
+
+[ext_resource type="Script" uid="uid://cw0iehgmbhwtg" path="res://scripts/codes/combat/enemy_ability.gd" id="1"]
+[resource]
+script=ExtResource("1")
+ability_id="fire_bolt"
+kind=1
+damage=11
+damage_type="fire"
+status_effect="burn"
+status_power=2
+range=210.0
+preferred_min_range=140.0
+preferred_max_range=210.0
+cooldown=1.5
+windup=0.4
+projectile_speed=390.0
+projectile_range=300.0

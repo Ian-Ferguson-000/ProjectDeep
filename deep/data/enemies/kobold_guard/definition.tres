@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://scripts/codes/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" uid="uid://cewtw5umav2t0" path="res://assets/sprite_packs/Kobold/kobold_profile.tres" id="2"]
+[ext_resource type="Resource" uid="uid://blqjpty5de5ap" path="res://Data/journal/kobold_guard.tres" id="3"]
+[ext_resource type="SpriteFrames" uid="uid://dibr8rl31t30g" path="res://assets/sprite_packs/Kobold/kobold_frames.tres" id="4"]
+[ext_resource type="Resource" path="res://Data/enemies/kobold_guard/abilities/club_strike.tres" id="5"]
+[resource]
+script=ExtResource("1")
+enemy_id="kobold_guard"
+display_name="Kobold Guard"
+profile=ExtResource("2")
+journal_entry=ExtResource("3")
+sprite_frames=ExtResource("4")
+sprite_offset=Vector2(0,-25)
+sprite_scale=Vector2(1,1)
+abilities=[ExtResource("5")]

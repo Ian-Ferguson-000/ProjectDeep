@@ -5,7 +5,7 @@
   "stations": [
     {"id":"keeper","type":"merchant","merchant_id":"tavern","position":[9,1],"name":"Mara Vell","prompt":"Browse Hearth supplies"},
     {"id":"armory","type":"armory","position":[3,8],"name":"Class Armory","prompt":"Choose class-compatible gear"},
-    {"id":"expedition_gate","type":"dungeon_selector","position":[13,1],"name":"Expedition Gate","prompt":"Choose a dungeon expedition"},
+    {"id":"expedition_gate","type":"dungeon_selector","position":[11,1],"name":"Expedition Gate","prompt":"Choose a dungeon expedition"},
     {"id":"forest_merchant","type":"merchant","merchant_id":"forest","position":[2,3],"name":"Thistle Fen","prompt":"Browse Briarway stock","unlock":"merchant:forest"},
     {"id":"crypt_merchant","type":"merchant","merchant_id":"crypt","position":[15,3],"name":"Sister Caldris","prompt":"Browse Ossuary stock","unlock":"merchant:crypt"},
     {"id":"farmstead_merchant","type":"merchant","merchant_id":"farmstead","position":[2,6],"name":"Orin Cinder","prompt":"Browse Ashfield stock","unlock":"merchant:farmstead"},

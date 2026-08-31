@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://cw1p26nqiy0q3"]
+
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dm1rhhj8cxn1x" path="res://assets/pixel_art/voodoo-guy-walk anim.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="Portrait"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 44, 37)
+
+[resource]
+script = ExtResource("1")
+enemy_id = "dark_druid"
+display_name = "Dark Druid"
+portrait = SubResource("Portrait")
+description = "A fallen grove keeper who twists roots through aetheric corruption."
+habitat = "Northwestern glade"
+behavior_summary = "Controls a broad rooting field while keeping distance."
+max_health = 48
+defense = 2
+attack_damage = 10
+damage_type = "aether"
+vulnerabilities = {
+"aether": 0.5,
+"fire": 1.25,
+"spirit": 1.5
+}

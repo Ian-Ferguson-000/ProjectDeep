@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyProfile" format=3]
+
+[ext_resource type="Script" uid="uid://csnapanx857b1" path="res://scripts/codes/combat/enemy_profile.gd" id="1"]
+[resource]
+script=ExtResource("1")
+enemy_id="feral_wolf"
+journal_id="feral_wolf"
+display_name="Feral Wolf"
+max_health=36
+defense=0
+vulnerabilities={"ice":1.25}
+knockback_resistance=0.1
+respawn_time=5.0
+move_speed=165.0
+aggro_range=170.0
+leash_range=330.0
+retreat_health_ratio=0.0
+enabled_behaviors=7

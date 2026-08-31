@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyProfile" format=3]
+
+[ext_resource type="Script" uid="uid://csnapanx857b1" path="res://scripts/codes/combat/enemy_profile.gd" id="1"]
+[resource]
+script=ExtResource("1")
+enemy_id="ice_mage"
+journal_id="ice_mage"
+display_name="Ice Mage"
+max_health=32
+defense=1
+vulnerabilities={"fire":1.5,"aether":0.75}
+respawn_time=5.0
+move_speed=85.0
+aggro_range=150.0
+leash_range=300.0
+retreat_health_ratio=0.0
+enabled_behaviors=7

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://cmhqo823cw4r3"]
+
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cix2nbksf8nw" path="res://assets/enemies/ice_mage/normalized_sheet.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="Portrait"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 96, 80)
+
+[resource]
+script = ExtResource("1")
+enemy_id = "ice_mage"
+display_name = "Ice Mage"
+portrait = SubResource("Portrait")
+description = "A secluded caster who binds intruders in killing frost."
+habitat = "Eastern creek"
+behavior_summary = "Kites at range and fires rooting frost bolts."
+max_health = 32
+defense = 1
+attack_damage = 9
+damage_type = "ice"
+vulnerabilities = {
+"aether": 0.75,
+"fire": 1.5
+}

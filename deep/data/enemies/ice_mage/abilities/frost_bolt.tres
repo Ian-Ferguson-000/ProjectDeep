@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyAbility" format=3]
+
+[ext_resource type="Script" uid="uid://cw0iehgmbhwtg" path="res://scripts/codes/combat/enemy_ability.gd" id="1"]
+[resource]
+script=ExtResource("1")
+ability_id="frost_bolt"
+kind=1
+damage=9
+damage_type="ice"
+status_effect="root"
+status_power=2
+range=220.0
+preferred_min_range=150.0
+preferred_max_range=220.0
+cooldown=1.6
+windup=0.45
+projectile_speed=360.0
+projectile_range=300.0

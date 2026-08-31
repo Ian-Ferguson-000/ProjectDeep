@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://scripts/codes/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://Data/enemies/fire_mage/profile.tres" id="2"]
+[ext_resource type="Resource" uid="uid://dfar7orva8eon" path="res://Data/enemies/fire_mage/journal.tres" id="3"]
+[ext_resource type="SpriteFrames" uid="uid://biarnd6k3rlpl" path="res://assets/enemies/fire_mage/frames.tres" id="4"]
+[ext_resource type="Resource" path="res://Data/enemies/fire_mage/abilities/fire_bolt.tres" id="5"]
+[resource]
+script=ExtResource("1")
+enemy_id="fire_mage"
+display_name="Fire Mage"
+profile=ExtResource("2")
+journal_entry=ExtResource("3")
+sprite_frames=ExtResource("4")
+sprite_offset=Vector2(0,-35)
+idle_animation="idle_right"
+run_animation="run_right"
+attack_animation="attack_right"
+abilities=[ExtResource("5")]

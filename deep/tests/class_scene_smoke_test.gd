@@ -5,11 +5,18 @@ const FOREST := preload("res://scenes/forest/Forest.tscn")
 const CRYPT := preload("res://scenes/crypt/Crypt.tscn")
 const CLASS_SELECTION := preload("res://scenes/class_selection/ClassSelection.tscn")
 
+class SelectionController extends Node:
+	var chosen_class := ""
+	func choose_class(class_id: String) -> void: chosen_class = class_id
+
 func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	var selection_controller := SelectionController.new()
+	root.add_child(selection_controller)
 	var selection := CLASS_SELECTION.instantiate()
+	selection.setup(selection_controller)
 	root.add_child(selection)
 	await process_frame
 	if selection.detail_text == null or not selection.detail_text.text.contains("Warrior"):
@@ -17,10 +24,20 @@ func _run() -> void:
 	selection._show_details("mage")
 	if not selection.detail_text.text.contains("+10 Accuracy"):
 		push_error("Class details omit Arcane Missile signature rule"); quit(1); return
+	for class_id in CLASS_IDS:
+		var card: Button = selection.cards[CLASS_IDS.find(class_id)]
+		if not (card is Button) or card.find_child("%sCardArt" % class_id.capitalize(), true, false) == null:
+			push_error("Class card %s is not a complete clickable card" % class_id); quit(1); return
+		if card.find_child("%sSelectButton" % class_id.capitalize(), true, false) != null:
+			push_error("Class card %s still contains a redundant Choose button" % class_id); quit(1); return
+	selection.cards[CLASS_IDS.find("phantom")].pressed.emit()
+	if selection_controller.chosen_class != "phantom":
+		push_error("Clicking a class card did not select it"); quit(1); return
 	selection.size = Vector2(700, 800); selection._update_responsive_layout()
 	if selection.class_grid.columns != 1:
 		push_error("Class selection one-column breakpoint failed"); quit(1); return
 	selection.free()
+	selection_controller.free()
 	var crypt_state := RunState.new(); crypt_state.set_class("warrior")
 	crypt_state.start_new_run(GearData.create("test_crypt", "Test Gear", 2, true, 1, "", "", "warrior", "none"), "crypt")
 	var crypt_scene := CRYPT.instantiate(); crypt_scene.setup(null, crypt_state); root.add_child(crypt_scene)

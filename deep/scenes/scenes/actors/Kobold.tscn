@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://ni1a483304mk"]
+
+[ext_resource type="Script" uid="uid://brfcvla2a88tq" path="res://scripts/codes/combat/enemy.gd" id="1"]
+[ext_resource type="Resource" uid="uid://cewtw5umav2t0" path="res://assets/sprite_packs/Kobold/kobold_profile.tres" id="2"]
+[ext_resource type="SpriteFrames" uid="uid://dibr8rl31t30g" path="res://assets/sprite_packs/Kobold/kobold_frames.tres" id="3"]
+[ext_resource type="Script" uid="uid://dip684oeg7jku" path="res://scripts/codes/combat/health_component.gd" id="4"]
+[ext_resource type="Script" uid="uid://by0shmn4owl53" path="res://scripts/codes/combat/status_component.gd" id="5"]
+[ext_resource type="Resource" path="res://Data/enemies/kobold_guard/definition.tres" id="6"]
+
+[sub_resource type="CapsuleShape2D" id="Capsule"]
+radius = 14.0
+height = 34.0
+
+[sub_resource type="StyleBoxFlat" id="BarBackground"]
+bg_color = Color(0.12, 0.06, 0.07, 0.9)
+
+[sub_resource type="StyleBoxFlat" id="BarFill"]
+bg_color = Color(0.76, 0.16, 0.12, 1)
+
+[node name="Kobold" type="CharacterBody2D" unique_id=1654738009]
+collision_layer = 4
+script = ExtResource("1")
+definition = ExtResource("6")
+profile = ExtResource("2")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=441371006]
+position = Vector2(0, -25)
+sprite_frames = ExtResource("3")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1972884032]
+shape = SubResource("Capsule")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=2125240030]
+script = ExtResource("4")
+
+[node name="StatusComponent" type="Node" parent="." unique_id=1384233065]
+script = ExtResource("5")
+
+[node name="DetectionArea" type="Area2D" parent="." unique_id=820200306]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=1388087304]
+shape = SubResource("Capsule")
+disabled = true
+
+[node name="AttackArea" type="Area2D" parent="." unique_id=615836206]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=1768732453]
+shape = SubResource("Capsule")
+disabled = true
+
+[node name="HealthBar" type="ProgressBar" parent="." unique_id=1270965974]
+visible = false
+offset_left = -34.0
+offset_top = -62.0
+offset_right = 34.0
+offset_bottom = -53.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("BarBackground")
+theme_override_styles/fill = SubResource("BarFill")
+value = 100.0
+show_percentage = false
+
+[node name="EnemyName" type="Label" parent="." unique_id=155498803]
+offset_left = -60.0
+offset_top = -104.0
+offset_right = 60.0
+offset_bottom = -84.0
+theme_override_colors/font_color = Color(1, 0.9, 0.72, 1)
+theme_override_colors/font_outline_color = Color(0.1, 0.04, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "KOBOLD GUARD"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="." unique_id=1450229792]
+offset_left = -55.0
+offset_top = -82.0
+offset_right = 55.0
+offset_bottom = -63.0
+theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1

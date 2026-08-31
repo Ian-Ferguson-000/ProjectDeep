@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyAbility" format=3]
+
+[ext_resource type="Script" uid="uid://cw0iehgmbhwtg" path="res://scripts/codes/combat/enemy_ability.gd" id="1"]
+[resource]
+script=ExtResource("1")
+ability_id="spore_burst"
+kind=2
+damage=7
+damage_type="poison"
+status_effect="poison"
+status_power=2
+range=64.0
+preferred_min_range=0.0
+preferred_max_range=60.0
+cooldown=2.2
+windup=0.45
+area_radius=64.0

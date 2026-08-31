@@ -13,6 +13,10 @@ const MERCHANTS_PATH := "res://data/merchants.json"
 const CONSUMABLES_PATH := "res://data/consumables.json"
 const DUNGEONS_PATH := "res://data/dungeons.json"
 const FIELD_ROOMS_PATH := "res://data/field_rooms.json"
+const SLASHER_BALANCE_PATH := "res://data/slasher_balance.json"
+const SLASHER_JOURNAL_PATH := "res://data/slasher_journal.json"
+const SLASHER_PROGRESSION_PATH := "res://data/slasher_progression.json"
+const SLASHER_ITEM_EFFECTS_PATH := "res://data/slasher_item_effects.json"
 
 static var _progression: Dictionary = {}
 static var _combat: Dictionary = {}
@@ -26,11 +30,250 @@ static var _merchants: Dictionary = {}
 static var _consumables: Dictionary = {}
 static var _dungeons: Dictionary = {}
 static var _field_rooms: Dictionary = {}
+static var _slasher_balance: Dictionary = {}
+static var _slasher_journal: Dictionary = {}
+static var _slasher_progression: Dictionary = {}
+static var _slasher_item_effects: Dictionary = {}
 static var _loaded := false
 
 static func get_progression() -> Dictionary:
 	_load_all()
 	return _progression
+
+static func get_slasher_balance(section: String = "") -> Dictionary:
+	_load_all()
+	if section.is_empty(): return _slasher_balance.duplicate(true)
+	var value: Variant = _slasher_balance.get(section, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+static func get_slasher_class_tuning(class_id: String) -> Dictionary:
+	_load_all()
+	var classes: Variant = _slasher_balance.get("classes", {})
+	var value: Variant = classes.get(normalize_class_id(class_id), {}) if classes is Dictionary else {}
+	if not (value is Dictionary) or value.is_empty():
+		push_warning("Invalid Slasher class tuning for '%s'." % class_id)
+		return {}
+	var result:Dictionary=value.duplicate(true)
+	for requirement in [{"key":"speed","fallback":185.0},{"key":"collision_radius","fallback":18.0}]:
+		var key:String=String(requirement.key);var candidate:Variant=result.get(key)
+		if typeof(candidate) not in [TYPE_INT,TYPE_FLOAT]:push_warning("Invalid Slasher numeric tuning '%s.%s'; using %s."%[class_id,key,requirement.fallback]);result[key]=requirement.fallback
+	return result
+
+static func get_slasher_ability_tuning(class_id: String, slot: String) -> Dictionary:
+	var value: Variant = get_slasher_class_tuning(class_id).get(slot, {})
+	if not (value is Dictionary) or value.is_empty():
+		push_warning("Invalid Slasher ability tuning for '%s.%s'." % [class_id, slot])
+		return {}
+	var result:Dictionary=value.duplicate(true)
+	var defaults:Dictionary={"cooldown":0.4 if slot=="basic" else 3.0,"resource_cost":2 if slot=="special" else 0,"animation_lock":0.32}
+	for key:String in defaults:
+		var candidate:Variant=result.get(key)
+		if typeof(candidate) not in [TYPE_INT,TYPE_FLOAT]:push_warning("Invalid Slasher numeric tuning '%s.%s.%s'; using %s."%[class_id,slot,key,defaults[key]]);result[key]=defaults[key]
+	return result
+
+static func get_slasher_progression(class_id:String)->Dictionary:
+	_load_all()
+	var classes:Dictionary=Dictionary(_slasher_progression.get("classes",{}));var value:Variant=classes.get(normalize_class_id(class_id),{})
+	return value.duplicate(true) if value is Dictionary else {}
+
+static func get_slasher_choices_for_level(class_id:String,level:int,profile:Dictionary)->Array[Dictionary]:
+	_load_all();class_id=normalize_class_id(class_id);var choices:Array[Dictionary]=[]
+	var selected:Array=_profile_array(profile,"slasher_ability_upgrades")+_profile_array(profile,"slasher_evolution_path")
+	if level==3:
+		for foundation_value:Variant in _slasher_progression.get("foundations",[]):
+			if foundation_value is Dictionary:
+				var foundation:Dictionary=foundation_value.duplicate(true);foundation["id"]="%s_foundation_%s"%[class_id,String(foundation.get("key","choice"))];foundation["level"]=3;foundation["type"]="ability"
+				if not selected.has(foundation.id):choices.append(foundation)
+		return choices
+	var progression:Dictionary=get_slasher_progression(class_id);var branches:Array=progression.get("branches",[])
+	if level==5:
+		for branch_value:Variant in branches:
+			if branch_value is Dictionary:
+				var branch:Dictionary=branch_value;var branch_id:String=String(branch.get("id",""));var choice:Dictionary={"id":"%s_branch_%s"%[class_id,branch_id],"level":5,"type":"evolution","branch":branch_id,"name":String(branch.get("name",branch_id.capitalize())),"description":String(branch.get("description","")),"flags":[branch_id+"_path"]}
+				if not selected.has(choice.id):choices.append(choice)
+		return choices
+	if level not in [7,9,11,13,17,19]:return choices
+	var branch_id:String=_slasher_profile_branch(class_id,profile);var branch:Dictionary=_slasher_branch(class_id,branch_id)
+	if branch.is_empty():return choices
+	var focus:Array=branch.get("focus",["basic","special"]);var milestone_index:int=[7,9,11,13,17,19].find(level);var slot:String=String(focus[milestone_index%maxi(1,focus.size())]);var templates:Dictionary=Dictionary(_slasher_progression.get("milestone_templates",{}));var level_template:Dictionary=Dictionary(templates.get(str(level),{}));var flags:Array=branch.get("flags",[]);var mechanic_flag:String=String(flags[mini(milestone_index,maxi(0,flags.size()-1))]) if not flags.is_empty() else branch_id+"_mastery"
+	for variant:String in ["power","flow"]:
+		var choice_id:String="%s_%s_l%d_%s"%[class_id,branch_id,level,variant]
+		if selected.has(choice_id):continue
+		choices.append({"id":choice_id,"level":level,"type":"ability","branch":branch_id,"slot":slot,"name":"%s %s"%[String(branch.get("name",branch_id.capitalize())),"Mastery" if variant=="power" else "Flow"],"description":"Transform %s through %s."%[slot.capitalize(),"greater impact" if variant=="power" else "faster resource tempo"],"operations":Dictionary(level_template.get(variant,{})).duplicate(true),"flags":[mechanic_flag] if variant=="power" else [mechanic_flag+"_flow"]})
+	return choices
+
+static func get_slasher_progression_choice(class_id:String,choice_id:String)->Dictionary:
+	var synthetic:Dictionary={"slasher_ability_upgrades":[],"slasher_evolution_path":[]}
+	for level:int in [3,5]:
+		for choice:Dictionary in get_slasher_choices_for_level(class_id,level,synthetic):
+			if String(choice.get("id",""))==choice_id:return choice
+	for branch_value:Variant in get_slasher_progression(class_id).get("branches",[]):
+		if not (branch_value is Dictionary):continue
+		var branch_id:String=String(branch_value.get("id",""));synthetic.slasher_evolution_path=["%s_branch_%s"%[normalize_class_id(class_id),branch_id]]
+		for level:int in [7,9,11,13,17,19]:
+			for choice:Dictionary in get_slasher_choices_for_level(class_id,level,synthetic):
+				if String(choice.get("id",""))==choice_id:return choice
+	return {}
+
+static func get_effective_slasher_ability_tuning(class_id:String,slot:String,selected_choices:Array)->Dictionary:
+	var tuning:Dictionary=get_slasher_ability_tuning(class_id,slot);var flags:Array[String]=[]
+	for choice_value:Variant in selected_choices:
+		var choice:Dictionary=get_slasher_progression_choice(class_id,String(choice_value))
+		if choice.is_empty():continue
+		var choice_slot:String=String(choice.get("slot",""));var applies:bool=choice_slot.is_empty() or choice_slot==slot
+		if applies:
+			_apply_slasher_operations(tuning,Dictionary(choice.get("operations",{})))
+			for flag_value:Variant in choice.get("flags",[]):
+				var flag:String=String(flag_value)
+				if not flags.has(flag):flags.append(flag)
+	_apply_slasher_flag_effects(tuning,flags,slot);tuning["progression_flags"]=flags;return tuning
+
+static func get_effective_slasher_companion_tuning(class_id:String,companion_id:String,selected_choices:Array)->Dictionary:
+	var tuning:Dictionary=get_slasher_companion_tuning(companion_id);var flags:Array[String]=[]
+	if normalize_class_id(class_id)!="summoner":return tuning
+	for choice_value:Variant in selected_choices:
+		var choice:Dictionary=get_slasher_progression_choice(class_id,String(choice_value));var choice_id:String=String(choice.get("id",""))
+		if choice.is_empty() or not choice_id.contains("packmaster") and not choice_id.contains("warden") and not choice_id.contains("wildrider"):continue
+		var operations:Dictionary=Dictionary(choice.get("operations",{}))
+		if choice_id.ends_with("_power"):
+			_apply_slasher_operations(tuning,{"damage_coefficient":operations.get("damage_coefficient",{"multiply":1.15}),"pounce_range":{"multiply":1.10}})
+		else:_apply_slasher_operations(tuning,{"attack_cooldown":{"multiply":0.88},"combat_speed":{"multiply":1.10},"resource_gain":operations.get("resource_gain",{"add":0})})
+		for flag_value:Variant in choice.get("flags",[]):flags.append(String(flag_value))
+	_apply_slasher_flag_effects(tuning,flags,"companion");tuning["progression_flags"]=flags;return tuning
+
+static func _apply_slasher_flag_effects(tuning:Dictionary,flags:Array[String],slot:String)->void:
+	for flag:String in flags:
+		if flag.contains("splash") or flag.contains("widen") or flag.contains("aura") or flag.contains("growth"):
+			if tuning.has("area_radius"):tuning.area_radius=float(tuning.area_radius)*1.20
+			elif tuning.has("reach"):tuning.reach=float(tuning.reach)*1.18
+			elif tuning.has("pounce_range"):tuning.pounce_range=float(tuning.pounce_range)*1.20
+		if flag.contains("chain") or flag.contains("echo") or flag.contains("double") or flag.contains("trail") or flag.contains("aftershock") or flag.contains("trample"):
+			tuning["echo_damage_multiplier"]=maxf(float(tuning.get("echo_damage_multiplier",0.0)),0.45);tuning["piercing"]=true
+		if flag.contains("refund") or flag.contains("overflow") or flag.contains("surge"):
+			tuning["resource_refund_on_hit"]=maxi(int(tuning.get("resource_refund_on_hit",0)),1)
+		if flag.contains("hidden") and tuning.has("hidden_duration"):tuning.hidden_duration=float(tuning.hidden_duration)+0.35
+		if flag.contains("threshold") and tuning.has("low_health_fraction"):tuning.low_health_fraction=minf(0.85,float(tuning.low_health_fraction)+0.15)
+		if flag.contains("store") and tuning.has("storage_fraction"):tuning.storage_fraction=minf(1.0,float(tuning.storage_fraction)+0.15)
+		if flag.contains("persist") and tuning.has("effect_duration"):tuning.effect_duration=float(tuning.effect_duration)*1.35
+		if flag.contains("frenzy") or flag.contains("rapid_cast") or flag.contains("fury_speed"):tuning.cooldown=float(tuning.get("cooldown",1.0))*0.85
+		if flag.ends_with("capstone"):
+			if tuning.has("damage_coefficient"):tuning.damage_coefficient=float(tuning.damage_coefficient)*1.20
+			if tuning.has("cooldown"):tuning.cooldown=float(tuning.cooldown)*0.82
+	if slot=="companion" and not flags.is_empty():tuning.combat_speed=float(tuning.get("combat_speed",145.0))*1.08
+
+static func _apply_slasher_operations(tuning:Dictionary,operations:Dictionary)->void:
+	for key_value:Variant in operations:
+		var key:String=String(key_value)
+		if not tuning.has(key) or typeof(tuning[key]) not in [TYPE_INT,TYPE_FLOAT]:continue
+		var operation_value:Variant=operations[key]
+		if not (operation_value is Dictionary):continue
+		var operation:Dictionary=operation_value;var value:float=float(tuning[key])
+		if operation.has("multiply"):value*=float(operation.multiply)
+		if operation.has("add"):value+=float(operation.add)
+		if operation.has("set"):value=float(operation.set)
+		if operation.has("min"):value=maxf(value,float(operation.min))
+		if operation.has("max"):value=minf(value,float(operation.max))
+		tuning[key]=roundi(value) if typeof(tuning[key])==TYPE_INT else value
+
+static func _slasher_branch(class_id:String,branch_id:String)->Dictionary:
+	for value:Variant in get_slasher_progression(class_id).get("branches",[]):
+		if value is Dictionary and String(value.get("id",""))==branch_id:return value.duplicate(true)
+	return {}
+
+static func _slasher_profile_branch(class_id:String,profile:Dictionary)->String:
+	for value:Variant in _profile_array(profile,"slasher_evolution_path"):
+		var choice:Dictionary=get_slasher_progression_choice(class_id,String(value))
+		if not choice.is_empty() and int(choice.get("level",0))==5:return String(choice.get("branch",""))
+	return ""
+
+static func get_slasher_enemy_tuning(kind: String) -> Dictionary:
+	_load_all()
+	var enemies: Variant = _slasher_balance.get("enemies", {})
+	var value: Variant = enemies.get(kind, {}) if enemies is Dictionary else {}
+	if not (value is Dictionary) or value.is_empty():
+		push_warning("Invalid Slasher enemy tuning for '%s'." % kind)
+		return {}
+	return value.duplicate(true)
+
+static func get_slasher_enemy_visual_tuning(visual_id:String)->Dictionary:
+	_load_all()
+	var visuals:Variant=_slasher_balance.get("enemy_visuals",{})
+	var value:Variant=visuals.get(visual_id,{}) if visuals is Dictionary else {}
+	if not (value is Dictionary) or value.is_empty():
+		push_warning("Missing Slasher enemy visual tuning for '%s'; using presentation defaults."%visual_id)
+		return {"sprite_offset_x":0.0,"sprite_offset_y":-18.0,"sprite_scale":0.7}
+	return value.duplicate(true)
+
+static func get_slasher_wolf_archetype(archetype_id:String)->Dictionary:
+	_load_all()
+	var archetypes:Variant=_slasher_balance.get("wolf_archetypes",{})
+	var value:Variant=archetypes.get(archetype_id,{}) if archetypes is Dictionary else {}
+	return value.duplicate(true) if value is Dictionary else {}
+
+static func get_slasher_wolfmaster_tuning()->Dictionary:
+	_load_all()
+	var value:Variant=_slasher_balance.get("wolfmaster",{})
+	return value.duplicate(true) if value is Dictionary else {}
+
+static func get_slasher_companion_tuning(companion_id: String) -> Dictionary:
+	_load_all()
+	var companions: Variant = _slasher_balance.get("companions", {})
+	var value: Variant = companions.get(companion_id, {}) if companions is Dictionary else {}
+	if not (value is Dictionary) or value.is_empty():
+		push_warning("Invalid Slasher companion tuning for '%s'." % companion_id)
+		return {}
+	return value.duplicate(true)
+
+static func get_slasher_journal()->Dictionary:
+	_load_all()
+	return _slasher_journal.duplicate(true)
+
+static func get_slasher_journal_entry(enemy_id:String)->Dictionary:
+	var entries:Variant=get_slasher_journal().get("entries",{})
+	var value:Variant=entries.get(enemy_id,{}) if entries is Dictionary else {}
+	return value.duplicate(true) if value is Dictionary else {}
+
+static func get_slasher_item_effects(item_id:String)->Dictionary:
+	_load_all()
+	var authored:Variant=Dictionary(_slasher_item_effects.get("items",{})).get(item_id,{})
+	var record:Dictionary=authored.duplicate(true) if authored is Dictionary else {}
+	var item:Dictionary=get_item(item_id)
+	if item.is_empty():return {}
+	var conversions:Dictionary={}
+	var modifiers:Dictionary=Dictionary(item.get("modifiers",{}))
+	for key_value:Variant in modifiers:
+		var key:String=String(key_value);var value:float=float(modifiers[key_value])
+		match key:
+			"attack_bonus":conversions["attack_power"]=value
+			"spell_power":conversions["spell_power"]=value
+			"defense":conversions["damage_reduction"]=minf(0.30,value*0.035)
+			"threshold":conversions["flat_prevention"]=value
+			"initiative_modifier":conversions["cooldown_reduction"]=minf(0.35,value*0.025)
+			"movement":conversions["speed_multiplier"]=1.0+value*0.05;conversions["mobility_multiplier"]=1.0+value*0.05
+			"accuracy":conversions["precision_hits"]=maxi(2,7-int(value))
+			"penetration":conversions["elite_damage_multiplier"]=1.0+value*0.08
+			"evasion":conversions["defense_window_bonus"]=value*0.06
+			"range":conversions["range_pixels"]=value*48.0
+			_:conversions[key]=value
+	var authored_conversions:Dictionary=Dictionary(record.get("conversions",{}));authored_conversions.merge(conversions,true);record["conversions"]=authored_conversions
+	if not record.has("rules"):
+		var summary:Array[String]=[]
+		for conversion_key:Variant in conversions:summary.append("%s %s"%[String(conversion_key).replace("_"," ").capitalize(),str(conversions[conversion_key])])
+		record["rules"]="Slasher: %s."%(", ".join(summary) if not summary.is_empty() else "activates a deterministic combat effect on its listed trigger")
+	record["trigger"]=String(record.get("trigger","passive"));record["internal_cooldown"]=float(record.get("internal_cooldown",0.0))
+	return record
+
+static func get_slasher_item_rules_text(item_id:String)->String:return String(get_slasher_item_effects(item_id).get("rules",""))
+static func get_slasher_item_stat_conversions(item_id:String)->Dictionary:return Dictionary(get_slasher_item_effects(item_id).get("conversions",{})).duplicate(true)
+
+static func get_slasher_chest_rarity_weights(floor_number:int,endless_cycle:int=0)->Dictionary:
+	_load_all();var weights:Dictionary=get_rarity_weights(clampi(floor_number,1,5)).duplicate(true)
+	if endless_cycle<=0:return weights
+	var scaling:Dictionary=Dictionary(_slasher_item_effects.get("endless_rarity",{}));var shift:int=endless_cycle*int(scaling.get("shift_per_cycle",4))
+	weights["common"]=maxi(0,int(weights.get("common",0))-shift*2);weights["uncommon"]=maxi(0,int(weights.get("uncommon",0))-shift)
+	weights["rare"]=int(weights.get("rare",0))+shift;weights["very_rare"]=int(weights.get("very_rare",0))+shift
+	weights["legendary"]=mini(int(scaling.get("legendary_weight_cap",15)),int(weights.get("legendary",0))+maxi(1,endless_cycle*int(scaling.get("legendary_per_cycle",2))))
+	return weights
 
 static func get_combat_value(path: Array, fallback: Variant) -> Variant:
 	_load_all()
@@ -296,6 +539,10 @@ static func _load_all() -> void:
 	_consumables = _load_json(CONSUMABLES_PATH)
 	_dungeons = _load_json(DUNGEONS_PATH)
 	_field_rooms = _load_json(FIELD_ROOMS_PATH)
+	_slasher_balance = _load_json(SLASHER_BALANCE_PATH)
+	_slasher_journal = _load_json(SLASHER_JOURNAL_PATH)
+	_slasher_progression = _load_json(SLASHER_PROGRESSION_PATH)
+	_slasher_item_effects = _load_json(SLASHER_ITEM_EFFECTS_PATH)
 
 static func _load_json(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

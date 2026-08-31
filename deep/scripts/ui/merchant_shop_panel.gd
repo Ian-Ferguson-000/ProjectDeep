@@ -53,9 +53,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _build_ui() -> void:
 	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-430, -300)
-	panel.size = Vector2(860, 600)
+	panel.anchor_left=0.5;panel.anchor_top=0.5;panel.anchor_right=0.5;panel.anchor_bottom=0.5
+	panel.offset_left=-430;panel.offset_top=-300;panel.offset_right=430;panel.offset_bottom=300
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.add_theme_stylebox_override("panel", _panel_style(Color(0.085, 0.06, 0.038), Color(0.80, 0.58, 0.26), 8))
 	add_child(panel)

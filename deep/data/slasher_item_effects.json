@@ -1,0 +1,22 @@
+{
+  "choice_count": 3,
+  "endless_rarity": {"shift_per_cycle": 4, "legendary_per_cycle": 2, "legendary_weight_cap": 15},
+  "timing_defaults": {"once_per_turn_seconds": 2.5, "timed_buff_seconds": 5.0, "periodic_seconds": 8.0},
+  "items": {
+    "soldiers_buckle": {"rules":"Slasher: reduce incoming damage by 3.5%.","trigger":"passive"},
+    "embershard_focus": {"rules":"Slasher: gain spell power for its remaining floors.","trigger":"passive"},
+    "keen_edge_oil": {"rules":"Slasher: gain attack power for its remaining floors.","trigger":"passive"},
+    "healers_brooch": {"rules":"Slasher: healing potions restore additional health.","trigger":"potion_use"},
+    "quickstep_charm": {"rules":"Slasher: movement speed and mobility distance increase.","trigger":"passive"},
+    "wand_of_cinders": {"rules":"Slasher: spell hits build precision; the cadence hit deals 25% bonus damage.","trigger":"hit","precision_bonus":0.25,"precision_hits":6},
+    "giant_bane_grip": {"rules":"Slasher: deal 16% more damage to elites and bosses.","trigger":"hit","elite_damage_multiplier":1.16},
+    "flameheart_talisman": {"rules":"Slasher: spell impacts gain an 18-pixel area burst.","trigger":"hit","area_radius_bonus":18.0,"internal_cooldown":1.5},
+    "starfallen_sigil": {"rules":"Slasher: specials create a 45% echo impact once every 4 seconds.","trigger":"action_complete","echo_multiplier":0.45,"internal_cooldown":4.0},
+    "heartwood_crown": {"rules":"Slasher: recover 2 health on each floor entry.","trigger":"floor_entry","heal":2},
+    "phoenix_ash_reliquary": {"rules":"Slasher: survive one lethal hit per floor at 1 health.","trigger":"lethal_damage","once_per_floor":true},
+    "chronomancers_pin": {"rules":"Slasher: periodically shave 0.4 seconds from active cooldowns.","trigger":"periodic","internal_cooldown":8.0,"cooldown_flat":0.4},
+    "worldbreaker_gauntlet": {"rules":"Slasher: impacts gain power, knockback, and area.","trigger":"hit","area_radius_bonus":20.0},
+    "crown_of_the_first_flame": {"rules":"Slasher: specials gain 30% damage and a wider impact.","trigger":"action_start","special_damage_multiplier":1.30,"area_radius_bonus":28.0},
+    "aegis_of_the_last_king": {"rules":"Slasher: gain heavy mitigation and survive one lethal hit per floor.","trigger":"lethal_damage","once_per_floor":true}
+  }
+}

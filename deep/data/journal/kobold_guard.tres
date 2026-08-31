@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://blqjpty5de5ap"]
+
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dl2ht8rioasou" path="res://assets/sprite_packs/Kobold/Sprites/with_outline/IDLE.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="Portrait"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 148, 96)
+
+[resource]
+script = ExtResource("1")
+enemy_id = "kobold_guard"
+display_name = "Kobold Guard"
+portrait = SubResource("Portrait")
+description = "A territorial tunnel scavenger armed with a curved blade. Kobolds are quick to defend claimed paths but lose confidence when badly wounded."
+habitat = "Northern approach and rocky warrens"
+behavior_summary = "Patrols its territory, chases intruders, attacks in melee, and retreats below 25% health."
+max_health = 80
+defense = 1
+attack_damage = 12
+damage_type = "physical"
+vulnerabilities = {
+"aether": 0.75,
+"fire": 1.25,
+"lightning": 1.5
+}

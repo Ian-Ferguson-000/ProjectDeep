@@ -1,0 +1,227 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://uxgkaipkksql" path="res://scripts/codes/start_menu.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://101ooyftoa2o" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Book Desk/4.png" id="2_backdrop"]
+[ext_resource type="Texture2D" uid="uid://s27ailqgyqtl" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/1.png" id="3_header"]
+[ext_resource type="Texture2D" uid="uid://ccioohoxksl38" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/7 Dialogue Box/1.png" id="4_paper"]
+
+[sub_resource type="StyleBoxFlat" id="ButtonNormal"]
+bg_color = Color(0.82, 0.68, 0.43, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.25, 0.14, 0.07, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 18.0
+content_margin_right = 18.0
+
+[sub_resource type="StyleBoxFlat" id="ButtonHover"]
+bg_color = Color(0.96, 0.82, 0.52, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.12, 0.38, 0.28, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="ButtonPressed"]
+bg_color = Color(0.64, 0.49, 0.29, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2, 0.1, 0.05, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxTexture" id="DialogPanel"]
+texture = ExtResource("4_paper")
+texture_margin_left = 32.0
+texture_margin_top = 32.0
+texture_margin_right = 32.0
+texture_margin_bottom = 32.0
+
+[node name="StartMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_backdrop")
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.09, 0.045, 0.025, 0.28)
+
+[node name="MenuPaper" type="NinePatchRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -370.0
+offset_top = -290.0
+offset_right = 370.0
+offset_bottom = 290.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("4_paper")
+patch_margin_left = 48
+patch_margin_top = 48
+patch_margin_right = 48
+patch_margin_bottom = 48
+
+[node name="TitleRibbon" type="TextureRect" parent="MenuPaper"]
+layout_mode = 0
+offset_left = 66.0
+offset_top = 22.0
+offset_right = 674.0
+offset_bottom = 198.0
+texture = ExtResource("3_header")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="MenuPaper/TitleRibbon"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
+theme_override_colors/font_shadow_color = Color(1, 0.91, 0.69, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 42
+text = "RUNE ALCHEMIST"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Subtitle" type="Label" parent="MenuPaper"]
+layout_mode = 0
+offset_left = 130.0
+offset_top = 152.0
+offset_right = 610.0
+offset_bottom = 188.0
+theme_override_colors/font_color = Color(0.26, 0.14, 0.08, 1)
+theme_override_font_sizes/font_size = 18
+text = "Choose how your journey through the runes begins"
+horizontal_alignment = 1
+
+[node name="ModeButtons" type="VBoxContainer" parent="MenuPaper"]
+layout_mode = 0
+offset_left = 150.0
+offset_top = 205.0
+offset_right = 590.0
+offset_bottom = 500.0
+theme_override_constants/separation = 12
+
+[node name="StoryButton" type="Button" parent="MenuPaper/ModeButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(440, 60)
+layout_mode = 2
+focus_neighbor_bottom = NodePath("../DevButton")
+theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
+theme_override_colors/font_hover_color = Color(0.12, 0.25, 0.16, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("ButtonNormal")
+theme_override_styles/hover = SubResource("ButtonHover")
+theme_override_styles/focus = SubResource("ButtonHover")
+theme_override_styles/pressed = SubResource("ButtonPressed")
+text = "STORY MODE"
+
+[node name="StoryDescription" type="Label" parent="MenuPaper/ModeButtons"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28, 0.17, 0.1, 1)
+theme_override_font_sizes/font_size = 15
+text = "Standard progression, resources, crafting, and objectives."
+horizontal_alignment = 1
+
+[node name="DevButton" type="Button" parent="MenuPaper/ModeButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(440, 60)
+layout_mode = 2
+focus_neighbor_top = NodePath("../StoryButton")
+focus_neighbor_bottom = NodePath("../QuitButton")
+theme_override_colors/font_color = Color(0.28, 0.08, 0.08, 1)
+theme_override_colors/font_hover_color = Color(0.5, 0.05, 0.05, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("ButtonNormal")
+theme_override_styles/hover = SubResource("ButtonHover")
+theme_override_styles/focus = SubResource("ButtonHover")
+theme_override_styles/pressed = SubResource("ButtonPressed")
+text = "DEV MODE"
+
+[node name="DevDescription" type="Label" parent="MenuPaper/ModeButtons"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.12, 0.1, 1)
+theme_override_font_sizes/font_size = 15
+text = "Developer testing: all runes unlocked and infinite resources."
+horizontal_alignment = 1
+
+[node name="QuitButton" type="Button" parent="MenuPaper/ModeButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(440, 50)
+layout_mode = 2
+focus_neighbor_top = NodePath("../DevButton")
+theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("ButtonNormal")
+theme_override_styles/hover = SubResource("ButtonHover")
+theme_override_styles/focus = SubResource("ButtonHover")
+theme_override_styles/pressed = SubResource("ButtonPressed")
+text = "QUIT"
+
+[node name="Footer" type="Label" parent="MenuPaper"]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 530.0
+offset_right = 600.0
+offset_bottom = 558.0
+theme_override_colors/font_color = Color(0.32, 0.2, 0.12, 0.8)
+theme_override_font_sizes/font_size = 14
+text = "Use mouse or arrow keys • Enter to select"
+horizontal_alignment = 1
+
+[node name="DevConfirmation" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Enter Developer Mode?"
+initial_position = 2
+size = Vector2i(620, 300)
+min_size = Vector2i(620, 300)
+ok_button_text = "ENTER DEV MODE"
+dialog_text = "Developer Mode bypasses normal progression balance.\n\nAll 37 runes will be unlocked, Cleansing Spark will be equipped, and every crafting resource will remain fixed at 999. Objectives still begin from the start for quest testing."
+theme_override_colors/font_color = Color(0.2, 0.1, 0.05, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/panel = SubResource("DialogPanel")

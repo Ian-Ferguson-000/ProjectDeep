@@ -24,6 +24,7 @@ var active_station: Dictionary = {}
 var backdrop_layer: CanvasLayer
 var backdrop: TextureRect
 var station_markers := Node2D.new()
+var expedition_gate_hit_target: Button
 
 @onready var board: Node2D = $Board
 @onready var ground_layer: TileMapLayer = $Board/GroundLayer
@@ -60,6 +61,8 @@ var expedition_title: Label
 var expedition_detail: Label
 var expedition_launch: Button
 var expedition_id := "forest"
+var expedition_mode := RunState.PLAY_MODE_STRATEGY
+var expedition_mode_buttons: Dictionary = {}
 var results_backdrop: ColorRect
 var results_text: RichTextLabel
 
@@ -112,6 +115,7 @@ func _setup_backdrop() -> void:
 	backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE; backdrop_layer.add_child(backdrop)
 	station_markers.name = "StationMarkers"; board.add_child(station_markers)
+	expedition_gate_hit_target=Button.new();expedition_gate_hit_target.name="ExpeditionGateHitTarget";expedition_gate_hit_target.flat=true;expedition_gate_hit_target.focus_mode=Control.FOCUS_NONE;expedition_gate_hit_target.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND;expedition_gate_hit_target.tooltip_text="Expedition Gate · Choose a dungeon";expedition_gate_hit_target.pressed.connect(_on_expedition_gate_clicked);ui_root.add_child(expedition_gate_hit_target)
 
 func _setup_tokens() -> void:
 	player_token.sprite_texture = PLAYER_IDLE_DOWN; player_token.sprite_region_enabled = true; player_token.sprite_region = Rect2(0,0,96,80); player_token.sprite_scale = Vector2(0.92,0.92); player_token.show_label = false; player_token.show_panel = false
@@ -170,12 +174,15 @@ func _build_armory_modal() -> void:
 
 func _build_expedition_modal() -> void:
 	expedition_backdrop = _modal_backdrop("ExpeditionModal")
-	var body := _modal_panel(expedition_backdrop,"Choose a Dungeon",Vector2(900,570))
+	var body := _modal_panel(expedition_backdrop,"Choose a Dungeon",Vector2(960,610))
 	var columns := HBoxContainer.new(); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; columns.add_theme_constant_override("separation",16); body.add_child(columns)
 	var list_scroll := ScrollContainer.new(); list_scroll.custom_minimum_size = Vector2(310,0); list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; columns.add_child(list_scroll)
 	expedition_list = VBoxContainer.new(); expedition_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL; expedition_list.add_theme_constant_override("separation",8); list_scroll.add_child(expedition_list)
 	var details := VBoxContainer.new(); details.size_flags_horizontal = Control.SIZE_EXPAND_FILL; details.add_theme_constant_override("separation",10); columns.add_child(details)
 	expedition_title = Label.new(); expedition_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; expedition_title.add_theme_font_size_override("font_size",22); expedition_title.add_theme_color_override("font_color",Color(1,0.8,0.4)); details.add_child(expedition_title)
+	var mode_row := HBoxContainer.new(); mode_row.alignment = BoxContainer.ALIGNMENT_CENTER; mode_row.add_theme_constant_override("separation",10); details.add_child(mode_row)
+	for mode in [RunState.PLAY_MODE_STRATEGY, RunState.PLAY_MODE_SLASHER]:
+		var mode_button := Button.new(); mode_button.text = mode.capitalize(); mode_button.toggle_mode = true; mode_button.name = "%sModeButton" % mode.capitalize(); mode_button.pressed.connect(_select_expedition_mode.bind(mode)); _style_button(mode_button); mode_row.add_child(mode_button); expedition_mode_buttons[mode] = mode_button
 	var detail_scroll := ScrollContainer.new(); detail_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; details.add_child(detail_scroll)
 	expedition_detail = Label.new(); expedition_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; expedition_detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL; expedition_detail.add_theme_font_size_override("font_size",14); detail_scroll.add_child(expedition_detail)
 	var buttons := HBoxContainer.new(); buttons.alignment = BoxContainer.ALIGNMENT_CENTER; buttons.add_theme_constant_override("separation",12); body.add_child(buttons)
@@ -225,6 +232,11 @@ func _handle_tile_click(tile: Vector2i) -> void:
 		return
 	if not _is_walkable(tile): _show_dialogue("The Hearth","Tables, walls, and occupied stalls block that route."); return
 	_walk_click_path(_find_navigation_path(player_pos,tile),{})
+
+func _on_expedition_gate_clicked()->void:
+	if click_navigation_active or _modal_visible():return
+	var gate:=_station_by_id("expedition_gate")
+	if not gate.is_empty():_handle_tile_click(_station_position(gate))
 
 func _walk_click_path(path: Array[Vector2i], station: Dictionary) -> void:
 	if path.is_empty():
@@ -319,6 +331,7 @@ func _open_dungeon_selector() -> void:
 		button.tooltip_text = String(dungeon.get("description","")); button.pressed.connect(_select_dungeon.bind(dungeon_id)); _style_button(button); expedition_list.add_child(button)
 		if first_button == null: first_button = button
 	var initial_id := expedition_id if GameBalance.get_dungeons().has(expedition_id) else String(GameBalance.get_dungeon_order()[0])
+	expedition_mode = run_state.last_play_mode
 	_select_dungeon(initial_id)
 	_show_modal(expedition_backdrop,first_button)
 
@@ -333,20 +346,28 @@ func _select_dungeon(dungeon_id: String) -> void:
 	var merchant_id := String(dungeon.get("merchant_id",dungeon_id))
 	var progress := run_state.get_merchant_progress(merchant_id)
 	expedition_title.text = "%s\n%s"%[String(dungeon.get("name",dungeon_id.capitalize())),String(dungeon.get("subtitle",""))]
-	var extent := "Single field: %d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "Floors: %d" % int(dungeon.get("floors",1))
+	var slasher_config:Dictionary=Dictionary(dungeon.get("slasher",{}));var displayed_floors:int=int(slasher_config.get("campaign_floors",dungeon.get("floors",1))) if expedition_mode==RunState.PLAY_MODE_SLASHER else int(dungeon.get("floors",1));var extent := "Single field: %d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "Floors: %d%s" % [displayed_floors," · Endless available after boss" if expedition_mode==RunState.PLAY_MODE_SLASHER and bool(slasher_config.get("endless_available",false)) else ""]
 	if GameBalance.are_all_dungeons_unlocked_for_testing(): extent += " · Testing unlock active"
-	expedition_detail.text = "%s · %s\n\n%s\n\n%s\nHighest depth: %d\nMerchant: %s%s\n\nClass: %s %s\nGear: %s (%d damage)\nConsumables: %d/%d\nGold carried: %d\n\n%s" % ["READY" if unlocked else "LOCKED",String(dungeon.get("difficulty","Unknown")),String(dungeon.get("description","")),extent,int(progress.get("highest_depth",0)),String(GameBalance.get_merchant(merchant_id).get("name",merchant_id.capitalize()))," · Recruited" if run_state.is_merchant_recruited(merchant_id) else "",run_state.selected_class_name,run_state.get_profile_summary(),selected_gear.display_name if selected_gear else "None",_gear_damage(selected_gear),run_state.get_consumables().size(),run_state.get_consumable_capacity(),run_state.gold,"Confirm to leave the safety of the Hearth." if unlocked else String(dungeon.get("unlock_text","This dungeon is locked."))]
-	expedition_launch.disabled = not unlocked or selected_gear == null
+	var mode_supported := run_state.dungeon_supports_mode(dungeon_id, expedition_mode)
+	var mode_copy := "Turn-based board combat with deliberate positioning." if expedition_mode == RunState.PLAY_MODE_STRATEGY else "Real-time combat · WASD/Left Stick move · LMB/A basic · RMB/B special · Space/X defend · Shift/Y mobility · Q potion · Esc abandon"
+	expedition_detail.text = "%s · %s · %s MODE\n\n%s\n\n%s\n%s\nHighest depth: %d\nMerchant: %s%s\n\nClass: %s %s\n%s\nGear: %s (%d damage)\nConsumables: %d/%d\nGold carried: %d\n\n%s" % ["READY" if unlocked and mode_supported else "LOCKED",String(dungeon.get("difficulty","Unknown")),expedition_mode.to_upper(),String(dungeon.get("description","")),mode_copy,extent,int(progress.get("highest_depth",0)),String(GameBalance.get_merchant(merchant_id).get("name",merchant_id.capitalize()))," · Recruited" if run_state.is_merchant_recruited(merchant_id) else "",run_state.selected_class_name,run_state.get_profile_summary(),run_state.get_slasher_progression_summary() if expedition_mode==RunState.PLAY_MODE_SLASHER else "Strategy progression",selected_gear.display_name if selected_gear else "None",_gear_damage(selected_gear),run_state.get_consumables().size(),run_state.get_consumable_capacity(),run_state.gold,("Confirm to leave the safety of the Hearth." if mode_supported else "%s mode is not available for this dungeon yet." % expedition_mode.capitalize()) if unlocked else String(dungeon.get("unlock_text","This dungeon is locked."))]
+	expedition_launch.disabled = not unlocked or selected_gear == null or not mode_supported
+	for mode in expedition_mode_buttons:
+		var button: Button = expedition_mode_buttons[mode]; button.button_pressed = mode == expedition_mode; button.disabled = not run_state.dungeon_supports_mode(dungeon_id, mode)
 	for child in expedition_list.get_children():
 		if child is Button: child.button_pressed = child.name == "%sDungeonButton"%dungeon_id.to_pascal_case()
 
 func _is_dungeon_unlocked(dungeon_id: String) -> bool:
 	return run_state.is_dungeon_unlocked(dungeon_id)
 
+func _select_expedition_mode(mode: String) -> void:
+	expedition_mode = run_state.normalize_play_mode(mode)
+	_select_dungeon(expedition_id)
+
 func _launch_expedition() -> void:
 	_close_modal(expedition_backdrop)
 	if controller == null or selected_gear == null: return
-	if controller.has_method("start_dungeon"): controller.start_dungeon(expedition_id,selected_gear)
+	if controller.has_method("start_dungeon"): controller.start_dungeon(expedition_id,selected_gear,expedition_mode)
 	elif expedition_id == "crypt": controller.start_crypt(selected_gear)
 	else: controller.start_forest(selected_gear)
 
@@ -356,8 +377,9 @@ func _show_arrival_results() -> void:
 	var lines: Array[String] = ["[font_size=22][color=#f0c768]%s[/color][/font_size]"%headline]
 	if not summary.is_empty():
 		lines.append("\n[b]Outcome:[/b] %s"%String(summary.get("outcome","return")).capitalize())
-		lines.append("[b]Dungeon:[/b] %s · Depth %d"%[String(summary.get("dungeon","Unknown")).capitalize(),int(summary.get("depth",0))])
+		lines.append("[b]Dungeon:[/b] %s · Depth %d · %s mode"%[String(summary.get("dungeon","Unknown")).capitalize(),int(summary.get("depth",0)),String(summary.get("mode",RunState.PLAY_MODE_STRATEGY)).capitalize()])
 		lines.append("[b]Gold:[/b] %d   [b]Hero:[/b] %s"%[int(summary.get("gold",run_state.gold)),run_state.get_profile_summary()])
+		if not String(summary.get("slasher_progression","")).is_empty():lines.append("[b]Slasher Path:[/b] %s"%String(summary.slasher_progression))
 		var changes: Array = summary.get("changes",[])
 		if not changes.is_empty(): lines.append("\n[b]Progress[/b]\n• "+"\n• ".join(changes))
 		lines.append("\n[color=#a9c792]Visit the armory, review merchant stock, then choose a gate.[/color]")
@@ -371,7 +393,9 @@ func _on_shop_purchase(purchase_message: String) -> void:
 
 func _show_dialogue(speaker: String, text: String) -> void:
 	dialogue_speaker.text = speaker; dialogue_text.text = text; dialogue_panel.visible = true; prompt_panel.visible = false
-	var tween := create_tween(); tween.tween_interval(3.5); tween.tween_callback(func(): if dialogue_panel != null: dialogue_panel.visible = false; _refresh_ui())
+	var tween:=create_tween();tween.tween_interval(3.5);tween.tween_callback(func():
+		if dialogue_panel!=null:dialogue_panel.visible=false
+		_refresh_ui())
 
 func _show_modal(modal: Control, focus: Control) -> void:
 	modal.visible = true; modal.move_to_front()
@@ -445,6 +469,11 @@ func _station_at(tile: Vector2i) -> Dictionary:
 		if _station_position(station) == tile: return station
 	return {}
 
+func _station_by_id(station_id:String)->Dictionary:
+	for station in stations:
+		if String(station.get("id",""))==station_id:return station
+	return {}
+
 func _station_position(station: Dictionary) -> Vector2i:
 	var value: Array = station.get("position",[0,0]); return Vector2i(int(value[0]),int(value[1]))
 
@@ -455,7 +484,10 @@ func _is_inside_grid(tile: Vector2i) -> bool: return tile.x>=0 and tile.y>=0 and
 func _distance(a: Vector2i,b: Vector2i) -> int: return abs(a.x-b.x)+abs(a.y-b.y)
 
 func _layout_scene() -> void:
-	_update_token_positions(); _refresh_station_markers()
+	_update_token_positions();_refresh_station_markers()
+	if expedition_gate_hit_target!=null:
+		var gate:=_station_by_id("expedition_gate")
+		if not gate.is_empty():expedition_gate_hit_target.position=_grid_center(_station_position(gate))-Vector2(TILE_SIZE,TILE_SIZE)/2.0;expedition_gate_hit_target.size=Vector2(TILE_SIZE,TILE_SIZE)
 
 func _grid_origin() -> Vector2:
 	var viewport_size := get_viewport_rect().size

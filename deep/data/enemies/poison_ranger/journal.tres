@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://dktf2cmtskb1j"]
+
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://ccmqkfsvt1a0u" path="res://assets/enemies/poison_ranger/normalized_sheet.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="Portrait"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 96, 80)
+
+[resource]
+script = ExtResource("1")
+enemy_id = "poison_ranger"
+display_name = "Poison Ranger"
+portrait = SubResource("Portrait")
+description = "A masked hunter whose arrows carry concentrated grove venom."
+habitat = "Western grove approach"
+behavior_summary = "Fast kiting archer with stacking-duration poison."
+max_health = 38
+defense = 1
+attack_damage = 8
+damage_type = "poison"
+vulnerabilities = {
+"fire": 1.25,
+"poison": 0.5
+}

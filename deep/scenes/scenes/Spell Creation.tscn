@@ -1,0 +1,142 @@
+[gd_scene format=3 uid="uid://c8itob48vgmqc"]
+
+[ext_resource type="Script" uid="uid://c87glktfbu672" path="res://scripts/codes/spellCreation.gd" id="1_qme0c"]
+
+[node name="SpellCreation" type="Control" unique_id=1065983408]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -77.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_qme0c")
+runeOptions = "res://Data/runes.json"
+magicButton = "uid://ipx5jhjm5xyi"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=546597112]
+layout_mode = 0
+offset_right = 1075.0
+offset_bottom = 480.0
+theme_override_constants/separation = 15
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=230698138]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="VBoxContainer" unique_id=60883645]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="VBoxContainer" unique_id=1443135956]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="VBoxContainer" unique_id=1171912287]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer5" type="HBoxContainer" parent="VBoxContainer" unique_id=1598595380]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer6" type="HBoxContainer" parent="VBoxContainer" unique_id=862135962]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer7" type="HBoxContainer" parent="VBoxContainer" unique_id=1488736612]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer8" type="HBoxContainer" parent="VBoxContainer" unique_id=625068716]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer9" type="HBoxContainer" parent="VBoxContainer" unique_id=307889696]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer10" type="HBoxContainer" parent="VBoxContainer" unique_id=1944790081]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer11" type="HBoxContainer" parent="VBoxContainer" unique_id=623704646]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer12" type="HBoxContainer" parent="VBoxContainer" unique_id=1691757722]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer13" type="HBoxContainer" parent="VBoxContainer" unique_id=685358158]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer14" type="HBoxContainer" parent="VBoxContainer" unique_id=1865137249]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer15" type="HBoxContainer" parent="VBoxContainer" unique_id=941461572]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer16" type="HBoxContainer" parent="VBoxContainer" unique_id=1848051500]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer17" type="HBoxContainer" parent="VBoxContainer" unique_id=1848738782]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer18" type="HBoxContainer" parent="VBoxContainer" unique_id=1702281839]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer19" type="HBoxContainer" parent="VBoxContainer" unique_id=157458955]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer20" type="HBoxContainer" parent="VBoxContainer" unique_id=1134138635]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer21" type="HBoxContainer" parent="VBoxContainer" unique_id=70067559]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer22" type="HBoxContainer" parent="VBoxContainer" unique_id=539447915]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer23" type="HBoxContainer" parent="VBoxContainer" unique_id=1236786479]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer24" type="HBoxContainer" parent="VBoxContainer" unique_id=670765293]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer25" type="HBoxContainer" parent="VBoxContainer" unique_id=908762437]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer26" type="HBoxContainer" parent="VBoxContainer" unique_id=338117987]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 2
+
+[node name="HBoxContainer27" type="HBoxContainer" parent="VBoxContainer" unique_id=1978284924]
+layout_mode = 2
+theme_override_constants/separation = 16

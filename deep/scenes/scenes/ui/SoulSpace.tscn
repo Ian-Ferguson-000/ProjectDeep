@@ -1,0 +1,83 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bvd556y2h58pd" path="res://scripts/codes/soul_space.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://xpc7phpxv61d" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/8 Shop/1.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://s27ailqgyqtl" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/1.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://ccioohoxksl38" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/7 Dialogue Box/1.png" id="4"]
+
+[node name="SoulSpace" type="Control"]
+custom_minimum_size = Vector2(1100,650)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1100.0
+offset_bottom = 650.0
+mouse_filter = 0
+script = ExtResource("1")
+
+[node name="Paper" type="TextureRect" parent="."]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(0.82,0.73,0.58,0.98)
+
+[node name="Header" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 315.0
+offset_top = -8.0
+offset_right = 785.0
+offset_bottom = 108.0
+mouse_filter = 2
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "SOUL SPACE"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_colors/font_color = Color(0.24,0.12,0.06,1)
+theme_override_font_sizes/font_size = 30
+
+[node name="StatusPaper" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 548.0
+offset_right = 694.0
+offset_bottom = 628.0
+mouse_filter = 2
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="StatusLabel" type="Label" parent="StatusPaper"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 12.0
+offset_right = -30.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Draw neighboring connections to arrange crafted runes."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.25,0.13,0.07,1)
+theme_override_font_sizes/font_size = 16

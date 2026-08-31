@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://scripts/codes/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://Data/enemies/dark_druid/profile.tres" id="2"]
+[ext_resource type="Resource" uid="uid://cw1p26nqiy0q3" path="res://Data/enemies/dark_druid/journal.tres" id="3"]
+[ext_resource type="SpriteFrames" uid="uid://dc3l7j4bx6ulr" path="res://assets/enemies/dark_druid/frames.tres" id="4"]
+[ext_resource type="Resource" path="res://Data/enemies/dark_druid/abilities/root_field.tres" id="5"]
+[resource]
+script=ExtResource("1")
+enemy_id="dark_druid"
+display_name="Dark Druid"
+profile=ExtResource("2")
+journal_entry=ExtResource("3")
+sprite_frames=ExtResource("4")
+sprite_offset=Vector2(0,-32)
+sprite_scale=Vector2(1.8,1.8)
+abilities=[ExtResource("5")]

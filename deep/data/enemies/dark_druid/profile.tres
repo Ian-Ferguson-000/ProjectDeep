@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyProfile" format=3]
+
+[ext_resource type="Script" uid="uid://csnapanx857b1" path="res://scripts/codes/combat/enemy_profile.gd" id="1"]
+[resource]
+script=ExtResource("1")
+enemy_id="dark_druid"
+journal_id="dark_druid"
+display_name="Dark Druid"
+max_health=48
+defense=2
+vulnerabilities={"spirit":1.5,"fire":1.25,"aether":0.5}
+respawn_time=5.0
+move_speed=80.0
+aggro_range=145.0
+leash_range=300.0
+retreat_health_ratio=0.0
+enabled_behaviors=7

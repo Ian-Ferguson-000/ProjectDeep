@@ -1,6 +1,8 @@
 extends RefCounted
 class_name RunState
 
+const PLAY_MODE_STRATEGY := "strategy"
+const PLAY_MODE_SLASHER := "slasher"
 const MAX_HERO_LEVEL := 20
 const FALLBACK_XP_THRESHOLDS := [0, 0, 100, 220, 380, 580, 820, 1100, 1420, 1780, 2180, 2620, 3100, 3620, 4180, 4780, 5420, 6100, 6820, 7580, 8380]
 const FALLBACK_CLASS_STATS := {
@@ -40,6 +42,8 @@ var floor_seed: int = 1001
 var current_floor: int = 1
 var max_floors: int = 5
 var active_dungeon_id: String = "forest"
+var active_play_mode: String = PLAY_MODE_STRATEGY
+var last_play_mode: String = PLAY_MODE_STRATEGY
 var forest_cleared: bool = false
 var crypt_unlocked: bool = false
 var completed_dungeons: Dictionary = {}
@@ -60,6 +64,17 @@ var purchased_favor_offers: Dictionary = {}
 var merchant_offer_stock: Dictionary = {}
 var consumable_items: Array[String] = []
 var pending_shop_consumables: Array[String] = []
+var enemy_defeat_counts:Dictionary={}
+var slasher_endless_mode:=false
+var slasher_campaign_boss_cleared:=false
+
+func record_enemy_defeat(enemy_id:String)->int:
+	if enemy_id.is_empty():return 0
+	var count:=int(enemy_defeat_counts.get(enemy_id,0))+1;enemy_defeat_counts[enemy_id]=count;return count
+
+func get_enemy_defeat_count(enemy_id:String)->int:return int(enemy_defeat_counts.get(enemy_id,0))
+func is_enemy_discovered(enemy_id:String)->bool:return get_enemy_defeat_count(enemy_id)>0
+func get_enemy_journal_snapshot()->Dictionary:return enemy_defeat_counts.duplicate(true)
 
 func _init() -> void:
 	_ensure_profiles()
@@ -79,13 +94,17 @@ func set_class(class_id: String) -> void:
 	_sync_health_from_profile(true)
 	_sync_crypt_unlock()
 
-func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
+func start_new_run(gear: GearData, dungeon_id: String = "forest", play_mode: String = PLAY_MODE_STRATEGY) -> void:
 	selected_gear = gear
 	if selected_gear != null:
 		selected_gear_by_class[selected_class_id] = selected_gear
 	active_dungeon_id = dungeon_id
+	active_play_mode = normalize_play_mode(play_mode)
+	last_play_mode = active_play_mode
+	if active_play_mode==PLAY_MODE_SLASHER:reconcile_slasher_progression()
 	var dungeon := GameBalance.get_dungeon(active_dungeon_id)
-	max_floors = int(dungeon.get("floors", 1))
+	# TUNING: Slasher Forest campaign depth is set in dungeons.json under forest.slasher.campaign_floors; Strategy keeps its original floor count.
+	var slasher_config:Dictionary=Dictionary(dungeon.get("slasher",{}));max_floors=int(slasher_config.get("campaign_floors",dungeon.get("floors",1))) if active_play_mode==PLAY_MODE_SLASHER else int(dungeon.get("floors",1))
 	_ensure_profiles()
 	_restore_permanent_inventory_for_active_class()
 	pending_chest_choices.clear()
@@ -108,14 +127,22 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	pending_shop_consumables.clear()
 	pending_shop_keys = 0
 	current_floor = 1
+	slasher_endless_mode=false;slasher_campaign_boss_cleared=false
 	class_resource = 0
 	floor_seed += 37
 	field_run.clear()
 	if String(dungeon.get("dungeon_type", "mystery")) == "field":
 		var room_count: Dictionary = dungeon.get("room_count", {"min":10,"max":12})
 		field_run = FieldDungeonGenerator.generate(get_current_floor_seed(), int(room_count.get("min", 10)), int(room_count.get("max", 12)))
-	run_outcome = "%s opens. The tavern falls quiet behind you." % String(dungeon.get("name", active_dungeon_id.capitalize()))
+	run_outcome = "%s opens in %s mode. The tavern falls quiet behind you." % [String(dungeon.get("name", active_dungeon_id.capitalize())), active_play_mode.capitalize()]
 	_sync_crypt_unlock()
+
+func normalize_play_mode(play_mode: String) -> String:
+	return PLAY_MODE_SLASHER if play_mode.to_lower() == PLAY_MODE_SLASHER else PLAY_MODE_STRATEGY
+
+func dungeon_supports_mode(dungeon_id: String, play_mode: String) -> bool:
+	var modes: Array = GameBalance.get_dungeon(dungeon_id).get("supported_modes", [PLAY_MODE_STRATEGY])
+	return normalize_play_mode(play_mode) in modes
 
 func advance_floor() -> bool:
 	if current_floor >= max_floors:
@@ -124,6 +151,21 @@ func advance_floor() -> bool:
 	class_resource = 0
 	_tick_inventory_floor_durations()
 	return true
+
+func advance_slasher_floor()->void:
+	current_floor+=1;class_resource=0;_tick_inventory_floor_durations()
+
+func get_slasher_cycle_length()->int:
+	# TUNING: Change forest.slasher.cycle_length to alter the repeating Endless cadence.
+	return maxi(1,int(Dictionary(GameBalance.get_dungeon(active_dungeon_id).get("slasher",{})).get("cycle_length",8)))
+
+func get_slasher_cycle_floor()->int:return ((current_floor-1)%get_slasher_cycle_length())+1
+func get_slasher_cycle_number()->int:return int((current_floor-1)/get_slasher_cycle_length())+1
+func is_slasher_boss_floor()->bool:return get_slasher_cycle_floor()==get_slasher_cycle_length()
+func is_slasher_elite_floor()->bool:
+	# TUNING: Change forest.slasher.elite_floor_in_cycle to move the elite miniboss.
+	return get_slasher_cycle_floor()==int(Dictionary(GameBalance.get_dungeon(active_dungeon_id).get("slasher",{})).get("elite_floor_in_cycle",5))
+func enter_slasher_endless()->void:slasher_endless_mode=true;slasher_campaign_boss_cleared=true
 
 func get_current_floor_seed() -> int:
 	return floor_seed + current_floor * 997
@@ -561,6 +603,7 @@ func gain_xp(amount: int, reason: String) -> Array[String]:
 		logs.append("%s reaches level %d. Max HP +%d." % [selected_class_name, int(profile["level"]), health_gain])
 		logs.append_array(_enqueue_progression_choices(profile, int(profile["level"])))
 	hero_profiles[selected_class_id] = profile
+	if active_play_mode==PLAY_MODE_SLASHER:logs.append_array(reconcile_slasher_progression())
 	_sync_health_from_profile(false)
 	_sync_crypt_unlock()
 	pending_level_logs.append_array(logs)
@@ -595,6 +638,30 @@ func generate_chest_choices(floor: int, source_rng: RandomNumberGenerator) -> Ar
 	pending_chest_choices.clear()
 	pending_chest_choices.append_array(choices)
 	return choices
+
+func generate_slasher_chest_choices(floor_number:int,chest_identity:Variant,endless_cycle:int=0)->Array[String]:
+	# Chest offerings deliberately use their own RNG so opening one never perturbs encounter or Strategy loot rolls.
+	var identity_hash:int=String(chest_identity).hash();var source_rng:=RandomNumberGenerator.new()
+	source_rng.seed=get_current_floor_seed()*1103515245+floor_number*961748927+identity_hash
+	var choices:Array[String]=[];var items:Dictionary=GameBalance.get_items();var weights:Dictionary=GameBalance.get_slasher_chest_rarity_weights(floor_number,endless_cycle)
+	var choice_count:int=int(GameBalance.get_loot_table().get("choice_count",3));var attempts:int=0
+	while choices.size()<choice_count and attempts<120:
+		attempts+=1;var rarity:String=_roll_weighted_rarity(weights,source_rng);var candidates:Array[String]=_item_ids_for_rarity(items,rarity)
+		if candidates.is_empty():candidates=_all_item_ids(items)
+		if candidates.is_empty():break
+		var item_id:String=candidates[source_rng.randi_range(0,candidates.size()-1)]
+		if not choices.has(item_id):choices.append(item_id)
+	pending_chest_choices.assign(choices);return choices
+
+func _roll_weighted_rarity(weights:Dictionary,source_rng:RandomNumberGenerator)->String:
+	var total:int=0
+	for value:Variant in weights.values():total+=maxi(0,int(value))
+	if total<=0:return "common"
+	var roll:int=source_rng.randi_range(1,total);var running:int=0
+	for key:Variant in weights:
+		running+=maxi(0,int(weights[key]))
+		if roll<=running:return String(key)
+	return "common"
 
 func choose_chest_item(item_id: String) -> Array[String]:
 	var logs: Array[String] = []
@@ -741,6 +808,83 @@ func get_progression_flag_value(flag_id: String) -> int:
 	var flags: Dictionary = _selected_progression_flags(_active_profile())
 	return int(flags.get(flag_id, 0))
 
+func reconcile_slasher_progression()->Array[String]:
+	_ensure_profiles();var logs:Array[String]=[];var profile:Dictionary=_active_profile();var pending:Array=_profile_array(profile,"pending_slasher_progression_choices")
+	if not pending.is_empty():return logs
+	var level:int=int(profile.get("level",1));var class_id:String=String(profile.get("class_id",selected_class_id))
+	for milestone:int in [3,5,7,9,10,11,13,15,17,19,20]:
+		if milestone>level:break
+		if milestone in [10,15,20]:
+			var branch:String=_slasher_branch_from_profile(profile,class_id)
+			if branch.is_empty():continue
+			var stage_id:String="%s_branch_%s_stage_%d"%[class_id,branch,milestone];var path:Array=_profile_array(profile,"slasher_evolution_path")
+			if not path.has(stage_id):path.append(stage_id);profile.slasher_evolution_path=path;logs.append("%s advances to %s."%[selected_class_name,_slasher_stage_name(class_id,branch,milestone)])
+			continue
+		if _has_slasher_choice_at_level(profile,class_id,milestone):continue
+		var choices:Array[Dictionary]=GameBalance.get_slasher_choices_for_level(class_id,milestone,profile)
+		if choices.is_empty():continue
+		pending.append({"level":milestone,"type":String(choices[0].get("type","ability")),"choices":choices});profile.pending_slasher_progression_choices=pending;logs.append("Slasher progression choice unlocked at level %d."%milestone);break
+	hero_profiles[selected_class_id]=profile;return logs
+
+func has_pending_slasher_progression_choice()->bool:
+	return not _profile_array(_active_profile(),"pending_slasher_progression_choices").is_empty()
+
+func get_pending_slasher_progression_choice()->Dictionary:
+	var pending:Array=_profile_array(_active_profile(),"pending_slasher_progression_choices")
+	return pending[0].duplicate(true) if not pending.is_empty() and pending[0] is Dictionary else {}
+
+func choose_slasher_progression_choice(choice_id:String)->Array[String]:
+	var logs:Array[String]=[];var profile:Dictionary=_active_profile();var pending:Array=_profile_array(profile,"pending_slasher_progression_choices")
+	if pending.is_empty() or not (pending[0] is Dictionary):return logs
+	var pending_choice:Dictionary=pending[0];var selected:Dictionary={}
+	for value:Variant in pending_choice.get("choices",[]):
+		if value is Dictionary and String(value.get("id",""))==choice_id:selected=value;break
+	if selected.is_empty():return ["That Slasher progression choice is no longer available."]
+	var canonical:Dictionary=GameBalance.get_slasher_progression_choice(selected_class_id,choice_id)
+	if canonical.is_empty() or int(canonical.get("level",-1))!=int(pending_choice.get("level",-2)):return ["That Slasher progression choice is invalid."]
+	var destination_key:String="slasher_evolution_path" if String(canonical.get("type","ability"))=="evolution" else "slasher_ability_upgrades";var selected_ids:Array=_profile_array(profile,destination_key)
+	if selected_ids.has(choice_id):return ["That Slasher progression choice was already claimed."]
+	selected_ids.append(choice_id);profile[destination_key]=selected_ids;pending.remove_at(0);profile.pending_slasher_progression_choices=pending;hero_profiles[selected_class_id]=profile
+	logs.append("Slasher upgrade selected: %s."%String(canonical.get("name",choice_id)));logs.append_array(reconcile_slasher_progression());pending_level_logs.append_array(logs);return logs
+
+func get_slasher_selected_choices()->Array:
+	var profile:Dictionary=_active_profile();return _profile_array(profile,"slasher_evolution_path")+_profile_array(profile,"slasher_ability_upgrades")
+
+func get_effective_slasher_ability_tuning(slot:String)->Dictionary:
+	return GameBalance.get_effective_slasher_ability_tuning(selected_class_id,slot,get_slasher_selected_choices())
+
+func get_effective_slasher_companion_tuning(companion_id:String="wolf")->Dictionary:
+	return GameBalance.get_effective_slasher_companion_tuning(selected_class_id,companion_id,get_slasher_selected_choices())
+
+func get_slasher_specialization_name()->String:
+	var profile:Dictionary=_active_profile();var branch:String=_slasher_branch_from_profile(profile,selected_class_id)
+	return "Unspecialized" if branch.is_empty() else _slasher_stage_name(selected_class_id,branch,int(profile.get("level",1)))
+
+func get_slasher_progression_summary()->String:
+	var profile:Dictionary=_active_profile();var upgrades:Array=_profile_array(profile,"slasher_ability_upgrades");return "%s · %d ability upgrades"%[get_slasher_specialization_name(),upgrades.size()]
+
+func _has_slasher_choice_at_level(profile:Dictionary,class_id:String,level:int)->bool:
+	for value:Variant in _profile_array(profile,"slasher_evolution_path")+_profile_array(profile,"slasher_ability_upgrades"):
+		var choice:Dictionary=GameBalance.get_slasher_progression_choice(class_id,String(value))
+		if not choice.is_empty() and int(choice.get("level",-1))==level:return true
+	return false
+
+func _slasher_branch_from_profile(profile:Dictionary,class_id:String)->String:
+	for value:Variant in _profile_array(profile,"slasher_evolution_path"):
+		var choice:Dictionary=GameBalance.get_slasher_progression_choice(class_id,String(value))
+		if int(choice.get("level",0))==5:return String(choice.get("branch",""))
+	return ""
+
+func _slasher_stage_name(class_id:String,branch_id:String,level:int)->String:
+	var stage_index:int=0
+	if level>=20:stage_index=3
+	elif level>=15:stage_index=2
+	elif level>=10:stage_index=1
+	for value:Variant in GameBalance.get_slasher_progression(class_id).get("branches",[]):
+		if value is Dictionary and String(value.get("id",""))==branch_id:
+			var stages:Array=value.get("stages",[]);return String(stages[mini(stage_index,maxi(0,stages.size()-1))]) if not stages.is_empty() else String(value.get("name",branch_id.capitalize()))
+	return branch_id.capitalize()
+
 func _ensure_profiles() -> void:
 	if hero_profiles.has("fighter") and not hero_profiles.has("warrior"):
 		hero_profiles["warrior"] = hero_profiles["fighter"]
@@ -759,6 +903,9 @@ func _ensure_profiles() -> void:
 			profile["ability_upgrades"] = []
 		if not profile.has("pending_progression_choices"):
 			profile["pending_progression_choices"] = []
+		if not profile.has("slasher_evolution_path"):profile["slasher_evolution_path"]=[]
+		if not profile.has("slasher_ability_upgrades"):profile["slasher_ability_upgrades"]=[]
+		if not profile.has("pending_slasher_progression_choices"):profile["pending_slasher_progression_choices"]=[]
 		hero_profiles[class_id] = profile
 
 func _create_profile(class_id: String) -> Dictionary:
@@ -774,6 +921,9 @@ func _create_profile(class_id: String) -> Dictionary:
 		"evolution_path": [],
 		"ability_upgrades": [],
 		"pending_progression_choices": [],
+		"slasher_evolution_path": [],
+		"slasher_ability_upgrades": [],
+		"pending_slasher_progression_choices": [],
 	}
 	_recalculate_profile(profile)
 	return profile

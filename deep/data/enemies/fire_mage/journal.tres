@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://dfar7orva8eon"]
+
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://btj7fkc5ln10h" path="res://assets/enemies/fire_mage/normalized_sheet.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="Portrait"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 96, 80)
+
+[resource]
+script = ExtResource("1")
+enemy_id = "fire_mage"
+display_name = "Fire Mage"
+portrait = SubResource("Portrait")
+description = "An ember-robed mage who leaves lingering flame in every wound."
+habitat = "Northeastern rocks"
+behavior_summary = "Maintains distance and launches burning bolts."
+max_health = 34
+defense = 1
+attack_damage = 11
+damage_type = "fire"
+vulnerabilities = {
+"fire": 0.5,
+"ice": 1.5
+}

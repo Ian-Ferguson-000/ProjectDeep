@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://scripts/codes/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://Data/enemies/spore_beast/profile.tres" id="2"]
+[ext_resource type="Resource" uid="uid://w7ypuwem72sp" path="res://Data/enemies/spore_beast/journal.tres" id="3"]
+[ext_resource type="SpriteFrames" uid="uid://ddk3x847fm1tv" path="res://assets/enemies/spore_beast/frames.tres" id="4"]
+[ext_resource type="Resource" path="res://Data/enemies/spore_beast/abilities/spore_burst.tres" id="5"]
+[resource]
+script=ExtResource("1")
+enemy_id="spore_beast"
+display_name="Spore Beast"
+profile=ExtResource("2")
+journal_entry=ExtResource("3")
+sprite_frames=ExtResource("4")
+sprite_offset=Vector2(0,-28)
+sprite_scale=Vector2(2,2)
+collision_radius=18.0
+collision_height=40.0
+abilities=[ExtResource("5")]

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "choice_levels": [3, 5, 7, 9, 11, 13, 17, 19],
+  "automatic_levels": [10, 15, 20],
+  "foundations": [
+    {"key":"power","name":"Relentless Technique","description":"Your basic attack hits harder and controls a wider space.","slot":"basic","operations":{"damage_coefficient":{"multiply":1.15},"reach":{"multiply":1.10},"projectile_range":{"multiply":1.10}},"flags":["foundation_power"]},
+    {"key":"tempo","name":"Unbroken Tempo","description":"Your mobility skill recovers faster and travels farther.","slot":"movement","operations":{"cooldown":{"multiply":0.85},"movement_distance":{"multiply":1.12}},"flags":["foundation_tempo"]},
+    {"key":"resolve","name":"Battlefield Resolve","description":"Your defensive window lasts longer and prevents more damage.","slot":"defensive","operations":{"effect_duration":{"multiply":1.20},"mitigation":{"add":0.08,"max":1.0}},"flags":["foundation_resolve"]}
+  ],
+  "classes": {
+    "warrior": {"branches":[
+      {"id":"vanguard","name":"Vanguard","stages":["Vanguard","Iron Vanguard","War Vanguard","Unbroken Vanguard"],"description":"Charge through enemy lines and control crowds with Cleave.","focus":["movement","special"],"flags":["charge_trail","charge_widen","cleave_stagger","charge_reset","vanguard_capstone"]},
+      {"id":"duelist","name":"Duelist","stages":["Duelist","Blade Duelist","Master Duelist","Peerless Duelist"],"description":"Refine Slash and Parry into a precise counterattacking style.","focus":["basic","defensive"],"flags":["slash_double","parry_window","parry_cleave","precision_momentum","duelist_capstone"]},
+      {"id":"berserker","name":"Berserker","stages":["Berserker","Blood Berserker","Rageborn","Avatar of Fury"],"description":"Turn Momentum and missing health into relentless offense.","focus":["basic","special"],"flags":["momentum_surge","low_health_power","cleave_refund","fury_speed","berserker_capstone"]}
+    ]},
+    "mage": {"branches":[
+      {"id":"arcanist","name":"Arcanist","stages":["Arcanist","Sigil Savant","Aether Adept","Arch Arcanist"],"description":"Expand missile and cannon splash, piercing, and projectile control.","focus":["basic","special"],"flags":["missile_chain","splash_growth","cannon_pierce","impact_echo","arcanist_capstone"]},
+      {"id":"riftwalker","name":"Riftwalker","stages":["Riftwalker","Rift Savant","Void Adept","Rift Sovereign"],"description":"Chain Blink and Repel to dominate distance and positioning.","focus":["movement","defensive"],"flags":["blink_charge","repel_damage","blink_refund","rift_wake","riftwalker_capstone"]},
+      {"id":"spellstorm","name":"Spellstorm","stages":["Spellstorm","Storm Savant","Tempest Adept","Living Spellstorm"],"description":"Cycle Focus quickly and fill the battlefield with repeated impacts.","focus":["basic","special"],"flags":["focus_overflow","rapid_cast","cannon_chain","storm_focus","spellstorm_capstone"]}
+    ]},
+    "healer": {"branches":[
+      {"id":"luminary","name":"Luminary","stages":["Luminary","Dawn Luminary","Radiant Adept","Living Sun"],"description":"Make Binding Light broader, brighter, and more debilitating.","focus":["basic","special"],"flags":["binding_splash","slow_strength","radiant_chain","light_burst","luminary_capstone"]},
+      {"id":"seraph","name":"Seraph","stages":["Seraph","Mercy Seraph","Guardian Seraph","Seraph Ascendant"],"description":"Transform Dash and Recover into powerful sustaining tools.","focus":["movement","defensive"],"flags":["dash_heal_aura","recover_shield","dash_charge","recover_echo","seraph_capstone"]},
+      {"id":"exemplar","name":"Exemplar","stages":["Exemplar","Grace Exemplar","Hallowed Exemplar","Perfect Exemplar"],"description":"Build Grace efficiently and amplify Empowered follow-up attacks.","focus":["special","basic"],"flags":["empower_persist","grace_overflow","empower_splash","grace_refund","exemplar_capstone"]}
+    ]},
+    "tank": {"branches":[
+      {"id":"bulwark","name":"Bulwark","stages":["Bulwark","Iron Bulwark","Living Bastion","Eternal Bulwark"],"description":"Strengthen Guard, Resolve generation, and damage interception.","focus":["defensive","basic"],"flags":["guard_persist","resolve_barrier","bash_guard","guard_aura","bulwark_capstone"]},
+      {"id":"juggernaut","name":"Juggernaut","stages":["Juggernaut","Siege Juggernaut","Earthshaker","Worldbreaker"],"description":"Turn Shield Bash and Leap into sweeping battlefield disruption.","focus":["basic","movement"],"flags":["bash_widen","leap_stun","bash_chain","leap_aftershock","juggernaut_capstone"]},
+      {"id":"avenger","name":"Avenger","stages":["Avenger","Oath Avenger","Wrathbound","Final Reckoning"],"description":"Store and release more Retribution through retaliation chains.","focus":["special","defensive"],"flags":["retribution_store","release_growth","retaliation_chain","retribution_refund","avenger_capstone"]}
+    ]},
+    "phantom": {"branches":[
+      {"id":"executioner","name":"Executioner","stages":["Executioner","Silent Executioner","Dread Reaper","Final Shadow"],"description":"Improve Assassinate thresholds, finishing damage, and resets.","focus":["special","basic"],"flags":["execute_threshold","assassinate_reset","marked_for_death","execution_refund","executioner_capstone"]},
+      {"id":"shade","name":"Shade","stages":["Shade","Deep Shade","Umbral Adept","Living Night"],"description":"Extend Hidden, Shadowstep, invulnerability, and ambush control.","focus":["movement","defensive"],"flags":["hidden_extend","shadowstep_damage","evade_hidden","shadow_charge","shade_capstone"]},
+      {"id":"bladedancer","name":"Bladedancer","stages":["Bladedancer","Edge Dancer","Spectral Dancer","Thousand Blades"],"description":"Widen Pierce and turn Evade into continuous offensive tempo.","focus":["basic","defensive"],"flags":["pierce_widen","evade_counter","pierce_echo","edge_overflow","bladedancer_capstone"]}
+    ]},
+    "summoner": {"branches":[
+      {"id":"packmaster","name":"Packmaster","stages":["Packmaster","Alpha Keeper","Primal Alpha","Lord of the Hunt"],"description":"Increase wolf offense, pounce, and marked-target pursuit.","focus":["special","basic"],"companion":true,"flags":["pounce_splash","wolf_frenzy","mark_damage","pounce_chain","packmaster_capstone"]},
+      {"id":"warden","name":"Warden","stages":["Warden","Pack Warden","Wild Guardian","Eternal Warden"],"description":"Improve Cover, interception, wolf survival, and defensive Bond.","focus":["defensive","special"],"companion":true,"flags":["cover_persist","wolf_intercept","cover_refund","guardian_aura","warden_capstone"]},
+      {"id":"wildrider","name":"Wildrider","stages":["Wildrider","Swift Rider","Storm Rider","One With the Pack"],"description":"Expand Mount, commands, coordinated attacks, and trampling paths.","focus":["movement","basic"],"companion":true,"flags":["mount_trample","command_range","mount_charge","coordinated_strike","wildrider_capstone"]}
+    ]}
+  },
+  "milestone_templates": {
+    "7": {"power":{"damage_coefficient":{"multiply":1.15},"area_radius":{"multiply":1.12},"reach":{"multiply":1.12},"projectile_range":{"multiply":1.10},"effect_duration":{"multiply":1.10}},"flow":{"cooldown":{"multiply":0.86},"resource_gain":{"add":1,"max":3},"movement_distance":{"multiply":1.10}}},
+    "9": {"power":{"damage_coefficient":{"multiply":1.16},"movement_distance":{"multiply":1.18},"area_radius":{"multiply":1.15},"path_radius":{"multiply":1.15},"reach":{"multiply":1.12},"effect_duration":{"multiply":1.12}},"flow":{"cooldown":{"multiply":0.82},"invulnerability":{"add":0.12,"max":1.5},"resource_gain":{"add":1,"max":3}}},
+    "11":{"power":{"damage_coefficient":{"multiply":1.20},"effect_duration":{"multiply":1.18},"area_radius":{"multiply":1.15},"reach":{"multiply":1.12},"projectile_range":{"multiply":1.12}},"flow":{"resource_cost":{"add":-1,"min":0},"cooldown":{"multiply":0.88},"resource_gain":{"add":1,"max":3}}},
+    "13":{"power":{"damage_coefficient":{"multiply":1.18},"mitigation":{"add":0.10,"max":1.0},"effect_duration":{"multiply":1.25},"counter_coefficient":{"multiply":1.25},"area_radius":{"multiply":1.12}},"flow":{"cooldown":{"multiply":0.80},"resource_gain":{"add":1,"max":3},"movement_distance":{"multiply":1.10}}},
+    "17":{"power":{"damage_coefficient":{"multiply":1.22},"area_radius":{"multiply":1.20},"reach":{"multiply":1.18},"projectile_range":{"multiply":1.15},"knockback":{"multiply":1.20},"effect_duration":{"multiply":1.15}},"flow":{"resource_cost":{"add":-1,"min":0},"cooldown":{"multiply":0.82},"resource_gain":{"add":1,"max":3}}},
+    "19":{"power":{"damage_coefficient":{"multiply":1.30},"effect_duration":{"multiply":1.25},"area_radius":{"multiply":1.25},"reach":{"multiply":1.20},"projectile_range":{"multiply":1.20}},"flow":{"cooldown":{"multiply":0.72},"resource_gain":{"add":1,"max":3},"movement_distance":{"multiply":1.15},"invulnerability":{"add":0.15,"max":1.5}}}
+  }
+}

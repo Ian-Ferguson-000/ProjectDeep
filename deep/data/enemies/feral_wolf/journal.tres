@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://d23l041ewqfm"]
+
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://ywg1i5e3ejle" path="res://assets/enemies/feral_wolf/normalized_sheet.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="Portrait"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 96, 80)
+
+[resource]
+script = ExtResource("1")
+enemy_id = "feral_wolf"
+display_name = "Feral Wolf"
+portrait = SubResource("Portrait")
+description = "A scarred pack hunter that closes distance in a sudden rush."
+habitat = "Southeastern path"
+behavior_summary = "Very fast pursuit followed by a physical lunge."
+max_health = 36
+attack_damage = 12
+damage_type = "physical"
+vulnerabilities = {
+"ice": 1.25
+}

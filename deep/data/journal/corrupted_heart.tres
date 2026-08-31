@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyJournalEntry" format=3]
+
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://doy84i0dc81ed" path="res://assets/pixel_art/starter_atlas.png" id="2"]
+[sub_resource type="AtlasTexture" id="Portrait"]
+atlas = ExtResource("2")
+region = Rect2(475,680,310,310)
+[resource]
+script = ExtResource("1")
+enemy_id = "corrupted_heart"
+display_name = "Corrupted Heart"
+category = "Special"
+portrait = SubResource("Portrait")
+description = "A knot of living corruption rooted into the glade. Ordinary elemental force cannot unravel its spiritual blight."
+habitat = "Corrupted northern glade"
+behavior_summary = "Stationary objective creature. Immune to ordinary damage and vulnerable to Spirit or Cleanse effects."
+max_health = 9
+defense = 0
+attack_damage = 0
+damage_type = "corruption"
+vulnerabilities = {"aether":0.0,"fire":0.0,"lightning":0.0,"spirit":1.0}
+

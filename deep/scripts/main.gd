@@ -6,6 +6,9 @@ const TavernScene := preload("res://scenes/tavern/Tavern.tscn")
 const ForestScene := preload("res://scenes/forest/Forest.tscn")
 const CryptScene := preload("res://scenes/crypt/Crypt.tscn")
 const AshenFarmsteadScene := preload("res://scenes/field/AshenFarmstead.tscn")
+const SlasherForestScene := preload("res://scenes/slasher/SlasherForest.tscn")
+const SlasherProgressionOverlay := preload("res://scripts/slasher/slasher_progression_overlay.gd")
+const SlasherEndlessPrompt := preload("res://scripts/slasher/slasher_endless_prompt.gd")
 
 var run_state := RunState.new()
 var all_gear_options: Array[GearData] = []
@@ -127,21 +130,45 @@ func start_crypt(gear: GearData) -> void:
 	run_state.start_new_run(gear, "crypt")
 	_load_crypt_floor()
 
-func start_dungeon(dungeon_id: String, gear: GearData) -> void:
+func start_dungeon(dungeon_id: String, gear: GearData, play_mode: String = RunState.PLAY_MODE_STRATEGY) -> void:
 	if not run_state.is_dungeon_unlocked(dungeon_id):
 		show_tavern(String(GameBalance.get_dungeon(dungeon_id).get("unlock_text", "That expedition is locked.")))
 		return
-	run_state.start_new_run(gear, dungeon_id)
-	_load_active_dungeon()
+	if not run_state.dungeon_supports_mode(dungeon_id, play_mode):
+		show_tavern("That dungeon does not support %s mode yet." % play_mode.capitalize())
+		return
+	if run_state.normalize_play_mode(play_mode)==RunState.PLAY_MODE_SLASHER:
+		run_state.reconcile_slasher_progression()
+		if run_state.has_pending_slasher_progression_choice():
+			_show_slasher_progression(func():_begin_dungeon(dungeon_id,gear,play_mode));return
+	_begin_dungeon(dungeon_id,gear,play_mode)
+
+func _begin_dungeon(dungeon_id:String,gear:GearData,play_mode:String)->void:
+	run_state.start_new_run(gear,dungeon_id,play_mode);_load_active_dungeon()
+
+func _show_slasher_progression(on_complete:Callable)->void:
+	var screen_layer:=CanvasLayer.new();screen_layer.name="SlasherProgressionLayer";screen_layer.layer=100;add_child(screen_layer)
+	var overlay:SlasherProgressionOverlay=SlasherProgressionOverlay.new();overlay.name="SlasherProgressionOverlay";overlay.all_choices_resolved.connect(_on_slasher_progression_closed.bind(screen_layer,on_complete),CONNECT_ONE_SHOT);screen_layer.add_child(overlay);overlay.open(run_state)
+
+func _on_slasher_progression_closed(screen_layer:CanvasLayer,on_complete:Callable)->void:
+	if is_instance_valid(screen_layer):screen_layer.queue_free()
+	if on_complete.is_valid():on_complete.call()
 
 func _load_active_dungeon() -> void:
 	_clear_scene()
 	var scene: PackedScene
-	match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)):
-		"forest": scene = ForestScene
-		"crypt": scene = CryptScene
-		"ashen_farmstead": scene = AshenFarmsteadScene
-		_: show_tavern("That expedition runtime is not available."); return
+	if run_state.active_play_mode == RunState.PLAY_MODE_SLASHER:
+		if run_state.active_dungeon_id == "forest":
+			scene = SlasherForestScene
+		else:
+			show_tavern("Slasher mode is not available for that expedition yet.")
+			return
+	else:
+		match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)):
+			"forest": scene = ForestScene
+			"crypt": scene = CryptScene
+			"ashen_farmstead": scene = AshenFarmsteadScene
+			_: show_tavern("That expedition runtime is not available."); return
 	var dungeon := scene.instantiate(); current_scene = dungeon; dungeon.setup(self, run_state); add_child(dungeon)
 
 func _load_forest_floor() -> void:
@@ -166,6 +193,35 @@ func complete_forest_floor() -> void:
 		run_state.mark_forest_cleared()
 		return_to_tavern("victory", "You escape the five-floor forest dungeon with %d gold. Thistle Fen has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
 
+func complete_slasher_forest_floor() -> void:
+	var cycle_boss:bool=run_state.is_slasher_boss_floor();var first_boss:bool=cycle_boss and not run_state.slasher_campaign_boss_cleared;var favor_logs:Array[String]=[]
+	# Campaign credit is awarded exactly once. Endless floors do not repeatedly grant dungeon-clear credit or merchant favor.
+	if not run_state.slasher_endless_mode:favor_logs=run_state.record_dungeon_floor_clear("forest",run_state.current_floor,first_boss)
+	if first_boss:run_state.slasher_campaign_boss_cleared=true;run_state.mark_forest_cleared()
+	run_state.reconcile_slasher_progression();var continuation:Callable=_after_slasher_floor_progression.bind(cycle_boss,favor_logs)
+	if run_state.has_pending_slasher_progression_choice():_show_slasher_progression(continuation)
+	else:continuation.call()
+
+func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])->void:
+	if cycle_boss:_show_slasher_endless_prompt(favor_logs);return
+	run_state.advance_slasher_floor();_load_active_dungeon()
+
+func _show_slasher_endless_prompt(favor_logs:Array[String])->void:
+	var screen_layer:=CanvasLayer.new();screen_layer.name="SlasherEndlessLayer";screen_layer.layer=100;add_child(screen_layer)
+	var prompt:SlasherEndlessPrompt=SlasherEndlessPrompt.new();prompt.name="SlasherEndlessPrompt";prompt.decision_made.connect(_on_slasher_endless_prompt_closed.bind(screen_layer,favor_logs),CONNECT_ONE_SHOT);screen_layer.add_child(prompt)
+
+func _on_slasher_endless_prompt_closed(continue_endless:bool,screen_layer:CanvasLayer,favor_logs:Array[String])->void:
+	if is_instance_valid(screen_layer):screen_layer.queue_free()
+	_on_slasher_endless_decision(continue_endless,favor_logs)
+
+func _on_slasher_endless_decision(continue_endless:bool,favor_logs:Array[String])->void:
+	if continue_endless:
+		run_state.enter_slasher_endless();run_state.advance_slasher_floor();_load_active_dungeon()
+	else:_finish_slasher_forest(favor_logs)
+
+func _finish_slasher_forest(favor_logs:Array[String])->void:
+	return_to_tavern("victory", "You leave the Forest after floor %d with %d gold. Thistle Fen has joined the tavern.\n%s\n%s" % [run_state.current_floor,run_state.gold, " ".join(favor_logs),run_state.get_slasher_progression_summary()])
+
 func complete_crypt_floor() -> void:
 	var favor_logs := run_state.record_dungeon_floor_clear("crypt", run_state.current_floor, run_state.current_floor >= run_state.max_floors)
 	if run_state.advance_floor():
@@ -185,8 +241,10 @@ func return_to_tavern(outcome: String, message: String) -> void:
 		"outcome": outcome,
 		"headline": String(message_lines[0]) if not message_lines.is_empty() else message,
 		"dungeon": run_state.active_dungeon_id,
+		"mode": run_state.active_play_mode,
 		"depth": run_state.current_floor,
 		"gold": run_state.gold,
+		"slasher_progression":run_state.get_slasher_progression_summary() if run_state.active_play_mode==RunState.PLAY_MODE_SLASHER else "",
 		"changes": changes,
 	}
 	run_state.finish_run(outcome, message)
@@ -213,11 +271,37 @@ func _ensure_input_actions() -> void:
 	_add_key_action("special", [KEY_F])
 	_add_key_action("drink_potion", [KEY_Q])
 	_add_key_action("character_menu", [KEY_M])
+	_add_key_action("character_menu", [KEY_TAB])
+	_add_joypad_action("character_menu",JOY_BUTTON_START)
 	_add_joypad_action("move_up", JOY_BUTTON_DPAD_UP)
 	_add_joypad_action("move_down", JOY_BUTTON_DPAD_DOWN)
 	_add_joypad_action("move_left", JOY_BUTTON_DPAD_LEFT)
 	_add_joypad_action("move_right", JOY_BUTTON_DPAD_RIGHT)
 	_add_joypad_action("interact", JOY_BUTTON_A)
+	_add_key_action("slasher_up", [KEY_W, KEY_UP])
+	_add_key_action("slasher_down", [KEY_S, KEY_DOWN])
+	_add_key_action("slasher_left", [KEY_A, KEY_LEFT])
+	_add_key_action("slasher_right", [KEY_D, KEY_RIGHT])
+	_reset_action("slasher_controller_basic")
+	_reset_action("slasher_mobility")
+	_reset_action("slasher_special")
+	_reset_action("slasher_defend")
+	for aim_action in ["slasher_aim_left","slasher_aim_right","slasher_aim_up","slasher_aim_down"]: _reset_action(aim_action)
+	_add_key_action("slasher_special", [KEY_SPACE])
+	_add_key_action("slasher_potion", [KEY_Q])
+	_add_key_action("slasher_abandon", [KEY_ESCAPE])
+	_add_key_action("slasher_consumable_1", [KEY_1])
+	_add_key_action("slasher_consumable_2", [KEY_2])
+	_add_key_action("slasher_consumable_3", [KEY_3])
+	_add_key_action("slasher_consumable_4", [KEY_4])
+	_add_joypad_action("slasher_controller_basic", JOY_BUTTON_A)
+	_add_joypad_action("slasher_mobility", JOY_BUTTON_B)
+	_add_joypad_action("slasher_special", JOY_BUTTON_X)
+	_add_joypad_action("slasher_defend", JOY_BUTTON_Y)
+	_add_joypad_axis_action("slasher_aim_left", JOY_AXIS_RIGHT_X, -1.0)
+	_add_joypad_axis_action("slasher_aim_right", JOY_AXIS_RIGHT_X, 1.0)
+	_add_joypad_axis_action("slasher_aim_up", JOY_AXIS_RIGHT_Y, -1.0)
+	_add_joypad_axis_action("slasher_aim_down", JOY_AXIS_RIGHT_Y, 1.0)
 
 func _add_key_action(action: StringName, keys: Array[int]) -> void:
 	if not InputMap.has_action(action):
@@ -239,3 +323,17 @@ func _add_joypad_action(action: StringName, button_index: JoyButton) -> void:
 	for existing in InputMap.action_get_events(action):
 		if existing is InputEventJoypadButton and existing.button_index == button_index: return
 	var event := InputEventJoypadButton.new(); event.button_index = button_index; InputMap.action_add_event(action,event)
+
+func _add_mouse_action(action: StringName, button_index: MouseButton) -> void:
+	if not InputMap.has_action(action): InputMap.add_action(action)
+	for existing in InputMap.action_get_events(action):
+		if existing is InputEventMouseButton and existing.button_index == button_index: return
+	var event := InputEventMouseButton.new(); event.button_index = button_index; InputMap.action_add_event(action,event)
+
+func _reset_action(action: StringName) -> void:
+	if not InputMap.has_action(action): InputMap.add_action(action)
+	InputMap.action_erase_events(action)
+
+func _add_joypad_axis_action(action: StringName, axis: JoyAxis, axis_value: float) -> void:
+	if not InputMap.has_action(action): InputMap.add_action(action)
+	var event:=InputEventJoypadMotion.new();event.axis=axis;event.axis_value=axis_value;InputMap.action_add_event(action,event)

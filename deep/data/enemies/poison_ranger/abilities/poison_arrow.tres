@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyAbility" format=3]
+
+[ext_resource type="Script" uid="uid://cw0iehgmbhwtg" path="res://scripts/codes/combat/enemy_ability.gd" id="1"]
+[resource]
+script=ExtResource("1")
+ability_id="poison_arrow"
+kind=1
+damage=8
+damage_type="poison"
+status_effect="poison"
+status_power=3
+range=240.0
+preferred_min_range=170.0
+preferred_max_range=240.0
+cooldown=1.2
+windup=0.3
+projectile_speed=460.0
+projectile_range=340.0

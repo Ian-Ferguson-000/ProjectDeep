@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyProfile" format=3]
+
+[ext_resource type="Script" uid="uid://csnapanx857b1" path="res://scripts/codes/combat/enemy_profile.gd" id="1"]
+[resource]
+script=ExtResource("1")
+enemy_id="poison_ranger"
+journal_id="poison_ranger"
+display_name="Poison Ranger"
+max_health=38
+defense=1
+vulnerabilities={"fire":1.25,"poison":0.5}
+respawn_time=5.0
+move_speed=115.0
+aggro_range=160.0
+leash_range=320.0
+retreat_health_ratio=0.0
+enabled_behaviors=7

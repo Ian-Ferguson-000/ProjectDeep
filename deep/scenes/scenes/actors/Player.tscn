@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://cj7bob0mn0r72"]
+
+[ext_resource type="Script" uid="uid://vlstiovs6iqu" path="res://scripts/codes/player.gd" id="1"]
+[ext_resource type="SpriteFrames" uid="uid://da8qlwmxx0cw6" path="res://assets/sprite_packs/Player/player_frames.tres" id="2"]
+[ext_resource type="Script" uid="uid://dip684oeg7jku" path="res://scripts/codes/combat/health_component.gd" id="3"]
+[ext_resource type="Script" uid="uid://by0shmn4owl53" path="res://scripts/codes/combat/status_component.gd" id="4"]
+
+[node name="Player" type="CharacterBody2D" unique_id=658580119]
+script = ExtResource("1")
+dash_speed = 1620.0
+dash_cooldown_time = 0.24
+draw_placeholder = false
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=778887802]
+position = Vector2(0, -19)
+scale = Vector2(1.5, 1.5)
+sprite_frames = ExtResource("2")
+animation = &"idle_down"
+autoplay = "idle_down"
+
+[node name="HealthComponent" type="Node" parent="." unique_id=799285719]
+script = ExtResource("3")
+
+[node name="StatusComponent" type="Node" parent="." unique_id=1809016137]
+script = ExtResource("4")

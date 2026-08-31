@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyAbility" format=3]
+
+[ext_resource type="Script" uid="uid://cw0iehgmbhwtg" path="res://scripts/codes/combat/enemy_ability.gd" id="1"]
+[resource]
+script=ExtResource("1")
+ability_id="feral_lunge"
+kind=3
+damage=12
+damage_type="physical"
+range=90.0
+preferred_min_range=0.0
+preferred_max_range=80.0
+cooldown=1.1
+windup=0.2
+knockback=140.0
+area_radius=42.0
+lunge_speed=430.0
+lunge_duration=0.22

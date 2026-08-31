@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyAbility" format=3]
+
+[ext_resource type="Script" uid="uid://cw0iehgmbhwtg" path="res://scripts/codes/combat/enemy_ability.gd" id="1"]
+[resource]
+script=ExtResource("1")
+ability_id="club_strike"
+kind=0
+damage=12
+damage_type="physical"
+range=48.0
+preferred_max_range=48.0
+cooldown=1.25
+windup=0.38
+knockback=100.0

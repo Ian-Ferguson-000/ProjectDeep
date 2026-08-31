@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://w7ypuwem72sp"]
+
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://7hcdt5ainxj0" path="res://assets/pixel_art/shroomie.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="Portrait"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 32, 32)
+
+[resource]
+script = ExtResource("1")
+enemy_id = "spore_beast"
+display_name = "Spore Beast"
+portrait = SubResource("Portrait")
+description = "A swollen fungal creature that vents toxic spores when threatened."
+habitat = "Southwestern grove"
+behavior_summary = "Slow durable pursuer with a close poison burst."
+max_health = 65
+defense = 3
+attack_damage = 7
+damage_type = "poison"
+vulnerabilities = {
+"fire": 1.5,
+"ice": 1.25,
+"poison": 0.0
+}

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://scripts/codes/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://Data/enemies/feral_wolf/profile.tres" id="2"]
+[ext_resource type="Resource" uid="uid://d23l041ewqfm" path="res://Data/enemies/feral_wolf/journal.tres" id="3"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/feral_wolf/frames.tres" id="4"]
+[ext_resource type="Resource" path="res://Data/enemies/feral_wolf/abilities/feral_lunge.tres" id="5"]
+[resource]
+script=ExtResource("1")
+enemy_id="feral_wolf"
+display_name="Feral Wolf"
+profile=ExtResource("2")
+journal_entry=ExtResource("3")
+sprite_frames=ExtResource("4")
+sprite_offset=Vector2(0,-32)
+idle_animation="idle_right"
+run_animation="run_right"
+attack_animation="attack_right"
+collision_radius=17.0
+collision_height=32.0
+abilities=[ExtResource("5")]

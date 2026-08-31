@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bkb2fo8ay8mob"]
+
+[ext_resource type="Script" uid="uid://bxdxh1cuvqt0b" path="res://scripts/slasher/slasher_forest.gd" id="1"]
+
+[node name="SlasherForest" type="Node2D" unique_id=2013988132]
+script = ExtResource("1")

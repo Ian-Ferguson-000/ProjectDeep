@@ -1,6 +1,7 @@
 extends Control
 
 const UI_BACKGROUND := preload("res://assets/ui/Eros.png")
+const OPTIONS_PANEL:=preload("res://scripts/ui/game_options_panel.gd")
 
 var controller: Node
 
@@ -44,9 +45,17 @@ func _build_ui() -> void:
 	_style_button(start_button)
 	root.add_child(start_button)
 
+	var options_button:=Button.new()
+	options_button.text="Options";options_button.custom_minimum_size=Vector2(320,52);options_button.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;options_button.pressed.connect(_open_options);_style_button(options_button);root.add_child(options_button)
+
 func _begin() -> void:
 	if controller != null and controller.has_method("show_class_selection"):
 		controller.show_class_selection()
+
+func _open_options()->void:
+	var overlay:=Control.new();overlay.name="OptionsOverlay";overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);overlay.mouse_filter=Control.MOUSE_FILTER_STOP;add_child(overlay)
+	var shade:=ColorRect.new();shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);shade.color=Color(0.01,0.01,0.01,0.82);overlay.add_child(shade)
+	var panel:GameOptionsPanel=OPTIONS_PANEL.new();panel.set_anchors_preset(Control.PRESET_CENTER);panel.position=Vector2(-320,-270);panel.setup(true);panel.close_requested.connect(overlay.queue_free);overlay.add_child(panel)
 
 func _style_button(button: Button) -> void:
 	FantasyButton.apply_light(button, 22)

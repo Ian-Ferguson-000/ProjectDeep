@@ -20,8 +20,11 @@ func _run() -> void:
 		_expect(tavern._grid_center(Vector2i(9,8)).x > 0 and tavern._grid_center(Vector2i(9,8)).x < viewport_size.x,"grid failed responsive centering at %s"%viewport_size,failures)
 		var floor_path: Array[Vector2i] = tavern._find_navigation_path(tavern.player_pos,Vector2i(12,7))
 		_expect(not floor_path.is_empty() and floor_path[floor_path.size()-1] == Vector2i(12,7),"click navigation could not route across Tavern floor",failures)
-		var gate_station: Dictionary = tavern._station_at(Vector2i(13,1)); var gate_approach: Vector2i = tavern._best_station_approach(Vector2i(13,1))
-		_expect(not gate_station.is_empty() and gate_approach != Vector2i(-1,-1) and tavern._distance(gate_approach,Vector2i(13,1))==1,"click navigation could not approach expedition gate",failures)
+		var gate_station: Dictionary = tavern._station_at(Vector2i(11,1)); var gate_approach: Vector2i = tavern._best_station_approach(Vector2i(11,1))
+		_expect(not gate_station.is_empty() and gate_approach != Vector2i(-1,-1) and tavern._distance(gate_approach,Vector2i(11,1))==1,"click navigation could not approach expedition gate",failures)
+		_expect(tavern.expedition_gate_hit_target!=null and tavern.expedition_gate_hit_target.mouse_default_cursor_shape==Control.CURSOR_POINTING_HAND,"expedition gate mouse hit target missing",failures)
+		tavern._on_expedition_gate_clicked();_expect(not tavern.expedition_backdrop.visible,"gate click bypassed modal ownership",failures)
+		tavern._close_modal(tavern.results_backdrop);tavern.player_pos=Vector2i(10,1);tavern._on_expedition_gate_clicked();_expect(tavern.expedition_backdrop.visible,"adjacent gate click did not open expedition selector",failures);tavern._close_modal(tavern.expedition_backdrop)
 		tavern._open_dungeon_selector()
 		var dungeon_button_count := 0
 		for entry in tavern.expedition_list.get_children():
@@ -31,7 +34,6 @@ func _run() -> void:
 		_expect(tavern.expedition_list.find_child("AshenFarmsteadDungeonButton",false,false) != null,"Farmstead selector entry missing",failures)
 		_expect(tavern.expedition_list.find_child("CryptDungeonButton",false,false) != null,"Crypt selector entry missing",failures)
 		tavern._close_modal(tavern.expedition_backdrop)
-		tavern._close_modal(tavern.results_backdrop)
 		tavern._open_armory()
 		_expect(tavern.armory_backdrop.visible and tavern.armory_list.get_child_count()==1,"armory modal failed",failures)
 		tavern._close_modal(tavern.armory_backdrop)
