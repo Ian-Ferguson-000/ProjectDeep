@@ -40,6 +40,7 @@ func _break()->void:
 func open_chest()->bool:
 	if prop_kind!="chest" or destroyed or is_open:return false
 	is_open=true;remove_from_group("slasher_damageable");remove_from_group("slasher_chest");collision.set_deferred("disabled",true)
+	var old_sprite:=sprite;var opened_sprite:=SlasherForestArt.make_sprite("chest_open");opened_sprite.position=old_sprite.position;opened_sprite.modulate=old_sprite.modulate;add_child(opened_sprite);remove_child(old_sprite);old_sprite.queue_free();sprite=opened_sprite
 	var tween:=create_tween();tween.tween_property(sprite,"position:y",sprite.position.y-5.0,0.10);tween.tween_property(sprite,"modulate",Color("#ffe49a"),0.12);opened.emit(self,cell);return true
 
 static func deterministic_gold_drop(run_seed:int,floor_number:int,grid_cell:Vector2i,kind:String,drop_tuning:Dictionary)->Dictionary:

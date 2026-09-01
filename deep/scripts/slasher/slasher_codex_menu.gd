@@ -125,7 +125,7 @@ func _class_portrait()->Texture2D:
 	return null
 func _tuning_summary(tuning:Dictionary)->String:
 	var parts:Array[String]=["Cooldown %.2fs"%float(tuning.get("cooldown",0.0))]
-	for pair in [["damage_coefficient","Power ×"],["flat_damage","Flat"],["reach","Reach"],["projectile_range","Range"],["movement_distance","Distance"],["effect_duration","Duration"]]:
+	for pair in [["damage_coefficient","Power ×"],["flat_damage","Flat"],["reach","Reach"],["projectile_range","Range"],["movement_distance","Distance"],["effect_duration","Duration"],["invulnerability","Invulnerable"]]:
 		if tuning.has(pair[0]):parts.append("%s %s"%[pair[1],tuning[pair[0]]])
 	if int(tuning.get("resource_cost",0))>0:parts.append("Cost %d"%int(tuning.resource_cost))
 	return " · ".join(parts)

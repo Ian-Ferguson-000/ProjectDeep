@@ -20,24 +20,51 @@ static func generate(seed_value:int,floor_number:int)->Dictionary:
 		var room:=Rect2i(origin,size);rooms.append(room);_carve_rect(cells,room)
 		if index>0:_carve_corridor(cells,rooms[index-1].get_center(),room.get_center(),index%2==0,corridor_width)
 	var start:=rooms[0].get_center();var exit:=rooms[-1].get_center()
-	var enemy_spawns:Array[Vector2i]=[]
+	var enemy_spawns:Array[Dictionary]=[]
 	for index in range(1,rooms.size()):
 		# TUNING: This cap prevents very deep Endless floors from spawning unbounded enemy counts; stats still scale with absolute depth.
 		var room:Rect2i=rooms[index];var count:int=mini(int(config.get("enemy_count_per_room_cap",7)),1+int(floor_number/2.0)+(1 if index==rooms.size()-1 else 0))
 		for spawn_index in count:
 			var candidate:=Vector2i(rng.randi_range(room.position.x+2,room.end.x-3),rng.randi_range(room.position.y+2,room.end.y-3))
-			if candidate!=exit and candidate not in enemy_spawns:enemy_spawns.append(candidate)
+			if candidate!=exit and not _spawn_records_contain(enemy_spawns,candidate):enemy_spawns.append(_enemy_spawn(candidate))
 	var loot_spawns:Array[Vector2i]=[]
 	for index in range(1,rooms.size(),2):loot_spawns.append(rooms[index].get_center()+Vector2i(1,0))
 	var merchant:=rooms[int(rooms.size()/2.0)].get_center()
 	var boss_spawn:=exit+Vector2i(-2,0) if is_boss_floor or is_elite_floor else Vector2i(-1,-1)
-	if is_boss_floor or is_elite_floor:
+	if is_elite_floor:
 		enemy_spawns.clear()
-		enemy_spawns.append(boss_spawn)
-	var reserved:=_reserved_cells([start,exit,merchant]+enemy_spawns+loot_spawns,int(config.get("spawn_clearance_cells",2)))
+		enemy_spawns.append(_enemy_spawn(boss_spawn,"briar_guardian","elite_guardian",false,true))
+	elif is_boss_floor:
+		enemy_spawns.clear();enemy_spawns.append(_enemy_spawn(boss_spawn,"dark_druid","",true,false))
+		var occupied:Array[Vector2i]=[boss_spawn,exit];var boss_room:Rect2i=rooms[-1]
+		for preferred:Vector2i in [boss_spawn+Vector2i(-2,-3),boss_spawn+Vector2i(-2,3)]:
+			var escort_position:=_validated_encounter_cell(preferred,boss_room,cells,occupied);occupied.append(escort_position);enemy_spawns.append(_enemy_spawn(escort_position,"briar_guardian","elite_guardian",false,true))
+	var enemy_points:Array=[]
+	for spawn_record:Dictionary in enemy_spawns:enemy_points.append(spawn_record.position)
+	var reserved:=_reserved_cells([start,exit,merchant]+enemy_points+loot_spawns,int(config.get("spawn_clearance_cells",2)))
 	var decorations:=_make_decorations(cells,reserved,rng,float(config.get("decoration_density",0.16)),float(config.get("edge_decoration_density",0.48)))
 	var solid_props:=_make_solid_props(cells,reserved,start,exit,rng,float(config.get("solid_prop_density",0.025)))
 	return {"width":width,"height":height,"cells":cells,"rooms":rooms,"start":start,"exit":exit,"enemy_spawns":enemy_spawns,"loot_spawns":loot_spawns,"merchant":merchant,"boss_spawn":boss_spawn,"is_boss_floor":is_boss_floor,"is_elite_floor":is_elite_floor,"cycle_floor":cycle_floor,"cycle_number":int((floor_number-1)/cycle_length)+1,"edges":classify_edges(cells),"decorations":decorations,"solid_props":solid_props}
+
+static func _enemy_spawn(position:Vector2i,visual_id:String="",behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->Dictionary:
+	return {"position":position,"visual_id":visual_id,"behavior_id":behavior_id,"is_boss":is_boss,"is_mini_boss":is_mini_boss}
+
+static func _spawn_records_contain(records:Array[Dictionary],position:Vector2i)->bool:
+	for record:Dictionary in records:
+		if Vector2i(record.get("position",Vector2i(-999,-999)))==position:return true
+	return false
+
+static func _validated_encounter_cell(preferred:Vector2i,room:Rect2i,cells:Dictionary,occupied:Array[Vector2i])->Vector2i:
+	var offsets:Array[Vector2i]=[Vector2i.ZERO,Vector2i.RIGHT,Vector2i.LEFT,Vector2i.DOWN,Vector2i.UP,Vector2i(1,1),Vector2i(-1,1),Vector2i(1,-1),Vector2i(-1,-1)]
+	for radius:int in range(0,5):
+		for offset:Vector2i in offsets:
+			var candidate:=preferred+offset*radius
+			if not room.has_point(candidate) or not cells.has(candidate):continue
+			var clear:=true
+			for used:Vector2i in occupied:
+				if candidate.distance_to(used)<2.5:clear=false;break
+			if clear:return candidate
+	return room.get_center()
 
 static func classify_edges(cells:Dictionary)->Dictionary:
 	var result:Dictionary={}

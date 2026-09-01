@@ -1,6 +1,7 @@
 {
   "generation": {"width": 44, "height": 28, "base_rooms": 6, "room_growth_per_floor": 1, "room_growth_cap": 3, "room_width_min": 9, "room_width_max": 14, "room_height_min": 7, "room_height_max": 11, "corridor_width": 2, "tile_size": 48, "decoration_density": 0.16, "edge_decoration_density": 0.48, "solid_prop_density": 0.025, "spawn_clearance_cells": 2,"enemy_count_per_room_cap":7},
   "rewards": {"floor_xp_base":45,"floor_xp_per_depth":5,"elite_floor_bonus":55,"campaign_boss_bonus":70,"endless_xp_multiplier":0.35,"loot_gold_base":5},
+  "boss_durability": {"max_damage_fraction":0.05,"shield_reduction":0.75,"shield_duration":0.5,"shield_color":"#8fd8ff"},
   "input": {"held_basic_cooldown_multiplier": 1.5},
   "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
   "classes": {
@@ -14,21 +15,21 @@
 	"mage": {
 	  "speed": 185, "collision_radius": 18, "sprite_scale": 0.42, "sprite_offset_y": -25,
 	  "basic": {"cooldown": 0.22, "resource_cost": 0, "resource_gain": 1, "power_stat": "spell_power", "damage_coefficient": 3.0, "flat_damage": 0, "projectile_range": 360, "projectile_speed": 620, "hit_radius": 24, "area_radius": 62, "piercing": false, "visual": "aether", "focus_min_distance": 140, "animation_lock": 0.32},
-	  "movement": {"cooldown": 0.5, "resource_cost": 0, "resource_gain": 0, "movement_distance": 380, "destination_clearance": 22, "animation_lock": 0.32},
+	  "movement": {"cooldown": 0.5, "resource_cost": 0, "resource_gain": 0, "movement_distance": 380, "destination_clearance": 22, "invulnerability": 0.28, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.8, "resource_cost": 1, "resource_gain": 0, "power_stat": "spell_power", "damage_coefficient": 4.0, "flat_damage": 0, "projectile_range": 480, "projectile_speed": 760, "hit_radius": 30, "area_radius": 88, "piercing": true, "visual": "fireball", "visual_scale": 1.7, "animation_lock": 0.32},
-	  "defensive": {"cooldown": 4.0, "resource_cost": 2, "resource_gain": 0, "effect_duration": 1.0, "mitigation": 0.5, "push_radius": 100, "push_distance": 70, "animation_lock": 0.32}
+	  "defensive": {"cooldown": 0.25, "resource_cost": 0, "resource_gain": 0, "effect_duration": 1.0, "mitigation": 0.5, "push_radius": 100, "push_distance": 70, "animation_lock": 0.32}
 	},
 	"healer": {
 	  "speed": 185, "collision_radius": 18, "sprite_scale": 0.42, "sprite_offset_y": -51,
 	  "basic": {"cooldown": 0.25, "resource_cost": 0, "resource_gain": 1, "power_stat": "spell_power", "damage_coefficient": 1.0, "flat_damage": 0, "projectile_range": 330, "projectile_speed": 520, "hit_radius": 24, "piercing": false, "visual": "aether", "tint": "#ffe68a", "status": "slow", "status_duration": 1.5, "status_strength": 0.55, "animation_lock": 0.32},
-	  "movement": {"cooldown": 1.3, "resource_cost": 0, "resource_gain": 0, "movement_distance": 145, "destination_clearance": 22, "heal_travel_threshold": 80, "heal_coefficient": 0.0, "flat_heal": 3, "animation_lock": 0.32},
+	  "movement": {"cooldown": 1.3, "resource_cost": 0, "resource_gain": 0, "movement_distance": 145, "destination_clearance": 22, "invulnerability": 0.18, "heal_travel_threshold": 80, "heal_coefficient": 0.0, "flat_heal": 3, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "empower_damage_multiplier": 2.0, "empower_status_duration_bonus": 1.0, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 4.0, "resource_cost": 0, "resource_gain": 0, "effect_duration": 1.2, "recover_fraction": 0.5, "animation_lock": 0.32}
 	},
 	"tank": {
 	  "speed": 165, "collision_radius": 18, "sprite_scale": 0.42, "sprite_offset_y": -51,
 	  "basic": {"cooldown": 0.28, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "reach": 62, "arc_degrees": 70, "knockback": 10, "animation_lock": 0.32},
-	  "movement": {"cooldown": 1.8, "resource_cost": 0, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "movement_distance": 150, "destination_clearance": 22, "area_radius": 72, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
+	  "movement": {"cooldown": 1.8, "resource_cost": 0, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "movement_distance": 150, "destination_clearance": 22, "invulnerability": 0.30, "area_radius": 72, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
 	  "special": {"cooldown": 3.0, "resource_cost": 2, "resource_gain": 0, "effect_duration": 2.0, "mitigation": 0.5, "storage_fraction": 0.5, "release_radius": 80, "release_knockback": 30, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 3.5, "resource_cost": 0, "resource_gain": 1, "effect_duration": 1.25, "mitigation": 0.75, "animation_lock": 0.32}
 	},
@@ -42,7 +43,7 @@
 	"summoner": {
 	  "speed": 180, "collision_radius": 18, "sprite_scale": 0.42, "sprite_offset_y": -57,
 	  "basic": {"cooldown": 0.22, "resource_cost": 0, "resource_gain": 1, "target_range": 360, "aim_dot_threshold": 0.8, "command_distance": 180, "animation_lock": 0.32},
-	  "movement": {"cooldown": 1.0, "resource_cost": 0, "resource_gain": 0, "movement_distance": 210, "destination_clearance": 22, "mount_offset": 24, "animation_lock": 0.32},
+	  "movement": {"cooldown": 1.0, "resource_cost": 0, "resource_gain": 0, "movement_distance": 210, "destination_clearance": 22, "invulnerability": 0.24, "mount_offset": 24, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 4.0, "resource_cost": 0, "resource_gain": 0, "effect_duration": 1.0, "animation_lock": 0.32}
 	}
@@ -53,6 +54,7 @@
   "enemies": {
 	"forest_normal": {"health_base": 14, "health_per_floor": 5, "damage_base": 2, "damage_per_floor": 1, "speed_base": 68, "speed_per_floor": 3, "attack_range": 34, "attack_cooldown": 1.15, "attack_knockback": 120, "collision_radius": 14, "reward": 3, "animation_lock": 0.35, "hit_stun_duration": 0.12, "received_knockback_multiplier": 1.0, "screen_shake_strength": 4.5, "screen_shake_duration": 0.16, "slow_multiplier": 0.55, "slow_duration": 1.5, "stagger_multiplier": 0.0, "stagger_duration": 0.45},
 	"forest_elite": {"minimum_floor":3,"health_bonus":10,"damage_bonus":2,"reward":5,"mini_boss_health_multiplier":2.5,"mini_boss_damage_multiplier":1.5,"mini_boss_reward":12},
+	"elite_guardian": {"received_knockback_multiplier":0.18,"hit_stun_duration":0.04,"burst_telegraph":0.22,"burst_projectiles":8,"burst_damage_multiplier":0.55,"burst_speed":285,"burst_range":285,"burst_hit_radius":13,"burst_rotation_step":0.19635,"burst_color":"#c9ef72"},
 	"forest_boss": {"health_base": 75, "health_per_floor": 18, "damage_base": 6, "damage_per_floor": 2, "speed_base": 62, "speed_per_floor": 0, "attack_range": 44, "attack_cooldown": 0.75, "attack_knockback": 120, "collision_radius": 24, "reward": 18, "animation_lock": 0.35, "hit_stun_duration": 0.06, "received_knockback_multiplier": 0.35, "screen_shake_strength": 6.5, "screen_shake_duration": 0.20, "slow_multiplier": 0.55, "slow_duration": 1.5, "stagger_multiplier": 0.0, "stagger_duration": 0.45}
   },
   "wolf_archetypes": {
@@ -70,6 +72,8 @@
 	"wolf_charger": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.78},
 	"wolf_hunter": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.7},
 	"wolf_howler": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.66},
+	"thornback_boar": {"sprite_offset_x": 0, "sprite_offset_y": -10, "sprite_scale": 0.78},
+	"briar_guardian": {"sprite_offset_x": 0, "sprite_offset_y": -12, "sprite_scale": 0.74},
 	"poison_ranger": {"sprite_offset_x": 0, "sprite_offset_y": -18, "sprite_scale": 0.7},
 	"spore_beast": {"sprite_offset_x": 0, "sprite_offset_y": -20, "sprite_scale": 0.7},
 	"fire_mage": {"sprite_offset_x": 0, "sprite_offset_y": -18, "sprite_scale": 0.7},

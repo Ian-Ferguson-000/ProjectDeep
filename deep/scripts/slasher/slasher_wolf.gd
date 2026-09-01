@@ -6,8 +6,9 @@ var sprite: AnimatedSprite2D
 var facing_name := "right"
 var animation_lock := 0.0
 var tuning:Dictionary={}
+var pathfinder:SlasherGridPathfinder
 
-func setup(value: SlasherPlayer) -> void:owner_player=value;tuning=value.run_state.get_effective_slasher_companion_tuning("wolf") if value.run_state!=null else GameBalance.get_slasher_companion_tuning("wolf");queue_redraw()
+func setup(value: SlasherPlayer) -> void:owner_player=value;pathfinder=value.pathfinder;tuning=value.run_state.get_effective_slasher_companion_tuning("wolf") if value.run_state!=null else GameBalance.get_slasher_companion_tuning("wolf");queue_redraw()
 func _ready() -> void:
 	if tuning.is_empty():tuning=GameBalance.get_slasher_companion_tuning("wolf")
 	var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=float(tuning.get("collision_radius",10.0));shape.shape=circle;add_child(shape)
@@ -21,12 +22,14 @@ func _physics_process(delta: float) -> void:
 		var follow:Array=tuning.get("follow_offset",[-24,18]);var follow_position:=owner_player.global_position+Vector2(float(follow[0]),float(follow[1]))
 		var command_position:Vector2=get_meta("command_position",follow_position)
 		var commanded:=global_position.distance_to(command_position)>float(tuning.get("command_distance",24.0));var destination:=command_position if commanded else follow_position
-		velocity=global_position.direction_to(destination)*float(tuning.get("command_speed" if commanded else "follow_speed",120.0)) if global_position.distance_to(destination)>float(tuning.get("follow_distance",40.0)) else Vector2.ZERO
+		var follow_waypoint:=pathfinder.next_waypoint(global_position,destination) if pathfinder!=null else destination
+		velocity=global_position.direction_to(follow_waypoint)*float(tuning.get("command_speed" if commanded else "follow_speed",120.0)) if global_position.distance_to(destination)>float(tuning.get("follow_distance",40.0)) else Vector2.ZERO
 		if not commanded and has_meta("command_position") and attack_cooldown<=0.0:
 			var prop:SlasherBreakableProp=_breakable_near(command_position,float(tuning.get("pounce_range",30.0)))
 			if is_instance_valid(prop):_attack_damageable(prop)
 	else:
-		velocity=global_position.direction_to(target.global_position)*float(tuning.get("pounce_speed",260.0) if get_meta("pounce",false) else tuning.get("combat_speed",145.0))
+		var combat_waypoint:=pathfinder.next_waypoint(global_position,target.global_position) if pathfinder!=null else target.global_position
+		velocity=global_position.direction_to(combat_waypoint)*float(tuning.get("pounce_speed",260.0) if get_meta("pounce",false) else tuning.get("combat_speed",145.0))
 		if global_position.distance_to(target.global_position)<float(tuning.get("pounce_range",30.0)) and attack_cooldown<=0:
 			_attack_damageable(target);owner_player.run_state.gain_class_resource(int(tuning.get("resource_gain",1)));owner_player.resource_changed.emit(owner_player.run_state.class_resource,owner_player.run_state.get_class_resource_max());set_meta("pounce",false)
 	if velocity.length()>0.1:facing_name=SlasherSpriteLibrary.direction_name(velocity,facing_name)

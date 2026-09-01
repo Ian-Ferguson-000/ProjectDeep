@@ -13,12 +13,14 @@ const RESOURCE_HUD_FRAME:=preload("res://assets/slasher/ui/slasher_resource_hud_
 const GOLD_UI_ICON:=preload("res://assets/pixel_art/Gold.png")
 const KEY_UI_ICON:=preload("res://assets/pixel_art/key.png")
 const POTION_UI_ICON:=preload("res://assets/pixel_art/potion.png")
+const GRID_PATHFINDER:=preload("res://scripts/slasher/slasher_grid_pathfinder.gd")
 
 var controller:Node
 var run_state:RunState
 var dungeon_context:Dictionary={}
 var layout:Dictionary={}
 var player:SlasherPlayer
+var pathfinder:SlasherGridPathfinder
 var enemies_remaining:=0
 var exit_open:=false
 var floor_reward_claimed:=false
@@ -61,6 +63,7 @@ func _build_floor()->void:
 	get_tree().paused=false
 	for child in get_children():child.free()
 	layout=SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor)
+	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
 	_build_world();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
 	if player.item_runtime:player.item_runtime.floor_entered()
 	if run_state.current_floor==1 and not run_state.starter_reward_claimed:call_deferred("_offer_starter_relic")
@@ -73,10 +76,11 @@ func _build_world()->void:
 	canopy_layer=Node2D.new();canopy_layer.name="Canopy";canopy_layer.y_sort_enabled=true;canopy_layer.z_index=8;add_child(canopy_layer)
 	var cells:Dictionary=layout.cells
 	for value:Variant in cells:
-		var cell:Vector2i=value;var base:=Sprite2D.new();base.name="Ground_%d_%d"%[cell.x,cell.y];base.texture=SlasherForestArt.ground_base_texture(cell);base.position=_world(cell);base.scale=Vector2(float(TILE+3)/base.texture.get_width(),float(TILE+3)/base.texture.get_height());base.modulate=Color(0.98,0.98,0.98);ground_layer.add_child(base)
+		var cell:Vector2i=value;var base:=SlasherForestArt.make_ground_sprite(cell,TILE);base.name="Ground_%d_%d"%[cell.x,cell.y];base.position=_world(cell);ground_layer.add_child(base)
 	for value:Variant in layout.get("edges",{}):
 		var cell:Vector2i=value;var edge:Dictionary=layout.edges[cell]
-		for missing_value in edge.get("missing",[]):_add_boundary(cell,_direction(String(missing_value)),String(edge.get("kind","straight")))
+		for missing_value in edge.get("missing",[]):_add_boundary(cell,_direction(String(missing_value)))
+	_build_boundary_corners(cells)
 	_build_decorations();_build_solid_props();_build_landmarks();_build_mist();_build_vignette()
 
 func _build_decorations()->void:
@@ -102,20 +106,26 @@ func _build_vignette()->void:
 	var vignette:=ColorRect.new();vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);vignette.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	var material:=ShaderMaterial.new();var shader:=Shader.new();shader.code="shader_type canvas_item; void fragment(){vec2 p=UV-vec2(0.5);float edge=smoothstep(0.28,0.72,length(p));COLOR=vec4(0.01,0.035,0.02,edge*0.48);}";material.shader=shader;vignette.material=material;layer.add_child(vignette)
 
-func _add_boundary(cell:Vector2i,direction:Vector2i,edge_kind:String)->void:
+func _add_boundary(cell:Vector2i,direction:Vector2i)->void:
 	var body:=StaticBody2D.new();var shape:=CollisionShape2D.new();var rectangle:=RectangleShape2D.new();rectangle.size=Vector2(TILE,8) if direction.y!=0 else Vector2(8,TILE);shape.shape=rectangle;body.add_child(shape);body.position=_world(cell)+Vector2(direction)*TILE*0.5;add_child(body)
 	var outside:Vector2i=cell+direction;var key:int=absi(outside.x*31+outside.y*17)
 	var wall:=SlasherForestArt.make_boundary_sprite(direction,key);wall.position=body.position;wall.z_index=2 if direction.y>=0 else -1;actor_layer.add_child(wall)
-	if edge_kind!="straight" and direction.y!=0:
-		var pillar:=SlasherForestArt.make_corner_pillar(key);pillar.position=body.position;pillar.z_index=3;actor_layer.add_child(pillar)
-	if key%7==0:
-		var tree_index:int=abs(outside.x+outside.y)%3
-		var tree:=SlasherForestArt.make_sprite(["tree_large","tree_wide","tree_small"][tree_index]);tree.position=_world(outside)-Vector2(0,16);canopy_layer.add_child(tree)
-	elif key%11==0:
-		var bush:=SlasherForestArt.make_sprite("rounded_bush");bush.position=_world(outside);canopy_layer.add_child(bush)
+
+func _build_boundary_corners(cells:Dictionary)->void:
+	var vertices:Dictionary={}
+	for cell_value:Variant in cells:
+		var cell:Vector2i=Vector2i(cell_value)
+		for offset:Vector2i in [Vector2i.ZERO,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.ONE]:vertices[cell+offset]=true
+	for vertex_value:Variant in vertices:
+		var vertex:Vector2i=Vector2i(vertex_value);var quadrants:Array[Vector2i]=[vertex+Vector2i(-1,-1),vertex+Vector2i(0,-1),vertex+Vector2i(-1,0),vertex];var occupied:Array[bool]=[];var occupied_count:=0
+		for quadrant:Vector2i in quadrants:
+			var present:bool=cells.has(quadrant);occupied.append(present);occupied_count+=1 if present else 0
+		if occupied_count not in [1,3]:continue
+		var target_state:bool=occupied_count==1;var quadrant_index:=occupied.find(target_state);var corner_index:int=[3,2,1,0][quadrant_index]
+		var corner:=SlasherForestArt.make_corner_pillar(corner_index);corner.position=ORIGIN+Vector2(vertex)*TILE;corner.z_index=4;actor_layer.add_child(corner)
 
 func _spawn_player()->void:
-	player=PLAYER_SCRIPT.new();player.name="SlasherPlayer";player.position_sanitizer=sanitize_player_position;player.setup(run_state);actor_layer.add_child(player);player.global_position=_world(layout.start);player.health_changed.connect(_on_health_changed);player.resource_changed.connect(_on_resource_changed);player.ability_resolved.connect(_on_ability_resolved);player.defeated.connect(_on_player_defeated)
+	player=PLAYER_SCRIPT.new();player.name="SlasherPlayer";player.position_sanitizer=sanitize_player_position;player.pathfinder=pathfinder;player.setup(run_state);actor_layer.add_child(player);player.global_position=_world(layout.start);player.health_changed.connect(_on_health_changed);player.resource_changed.connect(_on_resource_changed);player.ability_resolved.connect(_on_ability_resolved);player.defeated.connect(_on_player_defeated)
 	tutorial_origin=player.global_position;tutorial_elapsed=0.0
 	if player.item_runtime:player.item_runtime.effect_activated.connect(_show_message)
 	var camera:=Camera2D.new();camera.position_smoothing_enabled=true;camera.position_smoothing_speed=7
@@ -128,11 +138,10 @@ func _spawn_player()->void:
 func _spawn_enemies()->void:
 	enemies_remaining=0;var wolf_counts:Dictionary={};var spawn_index:=0
 	for spawn_value:Variant in layout.enemy_spawns:
-		var spawn:Vector2i=spawn_value;var visual_id:="dark_druid";var behavior_id:=""
-		if bool(layout.get("is_elite_floor",false)):visual_id="spore_beast"
-		elif not bool(layout.get("is_boss_floor",false)):
+		var spawn_record:Dictionary=Dictionary(spawn_value);var spawn:Vector2i=Vector2i(spawn_record.get("position",Vector2i.ZERO));var visual_id:=String(spawn_record.get("visual_id",""));var behavior_id:=String(spawn_record.get("behavior_id",""))
+		if visual_id.is_empty():
 			var spec:=_normal_enemy_spec(spawn_index,wolf_counts);visual_id=String(spec.visual_id);behavior_id=String(spec.behavior_id)
-		_spawn_enemy(_world(spawn),visual_id,behavior_id,bool(layout.get("is_boss_floor",false)),bool(layout.get("is_elite_floor",false)));spawn_index+=1
+		_spawn_enemy(_world(spawn),visual_id,behavior_id,bool(spawn_record.get("is_boss",false)),bool(spawn_record.get("is_mini_boss",false)));spawn_index+=1
 	exit_open=enemies_remaining==0
 
 func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
@@ -146,11 +155,11 @@ func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 		if int(wolf_counts.get("wolf_howler",0))>0 and wolf_id=="wolf_lurker":wolf_id="wolf_vanguard"
 		if wolf_id in ["wolf_hunter","wolf_howler"] and int(wolf_counts.get(wolf_id,0))>=1:wolf_id="wolf_vanguard" if (spawn_index%2)==0 else "wolf_charger"
 		wolf_counts[wolf_id]=int(wolf_counts.get(wolf_id,0))+1;return {"visual_id":wolf_id,"behavior_id":wolf_id}
-	var other_enemies:Array[String]=["poison_ranger","spore_beast","fire_mage","ice_mage"]
+	var other_enemies:Array[String]=["thornback_boar","spore_beast","briar_guardian","ice_mage"]
 	return {"visual_id":other_enemies[(spawn_index+run_state.current_floor-1)%other_enemies.size()],"behavior_id":""}
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
-	var enemy:SlasherEnemy=ENEMY_SCRIPT.new();enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1;return enemy
+	var enemy:SlasherEnemy=ENEMY_SCRIPT.new();enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1;return enemy
 
 func _on_reinforcement_requested(archetypes:Array,origin:Vector2)->void:
 	var cap:int=int(GameBalance.get_slasher_wolfmaster_tuning().get("reinforcement_cap",5));var active_wolves:int=get_tree().get_nodes_in_group("slasher_wolf").size();var available:int=maxi(0,cap-active_wolves)
@@ -244,6 +253,7 @@ func _collect_loot(loot:Area2D)->void:
 	var tween:=create_tween();tween.set_parallel(true);tween.tween_property(loot,"global_position",player.global_position-Vector2(0,28),0.22).set_trans(Tween.TRANS_QUAD);tween.tween_property(loot,"scale",Vector2(1.35,1.35),0.16);tween.tween_property(loot,"modulate:a",0.0,0.22);tween.chain().tween_callback(loot.queue_free)
 
 func _on_prop_broken(_prop:SlasherBreakableProp,kind:String,cell:Vector2i)->void:
+	if pathfinder!=null:pathfinder.set_cell_blocked(cell,false)
 	var prop_tuning:Dictionary=GameBalance.get_slasher_balance("breakable_props");var drop_tuning:Dictionary=Dictionary(prop_tuning.get("drops",{}));var outcome:Dictionary=SlasherBreakableProp.deterministic_gold_drop(run_state.get_current_floor_seed(),run_state.current_floor,cell,kind,drop_tuning)
 	if bool(outcome.get("drops",false)):_spawn_gold_drop(_world(cell),int(outcome.get("amount",1)))
 
@@ -251,6 +261,7 @@ func _spawn_gold_drop(world_position:Vector2,amount:int)->void:
 	var area:=Area2D.new();area.name="PropGoldDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape);var sprite:=SlasherForestArt.make_sprite("gold");sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),16));area.set_meta("kind","gold");area.set_meta("amount",amount);actor_layer.add_child(area);loot_nodes.append(area)
 
 func _on_chest_opened(_chest:SlasherBreakableProp,cell:Vector2i)->void:
+	if pathfinder!=null:pathfinder.set_cell_blocked(cell,false)
 	relic_choice_source="chest";var cycle:int=maxi(0,run_state.get_slasher_cycle_number()-1) if run_state.slasher_endless_mode else 0
 	var choices:Array[String]=run_state.generate_slasher_chest_choices(run_state.current_floor,"chest_%d_%d"%[cell.x,cell.y],cycle);relic_modal.open(run_state,choices,true)
 

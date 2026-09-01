@@ -4,7 +4,11 @@ class_name SlasherEnemy
 signal defeated(enemy:SlasherEnemy,reward:int)
 signal reinforcement_requested(archetypes:Array,origin:Vector2)
 
+const SPAWN_ACTIVATION_DELAY:=1.2
+const HOSTILE_PROJECTILE:=preload("res://scripts/slasher/slasher_hostile_projectile.gd")
+
 var target:SlasherPlayer
+var pathfinder:SlasherGridPathfinder
 var max_health:=20
 var health:=20
 var damage:=3
@@ -13,6 +17,7 @@ var attack_range:=34.0
 var attack_cooldown:=0.0
 var elite:=false
 var boss:=false
+var mini_boss:=false
 var dead:=false
 var visual_id:="feral_wolf"
 var behavior_id:=""
@@ -41,14 +46,20 @@ var root_cooldown:=2.0
 var howl_cooldown:=5.0
 var speed_boost_multiplier:=1.0
 var speed_boost_time:=0.0
+var activation_delay:=SPAWN_ACTIVATION_DELAY
+var damage_shield_remaining:=0.0
+var guardian_burst_queue:Array[Dictionary]=[]
+var guardian_burst_index:=0
 
 func configure(floor_number:int,is_boss:bool=false,enemy_visual_id:String="feral_wolf",is_mini_boss:bool=false,enemy_behavior_id:String="")->void:
+	activation_delay=SPAWN_ACTIVATION_DELAY
 	behavior_id=enemy_behavior_id
 	if behavior_id.is_empty() and enemy_visual_id.begins_with("wolf_"):behavior_id=enemy_visual_id
-	visual_id=behavior_id if not behavior_id.is_empty() else enemy_visual_id
+	visual_id=behavior_id if behavior_id.begins_with("wolf_") else enemy_visual_id
 	visual_tuning=GameBalance.get_slasher_enemy_visual_tuning(visual_id)
-	behavior_tuning=GameBalance.get_slasher_wolf_archetype(behavior_id) if is_wolf() else (GameBalance.get_slasher_wolfmaster_tuning() if is_boss else {})
-	boss=is_boss;tuning=GameBalance.get_slasher_enemy_tuning("forest_boss" if boss else "forest_normal")
+	boss=is_boss;mini_boss=is_mini_boss
+	behavior_tuning=GameBalance.get_slasher_wolf_archetype(behavior_id) if is_wolf() else (GameBalance.get_slasher_wolfmaster_tuning() if boss else (GameBalance.get_slasher_enemy_tuning(behavior_id) if not behavior_id.is_empty() else {}))
+	tuning=GameBalance.get_slasher_enemy_tuning("forest_boss" if boss else "forest_normal")
 	var elite_tuning:=GameBalance.get_slasher_enemy_tuning("forest_elite");elite=is_mini_boss or behavior_id.is_empty() and not boss and floor_number>=int(elite_tuning.get("minimum_floor",3))
 	max_health=int(tuning.get("health_base",75 if boss else 14))+floor_number*int(tuning.get("health_per_floor",18 if boss else 5))+(int(elite_tuning.get("health_bonus",10)) if elite else 0)
 	health=max_health;damage=int(tuning.get("damage_base",6 if boss else 2))+floor_number*int(tuning.get("damage_per_floor",2 if boss else 1))+(int(elite_tuning.get("damage_bonus",2)) if elite else 0)
@@ -70,6 +81,11 @@ func _ready()->void:
 
 func _physics_process(delta:float)->void:
 	if dead or not is_instance_valid(target):return
+	damage_shield_remaining=maxf(0.0,damage_shield_remaining-delta)
+	activation_delay=maxf(0.0,activation_delay-delta)
+	if activation_delay>0.0:
+		velocity=Vector2.ZERO;_play_animation("idle");return
+	_process_guardian_bursts(delta)
 	attack_cooldown=maxf(0.0,attack_cooldown-delta);animation_lock=maxf(0.0,animation_lock-delta);hit_stun_timer=maxf(0.0,hit_stun_timer-delta);status_time=maxf(0.0,status_time-delta);special_cooldown=maxf(0.0,special_cooldown-delta);state_timer=maxf(0.0,state_timer-delta);speed_boost_time=maxf(0.0,speed_boost_time-delta)
 	if status_time<=0.0:movement_slow=1.0
 	if speed_boost_time<=0.0:speed_boost_multiplier=1.0
@@ -173,8 +189,24 @@ func _process_default()->void:
 		velocity=Vector2.ZERO
 		if animation_lock<=0.0:_play_animation("idle")
 
+func _process_guardian_bursts(delta:float)->void:
+	if guardian_burst_queue.is_empty():return
+	for index:int in range(guardian_burst_queue.size()-1,-1,-1):
+		var burst:Dictionary=guardian_burst_queue[index];burst.time=float(burst.get("time",0.0))-delta;guardian_burst_queue[index]=burst
+		if float(burst.time)<=0.0:guardian_burst_queue.remove_at(index);_release_guardian_burst(float(burst.get("rotation",0.0)))
+	queue_redraw()
+
+func _schedule_guardian_burst()->void:
+	var step:=float(behavior_tuning.get("burst_rotation_step",PI/16.0));guardian_burst_queue.append({"time":float(behavior_tuning.get("burst_telegraph",0.22)),"rotation":guardian_burst_index*step});guardian_burst_index+=1;queue_redraw()
+
+func _release_guardian_burst(rotation_offset:float)->void:
+	if dead or not is_inside_tree() or not is_instance_valid(target):return
+	var count:=maxi(1,int(behavior_tuning.get("burst_projectiles",8)));var projectile_damage:=maxi(1,int(round(damage*float(behavior_tuning.get("burst_damage_multiplier",0.55)))))
+	for index:int in count:
+		var direction:=Vector2.RIGHT.rotated(rotation_offset+TAU*float(index)/float(count));var projectile:SlasherHostileProjectile=HOSTILE_PROJECTILE.new().setup(self,target,global_position+direction*22.0,direction,projectile_damage,behavior_tuning);get_parent().add_child(projectile)
+
 func _move_toward(point:Vector2)->void:
-	var direction:=global_position.direction_to(point);velocity=direction*speed*movement_slow*speed_boost_multiplier;facing_name=SlasherSpriteLibrary.direction_name(direction,facing_name);move_and_slide()
+	var waypoint:=pathfinder.next_waypoint(global_position,point) if pathfinder!=null else point;var direction:=global_position.direction_to(waypoint);velocity=direction*speed*movement_slow*speed_boost_multiplier;facing_name=SlasherSpriteLibrary.direction_name(direction,facing_name);move_and_slide()
 	if animation_lock<=0.0:_play_animation("run")
 
 func _bite(multiplier:float,slows_player:bool)->void:
@@ -202,26 +234,32 @@ func heal(amount:int)->void:
 		var resting_color:=Color.WHITE;resting_color.a=0.38 if behavior_id=="wolf_lurker" and not awakened else 1.0
 		var tween:=create_tween();tween.tween_property(sprite,"modulate",Color("#b9ffb1"),0.12);tween.tween_property(sprite,"modulate",resting_color,0.22)
 
-func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlayer=null,stun_duration:float=-1.0,shake_multiplier:float=1.0)->void:
-	if dead:return
+func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlayer=null,stun_duration:float=-1.0,shake_multiplier:float=1.0)->int:
+	if dead:return 0
 	if behavior_id=="wolf_lurker" and not awakened:_awaken_lurker()
-	health-=maxi(1,amount);var stun:=float(tuning.get("hit_stun_duration",0.12)) if stun_duration<0.0 else stun_duration;hit_stun_timer=maxf(hit_stun_timer,stun)
-	var adjusted_knockback:=knockback*float(tuning.get("received_knockback_multiplier",1.0))
+	var resolved_amount:=maxi(1,amount);var durability:=GameBalance.get_slasher_balance("boss_durability")
+	if boss or mini_boss:
+		if damage_shield_remaining>0.0:resolved_amount=maxi(1,int(round(resolved_amount*(1.0-float(durability.get("shield_reduction",0.75))))))
+		resolved_amount=mini(resolved_amount,maxi(1,int(floor(max_health*float(durability.get("max_damage_fraction",0.05))))));damage_shield_remaining=float(durability.get("shield_duration",0.5))
+	health-=resolved_amount;var stun_source:=behavior_tuning if behavior_id=="elite_guardian" else tuning;var stun:=float(stun_source.get("hit_stun_duration",0.12)) if stun_duration<0.0 else minf(stun_duration,float(stun_source.get("hit_stun_duration",stun_duration)));hit_stun_timer=maxf(hit_stun_timer,stun)
+	var knockback_source:=behavior_tuning if behavior_id=="elite_guardian" else tuning;var adjusted_knockback:=knockback*float(knockback_source.get("received_knockback_multiplier",1.0))
 	if not adjusted_knockback.is_zero_approx():move_and_collide(adjusted_knockback)
 	if is_instance_valid(attacker):
-		var damage_shake_scale:=1.0+minf(float(maxi(1,amount)),20.0)*0.025;attacker.add_impact_shake(float(tuning.get("screen_shake_strength",4.5))*damage_shake_scale*shake_multiplier,float(tuning.get("screen_shake_duration",0.16)))
+		var damage_shake_scale:=1.0+minf(float(resolved_amount),20.0)*0.025;attacker.add_impact_shake(float(tuning.get("screen_shake_strength",4.5))*damage_shake_scale*shake_multiplier,float(tuning.get("screen_shake_duration",0.16)))
+	if behavior_id=="elite_guardian":_schedule_guardian_burst()
 	queue_redraw()
-	if health<=0:dead=true;remove_from_group("slasher_enemy");remove_from_group("slasher_damageable");remove_from_group("slasher_wolf");defeated.emit(self,reward);queue_free()
+	if health<=0:dead=true;guardian_burst_queue.clear();remove_from_group("slasher_enemy");remove_from_group("slasher_damageable");remove_from_group("slasher_wolf");defeated.emit(self,reward);queue_free()
+	return resolved_amount
 
 func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	var amount:=maxi(1,int(attack.get("damage",1)));var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
-	receive_hit(amount,push_direction*float(attack.get("knockback",0.0)),attacker,float(attack.get("hit_stun_duration",tuning.get("hit_stun_duration",0.12))),float(attack.get("screen_shake_multiplier",1.0)))
+	var dealt:=receive_hit(amount,push_direction*float(attack.get("knockback",0.0)),attacker,float(attack.get("hit_stun_duration",tuning.get("hit_stun_duration",0.12))),float(attack.get("screen_shake_multiplier",1.0)))
 	match String(attack.get("status","")):
 		"slow":movement_slow=float(attack.get("status_strength",tuning.get("slow_multiplier",0.55)));status_time=float(attack.get("status_duration",tuning.get("slow_duration",1.5)))
 		"stagger":movement_slow=float(attack.get("status_strength",tuning.get("stagger_multiplier",0.0)));status_time=float(attack.get("status_duration",tuning.get("stagger_duration",0.45)))
 	if sprite:
-		var tween:=create_tween();tween.tween_property(sprite,"modulate",Color.WHITE*2.0,0.05);tween.tween_property(sprite,"modulate",Color.WHITE,0.12)
-	return amount
+		var flash:=Color(String(GameBalance.get_slasher_balance("boss_durability").get("shield_color","#8fd8ff"))) if (boss or mini_boss) else Color.WHITE*2.0;var tween:=create_tween();tween.tween_property(sprite,"modulate",flash,0.05);tween.tween_property(sprite,"modulate",Color.WHITE,0.12)
+	return dealt
 
 func is_wolf()->bool:return behavior_id.begins_with("wolf_")
 
@@ -232,6 +270,10 @@ func _draw()->void:
 	if ai_state in ["windup","dash"]:draw_line(Vector2.ZERO,charge_direction*minf(charge_remaining if charge_remaining>0.0 else 150.0,310.0),accent,4.0)
 	if ai_state in ["howl","boss_howl"]:draw_arc(Vector2.ZERO,float(behavior_tuning.get("howl_radius",245.0)),0.0,TAU,48,accent,3.0)
 	if ai_state=="root_windup":draw_circle(to_local(captured_target),float(behavior_tuning.get("root_radius",74.0)),Color(0.35,0.08,0.45,0.28));draw_arc(to_local(captured_target),float(behavior_tuning.get("root_radius",74.0)),0.0,TAU,40,Color("#c56ee8"),3.0)
+	if damage_shield_remaining>0.0:
+		var shield_color:=Color(String(GameBalance.get_slasher_balance("boss_durability").get("shield_color","#8fd8ff")));shield_color.a=0.72;draw_arc(Vector2.ZERO,34.0 if boss else 25.0,0.0,TAU,36,shield_color,4.0)
+	if behavior_id=="elite_guardian" and not guardian_burst_queue.is_empty():
+		var telegraph_color:=Color(String(behavior_tuning.get("burst_color","#c9ef72")));telegraph_color.a=0.55;draw_arc(Vector2.ZERO,42.0,0.0,TAU,32,telegraph_color,3.0)
 
 func _play_animation(state:String,restart:bool=false)->void:
 	if sprite==null or sprite.sprite_frames==null:return

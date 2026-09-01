@@ -9,6 +9,7 @@ signal defeated
 const PROJECTILE:=preload("res://scripts/slasher/slasher_projectile.gd")
 const ITEM_RUNTIME:=preload("res://scripts/slasher/slasher_item_runtime.gd")
 var run_state:RunState
+var pathfinder:SlasherGridPathfinder
 var class_id:="warrior"
 var max_health:=20
 var health:=20
@@ -67,7 +68,9 @@ func _refresh_presentation()->void:
 
 func _physics_process(delta:float)->void:
 	for key in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-delta)
+	var was_invulnerable:=invulnerable>0.0
 	invulnerable=maxf(0.0,invulnerable-delta);defense_window=maxf(0.0,defense_window-delta);animation_lock=maxf(0.0,animation_lock-delta);hidden_time=maxf(0.0,hidden_time-delta)
+	if was_invulnerable or invulnerable>0.0:queue_redraw()
 	consumable_speed_time=maxf(0.0,consumable_speed_time-delta)
 	if consumable_speed_time<=0.0:consumable_speed_multiplier=1.0
 	movement_debuff_time=maxf(0.0,movement_debuff_time-delta)
@@ -156,14 +159,19 @@ func _special(result:Dictionary)->Dictionary:
 
 func _movement(result:Dictionary)->Dictionary:
 	var tuning:=_ability_tuning("movement");var distance:=float(tuning.get("movement_distance",150.0));var start:=global_position
-	if class_id=="warrior":invulnerable=maxf(invulnerable,float(tuning.get("invulnerability",0.35)))
 	global_position=_safe_destination(global_position+aim_direction*distance,float(tuning.get("destination_clearance",22.0)))
+	# Mobility protection begins after destination resolution, making Blink and every other movement
+	# ability safe on landing without extending the window by its travel calculation.
+	var landing_invulnerability:=maxf(0.05,float(tuning.get("invulnerability",0.05)))
+	invulnerable=maxf(invulnerable,landing_invulnerability)
+	result["invulnerability_granted"]=landing_invulnerability
+	queue_redraw()
 	match class_id:
 		"warrior":result.targets_hit=_line_attack(start,global_position,float(tuning.get("path_radius",34.0)),_configured_attack(tuning,"physical"))
 		"healer":
 			if global_position.distance_to(start)>=float(tuning.get("heal_travel_threshold",80.0)):heal(_scaled_heal(tuning))
 		"tank":result.targets_hit=_area_attack(global_position,float(tuning.get("area_radius",72.0)),_configured_attack(tuning,"physical"))
-		"phantom":is_hidden=true;hidden_time=float(tuning.get("hidden_duration",0.5));invulnerable=float(tuning.get("invulnerability",0.5))
+		"phantom":is_hidden=true;hidden_time=float(tuning.get("hidden_duration",0.5))
 		"summoner":_ensure_companion();companion.global_position=global_position-aim_direction*float(tuning.get("mount_offset",24.0))
 	if result.targets_hit>0 and int(tuning.get("resource_gain",0))>0:_gain_resource(result,int(tuning.get("resource_gain",0)))
 	return result
@@ -368,6 +376,9 @@ func _update_screen_shake(delta:float)->void:
 	camera.offset=Vector2(randf_range(-1.0,1.0),randf_range(-1.0,1.0))*screen_shake_strength*falloff
 func _draw()->void:
 	if sprite==null or sprite.sprite_frames==null:draw_circle(Vector2.ZERO,18.0,Color.WHITE)
+	if invulnerable>0.0:
+		var pulse:=0.72+sin(Time.get_ticks_msec()*0.025)*0.18
+		draw_arc(Vector2.ZERO,27.0,0.0,TAU,32,Color(0.62,0.88,1.0,pulse),3.0)
 	if movement_debuff_time>0.0:draw_arc(Vector2.ZERO,24.0,0.0,TAU,28,Color("#79bfff"),3.0)
 func _play_animation(state:String)->void:
 	if sprite==null or sprite.sprite_frames==null:return

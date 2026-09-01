@@ -14,14 +14,14 @@ static func companion_frames() -> SpriteFrames:
 	return normalized_sheet_frames("res://assets/classes/wolf_companion/sheet.png")
 
 static func enemy_frames(enemy_id: String) -> SpriteFrames:
+	var generated_path:="res://assets/enemies/%s/generated_source.png"%enemy_id
+	if ResourceLoader.exists(generated_path):return generated_enemy_frames(generated_path)
 	if enemy_id.begins_with("wolf_"):
-		var generated_path:="res://assets/enemies/%s/generated_source.png"%enemy_id
-		if ResourceLoader.exists(generated_path):return wolf_archetype_frames(generated_path)
 		enemy_id="feral_wolf"
 	var path := "res://assets/enemies/%s/frames.tres" % enemy_id
 	return load(path) as SpriteFrames if ResourceLoader.exists(path) else null
 
-static func wolf_archetype_frames(path:String)->SpriteFrames:
+static func generated_enemy_frames(path:String)->SpriteFrames:
 	if _generated_cache.has(path):return _generated_cache[path] as SpriteFrames
 	var texture:=load(path) as Texture2D
 	if texture==null:return null

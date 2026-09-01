@@ -4,27 +4,27 @@
 
 | Semantic key | Source | Crop / presentation | Collision |
 |---|---|---|---|
-| grass variants | `assets/slasher/forest/verdant_tileset.png` | Eleven illustrated atlas regions from rows 1–2, scaled to one 48 px cell | None |
-| mossy boundary walls | `assets/slasher/forest/verdant_tileset.png` | Eight front-wall regions at Y 591–601; deterministic variant per exposed edge | Existing 8 px perimeter body |
-| side boundary pillars | `assets/slasher/forest/verdant_tileset.png` | Four pillar regions at Y 744–748 | Existing 8 px perimeter body |
-| tree_large / tree_small | `assets/slasher/forest/verdant_tileset.png` | `Rect2(27,905,88,128)`, scale 0.60 / 0.48, pivot above feet | 17 px circle when used as a solid prop |
-| tree_wide / low bushes | `assets/slasher/forest/verdant_tileset.png` | Bush and small ground-prop regions, scale 0.38–0.72 | Decorative |
-| grass tufts | `assets/slasher/forest/verdant_tileset.png` | Tall grass and reed regions, scale 0.42–0.44 | None |
-| mossy rock | `assets/slasher/forest/verdant_tileset.png` | `Rect2(796,1071,53,45)`, scale 0.62 | None |
-| rock / barrel / chest | `assets/slasher/forest/verdant_tileset.png` | Large prop row, scale 0.48 / 0.55 / 0.50 | 17 px circle when used as a solid prop |
+| grass variants | `assets/pixel_art/TX Tileset Grass.png` | Three quiet 32 px top-row atlas tiles, deterministically selected and scaled 1.5× to one 48 px cell | None |
+| masonry boundary walls | `assets/pixel_art/TX Tileset Wall.png` | Layered 32 px cap and brick-face courses extending into the void; narrow vertical side strips | Existing 8 px perimeter body |
+| boundary corners | `assets/pixel_art/TX Tileset Wall.png` | One small 10×10 rounded tip crop, flipped for convex and concave junctions | Existing 8 px perimeter body |
+| tree_large / tree_small | `assets/pixel_art/TX Plant.png` | Existing Strategy Forest tree regions and scales, pivoted above their feet | 17 px circle when used as a solid prop |
+| tree_wide / low bushes | `assets/pixel_art/TX Plant.png` | Existing Strategy Forest tree and bush regions | Decorative |
+| grass tufts | `assets/pixel_art/TX Plant.png` | Three 15–17 px ground-plant regions, scaled 1.12–1.18× | None |
+| mossy rock | `assets/pixel_art/TX Props.png` | Tight `Rect2(66,487,28,18)` crop | None |
+| rock / barrel / chest | `assets/pixel_art/TX Props.png` | Tight object-bound crops; chest swaps to its 33×68 open sprite when unlocked | 17 px circle when used as a solid prop |
 | campfire | Existing Strategy Forest individual sprite | Scale 0.07 | Reserved for later interactive props |
-| root gate | `assets/generated_ui/wooden_exit_door.png` | Scale 0.15, Y -22 | Interaction radius only |
+| root gate | `assets/pixel_art/TX Props.png` | Tight `Rect2(28,104,41,49)` wooden-door crop | Interaction radius only |
 | merchant | `assets/merchants/forest_thistle.png` | Scale 0.075, Y -28 | Interaction radius only |
 | gold / potion / key | Existing Strategy Forest pickup sprites | Scale 0.055 / 0.12 / 0.35 | 14 px pickup area |
 
 All semantic regions and pivots are centralized in `SlasherForestArt`; replace them there rather than changing generation code.
 
-Ground rendering now uses a consistent border-inset grass crop at 51 px, overlapping each 48 px walkable cell. Full-square detail overlays and per-cell tint variation were removed because their rectangular alpha and tonal boundaries remained visible; deterministic cutout foliage and rocks provide variation without changing the base floor. Walls now repeat cropped brick interiors and vertical masonry strips continuously, reserving full pillars for classified corners and reducing foliage interruptions. The permanent bottom ability bar was removed; floor one presents a translucent control legend that dismisses after movement, ability use, or fourteen seconds.
+Ground rendering uses the authored TX grass tileset: three quiet top-row 32 px grass variants are scaled with nearest-neighbor filtering to the 48 px Slasher grid, leaving flowers and stronger accents to separate decorations. Trees, bushes, and grass tufts use the matching TX plant sheet and the same semantic crops already established by Strategy Forest. Horizontal walls layer a TX cap course over a full brick-face course extending into the void. Vertical boundaries rotate one continuous cap-strip crop so neighboring segments meet without alpha gaps. Convex and concave grid junctions use a small 10×10 rounded TX tip instead of full 32 px corner chunks. Boundary generation no longer places foliage outside the walkable floor. Rocks, barrels, chests, and the exit use corrected TX Props crops that include each complete sprite without neighboring atlas content; opening a chest swaps it to the matching open-chest prop. Named regions are also available for crates, benches, pillars, and wells. The permanent bottom ability bar was removed; floor one presents a translucent control legend that dismisses after movement, ability use, or fourteen seconds.
 
 ## Art still needed
 
-- Additional matching transition pieces for concave wall corners, wall-to-door joins, roots, and canopy caps. The new Verdant atlas now supplies coherent grass, walls, pillars, and core props.
-- Purpose-built dark-canopy exterior art. The current milestone layers existing trees and bushes over a dark underlay, which cannot fully reproduce the painted depth of the references.
+- Additional matching transition pieces for wall-to-door joins, roots, and canopy caps. The TX grass, wall, plant, and prop sheets now supply the core forest environment art.
+- Purpose-built dark-canopy exterior art. The current milestone uses a plain dark underlay outside the TX masonry boundary.
 - Dedicated translucent mist textures. The current particle layer uses soft low-alpha procedural particles.
 - Matching prop families for shrines, ruins, flowers, reeds, mushrooms, fallen trunks, destructible foliage, and boss-arena landmarks.
 - Unified replacements for the remaining legacy pickup/merchant/exit art and generated character sprites. Photographic grass is no longer used by Slasher Forest.

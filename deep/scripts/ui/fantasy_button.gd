@@ -5,9 +5,9 @@ class_name FantasyButton
 # Replace these PNGs to reskin ordinary buttons across start, class, tavern,
 # dungeon actions, relic rewards, and character menus without touching scenes.
 
-const DARK_BUTTON := preload("res://assets/ui/buttons/fantasy_button_dark.png")
-const LIGHT_BUTTON := preload("res://assets/ui/buttons/fantasy_button_light.png")
-const COMPACT_DARK_BUTTON := preload("res://assets/ui/buttons/fantasy_button_compact_dark.png")
+const DARK_BUTTON := preload("res://assets/ui/buttons/fantasy_button_dark_clean.png")
+const LIGHT_BUTTON := preload("res://assets/ui/buttons/fantasy_button_light_clean.png")
+const COMPACT_DARK_BUTTON := preload("res://assets/ui/buttons/fantasy_button_compact_dark_clean.png")
 
 static func apply_dark(button: Button, font_size: int = 15, minimum_size: Vector2 = Vector2.ZERO) -> void:
 	_apply(button, DARK_BUTTON, font_size, minimum_size, Color(1.0, 0.88, 0.62), Color(1.0, 0.95, 0.74), Color(0.82, 0.68, 0.42))
