@@ -28,7 +28,7 @@
       {"id":"juggernaut","name":"Juggernaut","stages":["Juggernaut","Siege Juggernaut","Earthshaker","Worldbreaker"],"description":"Turn Shield Bash and Leap into sweeping battlefield disruption.","focus":["basic","movement"],"flags":["bash_widen","leap_stun","bash_chain","leap_aftershock","juggernaut_capstone"]},
       {"id":"avenger","name":"Avenger","stages":["Avenger","Oath Avenger","Wrathbound","Final Reckoning"],"description":"Store and release more Retribution through retaliation chains.","focus":["special","defensive"],"flags":["retribution_store","release_growth","retaliation_chain","retribution_refund","avenger_capstone"]}
     ]},
-    "phantom": {"branches":[
+    "rogue": {"branches":[
       {"id":"executioner","name":"Executioner","stages":["Executioner","Silent Executioner","Dread Reaper","Final Shadow"],"description":"Improve Assassinate thresholds, finishing damage, and resets.","focus":["special","basic"],"flags":["execute_threshold","assassinate_reset","marked_for_death","execution_refund","executioner_capstone"]},
       {"id":"shade","name":"Shade","stages":["Shade","Deep Shade","Umbral Adept","Living Night"],"description":"Extend Hidden, Shadowstep, invulnerability, and ambush control.","focus":["movement","defensive"],"flags":["hidden_extend","shadowstep_damage","evade_hidden","shadow_charge","shade_capstone"]},
       {"id":"bladedancer","name":"Bladedancer","stages":["Bladedancer","Edge Dancer","Spectral Dancer","Thousand Blades"],"description":"Widen Pierce and turn Evade into continuous offensive tempo.","focus":["basic","defensive"],"flags":["pierce_widen","evade_counter","pierce_echo","edge_overflow","bladedancer_capstone"]}

@@ -33,7 +33,7 @@
 	  "special": {"cooldown": 3.0, "resource_cost": 2, "resource_gain": 0, "effect_duration": 2.0, "mitigation": 0.5, "storage_fraction": 0.5, "release_radius": 80, "release_knockback": 30, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 3.5, "resource_cost": 0, "resource_gain": 1, "effect_duration": 1.25, "mitigation": 0.75, "animation_lock": 0.32}
 	},
-	"phantom": {
+	"rogue": {
 	  "speed": 215, "collision_radius": 18, "sprite_scale": 0.42, "sprite_offset_y": -57,
 	  "basic": {"cooldown": 0.12, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 2, "reach": 72, "arc_degrees": 28, "knockback": 10, "piercing": true, "animation_lock": 0.32},
 	  "movement": {"cooldown": 0.7, "resource_cost": 0, "resource_gain": 0, "movement_distance": 175, "destination_clearance": 22, "invulnerability": 0.5, "hidden_duration": 0.5, "animation_lock": 0.32},

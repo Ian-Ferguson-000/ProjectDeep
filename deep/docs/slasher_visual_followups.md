@@ -24,10 +24,8 @@ Ground rendering uses the authored TX grass tileset: three quiet top-row 32 px g
 ## Art still needed
 
 - Additional matching transition pieces for wall-to-door joins, roots, and canopy caps. The TX grass, wall, plant, and prop sheets now supply the core forest environment art.
-- Purpose-built dark-canopy exterior art. The current milestone uses a plain dark underlay outside the TX masonry boundary.
 - Dedicated translucent mist textures. The current particle layer uses soft low-alpha procedural particles.
 - Matching prop families for shrines, ruins, flowers, reeds, mushrooms, fallen trunks, destructible foliage, and boss-arena landmarks.
-- Unified replacements for the remaining legacy pickup/merchant/exit art and generated character sprites. Photographic grass is no longer used by Slasher Forest.
 
 ## Deferred presentation systems
 

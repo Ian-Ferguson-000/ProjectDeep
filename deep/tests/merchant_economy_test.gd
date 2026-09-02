@@ -9,9 +9,9 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var failures: Array[String] = []
-	_expect(GameBalance.get_merchants().size() == 4, "expected Tavern, Forest, Farmstead, and Crypt merchants", failures)
-	_expect(GameBalance.get_dungeons().size() == 3, "expected Forest, Farmstead, and Crypt dungeon selector entries", failures)
-	_expect(String(GameBalance.get_dungeon("crypt").get("unlock",{}).get("dungeon_id","")) == "ashen_farmstead", "Crypt selector unlock metadata missing", failures)
+	_expect(GameBalance.get_merchants().size() == 6, "expected six demo merchants", failures)
+	_expect(GameBalance.get_dungeons().size() == 7, "expected five regular and two secret dungeons", failures)
+	_expect(String(GameBalance.get_dungeon("crypt").get("unlock",{}).get("dungeon_id","")) == "forest", "Crypt selector unlock metadata missing", failures)
 	_expect(GameBalance.get_merchant_stock_for_rarity("common") == 5, "common stock quantity should be 5", failures)
 	_expect(GameBalance.get_merchant_stock_for_rarity("rare") == 3, "rare stock quantity should be 3", failures)
 	_expect(GameBalance.get_merchant_stock_for_rarity("legendary") == 1, "legendary stock quantity should be 1", failures)

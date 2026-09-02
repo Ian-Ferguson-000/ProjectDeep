@@ -3,6 +3,7 @@ class_name SlasherEnemy
 
 signal defeated(enemy:SlasherEnemy,reward:int)
 signal reinforcement_requested(archetypes:Array,origin:Vector2)
+signal farmstead_effect_requested(kind:String,origin:Vector2,payload:Dictionary)
 
 const SPAWN_ACTIVATION_DELAY:=1.2
 const HOSTILE_PROJECTILE:=preload("res://scripts/slasher/slasher_hostile_projectile.gd")
@@ -47,6 +48,7 @@ var howl_cooldown:=5.0
 var speed_boost_multiplier:=1.0
 var speed_boost_time:=0.0
 var activation_delay:=SPAWN_ACTIVATION_DELAY
+var retarget_timer:=0.0
 var damage_shield_remaining:=0.0
 var guardian_burst_queue:Array[Dictionary]=[]
 var guardian_burst_index:=0
@@ -66,7 +68,17 @@ func configure(floor_number:int,is_boss:bool=false,enemy_visual_id:String="feral
 	speed=float(tuning.get("speed_base",62.0 if boss else 68.0))+floor_number*float(tuning.get("speed_per_floor",0.0 if boss else 3.0));attack_range=float(tuning.get("attack_range",44.0 if boss else 34.0));attack_knockback=float(tuning.get("attack_knockback",120.0));reward=int(elite_tuning.get("reward",5)) if elite else int(tuning.get("reward",18 if boss else 3))
 	if is_wolf():speed*=float(behavior_tuning.get("speed_multiplier",1.0))
 	if is_mini_boss:max_health=maxi(1,int(round(max_health*float(elite_tuning.get("mini_boss_health_multiplier",2.5)))));health=max_health;damage=maxi(1,int(round(damage*float(elite_tuning.get("mini_boss_damage_multiplier",1.5)))));reward=int(elite_tuning.get("mini_boss_reward",12))
+	_apply_farmstead_tuning()
 	queue_redraw()
+
+func _apply_farmstead_tuning()->void:
+	match behavior_id:
+		"ash_rat":max_health=12;health=max_health;damage=2;speed=145.0;attack_range=31.0;reward=3
+		"possessed_scarecrow":max_health=26;health=max_health;damage=4;speed=58.0;attack_range=92.0;reward=5
+		"ember_crow":max_health=16;health=max_health;damage=3;speed=125.0;attack_range=38.0;reward=4
+		"blighted_farmhand":max_health=38;health=max_health;damage=6;speed=48.0;attack_range=48.0;attack_knockback=230.0;reward=6
+		"harvest_wretch":max_health=260;health=max_health;damage=8;speed=52.0;attack_range=78.0;attack_knockback=260.0;reward=28
+	if elite and behavior_id in ["ash_rat","possessed_scarecrow","ember_crow","blighted_farmhand"]:max_health=int(round(max_health*1.65));health=max_health;damage=maxi(1,int(round(damage*1.25)));speed*=1.12;reward+=5
 
 func _ready()->void:
 	add_to_group("slasher_enemy");add_to_group("slasher_damageable")
@@ -80,6 +92,8 @@ func _ready()->void:
 	_play_animation("idle")
 
 func _physics_process(delta:float)->void:
+	retarget_timer-=delta
+	if retarget_timer<=0.0:_retarget_party();retarget_timer=0.45
 	if dead or not is_instance_valid(target):return
 	damage_shield_remaining=maxf(0.0,damage_shield_remaining-delta)
 	activation_delay=maxf(0.0,activation_delay-delta)
@@ -90,10 +104,58 @@ func _physics_process(delta:float)->void:
 	if status_time<=0.0:movement_slow=1.0
 	if speed_boost_time<=0.0:speed_boost_multiplier=1.0
 	if hit_stun_timer>0.0 or status_time>0.0 and movement_slow<=0.05:velocity=Vector2.ZERO;_play_animation("idle");return
-	if boss:_process_boss(delta)
+	if behavior_id=="harvest_wretch":_process_harvest_wretch(delta)
+	elif behavior_id in ["ash_rat","possessed_scarecrow","ember_crow","blighted_farmhand"]:_process_farmstead_enemy(delta)
+	elif boss:_process_boss(delta)
 	elif is_wolf():_process_wolf(delta)
 	else:_process_default()
 	queue_redraw()
+
+func _retarget_party()->void:
+	var nearest:SlasherPlayer;var best:=INF
+	for node in get_tree().get_nodes_in_group("slasher_party_target"):
+		if node is SlasherPlayer and node.health>0:
+			var distance:=global_position.distance_squared_to(node.global_position)
+			if distance<best:best=distance;nearest=node
+	if nearest!=null:target=nearest
+
+func _process_farmstead_enemy(delta:float)->void:
+	var distance:=global_position.distance_to(target.global_position)
+	match behavior_id:
+		"ash_rat":
+			if ai_state=="retreat" and state_timer>0.0:_move_toward(global_position+(global_position-target.global_position).normalized()*120.0);return
+			if distance<=attack_range and attack_cooldown<=0.0:_bite(1.0,false);attack_cooldown=0.8;ai_state="retreat";state_timer=0.42
+			else:_process_default()
+		"possessed_scarecrow":
+			if ai_state=="windup":
+				velocity=Vector2.ZERO
+				if state_timer<=0.0:_bite(1.0,false);farmstead_effect_requested.emit("ash_burst",global_position,{"damage":maxi(1,damage/2)});ai_state="idle";attack_cooldown=2.0
+			elif distance<=attack_range and attack_cooldown<=0.0:ai_state="windup";state_timer=0.7;captured_target=target.global_position;_play_animation("attack",true)
+			else:_process_default()
+		"ember_crow":
+			if ai_state=="dash":_process_dash(delta,430.0,1.0,0.65);return
+			if special_cooldown<=0.0 and distance<280.0:charge_direction=global_position.direction_to(target.global_position);charge_remaining=220.0;ai_state="dash";special_cooldown=2.4;farmstead_effect_requested.emit("fire_patch",global_position,{"lifetime":3.5});return
+			_process_default()
+		"blighted_farmhand":
+			if ai_state=="windup":
+				velocity=Vector2.ZERO
+				if state_timer<=0.0:_bite(1.0,false);ai_state="idle";attack_cooldown=1.7
+			elif distance<=attack_range and attack_cooldown<=0.0:ai_state="windup";state_timer=0.82;captured_target=target.global_position;_play_animation("attack",true)
+			else:_process_default()
+
+func _process_harvest_wretch(delta:float)->void:
+	var fraction:=float(health)/maxf(1.0,float(max_health));var phase:=2 if fraction<=0.33 else (1 if fraction<=0.66 else 0)
+	if phase>boss_phase:
+		boss_phase=phase;farmstead_effect_requested.emit("summon_rats",global_position,{"count":2+phase});farmstead_effect_requested.emit("scorched_zone",target.global_position,{"radius":65.0+phase*18.0,"lifetime":5.0})
+	if ai_state=="wretch_windup":
+		velocity=Vector2.ZERO
+		if state_timer<=0.0:
+			if global_position.distance_to(target.global_position)<=attack_range+35.0:_bite(1.0+phase*0.15,false)
+			farmstead_effect_requested.emit("sweep",global_position,{"direction":charge_direction,"range":130.0,"damage":damage});ai_state="idle";attack_cooldown=maxf(0.65,1.55-phase*0.28)
+		return
+	if special_cooldown<=0.0:farmstead_effect_requested.emit("fire_patch",target.global_position,{"lifetime":4.5});special_cooldown=maxf(2.0,4.5-phase*0.8)
+	if global_position.distance_to(target.global_position)<=attack_range+25.0 and attack_cooldown<=0.0:ai_state="wretch_windup";state_timer=maxf(0.38,0.85-phase*0.16);charge_direction=global_position.direction_to(target.global_position);captured_target=target.global_position;_play_animation("attack",true);return
+	_process_default()
 
 func _process_wolf(delta:float)->void:
 	match behavior_id:
@@ -206,7 +268,9 @@ func _release_guardian_burst(rotation_offset:float)->void:
 		var direction:=Vector2.RIGHT.rotated(rotation_offset+TAU*float(index)/float(count));var projectile:SlasherHostileProjectile=HOSTILE_PROJECTILE.new().setup(self,target,global_position+direction*22.0,direction,projectile_damage,behavior_tuning);get_parent().add_child(projectile)
 
 func _move_toward(point:Vector2)->void:
-	var waypoint:=pathfinder.next_waypoint(global_position,point) if pathfinder!=null else point;var direction:=global_position.direction_to(waypoint);velocity=direction*speed*movement_slow*speed_boost_multiplier;facing_name=SlasherSpriteLibrary.direction_name(direction,facing_name);move_and_slide()
+	var waypoint:=pathfinder.next_waypoint(global_position,point) if pathfinder!=null else point;var direction:=global_position.direction_to(waypoint);velocity=direction*speed*movement_slow*speed_boost_multiplier;facing_name=SlasherSpriteLibrary.direction_name(direction,facing_name)
+	if not is_inside_tree() or not PhysicsServer2D.body_get_space(get_rid()).is_valid():velocity=Vector2.ZERO;return
+	move_and_slide()
 	if animation_lock<=0.0:_play_animation("run")
 
 func _bite(multiplier:float,slows_player:bool)->void:
@@ -270,6 +334,7 @@ func _draw()->void:
 	if ai_state in ["windup","dash"]:draw_line(Vector2.ZERO,charge_direction*minf(charge_remaining if charge_remaining>0.0 else 150.0,310.0),accent,4.0)
 	if ai_state in ["howl","boss_howl"]:draw_arc(Vector2.ZERO,float(behavior_tuning.get("howl_radius",245.0)),0.0,TAU,48,accent,3.0)
 	if ai_state=="root_windup":draw_circle(to_local(captured_target),float(behavior_tuning.get("root_radius",74.0)),Color(0.35,0.08,0.45,0.28));draw_arc(to_local(captured_target),float(behavior_tuning.get("root_radius",74.0)),0.0,TAU,40,Color("#c56ee8"),3.0)
+	if ai_state=="wretch_windup":draw_arc(Vector2.ZERO,attack_range+35.0,-1.0,1.0,24,Color("#ff7838"),5.0)
 	if damage_shield_remaining>0.0:
 		var shield_color:=Color(String(GameBalance.get_slasher_balance("boss_durability").get("shield_color","#8fd8ff")));shield_color.a=0.72;draw_arc(Vector2.ZERO,34.0 if boss else 25.0,0.0,TAU,36,shield_color,4.0)
 	if behavior_id=="elite_guardian" and not guardian_burst_queue.is_empty():

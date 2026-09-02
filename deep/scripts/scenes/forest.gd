@@ -282,6 +282,8 @@ var consumables_backdrop: ColorRect
 var consumables_panel: PanelContainer
 var consumables_box: VBoxContainer
 var hovered_action_preview := ""
+var strategy_party_tokens:Dictionary={}
+var initiative_inspection_index:=-1
 
 func setup(game_controller: Node, state: RunState) -> void:
 	controller = game_controller
@@ -310,23 +312,27 @@ func _ready() -> void:
 	_build_board_tiles()
 	_build_decorations()
 	_configure_player_sprite()
+	_rebuild_strategy_party_tokens()
 	_refresh_ui()
 
 func _process(_delta: float) -> void:
 	_update_follow_camera()
 
 func _configure_dungeon_settings() -> void:
-	dungeon_id = "forest"
-	dungeon_title = "Forest Dungeon"
+	dungeon_id = run_state.active_dungeon_id if run_state != null else "forest"
+	var definition := GameBalance.get_dungeon(dungeon_id)
+	var runtime_profile:=DungeonRuntimeProfile.get_profile(dungeon_id)
+	dungeon_title = String(definition.get("name", "Forest Dungeon"))
 	dungeon_floor_label = "Floor"
-	complete_floor_method = "complete_forest_floor"
-	victory_text_template = "You escape the forest with %d gold. The bartender smiles like he expected it."
+	complete_floor_method = "complete_strategy_dungeon_floor"
+	victory_text_template = "You escape %s with %%d gold." % dungeon_title
 	grid_w = 16
 	grid_h = 11
 	tile_size = TILE_SIZE
 	use_follow_camera = false
 	camera_ui_right_margin = 0.0
 	camera_ui_top_margin = 0.0
+	if ground_layer!=null:ground_layer.modulate=Color(String(runtime_profile.get("strategy_tint","ffffff")))
 
 func _setup_follow_camera() -> void:
 	if not use_follow_camera or follow_camera != null:
@@ -1334,17 +1340,15 @@ func _start_combat() -> void:
 	initiative_order.clear()
 	round_number = 1
 	current_actor_index = 0
-	var player_modifier: int = _player_initiative_modifier()
-	var player_roll := rng.randi_range(1, 20)
-	initiative_order.append({
-		"kind": "player",
-		"id": PLAYER_ACTOR_ID,
-		"name": "You",
-		"roll": player_roll,
-		"modifier": player_modifier,
-		"initiative": player_roll + player_modifier,
-		"tie": 1,
-	})
+	var party_ids:Array[String]=run_state.get_active_party_ids()
+	if party_ids.is_empty() and not run_state.active_character_id.is_empty():party_ids.append(run_state.active_character_id)
+	var original_id:=run_state.active_character_id
+	for party_index in range(party_ids.size()):
+		var character_id:String=party_ids[party_index];var member:=run_state.campaign.character(character_id)
+		if member==null:continue
+		run_state.select_active_character(character_id);var player_modifier:int=_player_initiative_modifier();var player_roll:=rng.randi_range(1,20)
+		initiative_order.append({"kind":"player","id":PLAYER_ACTOR_ID-party_index,"character_id":character_id,"name":member.display_name,"roll":player_roll,"modifier":player_modifier,"initiative":player_roll+player_modifier,"tie":1,"spawn":party_index})
+	if not original_id.is_empty():run_state.select_active_character(original_id)
 	for i in range(enemies.size()):
 		var enemy: Dictionary = enemies[i]
 		var modifier: int = _enemy_initiative_modifier(enemy)
@@ -1393,6 +1397,8 @@ func _begin_current_actor_turn() -> void:
 		round_number += 1
 	var actor: Dictionary = initiative_order[current_actor_index]
 	if actor["kind"] == "player":
+		var character_id:=String(actor.get("character_id",run_state.active_character_id))
+		if character_id!=run_state.active_character_id:_activate_strategy_member(character_id)
 		_begin_player_turn()
 	else:
 		_begin_enemy_turn(actor)
@@ -1410,9 +1416,9 @@ func _begin_player_turn() -> void:
 	movement_remaining = _player_move_allowance()
 	tiles_moved_this_turn = 0
 	if round_number == 1:
-		message = "Initiative: %s\nRound %d: Your turn. Dash up to %d tiles, then choose an action." % [_initiative_roll_summary(), round_number, movement_remaining]
+		message = "Initiative: %s\nRound %d: %s acts. Dash up to %d tiles, then choose an action." % [_initiative_roll_summary(), round_number,run_state.get_active_character().display_name,movement_remaining]
 	else:
-		message = "Round %d: Your turn. Dash up to %d tiles, then choose an action." % [round_number, movement_remaining]
+		message = "Round %d: %s acts. Dash up to %d tiles, then choose an action." % [round_number,run_state.get_active_character().display_name,movement_remaining]
 	_refresh_ui()
 
 func _begin_enemy_turn(actor: Dictionary) -> void:
@@ -1427,6 +1433,7 @@ func _begin_enemy_turn(actor: Dictionary) -> void:
 	call_deferred("_resolve_enemy_actor_turn", int(actor["id"]))
 
 func _advance_to_next_actor() -> void:
+	_save_strategy_member_runtime()
 	if run_state != null and run_state.current_health <= 0:
 		_die()
 		return
@@ -1482,6 +1489,7 @@ func _prune_initiative_order() -> void:
 		var actor: Dictionary = initiative_order[i]
 		if actor["kind"] == "enemy" and not active_enemy_ids.has(int(actor["id"])):
 			initiative_order.remove_at(i)
+		elif actor["kind"]=="player" and not run_state.get_active_party_ids().has(String(actor.get("character_id",""))):initiative_order.remove_at(i)
 
 func _initiative_index_for(actor: Dictionary) -> int:
 	for i in range(initiative_order.size()):
@@ -1497,6 +1505,9 @@ func _input(event: InputEvent) -> void:
 		_update_hover_context(event.position)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("extract_expedition") and run_state.can_extract():
+		if controller != null and controller.has_method("extract_expedition"): controller.extract_expedition()
+		return
 	if consumables_backdrop != null and consumables_backdrop.visible and event.is_action_pressed("ui_cancel"):
 		_close_consumables()
 		return
@@ -1508,7 +1519,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if combat_log_backdrop != null and combat_log_backdrop.visible:
 		return
 	if event.is_action_pressed("character_menu"):
-		_toggle_character_menu()
+		if run_state.get_active_party_ids().size() > 1 and not _is_free_roam(): _inspect_next_party_initiative()
+		elif run_state.get_active_party_ids().size() > 1: _cycle_strategy_member()
+		else: _toggle_character_menu()
 		return
 	if event.is_action_pressed("ui_cancel") and selected_action in ["attack", "special", "movement"]:
 		_cancel_selected_action()
@@ -1638,6 +1651,7 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		facing = path[1] - player_pos
 	tiles_moved_this_turn += maxi(0, path.size() - 1)
 	player_pos = tile
+	_save_strategy_member_runtime()
 	if _is_free_roam():
 		movement_remaining = FREE_ROAM_MOVE_ALLOWANCE
 		message = "You move through the cleared forest."
@@ -2011,7 +2025,7 @@ func _execute_class_basic(tile: Vector2i, enemy_index: int) -> void:
 			if pushed:
 				run_state.gain_class_resource()
 			message = "Shield Bash staggers%s." % (" and pushes the target" if pushed else " the target")
-		"phantom":
+		"rogue":
 			_attack_enemy(enemy_index, damage)
 			var behind := tile + facing
 			var second := _enemy_at(behind)
@@ -2080,7 +2094,7 @@ func _execute_class_special(tile: Vector2i) -> bool:
 			retribution_armed = true
 			retribution_stored = 0
 			message = "Retribution stores half of incoming damage."
-		"phantom":
+		"rogue":
 			var index := _enemy_at(tile)
 			if index == -1 or _distance(player_pos, tile) != 1:
 				message = "Assassinate requires an adjacent enemy."
@@ -2148,7 +2162,7 @@ func _try_class_movement(tile: Vector2i) -> void:
 					enemies[i]["taunted"] = 1
 					_attack_enemy(i, maxi(1, _player_gear_damage() - 1))
 			message = "You Leap into the fray and taunt nearby foes."
-		"phantom":
+		"rogue":
 			if distance < 2 or distance > 3 + movement_range_bonus or not _is_walkable(tile):
 				message = "Shadowstep needs an open destination two or three spaces away."
 				_refresh_ui(); return
@@ -2230,6 +2244,7 @@ func _defend() -> void:
 	_finish_player_action()
 
 func _finish_player_action() -> void:
+	_save_strategy_member_runtime()
 	has_used_action = true
 	selected_action = "move"
 	if bonus_actions_remaining > 0:
@@ -2255,6 +2270,7 @@ func _finish_turn_if_exhausted() -> void:
 func _end_player_turn() -> void:
 	if not is_player_turn:
 		return
+	_save_strategy_member_runtime()
 	is_player_turn = false
 	selected_action = "wait"
 	message = "You end your turn."
@@ -2569,7 +2585,7 @@ func _valid_special_tiles() -> Array[Vector2i]:
 				for step in range(1, cannon_range + 1):
 					var tile := player_pos + direction * step
 					if floor_cells.has(tile): tiles.append(tile)
-		"phantom":
+		"rogue":
 			for enemy in enemies:
 				var tile: Vector2i = enemy["pos"]
 				if _distance(player_pos, tile) == 1: tiles.append(tile)
@@ -2593,8 +2609,8 @@ func _valid_class_movement_tiles() -> Array[Vector2i]:
 		if target == player_pos or not _is_walkable(target): continue
 		var distance := _distance(player_pos, target)
 		if distance > max_range: continue
-		if run_state.selected_class_id == "phantom" and distance < 2: continue
-		if run_state.selected_class_id in ["mage", "tank", "phantom"] or not _find_path(player_pos, target, max_range).is_empty():
+		if run_state.selected_class_id == "rogue" and distance < 2: continue
+		if run_state.selected_class_id in ["mage", "tank", "rogue"] or not _find_path(player_pos, target, max_range).is_empty():
 			tiles.append(target)
 	return tiles
 
@@ -3329,7 +3345,7 @@ func _player_damage_type() -> String:
 	match run_state.selected_class_id:
 		"mage": return "arcane"
 		"healer": return "radiant"
-		"phantom": return "necrotic"
+		"rogue": return "necrotic"
 	return "physical"
 
 func _apply_damage(amount: int) -> void:
@@ -3509,6 +3525,8 @@ func _on_exit_door_entered(_door: ExitDoor) -> void:
 	_finish_floor()
 
 func _finish_floor() -> void:
+	_save_strategy_member_runtime()
+	run_state.mark_extraction_available()
 	if controller != null and controller.has_method(complete_floor_method):
 		controller.call(complete_floor_method)
 		return
@@ -3516,7 +3534,72 @@ func _finish_floor() -> void:
 	controller.return_to_tavern("victory", victory_text_template % final_gold)
 
 func _die() -> void:
-	controller.return_to_tavern("death", "You wake at the tavern table. The bartender says, 'Again, then?'")
+	_save_strategy_member_runtime()
+	if run_state.record_active_character_death("Fell in %s (Strategy)" % dungeon_title):
+		_prune_initiative_order()
+		if current_actor_index>=initiative_order.size():current_actor_index=0
+		_configure_player_sprite();_rebuild_strategy_party_tokens();message="A recruit falls forever. Initiative passes to the next living actor.";_refresh_ui();call_deferred("_begin_current_actor_turn");return
+	controller.return_to_tavern("death", "The final party member falls. The tavern records every name.")
+
+func _cycle_strategy_member() -> void:
+	if not _is_free_roam():return
+	_save_strategy_member_runtime()
+	if run_state.cycle_active_character():_restore_strategy_member_position();_configure_player_sprite();_rebuild_strategy_party_tokens();message="Free-roam leader: %s · %s"%[run_state.get_active_character().display_name,run_state.selected_class_name];_refresh_ui()
+
+func _inspect_next_party_initiative()->void:
+	var player_indexes:Array[int]=[]
+	for index in range(initiative_order.size()):
+		if String(initiative_order[index].get("kind",""))=="player":player_indexes.append(index)
+	if player_indexes.is_empty():return
+	var current:=player_indexes.find(initiative_inspection_index);initiative_inspection_index=player_indexes[(current+1)%player_indexes.size()]
+	var actor:Dictionary=initiative_order[initiative_inspection_index];message="Inspecting %s · initiative %d. Control remains with the acting recruit."%[String(actor.get("name","Recruit")),int(actor.get("initiative",0))];_refresh_ui()
+
+func _save_strategy_member_runtime()->void:
+	if run_state==null or run_state.campaign==null or not run_state.campaign.expedition.active or run_state.active_character_id.is_empty():return
+	var runtime:Dictionary=run_state.campaign.expedition.member_runtime.get(run_state.active_character_id,{})
+	runtime["position"]=[player_pos.x,player_pos.y];runtime["health"]=run_state.current_health;runtime["resource"]=run_state.class_resource;runtime["strategy_turn"]={"movement_remaining":movement_remaining,"has_used_action":has_used_action,"defending":is_defending,"reaction":armed_reaction};run_state.campaign.expedition.member_runtime[run_state.active_character_id]=runtime
+
+func _activate_strategy_member(character_id:String)->bool:
+	_save_strategy_member_runtime()
+	if not run_state.select_active_character(character_id):return false
+	_restore_strategy_member_position();_configure_player_sprite();_rebuild_strategy_party_tokens();return true
+
+func _restore_strategy_member_position() -> void:
+	var runtime: Dictionary = run_state.campaign.expedition.member_runtime.get(run_state.active_character_id, {})
+	var stored: Array = runtime.get("position", [])
+	if stored.size() >= 2:
+		var candidate := Vector2i(int(stored[0]),int(stored[1]))
+		if _is_walkable(candidate):player_pos=candidate
+		else:
+			for delta in [Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT,Vector2i.UP,Vector2i(1,1),Vector2i(-1,1),Vector2i(1,-1),Vector2i(-1,-1)]:
+				if _is_walkable(player_pos+delta):player_pos+=delta;break
+	else:
+		for delta in [Vector2i.ZERO,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT,Vector2i.UP]:
+			if floor_cells.has(player_pos+delta) and _enemy_at(player_pos+delta)<0: player_pos += delta; break
+	_sync_board_nodes()
+
+func _rebuild_strategy_party_tokens()->void:
+	for token_value in strategy_party_tokens.values():
+		if is_instance_valid(token_value):token_value.free()
+	strategy_party_tokens.clear()
+	if run_state==null or run_state.campaign==null:return
+	var offset_index:=0;var occupied:Dictionary={player_pos:true}
+	for existing_id in run_state.get_active_party_ids():
+		var existing_runtime:Dictionary=run_state.campaign.expedition.member_runtime.get(existing_id,{});var existing:Array=existing_runtime.get("position",[])
+		if existing.size()>=2:occupied[Vector2i(int(existing[0]),int(existing[1]))]=true
+	for character_id in run_state.get_active_party_ids():
+		if character_id==run_state.active_character_id:continue
+		var member:=run_state.campaign.character(character_id)
+		if member==null:continue
+		var runtime:Dictionary=run_state.campaign.expedition.member_runtime.get(character_id,{})
+		if Array(runtime.get("position",[])).size()<2:
+			var candidate:=player_pos
+			for delta:Vector2i in [Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT,Vector2i.UP,Vector2i(1,1),Vector2i(-1,1),Vector2i(1,-1),Vector2i(-1,-1)]:
+				var possible:Vector2i=player_pos+delta
+				if floor_cells.has(possible) and _enemy_at(possible)<0 and not occupied.has(possible):candidate=possible;break
+			runtime["position"]=[candidate.x,candidate.y];run_state.campaign.expedition.member_runtime[character_id]=runtime;occupied[candidate]=true
+		var token:BoardPiece=BoardPieceScene.instantiate();token.name="Party_%s"%character_id;var class_data:=GameBalance.get_base_class(member.class_id);token.sprite_texture=load(String(class_data.get("sprite","")));token.sprite_region_enabled=true;token.sprite_region=Rect2(0,0,96,80);token.sprite_scale=Vector2(0.52,0.52);token.show_label=true;token.label_text=member.display_name;token.modulate=Color(0.72,0.82,1.0,0.88);player_token.get_parent().add_child(token);strategy_party_tokens[character_id]=token;offset_index+=1
+	_sync_board_nodes()
 
 func _build_board_tiles() -> void:
 	if ground_layer == null:
@@ -3724,15 +3807,15 @@ func _sync_initiative_tracker() -> void:
 		return
 	for i in range(initiative_order.size()):
 		var actor: Dictionary = initiative_order[i]
-		initiative_tracker.add_child(_make_initiative_token(actor, i == current_actor_index))
+		initiative_tracker.add_child(_make_initiative_token(actor,i==current_actor_index,i==initiative_inspection_index))
 
-func _make_initiative_token(actor: Dictionary, active: bool) -> PanelContainer:
+func _make_initiative_token(actor:Dictionary,active:bool,inspected:bool=false)->PanelContainer:
 	var token := PanelContainer.new()
 	token.custom_minimum_size = Vector2(96, 52) if active else Vector2(88, 48)
 	token.add_theme_stylebox_override("panel", _flat_style(
-		Color(0.28, 0.20, 0.11, 0.96) if active else Color(0.10, 0.08, 0.06, 0.88),
+		Color(0.28,0.20,0.11,0.96) if active else (Color(0.10,0.18,0.22,0.94) if inspected else Color(0.10,0.08,0.06,0.88)),
 		4,
-		Color(0.98, 0.82, 0.34) if active else Color(0.42, 0.31, 0.18)
+		Color(0.98,0.82,0.34) if active else (Color(0.38,0.78,0.95) if inspected else Color(0.42,0.31,0.18))
 	))
 
 	var row := HBoxContainer.new()
@@ -4583,7 +4666,8 @@ func _make_atlas_texture(texture: Texture2D, region: Rect2) -> AtlasTexture:
 
 func _short_actor_name(actor: Dictionary) -> String:
 	if String(actor["kind"]) == "player":
-		return "You"
+		var member:=run_state.campaign.character(String(actor.get("character_id","")))
+		return member.display_name if member!=null else "Hero"
 	var enemy_index: int = _enemy_index_by_id(int(actor["id"]))
 	if enemy_index != -1:
 		return _enemy_short_name(enemies[enemy_index])
@@ -4611,6 +4695,9 @@ func _sync_board_nodes() -> void:
 	if player_token == null or markers_root == null or enemies_root == null:
 		return
 	player_token.position = _grid_center(player_pos)
+	for character_id in strategy_party_tokens:
+		var token:BoardPiece=strategy_party_tokens[character_id];var runtime:Dictionary=run_state.campaign.expedition.member_runtime.get(character_id,{});var stored:Array=runtime.get("position",[])
+		if stored.size()>=2:token.position=_grid_center(Vector2i(int(stored[0]),int(stored[1])))
 	_clear_generated_markers()
 	_clear_children(enemies_root)
 
@@ -5019,7 +5106,15 @@ func _is_walkable(tile: Vector2i) -> bool:
 	var chest_blocks: bool = chest.has("pos") and not bool(chest.get("opened", false)) and tile == chest["pos"]
 	var companion_blocks := _companion_active() and Vector2i(companion["pos"]) == tile
 	var merchant_blocks := not dungeon_merchant.is_empty() and Vector2i(dungeon_merchant["pos"]) == tile
-	return floor_cells.has(tile) and _prop_at(tile) == -1 and not chest_blocks and _enemy_at(tile) == -1 and not companion_blocks and not merchant_blocks
+	return floor_cells.has(tile) and _prop_at(tile) == -1 and not chest_blocks and _enemy_at(tile) == -1 and not companion_blocks and not merchant_blocks and not _inactive_party_at(tile)
+
+func _inactive_party_at(tile:Vector2i)->bool:
+	if run_state==null or run_state.campaign==null or not run_state.campaign.expedition.active:return false
+	for character_id in run_state.get_active_party_ids():
+		if character_id==run_state.active_character_id:continue
+		var runtime:Dictionary=run_state.campaign.expedition.member_runtime.get(character_id,{});var stored:Array=runtime.get("position",[])
+		if stored.size()>=2 and Vector2i(int(stored[0]),int(stored[1]))==tile:return true
+	return false
 
 func _companion_active() -> bool:
 	return not companion.is_empty() and int(companion.get("hp", 0)) > 0 and companion.has("pos")

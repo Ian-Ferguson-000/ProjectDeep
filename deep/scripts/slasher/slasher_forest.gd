@@ -14,6 +14,8 @@ const GOLD_UI_ICON:=preload("res://assets/pixel_art/Gold.png")
 const KEY_UI_ICON:=preload("res://assets/pixel_art/key.png")
 const POTION_UI_ICON:=preload("res://assets/pixel_art/potion.png")
 const GRID_PATHFINDER:=preload("res://scripts/slasher/slasher_grid_pathfinder.gd")
+const PARTY_HEALTH_PORTRAIT:=preload("res://scripts/ui/party_health_portrait.gd")
+const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
 
 var controller:Node
 var run_state:RunState
@@ -27,6 +29,7 @@ var floor_reward_claimed:=false
 var loot_nodes:Array[Area2D]=[]
 var exit_position:=Vector2.ZERO
 var merchant_position:=Vector2.ZERO
+var has_dungeon_merchant:=true
 var message_label:Label
 var objective_label:Label
 var health_bar:ProgressBar
@@ -48,6 +51,16 @@ var low_decor_layer:Node2D
 var actor_layer:Node2D
 var canopy_layer:Node2D
 var suppress_abandon_frames:=0
+var party_strip:HBoxContainer
+var party_portraits:Dictionary={}
+var active_summons:Dictionary={}
+var local_settings:Node
+
+func _settings()->Node:
+	var singleton:=get_node_or_null("/root/GameSettings")
+	if singleton!=null:return singleton
+	if local_settings==null:local_settings=SETTINGS_SERVICE.new();local_settings.values=SETTINGS_SERVICE.DEFAULTS.duplicate(true)
+	return local_settings
 
 func setup(game_controller:Node,state:RunState,context:Dictionary={})->void:
 	controller=game_controller;run_state=state;dungeon_context=context
@@ -64,12 +77,12 @@ func _build_floor()->void:
 	for child in get_children():child.free()
 	layout=SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor)
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
-	_build_world();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
+	active_summons.clear();_build_world();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
 	if player.item_runtime:player.item_runtime.floor_entered()
 	if run_state.current_floor==1 and not run_state.starter_reward_claimed:call_deferred("_offer_starter_relic")
 
 func _build_world()->void:
-	var underlay:=ColorRect.new();underlay.name="ForestDepth";underlay.color=Color("#07100d");underlay.position=Vector2.ZERO;underlay.size=Vector2(float(layout.width*TILE+128),float(layout.height*TILE+128));underlay.mouse_filter=Control.MOUSE_FILTER_IGNORE;underlay.z_index=-20;add_child(underlay)
+	var profile:=DungeonRuntimeProfile.get_profile(run_state.active_dungeon_id);var underlay:=ColorRect.new();underlay.name="DungeonDepth";underlay.color=Color("#"+String(profile.get("underlay","07100d")));underlay.position=Vector2.ZERO;underlay.size=Vector2(float(layout.width*TILE+128),float(layout.height*TILE+128));underlay.mouse_filter=Control.MOUSE_FILTER_IGNORE;underlay.z_index=-20;add_child(underlay)
 	ground_layer=Node2D.new();ground_layer.name="Ground";ground_layer.z_index=-10;add_child(ground_layer)
 	low_decor_layer=Node2D.new();low_decor_layer.name="LowDecor";low_decor_layer.z_index=-2;add_child(low_decor_layer)
 	actor_layer=Node2D.new();actor_layer.name="Actors";actor_layer.y_sort_enabled=true;add_child(actor_layer)
@@ -96,7 +109,9 @@ func _build_solid_props()->void:
 func _build_landmarks()->void:
 	exit_position=_world(layout.exit);merchant_position=_world(layout.merchant)
 	var exit_root:=Node2D.new();exit_root.name="RootGate";exit_root.position=exit_position;exit_root.z_index=12;exit_root.add_child(_glow(Color("#83d978"),34));var exit_sprite:=SlasherForestArt.make_sprite("exit");exit_sprite.position=Vector2(0,-30);exit_root.add_child(exit_sprite);actor_layer.add_child(exit_root)
-	var merchant_root:=Node2D.new();merchant_root.name="ForestMerchant";merchant_root.position=merchant_position;merchant_root.add_child(_glow(Color("#e8b94e"),28));var merchant_sprite:=SlasherForestArt.make_sprite("merchant");merchant_sprite.position=Vector2(0,-28);merchant_root.add_child(merchant_sprite);actor_layer.add_child(merchant_root)
+	has_dungeon_merchant=not String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id","")).is_empty()
+	if has_dungeon_merchant:
+		var merchant_root:=Node2D.new();merchant_root.name="DungeonMerchant";merchant_root.position=merchant_position;merchant_root.add_child(_glow(Color("#e8b94e"),28));var merchant_sprite:=SlasherForestArt.make_sprite("merchant");merchant_sprite.position=Vector2(0,-28);merchant_root.add_child(merchant_sprite);actor_layer.add_child(merchant_root)
 
 func _build_mist()->void:
 	var mist:=CPUParticles2D.new();mist.name="ForestMist";mist.amount=42;mist.lifetime=9.0;mist.preprocess=9.0;mist.emission_shape=CPUParticles2D.EMISSION_SHAPE_RECTANGLE;mist.emission_rect_extents=Vector2(float(layout.width*TILE)/2.0,float(layout.height*TILE)/2.0);mist.position=ORIGIN+Vector2(float(layout.width*TILE)/2.0,float(layout.height*TILE)/2.0);mist.direction=Vector2(1,-0.12);mist.spread=18;mist.initial_velocity_min=3;mist.initial_velocity_max=8;mist.scale_amount_min=3;mist.scale_amount_max=8;mist.color=Color(0.65,0.85,0.72,0.055);mist.z_index=6;add_child(mist)
@@ -126,6 +141,8 @@ func _build_boundary_corners(cells:Dictionary)->void:
 
 func _spawn_player()->void:
 	player=PLAYER_SCRIPT.new();player.name="SlasherPlayer";player.position_sanitizer=sanitize_player_position;player.pathfinder=pathfinder;player.setup(run_state);actor_layer.add_child(player);player.global_position=_world(layout.start);player.health_changed.connect(_on_health_changed);player.resource_changed.connect(_on_resource_changed);player.ability_resolved.connect(_on_ability_resolved);player.defeated.connect(_on_player_defeated)
+	_restore_active_slasher_state()
+	player.add_to_group("slasher_party_target")
 	tutorial_origin=player.global_position;tutorial_elapsed=0.0
 	if player.item_runtime:player.item_runtime.effect_activated.connect(_show_message)
 	var camera:=Camera2D.new();camera.position_smoothing_enabled=true;camera.position_smoothing_speed=7
@@ -133,7 +150,7 @@ func _spawn_player()->void:
 	camera.drag_horizontal_enabled=true;camera.drag_vertical_enabled=true
 	camera.drag_left_margin=CAMERA_DRAG_MARGIN;camera.drag_right_margin=CAMERA_DRAG_MARGIN;camera.drag_top_margin=CAMERA_DRAG_MARGIN;camera.drag_bottom_margin=CAMERA_DRAG_MARGIN
 	player.add_child(camera);player.camera=camera;camera.make_current()
-	camera.zoom=Vector2.ONE*GameSettings.get_float("slasher_zoom",1.30);GameSettings.settings_changed.connect(_on_game_setting_changed)
+	camera.zoom=Vector2.ONE*_settings().get_float("slasher_zoom",1.30);_settings().settings_changed.connect(_on_game_setting_changed)
 
 func _spawn_enemies()->void:
 	enemies_remaining=0;var wolf_counts:Dictionary={};var spawn_index:=0
@@ -155,7 +172,7 @@ func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 		if int(wolf_counts.get("wolf_howler",0))>0 and wolf_id=="wolf_lurker":wolf_id="wolf_vanguard"
 		if wolf_id in ["wolf_hunter","wolf_howler"] and int(wolf_counts.get(wolf_id,0))>=1:wolf_id="wolf_vanguard" if (spawn_index%2)==0 else "wolf_charger"
 		wolf_counts[wolf_id]=int(wolf_counts.get(wolf_id,0))+1;return {"visual_id":wolf_id,"behavior_id":wolf_id}
-	var other_enemies:Array[String]=["thornback_boar","spore_beast","briar_guardian","ice_mage"]
+	var other_enemies:Array[String]=[];other_enemies.assign(DungeonRuntimeProfile.get_profile(run_state.active_dungeon_id).get("slasher_enemies",["thornback_boar","spore_beast","briar_guardian","ice_mage"]))
 	return {"visual_id":other_enemies[(spawn_index+run_state.current_floor-1)%other_enemies.size()],"behavior_id":""}
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
@@ -174,6 +191,7 @@ func _spawn_loot()->void:
 
 func _process(delta:float)->void:
 	if not is_instance_valid(player):return
+	_tick_benched_party(delta)
 	var abandon_is_suppressed:bool=suppress_abandon_frames>0
 	suppress_abandon_frames=maxi(0,suppress_abandon_frames-1)
 	if tutorial_layer!=null:
@@ -182,9 +200,14 @@ func _process(delta:float)->void:
 	var codex_open:bool=codex!=null and codex.visible
 	var modal_open:bool=(merchant_shop_panel!=null and merchant_shop_panel.visible) or (relic_modal!=null and relic_modal.visible)
 	player.input_locked=modal_open or codex_open
-	if Input.is_action_just_pressed("character_menu") and not modal_open:_open_codex();return
+	if Input.is_action_just_pressed("character_menu") and not modal_open:
+		if run_state.get_active_party_ids().size()>1:_cycle_party_member();return
+		_open_codex();return
 	# Modal controls consume Escape themselves. Never let the same keypress fall through to abandon.
 	if modal_open or codex_open:return
+	if Input.is_action_just_pressed("extract_expedition") and run_state.can_extract():
+		if controller and controller.has_method("extract_expedition"):controller.extract_expedition()
+		return
 	var interaction_used:=false;var nearby_chest:SlasherBreakableProp=_nearby_chest()
 	if nearby_chest!=null:
 		_show_message("Locked chest · find a key." if run_state.keys<=0 else "Chest ready · press E to unlock and open.",0.15)
@@ -194,12 +217,13 @@ func _process(delta:float)->void:
 			else:run_state.keys-=1;nearby_chest.open_chest();_show_message("The key turns. The chest opens.")
 	for loot in loot_nodes.duplicate():
 		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<30:_collect_loot(loot);loot_nodes.erase(loot)
-	if player.global_position.distance_to(merchant_position)<48:
-		_show_message("Thistle Fen · press E to trade.",0.15)
-		if not interaction_used and Input.is_action_just_pressed("interact") and merchant_shop_panel:player.basic_mouse_held=false;merchant_shop_panel.setup(run_state,"forest","dungeon");merchant_shop_panel.open()
+	if has_dungeon_merchant and player.global_position.distance_to(merchant_position)<48:
+		var merchant_id:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id",run_state.active_dungeon_id));var merchant:=GameBalance.get_merchant(merchant_id);var merchant_name:=String(merchant.get("name","Dungeon merchant"))
+		_show_message("%s · press E to trade."%merchant_name,0.15)
+		if not interaction_used and Input.is_action_just_pressed("interact") and merchant_shop_panel:player.basic_mouse_held=false;merchant_shop_panel.setup(run_state,merchant_id,"dungeon");merchant_shop_panel.open()
 	if player.global_position.distance_to(exit_position)<42:
 		if exit_open:_complete_floor()
-		else:_show_message("The root gate is sealed · %d foes remain."%enemies_remaining,0.15)
+		else:_show_message("The way onward is sealed · %d foes remain."%enemies_remaining,0.15)
 	if Input.is_action_just_pressed("slasher_potion"):_use_potion()
 	for slot_index:int in range(4):
 		if Input.is_action_just_pressed("slasher_consumable_%d"%(slot_index+1)):_use_consumable_slot(slot_index);break
@@ -209,7 +233,7 @@ func _process(delta:float)->void:
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	run_state.record_enemy_defeat(enemy.visual_id);enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
 	if player.item_runtime:player.item_runtime.handle_event({"trigger":"boss_kill" if enemy.boss else ("elite_kill" if enemy.elite else "enemy_kill"),"enemy":enemy})
-	if enemies_remaining==0:exit_open=true;_show_message("Encounter cleared · the root gate opens.")
+	if enemies_remaining==0:exit_open=true;_show_message("Encounter cleared · the way onward opens.")
 
 func _complete_floor()->void:
 	if floor_reward_claimed:return
@@ -221,10 +245,64 @@ func _complete_floor()->void:
 	if bool(layout.get("is_boss_floor",false)):xp+=float(rewards.get("campaign_boss_bonus",70))
 	if run_state.slasher_endless_mode:xp*=float(rewards.get("endless_xp_multiplier",0.35))
 	run_state.gain_xp(maxi(1,int(round(xp))),"Slasher Forest%s floor %d cleared"%[" Endless" if run_state.slasher_endless_mode else "",run_state.current_floor])
-	if controller and controller.has_method("complete_slasher_forest_floor"):controller.complete_slasher_forest_floor()
+	run_state.mark_extraction_available()
+	if controller and controller.has_method("complete_slasher_dungeon_floor"):controller.complete_slasher_dungeon_floor()
+	elif controller and controller.has_method("complete_slasher_forest_floor"):controller.complete_slasher_forest_floor()
 func _on_player_defeated()->void:
 	_close_codex()
-	if controller and controller.has_method("return_to_tavern"):controller.return_to_tavern("death","You fall beneath the Forest in Slasher mode with %d gold."%run_state.gold)
+	var fallen_id:=run_state.active_character_id;var death_position:=player.global_position;var fallen_summon:Node=player.companion
+	_store_active_slasher_state()
+	if not is_instance_valid(fallen_summon):fallen_summon=active_summons.get(fallen_id) as Node
+	if is_instance_valid(fallen_summon):fallen_summon.queue_free()
+	active_summons.erase(fallen_id);player.companion=null
+	if run_state.record_active_character_death("Fell in %s (Slasher)" % String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name", "the dungeon"))):
+		player.setup(run_state);_restore_active_slasher_state();player.global_position=sanitize_player_position(death_position);_show_message("A party member has fallen forever. Control passes to %s." % run_state.selected_class_name);_flash_fallen_portrait(fallen_id);_refresh_hud();return
+	if controller and controller.has_method("return_to_tavern"):controller.return_to_tavern("death","The last party member falls with %d unbanked gold."%run_state.gold)
+
+func _cycle_party_member()->void:
+	var swap_position:=player.global_position;var outgoing_id:=run_state.active_character_id
+	_store_active_slasher_state()
+	if is_instance_valid(player.companion):active_summons[outgoing_id]=player.companion
+	player.companion=null;player.velocity=Vector2.ZERO;player.basic_mouse_held=false
+	if not run_state.cycle_active_character():return
+	player.setup(run_state);player.companion=active_summons.get(run_state.active_character_id) as CharacterBody2D;_restore_active_slasher_state();player.global_position=sanitize_player_position(swap_position)
+	for enemy in get_tree().get_nodes_in_group("slasher_enemy"):
+		if enemy is SlasherEnemy:enemy.target=player
+	_show_message("Now controlling %s · %s"%[run_state.get_active_character().display_name,run_state.selected_class_name]);_refresh_hud()
+
+func _store_active_slasher_state()->void:
+	if run_state==null or run_state.campaign==null or not run_state.campaign.expedition.active or not is_instance_valid(player):return
+	var character_id:=run_state.active_character_id;var runtime:Dictionary=run_state.campaign.expedition.member_runtime.get(character_id,{})
+	runtime["health"]=player.health;runtime["resource"]=run_state.class_resource;runtime["slasher"]=player.snapshot_party_state();run_state.campaign.expedition.member_runtime[character_id]=runtime
+	var member:=run_state.campaign.character(character_id)
+	if member!=null:member.current_health=player.health
+
+func _restore_active_slasher_state()->void:
+	if run_state==null or run_state.campaign==null or not is_instance_valid(player):return
+	var runtime:Dictionary=run_state.campaign.expedition.member_runtime.get(run_state.active_character_id,{})
+	if int(runtime.get("health",-1))>=0:player.health=clampi(int(runtime.health),0,player.max_health);run_state.current_health=player.health
+	if runtime.has("resource"):run_state.class_resource=clampi(int(runtime.resource),0,run_state.get_class_resource_max())
+	player.restore_party_state(Dictionary(runtime.get("slasher",{})))
+
+func _tick_benched_party(delta:float)->void:
+	if run_state==null or run_state.campaign==null or not run_state.campaign.expedition.active:return
+	for character_id in run_state.get_active_party_ids():
+		if character_id==run_state.active_character_id:continue
+		var runtime:Dictionary=run_state.campaign.expedition.member_runtime.get(character_id,{})
+		var state:Dictionary=Dictionary(runtime.get("slasher",{}))
+		var cooldowns:Dictionary=Dictionary(state.get("cooldowns",{}))
+		for key in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-delta)
+		state["cooldowns"]=cooldowns
+		for timer_name in ["invulnerable","defense_window","hidden_time","consumable_speed_time","movement_debuff_time"]:state[timer_name]=maxf(0.0,float(state.get(timer_name,0.0))-delta)
+		if float(state.get("hidden_time",0.0))<=0.0:state["is_hidden"]=false
+		if float(state.get("consumable_speed_time",0.0))<=0.0:state["consumable_speed_multiplier"]=1.0
+		if float(state.get("movement_debuff_time",0.0))<=0.0:state["movement_debuff_multiplier"]=1.0
+		if float(state.get("defense_window",0.0))<=0.0 and String(state.get("defense_kind",""))!="retribution_ready":state["defense_kind"]=""
+		var item_state:Dictionary=Dictionary(state.get("item_runtime",{}))
+		var item_cooldowns:Dictionary=Dictionary(item_state.get("cooldowns",{}))
+		for key in item_cooldowns:item_cooldowns[key]=maxf(0.0,float(item_cooldowns[key])-delta)
+		item_state["cooldowns"]=item_cooldowns;state["item_runtime"]=item_state
+		runtime["slasher"]=state;run_state.campaign.expedition.member_runtime[character_id]=runtime
 func _abandon_run()->void:
 	_close_codex()
 	if controller and controller.has_method("return_to_tavern"):controller.return_to_tavern("abandon","You abandon the Slasher expedition and return with %d gold."%run_state.gold)
@@ -287,7 +365,8 @@ func _nearby_chest()->SlasherBreakableProp:
 
 func _build_hud()->void:
 	var canvas:=CanvasLayer.new();canvas.name="HUD";canvas.layer=10;add_child(canvas)
-	var panel:=PanelContainer.new();panel.position=Vector2(18,18);panel.size=Vector2(390,54);panel.add_theme_stylebox_override("panel",_panel_style(Color("#101c18e8"),Color("#557c54")));canvas.add_child(panel)
+	_build_party_strip(canvas)
+	var panel:=PanelContainer.new();panel.set_anchors_preset(Control.PRESET_TOP_WIDE);panel.offset_left=340;panel.offset_top=18;panel.offset_right=-340;panel.offset_bottom=72;panel.add_theme_stylebox_override("panel",_panel_style(Color("#101c18e8"),Color("#557c54")));canvas.add_child(panel)
 	var status:=VBoxContainer.new();status.add_theme_constant_override("separation",2);panel.add_child(status)
 	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;status.add_child(objective_label)
 	_build_resource_hud(canvas)
@@ -299,12 +378,38 @@ func _build_hud()->void:
 
 func _refresh_hud()->void:
 	if not is_instance_valid(player) or objective_label==null:return
+	_store_active_slasher_state();_refresh_party_strip()
 	var depth_text:String="ENDLESS CYCLE %d · FLOOR %d"%[run_state.get_slasher_cycle_number(),run_state.current_floor] if run_state.slasher_endless_mode else "FLOOR %d/%d"%[run_state.current_floor,run_state.max_floors]
 	var encounter_text:String="BOSS" if bool(layout.get("is_boss_floor",false)) else ("ELITE GUARDIAN" if bool(layout.get("is_elite_floor",false)) else ("GATE OPEN" if exit_open else "%d FOES"%enemies_remaining))
 	objective_label.text="VERDANT FOREST  ·  %s  ·  %s"%[depth_text,encounter_text]
 	health_bar.max_value=maxi(1,player.max_health);health_bar.value=player.health;health_value_label.text="%d / %d"%[player.health,player.max_health]
 	resource_bar.max_value=maxi(1,run_state.get_class_resource_max());resource_bar.value=run_state.class_resource;resource_value_label.text="%s  %d / %d"%[run_state.get_class_resource_name(),run_state.class_resource,run_state.get_class_resource_max()]
 	gold_value_label.text=str(run_state.gold);key_value_label.text=str(run_state.keys);potion_value_label.text=str(run_state.get_consumables().count("healing_potion"))
+
+func _build_party_strip(canvas:CanvasLayer)->void:
+	var panel:=PanelContainer.new();panel.name="PartyStripPanel";panel.position=Vector2(18,12);panel.custom_minimum_size=Vector2(300,84);panel.add_theme_stylebox_override("panel",_panel_style(Color("#101713e8"),Color("#80602d")));canvas.add_child(panel)
+	var body:=VBoxContainer.new();body.add_theme_constant_override("separation",0);panel.add_child(body);party_strip=HBoxContainer.new();party_strip.name="PartyStrip";party_strip.add_theme_constant_override("separation",2);body.add_child(party_strip)
+	var hint:=Label.new();hint.text="TAB / LB  ·  SWAP";hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;hint.add_theme_font_size_override("font_size",10);hint.add_theme_color_override("font_color",Color("c9aa6a"));body.add_child(hint);_rebuild_party_strip()
+
+func _rebuild_party_strip()->void:
+	if party_strip==null:return
+	for child in party_strip.get_children():child.free()
+	party_portraits.clear()
+	for character_id in run_state.get_active_party_ids():
+		var member:=run_state.campaign.character(character_id)
+		if member==null:continue
+		var path:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant];var texture:Texture2D=load(path) if ResourceLoader.exists(path) else null
+		var portrait:PartyHealthPortrait=PARTY_HEALTH_PORTRAIT.new();portrait.name="PartyPortrait_%s"%character_id;portrait.setup(character_id,member.display_name,texture);party_strip.add_child(portrait);party_portraits[character_id]=portrait
+
+func _refresh_party_strip()->void:
+	for character_id in party_portraits:
+		var member:=run_state.campaign.character(character_id);var portrait:PartyHealthPortrait=party_portraits[character_id]
+		if member!=null and is_instance_valid(portrait):portrait.update_state(member.current_health,member.max_health,character_id==run_state.active_character_id)
+
+func _flash_fallen_portrait(character_id:String)->void:
+	var portrait:PartyHealthPortrait=party_portraits.get(character_id) as PartyHealthPortrait
+	if not is_instance_valid(portrait):_rebuild_party_strip();return
+	portrait.update_state(0,maxi(1,portrait.maximum),false);var tween:=create_tween();tween.tween_property(portrait,"modulate",Color(1.0,0.22,0.18,0.9),0.16);tween.tween_interval(0.35);tween.tween_property(portrait,"modulate:a",0.0,0.28);tween.tween_callback(_rebuild_party_strip)
 
 func _build_resource_hud(canvas:CanvasLayer)->void:
 	var hud:=Control.new();hud.name="ResourceHUD";hud.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT);hud.position=Vector2(-358,-385);hud.size=Vector2(340,367);hud.mouse_filter=Control.MOUSE_FILTER_IGNORE;canvas.add_child(hud)
@@ -334,7 +439,7 @@ func _class_resource_color()->Color:
 		"warrior":return Color("#d88322")
 		"healer":return Color("#d7b944")
 		"tank":return Color("#7994a8")
-		"phantom":return Color("#8c4ac7")
+		"rogue":return Color("#8c4ac7")
 		"summoner":return Color("#4ba866")
 		_:return Color("#245ee8")
 
@@ -370,7 +475,7 @@ func _suppress_abandon_once()->void:suppress_abandon_frames=2
 func _on_health_changed(_current:int,_maximum:int)->void:_refresh_hud()
 func _on_resource_changed(_current:int,_maximum:int)->void:_refresh_hud()
 func _on_game_setting_changed(key:String,value:Variant)->void:
-	if key in ["slasher_zoom","reset"] and is_instance_valid(player) and player.camera!=null:player.camera.zoom=Vector2.ONE*(GameSettings.get_float("slasher_zoom",1.30) if key=="reset" else float(value))
+	if key in ["slasher_zoom","reset"] and is_instance_valid(player) and player.camera!=null:player.camera.zoom=Vector2.ONE*(_settings().get_float("slasher_zoom",1.30) if key=="reset" else float(value))
 func _on_ability_resolved(result:Dictionary)->void:
 	if bool(result.get("started",false)):_dismiss_tutorial()
 	var failure:=String(result.get("failure",""))

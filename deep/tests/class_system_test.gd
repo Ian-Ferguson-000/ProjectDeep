@@ -1,6 +1,6 @@
 extends SceneTree
 
-const EXPECTED_CLASSES := ["warrior", "mage", "healer", "tank", "phantom", "summoner"]
+const EXPECTED_CLASSES := ["warrior", "mage", "healer", "tank", "rogue", "summoner"]
 const EXPECTED_SLOTS := ["basic", "special", "defensive", "movement"]
 
 func _initialize() -> void:
@@ -40,8 +40,8 @@ func _initialize() -> void:
 	if int(healer.get_action_modifier_breakdown("basic", {"target_slowed":true}).get("conditional_bonus", 0)) != 3: failures.append("Binding Light Slowed bonus missing")
 	var tank := RunState.new(); tank.set_class("tank")
 	if int(tank.get_action_modifier_breakdown("basic", {"target_threshold":2}).get("conditional_bonus", 0)) != 4: failures.append("Shield Bash Threshold bonus missing")
-	var phantom := RunState.new(); phantom.set_class("phantom")
-	if not phantom.get_action_modifier_breakdown("basic", {}).get("ignore", []).has("threshold"): failures.append("Pierce Threshold ignore missing")
+	var rogue := RunState.new(); rogue.set_class("rogue")
+	if not rogue.get_action_modifier_breakdown("basic", {}).get("ignore", []).has("threshold"): failures.append("Pierce Threshold ignore missing")
 	var summoner := RunState.new(); summoner.set_class("summoner")
 	if int(summoner.get_action_modifier_breakdown("basic", {"coordinated_wolf_attack":true}).get("conditional_bonus", 0)) != 3: failures.append("wolf coordinated Accuracy missing")
 	var legacy := RunState.new()

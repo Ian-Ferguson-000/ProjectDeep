@@ -1,5 +1,6 @@
 extends CharacterBody2D
 class_name SlasherPlayer
+const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
 
 signal health_changed(current:int,maximum:int)
 signal resource_changed(current:int,maximum:int)
@@ -45,8 +46,28 @@ var consumable_aegis:=0
 var consumable_speed_time:=0.0
 var consumable_speed_multiplier:=1.0
 var movement_debuff_multiplier:=1.0
+var local_settings:Node
+func _settings()->Node:
+	var singleton:=get_node_or_null("/root/GameSettings")
+	if singleton!=null:return singleton
+	if local_settings==null:local_settings=SETTINGS_SERVICE.new();local_settings.values=SETTINGS_SERVICE.DEFAULTS.duplicate(true)
+	return local_settings
 var movement_debuff_time:=0.0
 var next_attack_multiplier:=1.0
+
+func snapshot_party_state()->Dictionary:
+	var state:={"cooldowns":cooldowns.duplicate(true),"invulnerable":invulnerable,"defense_window":defense_window,"defense_kind":defense_kind,"empowered":empowered,"is_hidden":is_hidden,"hidden_time":hidden_time,"retribution_stored":retribution_stored,"consumable_aegis":consumable_aegis,"consumable_speed_time":consumable_speed_time,"consumable_speed_multiplier":consumable_speed_multiplier,"movement_debuff_time":movement_debuff_time,"movement_debuff_multiplier":movement_debuff_multiplier,"next_attack_multiplier":next_attack_multiplier,"last_direction":[last_direction.x,last_direction.y],"aim_direction":[aim_direction.x,aim_direction.y],"marked_enemy_instance_id":marked_enemy.get_instance_id() if is_instance_valid(marked_enemy) else 0}
+	if item_runtime!=null:state["item_runtime"]={"cooldowns":item_runtime.cooldowns.duplicate(true),"floor_uses":item_runtime.floor_uses.duplicate(true),"precision_count":item_runtime.precision_count}
+	return state
+
+func restore_party_state(state:Dictionary)->void:
+	cooldowns=Dictionary(state.get("cooldowns",{"basic":0.0,"special":0.0,"defensive":0.0,"movement":0.0})).duplicate(true);invulnerable=float(state.get("invulnerable",0.0));defense_window=float(state.get("defense_window",0.0));defense_kind=String(state.get("defense_kind",""));empowered=bool(state.get("empowered",false));is_hidden=bool(state.get("is_hidden",false));hidden_time=float(state.get("hidden_time",0.0));retribution_stored=int(state.get("retribution_stored",0));consumable_aegis=int(state.get("consumable_aegis",0));consumable_speed_time=float(state.get("consumable_speed_time",0.0));consumable_speed_multiplier=float(state.get("consumable_speed_multiplier",1.0));movement_debuff_time=float(state.get("movement_debuff_time",0.0));movement_debuff_multiplier=float(state.get("movement_debuff_multiplier",1.0));next_attack_multiplier=float(state.get("next_attack_multiplier",1.0))
+	var direction:Array=state.get("last_direction",[]);if direction.size()>=2:last_direction=Vector2(float(direction[0]),float(direction[1]))
+	var aim:Array=state.get("aim_direction",[]);if aim.size()>=2:aim_direction=Vector2(float(aim[0]),float(aim[1]))
+	var marked_id:=int(state.get("marked_enemy_instance_id",0));marked_enemy=instance_from_id(marked_id) as SlasherEnemy if marked_id>0 else null
+	if item_runtime!=null:
+		var item_state:Dictionary=Dictionary(state.get("item_runtime",{}));item_runtime.cooldowns=Dictionary(item_state.get("cooldowns",{})).duplicate(true);item_runtime.floor_uses=Dictionary(item_state.get("floor_uses",{})).duplicate(true);item_runtime.precision_count=int(item_state.get("precision_count",0))
+	velocity=Vector2.ZERO;basic_mouse_held=false;animation_lock=0.0
 
 func setup(state:RunState)->void:
 	run_state=state;class_id=state.selected_class_id
@@ -54,6 +75,9 @@ func setup(state:RunState)->void:
 	speed=float(tuning.get("speed",speed));max_health=state.max_health;health=state.current_health
 	attack_power=maxi(2,state.get_derived_stat("attack_power")+(state.selected_gear.damage if state.selected_gear else 1))
 	spell_power=maxi(2,state.get_derived_stat("spell_potency")+(state.selected_gear.damage if state.selected_gear else 1))
+	if item_runtime!=null:item_runtime.setup(state,self)
+	var hitbox:=get_node_or_null("PlayerHitbox") as CollisionShape2D
+	if hitbox!=null and hitbox.shape is CircleShape2D:(hitbox.shape as CircleShape2D).radius=float(tuning.get("collision_radius",18.0))
 	if is_inside_tree():_refresh_presentation()
 
 func _ready()->void:
@@ -145,7 +169,7 @@ func _special(result:Dictionary)->Dictionary:
 		"mage":_spawn_projectile(_configured_attack(tuning,"arcane"),false)
 		"healer":empowered=true
 		"tank":defense_kind="retribution_ready";defense_window=float(tuning.get("effect_duration",2.0));retribution_stored=0
-		"phantom":
+		"rogue":
 			var target:=_enemy_near_aim(float(tuning.get("target_range",100.0)),float(tuning.get("aim_dot_threshold",0.65)))
 			if target:
 				var isolated:=_nearby_enemy_count(target.global_position,float(tuning.get("isolation_radius",95.0)))<=1
@@ -171,7 +195,7 @@ func _movement(result:Dictionary)->Dictionary:
 		"healer":
 			if global_position.distance_to(start)>=float(tuning.get("heal_travel_threshold",80.0)):heal(_scaled_heal(tuning))
 		"tank":result.targets_hit=_area_attack(global_position,float(tuning.get("area_radius",72.0)),_configured_attack(tuning,"physical"))
-		"phantom":is_hidden=true;hidden_time=float(tuning.get("hidden_duration",0.5))
+		"rogue":is_hidden=true;hidden_time=float(tuning.get("hidden_duration",0.5))
 		"summoner":_ensure_companion();companion.global_position=global_position-aim_direction*float(tuning.get("mount_offset",24.0))
 	if result.targets_hit>0 and int(tuning.get("resource_gain",0))>0:_gain_resource(result,int(tuning.get("resource_gain",0)))
 	return result
@@ -183,7 +207,7 @@ func _defensive(result:Dictionary)->Dictionary:
 		"mage":defense_kind="repel";_push_nearby(float(tuning.get("push_radius",100.0)),float(tuning.get("push_distance",70.0)))
 		"healer":defense_kind="recover"
 		"tank":defense_kind="guard"
-		"phantom":defense_kind="evade";invulnerable=float(tuning.get("invulnerability",defense_window));global_position=_safe_destination(global_position-aim_direction*float(tuning.get("movement_distance",70.0)),float(tuning.get("destination_clearance",22.0)))
+		"rogue":defense_kind="evade";invulnerable=float(tuning.get("invulnerability",defense_window));global_position=_safe_destination(global_position-aim_direction*float(tuning.get("movement_distance",70.0)),float(tuning.get("destination_clearance",22.0)))
 		"summoner":_ensure_companion();defense_kind="cover"
 	return result
 
@@ -346,7 +370,7 @@ func _push_nearby(radius:float,distance:float)->void:
 func _ensure_companion()->void:
 	if is_instance_valid(companion):return
 	var tuning:=GameBalance.get_slasher_companion_tuning("wolf");var spawn:Array=tuning.get("spawn_offset",[28,0])
-	companion=load("res://scripts/slasher/slasher_wolf.gd").new();companion.name="BondedWolf";get_parent().add_child(companion);companion.global_position=global_position+Vector2(float(spawn[0]),float(spawn[1]));companion.call("setup",self)
+	companion=load("res://scripts/slasher/slasher_wolf.gd").new();companion.name="BondedWolf";get_parent().add_child(companion);companion.global_position=global_position+Vector2(float(spawn[0]),float(spawn[1]));companion.call("setup",self,run_state.active_character_id)
 func _update_aim()->void:
 	var stick_aim:=Input.get_vector("slasher_aim_left","slasher_aim_right","slasher_aim_up","slasher_aim_down")
 	var mouse_offset:=get_global_mouse_position()-global_position
@@ -363,13 +387,13 @@ func _action_name(slot:String)->String:return String(GameBalance.get_class_actio
 func _gain_resource(result:Dictionary,amount:int)->void:run_state.gain_class_resource(amount);result.resource_gained=int(result.get("resource_gained",0))+amount
 func heal(amount:int)->void:health=mini(max_health,health+amount);run_state.current_health=health;health_changed.emit(health,max_health)
 func add_impact_shake(strength:float,duration:float)->void:
-	strength*=GameSettings.get_float("screen_shake_intensity",1.0)
+	strength*=_settings().get_float("screen_shake_intensity",1.0)
 	if strength<=0.0 or duration<=0.0:return
 	screen_shake_strength=minf(12.0,sqrt(screen_shake_strength*screen_shake_strength+strength*strength));screen_shake_time=maxf(screen_shake_time,duration);screen_shake_duration=maxf(screen_shake_duration,duration)
 	if camera!=null:camera.offset=Vector2(randf_range(-1.0,1.0),randf_range(-1.0,1.0)).normalized()*screen_shake_strength
 func _update_screen_shake(delta:float)->void:
 	if camera==null:return
-	if GameSettings.get_float("screen_shake_intensity",1.0)<=0.0:camera.offset=Vector2.ZERO;screen_shake_time=0.0;screen_shake_strength=0.0;screen_shake_duration=0.0;return
+	if _settings().get_float("screen_shake_intensity",1.0)<=0.0:camera.offset=Vector2.ZERO;screen_shake_time=0.0;screen_shake_strength=0.0;screen_shake_duration=0.0;return
 	if screen_shake_time<=0.0:camera.offset=Vector2.ZERO;screen_shake_strength=0.0;screen_shake_duration=0.0;return
 	screen_shake_time=maxf(0.0,screen_shake_time-delta)
 	var falloff:=screen_shake_time/maxf(0.001,screen_shake_duration)

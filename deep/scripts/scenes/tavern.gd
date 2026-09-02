@@ -56,15 +56,28 @@ var armory_backdrop: ColorRect
 var armory_list: VBoxContainer
 var armory_detail: Label
 var expedition_backdrop: ColorRect
+var expedition_panel: PanelContainer
 var expedition_list: VBoxContainer
 var expedition_title: Label
 var expedition_detail: Label
+var expedition_party_count: Label
+var expedition_readiness: Label
 var expedition_launch: Button
 var expedition_id := "forest"
 var expedition_mode := RunState.PLAY_MODE_STRATEGY
 var expedition_mode_buttons: Dictionary = {}
+var expedition_party_list: VBoxContainer
+var selected_party_ids: Array[String] = []
 var results_backdrop: ColorRect
 var results_text: RichTextLabel
+var tutorial_continue: Button
+var company_backdrop:ColorRect
+var company_panel:PanelContainer
+var company_list:VBoxContainer
+var company_tabs:TabContainer
+var company_pages:Dictionary={}
+var company_party_dungeon_id:="forest"
+var company_party_initialized:=false
 
 func setup(game_controller: Node, state: RunState, options: Array[GearData], intro_message: String, summary: Dictionary = {}) -> void:
 	controller = game_controller
@@ -87,11 +100,25 @@ func _ready() -> void:
 	_build_armory_modal()
 	_build_expedition_modal()
 	_build_results_modal()
+	_build_company_modal()
+	_build_tutorial_prompt()
 	_setup_merchant_shops()
 	get_viewport().size_changed.connect(_layout_scene)
 	_layout_scene()
 	_refresh_ui()
 	if not arrival_summary.is_empty() or not message.is_empty(): _show_arrival_results()
+	if run_state != null and run_state.campaign != null and not run_state.campaign.is_tutorial_complete(): _show_tutorial_prompt()
+
+func _build_tutorial_prompt() -> void:
+	tutorial_continue = Button.new(); tutorial_continue.name = "TutorialContinue"; tutorial_continue.text = "Choose the First Adventurer"; tutorial_continue.set_anchors_preset(Control.PRESET_BOTTOM_WIDE); tutorial_continue.offset_left = 430; tutorial_continue.offset_right = -430; tutorial_continue.offset_top = -92; tutorial_continue.offset_bottom = -36; tutorial_continue.pressed.connect(_continue_tutorial); _style_button(tutorial_continue); ui_root.add_child(tutorial_continue); tutorial_continue.visible = false
+
+func _show_tutorial_prompt() -> void:
+	if tutorial_continue == null: return
+	tutorial_continue.visible = run_state.campaign.tutorial_phase == CampaignState.TUTORIAL_DIALOGUE
+	if tutorial_continue.visible: _show_dialogue("Mara Vell", message)
+
+func _continue_tutorial() -> void:
+	if controller != null and controller.has_method("advance_tutorial_from_tavern"): controller.advance_tutorial_from_tavern()
 
 func _load_layout() -> void:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(LAYOUT_PATH))
@@ -134,6 +161,7 @@ func _build_hud() -> void:
 	top_hud.add_theme_stylebox_override("panel", _panel_style(Color(0.055,0.04,0.025,0.94), Color(0.65,0.43,0.18), 8)); ui_root.add_child(top_hud)
 	var margin := MarginContainer.new(); margin.add_theme_constant_override("margin_left",16); margin.add_theme_constant_override("margin_right",16); margin.add_theme_constant_override("margin_top",8); margin.add_theme_constant_override("margin_bottom",8); top_hud.add_child(margin)
 	hud_label = Label.new(); hud_label.add_theme_font_size_override("font_size",16); hud_label.add_theme_color_override("font_color",Color(0.94,0.84,0.66)); margin.add_child(hud_label)
+	var company_button:=Button.new();company_button.name="CompanyLedgerButton";company_button.text="Company Ledger";company_button.set_anchors_preset(Control.PRESET_TOP_RIGHT);company_button.position=Vector2(-190,78);company_button.size=Vector2(166,40);company_button.pressed.connect(_open_company_ledger);_style_button(company_button);ui_root.add_child(company_button)
 
 func _build_dialogue_banner() -> void:
 	dialogue_panel = PanelContainer.new(); dialogue_panel.name = "ContextBanner"; dialogue_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -174,26 +202,206 @@ func _build_armory_modal() -> void:
 
 func _build_expedition_modal() -> void:
 	expedition_backdrop = _modal_backdrop("ExpeditionModal")
-	var body := _modal_panel(expedition_backdrop,"Choose a Dungeon",Vector2(960,610))
-	var columns := HBoxContainer.new(); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; columns.add_theme_constant_override("separation",16); body.add_child(columns)
-	var list_scroll := ScrollContainer.new(); list_scroll.custom_minimum_size = Vector2(310,0); list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; columns.add_child(list_scroll)
+	var body := _modal_panel(expedition_backdrop,"Plan an Expedition",Vector2(1160,660));expedition_panel=body.get_parent().get_parent() as PanelContainer
+	var subtitle:=Label.new();subtitle.text="Choose a destination, select a combat mode, then confirm who will leave the safety of the Hearth.";subtitle.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;subtitle.add_theme_color_override("font_color",Color(0.76,0.72,0.64));body.add_child(subtitle)
+	var columns := HBoxContainer.new(); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; columns.add_theme_constant_override("separation",18); body.add_child(columns)
+	var destinations:=VBoxContainer.new();destinations.custom_minimum_size=Vector2(390,0);destinations.add_theme_constant_override("separation",8);columns.add_child(destinations)
+	var destination_heading:=Label.new();destination_heading.text="1  ·  CHOOSE A DESTINATION";destination_heading.add_theme_font_size_override("font_size",16);destination_heading.add_theme_color_override("font_color",Color(0.95,0.69,0.3));destinations.add_child(destination_heading)
+	var list_scroll := ScrollContainer.new();list_scroll.name="DungeonListScroll";list_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; destinations.add_child(list_scroll)
 	expedition_list = VBoxContainer.new(); expedition_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL; expedition_list.add_theme_constant_override("separation",8); list_scroll.add_child(expedition_list)
-	var details := VBoxContainer.new(); details.size_flags_horizontal = Control.SIZE_EXPAND_FILL; details.add_theme_constant_override("separation",10); columns.add_child(details)
+	var details := VBoxContainer.new(); details.size_flags_horizontal = Control.SIZE_EXPAND_FILL; details.add_theme_constant_override("separation",9); columns.add_child(details)
 	expedition_title = Label.new(); expedition_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; expedition_title.add_theme_font_size_override("font_size",22); expedition_title.add_theme_color_override("font_color",Color(1,0.8,0.4)); details.add_child(expedition_title)
+	var mode_heading:=Label.new();mode_heading.text="2  ·  CHOOSE A COMBAT MODE";mode_heading.add_theme_color_override("font_color",Color(0.95,0.69,0.3));details.add_child(mode_heading)
 	var mode_row := HBoxContainer.new(); mode_row.alignment = BoxContainer.ALIGNMENT_CENTER; mode_row.add_theme_constant_override("separation",10); details.add_child(mode_row)
 	for mode in [RunState.PLAY_MODE_STRATEGY, RunState.PLAY_MODE_SLASHER]:
-		var mode_button := Button.new(); mode_button.text = mode.capitalize(); mode_button.toggle_mode = true; mode_button.name = "%sModeButton" % mode.capitalize(); mode_button.pressed.connect(_select_expedition_mode.bind(mode)); _style_button(mode_button); mode_row.add_child(mode_button); expedition_mode_buttons[mode] = mode_button
-	var detail_scroll := ScrollContainer.new(); detail_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; details.add_child(detail_scroll)
+		var mode_button := Button.new(); mode_button.text = mode.capitalize(); mode_button.toggle_mode = true; mode_button.name = "%sModeButton" % mode.capitalize();mode_button.size_flags_horizontal=Control.SIZE_EXPAND_FILL; mode_button.pressed.connect(_select_expedition_mode.bind(mode)); FantasyButton.apply_dark(mode_button,15,Vector2(0,54)); mode_row.add_child(mode_button); expedition_mode_buttons[mode] = mode_button
+	var decision_columns:=HBoxContainer.new();decision_columns.size_flags_vertical=Control.SIZE_EXPAND_FILL;decision_columns.add_theme_constant_override("separation",14);details.add_child(decision_columns)
+	var briefing:=VBoxContainer.new();briefing.size_flags_horizontal=Control.SIZE_EXPAND_FILL;briefing.add_theme_constant_override("separation",6);decision_columns.add_child(briefing)
+	var briefing_heading:=Label.new();briefing_heading.text="DESTINATION BRIEFING";briefing_heading.add_theme_color_override("font_color",Color(0.6,0.82,0.96));briefing.add_child(briefing_heading)
+	var detail_scroll := ScrollContainer.new(); detail_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; briefing.add_child(detail_scroll)
 	expedition_detail = Label.new(); expedition_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; expedition_detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL; expedition_detail.add_theme_font_size_override("font_size",14); detail_scroll.add_child(expedition_detail)
+	var party_column:=VBoxContainer.new();party_column.custom_minimum_size=Vector2(340,0);party_column.add_theme_constant_override("separation",6);decision_columns.add_child(party_column)
+	var party_row:=HBoxContainer.new();party_column.add_child(party_row);var party_heading := Label.new(); party_heading.text = "3  ·  ASSEMBLE PARTY";party_heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL; party_heading.add_theme_color_override("font_color",Color(0.95,0.69,0.3)); party_row.add_child(party_heading)
+	expedition_party_count=Label.new();expedition_party_count.name="ExpeditionPartyCount";expedition_party_count.add_theme_color_override("font_color",Color(0.58,0.86,0.66));party_row.add_child(expedition_party_count)
+	var party_scroll:=ScrollContainer.new();party_scroll.name="ExpeditionPartyScroll";party_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;party_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;party_column.add_child(party_scroll)
+	expedition_party_list = VBoxContainer.new();expedition_party_list.size_flags_horizontal=Control.SIZE_EXPAND_FILL; expedition_party_list.add_theme_constant_override("separation",6);party_scroll.add_child(expedition_party_list)
+	expedition_readiness=Label.new();expedition_readiness.name="ExpeditionReadiness";expedition_readiness.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;expedition_readiness.add_theme_font_size_override("font_size",15);details.add_child(expedition_readiness)
 	var buttons := HBoxContainer.new(); buttons.alignment = BoxContainer.ALIGNMENT_CENTER; buttons.add_theme_constant_override("separation",12); body.add_child(buttons)
-	var cancel := Button.new(); cancel.text = "Cancel"; cancel.pressed.connect(_close_modal.bind(expedition_backdrop)); _style_button(cancel); buttons.add_child(cancel)
-	expedition_launch = Button.new(); expedition_launch.text = "Begin Expedition"; expedition_launch.pressed.connect(_launch_expedition); _style_button(expedition_launch); buttons.add_child(expedition_launch)
+	var cancel := Button.new(); cancel.text = "Return to Tavern";cancel.size_flags_horizontal=Control.SIZE_EXPAND_FILL; cancel.pressed.connect(_close_modal.bind(expedition_backdrop)); _style_button(cancel); buttons.add_child(cancel)
+	expedition_launch = Button.new(); expedition_launch.text = "Begin Expedition";expedition_launch.size_flags_horizontal=Control.SIZE_EXPAND_FILL; expedition_launch.pressed.connect(_launch_expedition); _style_button(expedition_launch); buttons.add_child(expedition_launch)
 
 func _build_results_modal() -> void:
 	results_backdrop = _modal_backdrop("RunResultsModal")
 	var body := _modal_panel(results_backdrop,"Return to the Hearth",Vector2(680,500))
 	results_text = RichTextLabel.new(); results_text.bbcode_enabled = true; results_text.fit_content = true; results_text.size_flags_vertical = Control.SIZE_EXPAND_FILL; body.add_child(results_text)
 	var close := Button.new(); close.name = "ContinueButton"; close.text = "Continue in Tavern"; close.pressed.connect(_close_modal.bind(results_backdrop)); _style_button(close); body.add_child(close)
+
+func _build_company_modal()->void:
+	company_backdrop=_modal_backdrop("CompanyLedgerModal")
+	var body:=_modal_panel(company_backdrop,"Company Ledger",Vector2(1160,650));company_panel=body.get_parent().get_parent() as PanelContainer
+	var subtitle:=Label.new();subtitle.text="Manage the company between expeditions. Changes here are permanent unless a recruit dies.";subtitle.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;subtitle.add_theme_color_override("font_color",Color(0.78,0.72,0.62));body.add_child(subtitle)
+	company_tabs=TabContainer.new();company_tabs.name="CompanyLedgerTabs";company_tabs.focus_mode=Control.FOCUS_ALL;company_tabs.size_flags_vertical=Control.SIZE_EXPAND_FILL;company_tabs.add_theme_font_size_override("font_size",17);body.add_child(company_tabs)
+	for page_name in ["Resources","Party Builder","Improvements","Memorial"]:
+		var scroll:=ScrollContainer.new();scroll.name=page_name;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;company_tabs.add_child(scroll)
+		var margin:=MarginContainer.new();margin.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		for side in ["left","right","top","bottom"]:margin.add_theme_constant_override("margin_%s"%side,14)
+		scroll.add_child(margin)
+		var page:=VBoxContainer.new();page.name="%sPage"%page_name.replace(" ","");page.size_flags_horizontal=Control.SIZE_EXPAND_FILL;page.add_theme_constant_override("separation",12);margin.add_child(page);company_pages[page_name]=page
+	company_list=company_pages["Improvements"]
+	var close:=Button.new();close.text="Close Ledger";close.pressed.connect(_close_modal.bind(company_backdrop));_style_button(close);body.add_child(close)
+
+func _open_company_ledger()->void:
+	_refresh_company_ledger()
+	_show_modal(company_backdrop,company_tabs)
+
+func _purchase_tavern_upgrade(branch:String)->void:
+	var result:=run_state.campaign.purchase_upgrade(branch);message=" ".join(result);run_state.autosave_campaign();_refresh_ui();call_deferred("_refresh_company_ledger")
+
+func _refresh_company_ledger()->void:
+	if company_pages.is_empty():return
+	for page_value in company_pages.values():
+		for child in (page_value as VBoxContainer).get_children():child.free()
+	var campaign:=run_state.campaign
+	_refresh_resources_page(campaign)
+	_refresh_party_page(campaign)
+	_refresh_improvements_page(campaign)
+	_refresh_memorial_page(campaign)
+
+func _refresh_resources_page(campaign:CampaignState)->void:
+	var page:VBoxContainer=company_pages["Resources"]
+	_add_ledger_heading("TAVERN RESOURCES",Color(1,0.78,0.32),page)
+	_add_resource_card(page,"BANKED GOLD",str(campaign.banked_gold),"Spend with merchants or on Hearth improvements. Gold carried in a dungeon is not safe until extraction or victory.",Color(0.95,0.72,0.25))
+	_add_resource_card(page,"RELIC ESSENCE",str(campaign.relic_essence),"Permanent upgrade currency recovered from cleared checkpoints and banked on a safe return.",Color(0.55,0.84,1.0))
+	_add_resource_card(page,"SUCCESSFUL LEVELS",str(campaign.successful_levels),"Lifetime levels brought home by victorious recruits. Requirements check this total but never spend it.",Color(0.58,0.9,0.62))
+	_add_ledger_heading("UNIQUE RELICS",Color(0.76,0.62,0.9),page)
+	var relics:=Label.new();relics.text="No unique relics recovered yet. Secret dungeons hold relics that remain with the company." if campaign.banked_relics.is_empty() else "  •  ".join(campaign.banked_relics).replace("_"," ").capitalize();relics.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;relics.add_theme_font_size_override("font_size",16);page.add_child(relics)
+
+func _refresh_party_page(campaign:CampaignState)->void:
+	var page:VBoxContainer=company_pages["Party Builder"]
+	_add_ledger_heading("EXPEDITION PARTY BUILDER",Color(0.58,0.82,1.0),page)
+	var help:=Label.new();help.text="Plan the party that will be preselected at the Expedition Gate. Each recruit keeps independent health, equipment, resources, traits, and progression. Death is permanent.";help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;help.add_theme_color_override("font_color",Color(0.74,0.82,0.88));page.add_child(help)
+	var controls:=HBoxContainer.new();controls.add_theme_constant_override("separation",12);page.add_child(controls)
+	var dungeon_label:=Label.new();dungeon_label.text="Plan for:";dungeon_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;controls.add_child(dungeon_label)
+	var dungeon_picker:=OptionButton.new();dungeon_picker.name="PartyDungeonPicker";dungeon_picker.size_flags_horizontal=Control.SIZE_EXPAND_FILL;var selected_index:=0
+	for dungeon_id_value in GameBalance.get_dungeon_order():
+		var dungeon_id:=String(dungeon_id_value)
+		if not run_state.is_dungeon_unlocked(dungeon_id):continue
+		var index:=dungeon_picker.item_count;dungeon_picker.add_item(String(GameBalance.get_dungeon(dungeon_id).get("name",dungeon_id.capitalize())));dungeon_picker.set_item_metadata(index,dungeon_id)
+		if dungeon_id==company_party_dungeon_id:selected_index=index
+	if dungeon_picker.item_count==0:dungeon_picker.add_item("Verdant Forest");dungeon_picker.set_item_metadata(0,"forest")
+	dungeon_picker.select(selected_index);company_party_dungeon_id=String(dungeon_picker.get_item_metadata(selected_index));dungeon_picker.item_selected.connect(_ledger_party_dungeon_selected.bind(dungeon_picker));controls.add_child(dungeon_picker)
+	var cap:=campaign.get_party_cap(company_party_dungeon_id);var valid:Array[String]=[]
+	for member in campaign.living_roster():if member.status==CharacterRecord.STATUS_AVAILABLE:valid.append(member.id)
+	selected_party_ids=selected_party_ids.filter(func(id:String)->bool:return valid.has(id)).slice(0,cap)
+	if selected_party_ids.is_empty() and not company_party_initialized:selected_party_ids=valid.slice(0,mini(cap,valid.size()))
+	company_party_initialized=true
+	var count:=Label.new();count.name="PartySelectionCount";count.text="%d / %d selected"%[selected_party_ids.size(),cap];count.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;count.add_theme_color_override("font_color",Color(1,0.78,0.32));controls.add_child(count)
+	var clear_party:=Button.new();clear_party.name="ClearPartyButton";clear_party.text="CLEAR";clear_party.tooltip_text="Remove every recruit from the planned party.";clear_party.disabled=selected_party_ids.is_empty();clear_party.pressed.connect(_clear_ledger_party);FantasyButton.apply_dark(clear_party,13);controls.add_child(clear_party)
+	var auto_fill:=Button.new();auto_fill.name="AutoFillPartyButton";auto_fill.text="AUTO FILL";auto_fill.tooltip_text="Fill every open party slot with available recruits.";auto_fill.disabled=valid.is_empty();auto_fill.pressed.connect(_autofill_ledger_party);FantasyButton.apply_dark(auto_fill,13);controls.add_child(auto_fill)
+	var selection_help:=Label.new();selection_help.name="PartySelectionHelp";selection_help.text="Selected recruits are numbered by party slot. Deselect a recruit or use Clear when the party is full.";selection_help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;selection_help.add_theme_color_override("font_color",Color(0.7,0.76,0.82));page.add_child(selection_help)
+	var grid:=GridContainer.new();grid.name="PartyRosterGrid";grid.columns=2;grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL;grid.add_theme_constant_override("h_separation",12);grid.add_theme_constant_override("v_separation",10);page.add_child(grid)
+	for member in campaign.living_roster():_add_party_builder_card(grid,member,cap)
+	var open_setup:=Button.new();open_setup.text="Continue to Expedition Setup";open_setup.pressed.connect(_open_planned_expedition);_style_button(open_setup);page.add_child(open_setup)
+
+func _refresh_improvements_page(campaign:CampaignState)->void:
+	var page:VBoxContainer=company_pages["Improvements"]
+	_add_ledger_heading("TAVERN IMPROVEMENTS",Color(0.96,0.62,0.25),page)
+	var help:=Label.new();help.text="Permanent Hearth upgrades apply across every expedition and survive recruit deaths. Disabled purchase buttons list exactly what the company still needs.";help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;help.add_theme_color_override("font_color",Color(0.82,0.76,0.66));page.add_child(help)
+	for branch in campaign.tavern_upgrades:_add_upgrade_ledger_row(String(branch),page)
+
+func _refresh_memorial_page(campaign:CampaignState)->void:
+	var page:VBoxContainer=company_pages["Memorial"]
+	_add_ledger_heading("COMPANY MEMORIAL  ·  %d LOST"%campaign.memorial.size(),Color(0.78,0.66,0.82),page)
+	var help:=Label.new();help.text="The memorial is permanent. Fallen recruits cannot be restored, and their personal levels and equipment are gone.";help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;help.add_theme_color_override("font_color",Color(0.78,0.72,0.82));page.add_child(help)
+	if campaign.memorial.is_empty():
+		var empty:=Label.new();empty.text="No names have been entered. Fallen recruits will appear here permanently with their class, level, and cause of death.";empty.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;page.add_child(empty)
+	else:
+		for record in campaign.memorial:
+			var panel:=PanelContainer.new();panel.add_theme_stylebox_override("panel",_panel_style(Color(0.055,0.04,0.065,0.94),Color(0.42,0.3,0.5),7));page.add_child(panel);var fallen:=Label.new();fallen.text="✦ %s · %s · Level %d\n%d expeditions · %d victories · %s"%[String(record.get("name","Unknown")),String(record.get("class_id","hero")).capitalize(),int(record.get("level",1)),int(record.get("expeditions",0)),int(record.get("victories",0)),String(record.get("cause","Fell in the dungeon"))];fallen.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;fallen.add_theme_color_override("font_color",Color(0.86,0.8,0.9));panel.add_child(fallen)
+
+func _add_ledger_heading(text_value:String,color:Color,target:VBoxContainer)->void:
+	var heading:=Label.new();heading.text=text_value;heading.add_theme_font_size_override("font_size",19);heading.add_theme_color_override("font_color",color);target.add_child(heading)
+
+func _add_recruit_ledger_row(member:CharacterRecord)->void:
+	var panel:=PanelContainer.new();panel.add_theme_stylebox_override("panel",_panel_style(Color(0.045,0.055,0.07,0.92),Color(0.28,0.48,0.64),7));company_list.add_child(panel);var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);panel.add_child(row)
+	var portrait:=TextureRect.new();portrait.custom_minimum_size=Vector2(72,86);portrait.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;portrait.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;var roster_path:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant];portrait.texture=load(roster_path) if ResourceLoader.exists(roster_path) else load("res://assets/ui/class_cards/%s.png"%("phantom" if member.class_id=="rogue" else member.class_id));row.add_child(portrait)
+	var copy:=Label.new();copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL;copy.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;copy.text="%s\n%s · Level %d · %s\n%s\n%d expeditions · %d victories · deepest floor %d"%[member.display_name,member.class_id.capitalize(),member.level,member.trait_name,member.trait_description,member.expeditions,member.victories,member.deepest_floor];row.add_child(copy)
+	var status:=Label.new();status.text=member.status.to_upper();status.add_theme_color_override("font_color",Color(0.55,0.9,0.62) if member.status==CharacterRecord.STATUS_AVAILABLE else Color(0.94,0.72,0.34));row.add_child(status)
+
+func _add_upgrade_ledger_row(branch:String,target:VBoxContainer)->void:
+	var campaign:=run_state.campaign;var cost:=campaign.upgrade_cost(branch);var rank:=int(campaign.tavern_upgrades[branch]);var affordable:=campaign.banked_gold>=int(cost.gold) and campaign.relic_essence>=int(cost.essence) and campaign.successful_levels>=int(cost.levels)
+	var panel:=PanelContainer.new();panel.custom_minimum_size=Vector2(0,92);panel.add_theme_stylebox_override("panel",_panel_style(Color(0.055,0.04,0.025,0.96),Color(0.48,0.31,0.12),8));target.add_child(panel)
+	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",18);panel.add_child(row)
+	var copy:=VBoxContainer.new();copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL;copy.add_theme_constant_override("separation",3);row.add_child(copy)
+	var title:=Label.new();title.text="%s  ·  Rank %d → %d"%[branch.replace("_"," ").capitalize(),rank,rank+1];title.add_theme_font_size_override("font_size",18);title.add_theme_color_override("font_color",Color(1,0.76,0.34));copy.add_child(title)
+	var description:=Label.new();description.text=_upgrade_description(branch);description.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;description.add_theme_color_override("font_color",Color(0.88,0.82,0.72));copy.add_child(description)
+	var requirements:=Label.new();requirements.text="Cost  %d gold  +  %d essence     Requirement  %d successful levels"%[int(cost.gold),int(cost.essence),int(cost.levels)];requirements.add_theme_color_override("font_color",Color(0.62,0.86,0.68) if affordable else Color(0.9,0.58,0.48));copy.add_child(requirements)
+	var button:=Button.new();button.name="Upgrade%sButton"%branch.to_pascal_case();button.custom_minimum_size=Vector2(170,64);button.text="PURCHASE" if affordable else "LOCKED\n%s"%_short_missing_upgrade_resources(cost);button.disabled=not affordable;button.tooltip_text="Purchase this permanent improvement." if affordable else _missing_upgrade_resources(cost);button.pressed.connect(_purchase_tavern_upgrade.bind(branch));FantasyButton.apply_dark(button,15);row.add_child(button)
+
+func _add_resource_card(target:VBoxContainer,title_text:String,value_text:String,description_text:String,accent:Color)->void:
+	var panel:=PanelContainer.new();panel.custom_minimum_size=Vector2(0,92);panel.add_theme_stylebox_override("panel",_panel_style(Color(0.045,0.04,0.032,0.94),accent.darkened(0.45),8));target.add_child(panel)
+	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",18);panel.add_child(row)
+	var value:=Label.new();value.custom_minimum_size=Vector2(170,0);value.text=value_text;value.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;value.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;value.add_theme_font_size_override("font_size",30);value.add_theme_color_override("font_color",accent);row.add_child(value)
+	var copy:=VBoxContainer.new();copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(copy)
+	var heading:=Label.new();heading.text=title_text;heading.add_theme_font_size_override("font_size",18);heading.add_theme_color_override("font_color",accent);copy.add_child(heading)
+	var description:=Label.new();description.text=description_text;description.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;description.add_theme_color_override("font_color",Color(0.84,0.8,0.72));copy.add_child(description)
+
+func _add_party_builder_card(target:GridContainer,member:CharacterRecord,cap:int)->void:
+	var selected:=selected_party_ids.has(member.id);var available:=member.status==CharacterRecord.STATUS_AVAILABLE
+	var card:=CheckButton.new();card.name="%sLedgerPartyToggle"%member.id;card.toggle_mode=true;card.button_pressed=selected;card.disabled=not available or (not selected and selected_party_ids.size()>=cap);card.custom_minimum_size=Vector2(500,112);card.alignment=HORIZONTAL_ALIGNMENT_LEFT
+	var class_data:=GameBalance.get_base_class(member.class_id);var role:=String(class_data.get("role","Adventurer"));var slot_prefix:="SLOT %d  ·  "%[selected_party_ids.find(member.id)+1] if selected else "";card.text="%s%s  ·  %s  Level %d\n%s  ·  %s\nHP %d/%d  ·  %d expeditions  ·  %d victories"%[slot_prefix,member.display_name,member.class_id.capitalize(),member.level,role,member.trait_name,member.current_health,member.max_health,member.expeditions,member.victories]
+	var portrait_path:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant];if ResourceLoader.exists(portrait_path):card.icon=load(portrait_path);card.expand_icon=true;card.add_theme_constant_override("icon_max_width",76)
+	var action_hint:="Selected in party slot %d. Deselect to make room."%[selected_party_ids.find(member.id)+1] if selected else ("Party full—deselect a selected recruit or use Clear." if selected_party_ids.size()>=cap else "Select this recruit for the planned party.")
+	card.tooltip_text="%s\n%s\n%s"%[role,member.trait_description,action_hint];card.toggled.connect(_ledger_party_member_toggled.bind(member.id));FantasyButton.apply_dark(card,15);target.add_child(card)
+
+func _ledger_party_dungeon_selected(index:int,picker:OptionButton)->void:
+	company_party_dungeon_id=String(picker.get_item_metadata(index));expedition_id=company_party_dungeon_id;call_deferred("_refresh_company_ledger")
+
+func _ledger_party_member_toggled(enabled:bool,character_id:String)->void:
+	var cap:=run_state.campaign.get_party_cap(company_party_dungeon_id)
+	if enabled and not selected_party_ids.has(character_id) and selected_party_ids.size()<cap:selected_party_ids.append(character_id)
+	elif not enabled:selected_party_ids.erase(character_id)
+	call_deferred("_refresh_company_ledger")
+
+func _clear_ledger_party()->void:
+	selected_party_ids.clear()
+	call_deferred("_refresh_company_ledger")
+
+func _autofill_ledger_party()->void:
+	selected_party_ids.clear()
+	var cap:=run_state.campaign.get_party_cap(company_party_dungeon_id)
+	for member in run_state.campaign.living_roster():
+		if member.status==CharacterRecord.STATUS_AVAILABLE:selected_party_ids.append(member.id)
+		if selected_party_ids.size()>=cap:break
+	call_deferred("_refresh_company_ledger")
+
+func _open_planned_expedition()->void:
+	_close_modal(company_backdrop);_open_expedition(company_party_dungeon_id)
+
+func _short_missing_upgrade_resources(cost:Dictionary)->String:
+	var missing:Array[String]=[];var campaign:=run_state.campaign
+	if campaign.banked_gold<int(cost.gold):missing.append("%dg"%(int(cost.gold)-campaign.banked_gold))
+	if campaign.relic_essence<int(cost.essence):missing.append("%de"%(int(cost.essence)-campaign.relic_essence))
+	if campaign.successful_levels<int(cost.levels):missing.append("%d levels"%(int(cost.levels)-campaign.successful_levels))
+	return " · ".join(missing)
+
+func _upgrade_description(branch:String)->String:
+	match branch:
+		"roster_services":return "Improves company administration and recruit support."
+		"starting_supplies":return "Adds better expedition provisions."
+		"item_rarity":return "Allows rarer equipment to appear."
+		"merchant_stock":return "Improves recruited merchant selections."
+		"relic_capacity":return "Expands permanent relic facilities."
+		"secret_research":return "Deciphers clues leading to secret dungeons."
+		"replacement_quality":return "Improves the level of arriving replacements."
+	return "Permanently improves the Hearth."
+
+func _missing_upgrade_resources(cost:Dictionary)->String:
+	var missing:Array[String]=[];var campaign:=run_state.campaign
+	if campaign.banked_gold<int(cost.gold):missing.append("%d more gold"%(int(cost.gold)-campaign.banked_gold))
+	if campaign.relic_essence<int(cost.essence):missing.append("%d more relic essence"%(int(cost.essence)-campaign.relic_essence))
+	if campaign.successful_levels<int(cost.levels):missing.append("%d more successful levels"%(int(cost.levels)-campaign.successful_levels))
+	return "Needs "+", ".join(missing)+". Extract or win expeditions to progress."
 
 func _setup_merchant_shops() -> void:
 	merchant_shop_panel = MerchantShopPanel.new(); merchant_shop_panel.name = "MerchantShopPanel"; merchant_shop_panel.purchase_completed.connect(_on_shop_purchase); merchant_shop_panel.closed.connect(_restore_hub_focus); $UI.add_child(merchant_shop_panel)
@@ -313,23 +521,22 @@ func _update_armory_detail() -> void:
 	armory_detail.text = "%s %s\n%d total damage · %s\n%s" % [run_state.selected_class_name,run_state.get_profile_summary(),_gear_damage(selected_gear),"Block %d"%selected_gear.block_limit if selected_gear.has_block else "No block",selected_gear.description]
 
 func _open_dungeon_selector() -> void:
-	for child in expedition_list.get_children(): child.queue_free()
+	for child in expedition_list.get_children(): child.free()
 	var first_button: Button
-	var current_category := ""
+	var categories:Array[String]=[]
 	for dungeon_value in GameBalance.get_dungeon_order():
-		var dungeon_id := String(dungeon_value)
-		var dungeon := GameBalance.get_dungeon(dungeon_id)
-		if dungeon.is_empty(): continue
-		var category := String(dungeon.get("category", "Mystery"))
-		if category != current_category:
-			current_category = category
-			var heading := Label.new(); heading.text = "%s DUNGEONS" % category.to_upper(); heading.add_theme_font_size_override("font_size",16); heading.add_theme_color_override("font_color",Color(0.94,0.66,0.28)); expedition_list.add_child(heading)
-		var unlocked := _is_dungeon_unlocked(dungeon_id)
-		var button := Button.new(); button.name = "%sDungeonButton"%dungeon_id.to_pascal_case(); button.toggle_mode = true
-		var format_text := "Single field · %d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "%d floors"%int(dungeon.get("floors",1))
-		button.text = "%s\n%s · %s%s"%[String(dungeon.get("name",dungeon_id.capitalize())),String(dungeon.get("difficulty","Unknown")),format_text,"" if unlocked else " · LOCKED"]
-		button.tooltip_text = String(dungeon.get("description","")); button.pressed.connect(_select_dungeon.bind(dungeon_id)); _style_button(button); expedition_list.add_child(button)
-		if first_button == null: first_button = button
+		var category:=String(GameBalance.get_dungeon(String(dungeon_value)).get("category","Mystery"))
+		if not categories.has(category):categories.append(category)
+	for category in categories:
+		var heading := Label.new(); heading.text = category.to_upper(); heading.add_theme_font_size_override("font_size",15); heading.add_theme_color_override("font_color",Color(0.94,0.66,0.28)); expedition_list.add_child(heading)
+		for dungeon_value in GameBalance.get_dungeon_order():
+			var dungeon_id := String(dungeon_value);var dungeon := GameBalance.get_dungeon(dungeon_id)
+			if dungeon.is_empty() or String(dungeon.get("category","Mystery"))!=category:continue
+			var unlocked := _is_dungeon_unlocked(dungeon_id);var button := Button.new(); button.name = "%sDungeonButton"%dungeon_id.to_pascal_case(); button.toggle_mode = true;button.alignment=HORIZONTAL_ALIGNMENT_LEFT
+			var format_text := "%d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "%d floors"%int(dungeon.get("floors",1))
+			var state_text:="AVAILABLE" if unlocked else "LOCKED";button.text = "%s   ·   %s\n%s   ·   %s"%[String(dungeon.get("name",dungeon_id.capitalize())),state_text,String(dungeon.get("difficulty","Unknown")),format_text];button.set_meta("base_text",button.text)
+			button.tooltip_text = String(dungeon.get("description","")) if unlocked else "%s\n\nUnlock: %s"%[String(dungeon.get("description","")),String(dungeon.get("unlock_text","Progress further to reveal this destination."))]; button.pressed.connect(_select_dungeon.bind(dungeon_id)); FantasyButton.apply_dark(button,14,Vector2(0,72)); expedition_list.add_child(button)
+			if first_button == null: first_button = button
 	var initial_id := expedition_id if GameBalance.get_dungeons().has(expedition_id) else String(GameBalance.get_dungeon_order()[0])
 	expedition_mode = run_state.last_play_mode
 	_select_dungeon(initial_id)
@@ -343,19 +550,30 @@ func _select_dungeon(dungeon_id: String) -> void:
 	expedition_id = dungeon_id
 	var dungeon := GameBalance.get_dungeon(dungeon_id)
 	var unlocked := _is_dungeon_unlocked(dungeon_id)
-	var merchant_id := String(dungeon.get("merchant_id",dungeon_id))
+	var merchant_id := String(dungeon.get("merchant_id",dungeon_id));var merchant_name:="None" if merchant_id.is_empty() else String(GameBalance.get_merchant(merchant_id).get("name",merchant_id.capitalize()))
 	var progress := run_state.get_merchant_progress(merchant_id)
+	_populate_party_selector(dungeon_id)
 	expedition_title.text = "%s\n%s"%[String(dungeon.get("name",dungeon_id.capitalize())),String(dungeon.get("subtitle",""))]
 	var slasher_config:Dictionary=Dictionary(dungeon.get("slasher",{}));var displayed_floors:int=int(slasher_config.get("campaign_floors",dungeon.get("floors",1))) if expedition_mode==RunState.PLAY_MODE_SLASHER else int(dungeon.get("floors",1));var extent := "Single field: %d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "Floors: %d%s" % [displayed_floors," · Endless available after boss" if expedition_mode==RunState.PLAY_MODE_SLASHER and bool(slasher_config.get("endless_available",false)) else ""]
 	if GameBalance.are_all_dungeons_unlocked_for_testing(): extent += " · Testing unlock active"
 	var mode_supported := run_state.dungeon_supports_mode(dungeon_id, expedition_mode)
-	var mode_copy := "Turn-based board combat with deliberate positioning." if expedition_mode == RunState.PLAY_MODE_STRATEGY else "Real-time combat · WASD/Left Stick move · LMB/A basic · RMB/B special · Space/X defend · Shift/Y mobility · Q potion · Esc abandon"
-	expedition_detail.text = "%s · %s · %s MODE\n\n%s\n\n%s\n%s\nHighest depth: %d\nMerchant: %s%s\n\nClass: %s %s\n%s\nGear: %s (%d damage)\nConsumables: %d/%d\nGold carried: %d\n\n%s" % ["READY" if unlocked and mode_supported else "LOCKED",String(dungeon.get("difficulty","Unknown")),expedition_mode.to_upper(),String(dungeon.get("description","")),mode_copy,extent,int(progress.get("highest_depth",0)),String(GameBalance.get_merchant(merchant_id).get("name",merchant_id.capitalize()))," · Recruited" if run_state.is_merchant_recruited(merchant_id) else "",run_state.selected_class_name,run_state.get_profile_summary(),run_state.get_slasher_progression_summary() if expedition_mode==RunState.PLAY_MODE_SLASHER else "Strategy progression",selected_gear.display_name if selected_gear else "None",_gear_damage(selected_gear),run_state.get_consumables().size(),run_state.get_consumable_capacity(),run_state.gold,("Confirm to leave the safety of the Hearth." if mode_supported else "%s mode is not available for this dungeon yet." % expedition_mode.capitalize()) if unlocked else String(dungeon.get("unlock_text","This dungeon is locked."))]
-	expedition_launch.disabled = not unlocked or selected_gear == null or not mode_supported
+	var mode_copy := "Turn-based command of every recruit. Position carefully and spend each character's actions independently." if expedition_mode == RunState.PLAY_MODE_STRATEGY else "Real-time party combat. Move with WASD or Left Stick and press Tab to cycle the directly controlled survivor."
+	var access_copy:="Testing unlock active" if GameBalance.are_all_dungeons_unlocked_for_testing() else ("Available to the company" if unlocked else "UNLOCK: %s"%String(dungeon.get("unlock_text","Progress further to reveal this destination.")))
+	expedition_detail.text = "%s\n\n%s\n\n%s\n\nDIFFICULTY  %s\nSCOPE  %s\nBEST DEPTH  %d\nEXTRACTION  After a cleared %s\nMERCHANT  %s%s\n\nLOADOUT\n%s · %d damage\nConsumables %d/%d · Carried gold %d\n\n%s" % [String(dungeon.get("description","")),mode_copy,access_copy,String(dungeon.get("difficulty","Unknown")),extent,int(progress.get("highest_depth",0)),"room" if String(dungeon.get("extraction","cleared_floor"))=="cleared_room" else "floor",merchant_name," · Recruited" if not merchant_id.is_empty() and run_state.is_merchant_recruited(merchant_id) else "",selected_gear.display_name if selected_gear else "No compatible gear selected",_gear_damage(selected_gear),run_state.get_consumables().size(),run_state.get_consumable_capacity(),run_state.gold,run_state.get_slasher_progression_summary() if expedition_mode==RunState.PLAY_MODE_SLASHER else "Strategy mode uses each recruit's independent turn state."]
+	expedition_launch.disabled = not unlocked or selected_gear == null or not mode_supported or selected_party_ids.is_empty()
+	var readiness_reasons:Array[String]=[]
+	if not unlocked:readiness_reasons.append("Destination locked")
+	if not mode_supported:readiness_reasons.append("Mode unavailable")
+	if selected_gear==null:readiness_reasons.append("Select compatible gear")
+	if selected_party_ids.is_empty():readiness_reasons.append("Select at least one recruit")
+	expedition_readiness.text="READY  ·  %d recruit%s  ·  %s mode"%[selected_party_ids.size(),"" if selected_party_ids.size()==1 else "s",expedition_mode.capitalize()] if readiness_reasons.is_empty() else "NOT READY  ·  %s"%"  ·  ".join(readiness_reasons)
+	expedition_readiness.add_theme_color_override("font_color",Color(0.55,0.9,0.62) if readiness_reasons.is_empty() else Color(0.94,0.58,0.48))
+	expedition_launch.text="Begin %s Expedition"%expedition_mode.capitalize() if readiness_reasons.is_empty() else "Expedition Not Ready"
 	for mode in expedition_mode_buttons:
 		var button: Button = expedition_mode_buttons[mode]; button.button_pressed = mode == expedition_mode; button.disabled = not run_state.dungeon_supports_mode(dungeon_id, mode)
 	for child in expedition_list.get_children():
-		if child is Button: child.button_pressed = child.name == "%sDungeonButton"%dungeon_id.to_pascal_case()
+		if child is Button:
+			var selected:=child.name == "%sDungeonButton"%dungeon_id.to_pascal_case();child.button_pressed=selected;child.text=("▶  " if selected else "     ")+String(child.get_meta("base_text",child.text))
 
 func _is_dungeon_unlocked(dungeon_id: String) -> bool:
 	return run_state.is_dungeon_unlocked(dungeon_id)
@@ -367,9 +585,28 @@ func _select_expedition_mode(mode: String) -> void:
 func _launch_expedition() -> void:
 	_close_modal(expedition_backdrop)
 	if controller == null or selected_gear == null: return
-	if controller.has_method("start_dungeon"): controller.start_dungeon(expedition_id,selected_gear,expedition_mode)
+	if controller.has_method("start_dungeon"): controller.start_dungeon(expedition_id,selected_gear,expedition_mode,selected_party_ids)
 	elif expedition_id == "crypt": controller.start_crypt(selected_gear)
 	else: controller.start_forest(selected_gear)
+
+func _populate_party_selector(dungeon_id: String) -> void:
+	if expedition_party_list == null or run_state.campaign == null: return
+	for child in expedition_party_list.get_children(): child.free()
+	var cap := run_state.campaign.get_party_cap(dungeon_id)
+	var valid: Array[String] = []
+	for member in run_state.campaign.living_roster():
+		if member.status == CharacterRecord.STATUS_AVAILABLE: valid.append(member.id)
+	selected_party_ids = selected_party_ids.filter(func(id: String): return valid.has(id)).slice(0, cap)
+	if selected_party_ids.is_empty(): selected_party_ids = valid.slice(0, mini(cap, valid.size()))
+	if expedition_party_count!=null:expedition_party_count.text="%d / %d"%[selected_party_ids.size(),cap]
+	for member in run_state.campaign.living_roster():
+		if member.status != CharacterRecord.STATUS_AVAILABLE: continue
+		var selected:=selected_party_ids.has(member.id);var toggle := CheckButton.new(); toggle.name = "%sPartyToggle" % member.id;toggle.alignment=HORIZONTAL_ALIGNMENT_LEFT;var slot_copy:="SLOT %d  ·  "%[selected_party_ids.find(member.id)+1] if selected else "";toggle.text = "%s%s\n%s  ·  Level %d  ·  %s" % [slot_copy,member.display_name,member.class_id.capitalize(),member.level,member.trait_name]; var portrait_path := "res://assets/roster_portraits/%s_%d.png" % [member.class_id,member.portrait_variant]; if ResourceLoader.exists(portrait_path): toggle.icon=load(portrait_path); toggle.add_theme_constant_override("icon_max_width",52); toggle.expand_icon=true; toggle.tooltip_text="%s\n%s\n%s"%[member.trait_name,member.trait_description,"Deselect to make room." if selected else ("Party full—deselect a selected recruit first." if selected_party_ids.size()>=cap else "Add to the expedition party.")]; toggle.set_pressed_no_signal(selected); toggle.disabled = not selected and selected_party_ids.size() >= cap; toggle.toggled.connect(_toggle_party_member.bind(member.id,dungeon_id));FantasyButton.apply_dark(toggle,13,Vector2(0,72)); expedition_party_list.add_child(toggle)
+
+func _toggle_party_member(enabled: bool, character_id: String, dungeon_id: String) -> void:
+	if enabled and not selected_party_ids.has(character_id) and selected_party_ids.size() < run_state.campaign.get_party_cap(dungeon_id): selected_party_ids.append(character_id)
+	elif not enabled: selected_party_ids.erase(character_id)
+	call_deferred("_select_dungeon",dungeon_id)
 
 func _show_arrival_results() -> void:
 	var summary := arrival_summary
@@ -406,12 +643,13 @@ func _close_modal(modal: Control) -> void:
 
 func _close_top_modal() -> void:
 	if merchant_shop_panel != null and merchant_shop_panel.visible: merchant_shop_panel.close()
+	elif company_backdrop!=null and company_backdrop.visible:_close_modal(company_backdrop)
 	elif results_backdrop.visible: _close_modal(results_backdrop)
 	elif expedition_backdrop.visible: _close_modal(expedition_backdrop)
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
 
 func _modal_visible() -> bool:
-	return (merchant_shop_panel != null and merchant_shop_panel.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible)
+	return (merchant_shop_panel != null and merchant_shop_panel.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
 
 func _restore_hub_focus() -> void:
 	ui_root.grab_focus()
@@ -419,7 +657,8 @@ func _restore_hub_focus() -> void:
 func _refresh_ui() -> void:
 	if hud_label == null or run_state == null: return
 	var tavern_favor := int(run_state.get_merchant_progress("tavern").get("available_favor",0))
-	hud_label.text = "EROS · THE HEARTH     %s  %s     Gold %d     Hearth Favor %d     Gear: %s" % [run_state.selected_class_name,run_state.get_profile_summary(),run_state.gold,tavern_favor,selected_gear.display_name if selected_gear else "None"]
+	var company := "Roster %d/6 · Memorial %d" % [run_state.campaign.living_roster().size(), run_state.campaign.memorial.size()] if run_state.campaign != null else ""
+	hud_label.text = "EROS · THE HEARTH     %s  %s     Bank %d     %s     Gear: %s" % [run_state.selected_class_name,run_state.get_profile_summary(),run_state.campaign.banked_gold if run_state.campaign != null else run_state.gold,company,selected_gear.display_name if selected_gear else "None"]
 	dialogue_panel.visible = false
 	var station := _nearest_station()
 	prompt_panel.visible = not station.is_empty()

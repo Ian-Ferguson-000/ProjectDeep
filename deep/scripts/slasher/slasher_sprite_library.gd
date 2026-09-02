@@ -8,7 +8,8 @@ static var _generated_cache: Dictionary = {}
 static func player_frames(class_id: String) -> SpriteFrames:
 	if class_id == "warrior":
 		return load("res://assets/sprite_packs/Player/player_frames.tres") as SpriteFrames
-	return animation_board_frames("res://assets/classes/%s/slasher_sheet.png" % class_id)
+	var asset_class_id := "phantom" if class_id == "rogue" else class_id
+	return animation_board_frames("res://assets/classes/%s/slasher_sheet.png" % asset_class_id)
 
 static func companion_frames() -> SpriteFrames:
 	return normalized_sheet_frames("res://assets/classes/wolf_companion/sheet.png")

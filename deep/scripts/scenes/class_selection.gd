@@ -1,6 +1,6 @@
 extends Control
 
-const CLASS_IDS := ["warrior", "mage", "healer", "tank", "phantom", "summoner"]
+const CLASS_IDS := ["warrior", "mage", "healer", "tank", "rogue", "summoner"]
 const STAT_IDS := ["str", "dex", "con", "int", "wis", "cha"]
 
 var controller: Node
@@ -35,7 +35,9 @@ func _ready() -> void:
 	class_grid.columns = 3; class_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	class_grid.add_theme_constant_override("h_separation", 12); class_grid.add_theme_constant_override("v_separation", 12)
 	browser.add_child(class_grid)
-	for class_id in CLASS_IDS:
+	var available_ids: Array = CLASS_IDS
+	if controller != null and controller.has_method("get_selectable_class_ids"): available_ids = controller.get_selectable_class_ids()
+	for class_id in available_ids:
 		var card := _make_class_card(class_id, GameBalance.get_base_class(class_id))
 		cards.append(card); class_grid.add_child(card)
 	var detail_panel := PanelContainer.new()
@@ -71,7 +73,8 @@ func _make_class_card(class_id: String, data: Dictionary) -> Button:
 	card.add_child(content)
 	var portrait := TextureRect.new()
 	portrait.name = "%sCardArt" % class_id.capitalize()
-	portrait.texture = load("res://assets/ui/class_cards/%s.png" % class_id)
+	var card_asset_id := "phantom" if class_id == "rogue" else class_id
+	portrait.texture = load("res://assets/ui/class_cards/%s.png" % card_asset_id)
 	portrait.custom_minimum_size = Vector2(185, 185); portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST; portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(portrait)

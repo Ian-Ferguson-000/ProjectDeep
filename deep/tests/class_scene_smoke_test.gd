@@ -1,6 +1,6 @@
 extends SceneTree
 
-const CLASS_IDS := ["warrior", "mage", "healer", "tank", "phantom", "summoner"]
+const CLASS_IDS := ["warrior", "mage", "healer", "tank", "rogue", "summoner"]
 const FOREST := preload("res://scenes/forest/Forest.tscn")
 const CRYPT := preload("res://scenes/crypt/Crypt.tscn")
 const CLASS_SELECTION := preload("res://scenes/class_selection/ClassSelection.tscn")
@@ -30,8 +30,8 @@ func _run() -> void:
 			push_error("Class card %s is not a complete clickable card" % class_id); quit(1); return
 		if card.find_child("%sSelectButton" % class_id.capitalize(), true, false) != null:
 			push_error("Class card %s still contains a redundant Choose button" % class_id); quit(1); return
-	selection.cards[CLASS_IDS.find("phantom")].pressed.emit()
-	if selection_controller.chosen_class != "phantom":
+	selection.cards[CLASS_IDS.find("rogue")].pressed.emit()
+	if selection_controller.chosen_class != "rogue":
 		push_error("Clicking a class card did not select it"); quit(1); return
 	selection.size = Vector2(700, 800); selection._update_responsive_layout()
 	if selection.class_grid.columns != 1:

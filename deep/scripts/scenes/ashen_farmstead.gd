@@ -43,6 +43,9 @@ func _load_field_room(room_id: int, previous_id: int) -> void:
 	field_room_id = room_id
 	run_state.enter_field_room(room_id, previous_id)
 	field_room = run_state.get_field_room(room_id)
+	var role := String(field_room.get("role", "combat"))
+	if not bool(field_room.get("cleared", false)) and role in ["combat", "elite", "boss"]:
+		run_state.continue_expedition()
 	wretch_telegraph.clear()
 	rng.seed = int(run_state.field_run.get("seed", 1)) + room_id * 7919
 	layout_type = "field_%s_%s" % [String(field_room.get("role","combat")), String(field_room.get("door_signature",""))]
@@ -228,6 +231,9 @@ func _enter_free_roam_if_clear() -> bool:
 		if reward:
 			var room_gold := 10 if role == "elite" else (25 if role == "boss" else 4)
 			run_state.gold += room_gold; message += "\nRoom clear: +%d gold." % room_gold
+			run_state.mark_extraction_available("room_%d" % field_room_id, run_state.get_field_cleared_count())
+			run_state.autosave_campaign()
+			message += "\nSafe checkpoint reached. Press X to extract or choose a door."
 		if role == "boss": run_state.field_run["boss_defeated"] = true; message += "\nA hearth-gate blooms from the Wretch's ashes."
 	return entered
 

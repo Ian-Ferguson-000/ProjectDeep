@@ -33,6 +33,7 @@ static var _field_rooms: Dictionary = {}
 static var _slasher_balance: Dictionary = {}
 static var _slasher_journal: Dictionary = {}
 static var _slasher_progression: Dictionary = {}
+static var _debug_unlock_all_dungeons := false
 static var _slasher_item_effects: Dictionary = {}
 static var _loaded := false
 
@@ -354,7 +355,9 @@ static func get_class_data(class_id: String) -> Dictionary:
 	return {}
 
 static func normalize_class_id(class_id: String) -> String:
-	return "warrior" if class_id == "fighter" else class_id
+	if class_id == "fighter": return "warrior"
+	if class_id == "phantom": return "rogue"
+	return class_id
 
 static func get_base_classes() -> Dictionary:
 	_load_all()
@@ -395,7 +398,7 @@ static func get_action_tooltip(class_id: String, slot: String) -> String:
 
 static func validate_base_classes() -> Array[String]:
 	var errors: Array[String] = []
-	for class_id in ["warrior", "mage", "healer", "tank", "phantom", "summoner"]:
+	for class_id in ["warrior", "mage", "healer", "tank", "rogue", "summoner"]:
 		var data := get_base_class(class_id)
 		for key in ["name", "base_stats", "primary", "stat_growth", "derived", "resource_rules", "actions"]:
 			if not data.has(key): errors.append("%s missing %s" % [class_id, key])
@@ -501,7 +504,10 @@ static func get_class_progression(class_id: String) -> Dictionary:
 
 static func are_all_dungeons_unlocked_for_testing() -> bool:
 	_load_all()
-	return bool(_dungeons.get("unlock_all_for_testing", false))
+	return _debug_unlock_all_dungeons
+
+static func set_debug_unlock_all_dungeons(enabled: bool) -> void:
+	_debug_unlock_all_dungeons = enabled
 
 static func get_evolution_choices(class_id: String, level: int, profile: Dictionary) -> Array:
 	return _class_choices_for_level(class_id, "evolutions", level, profile)

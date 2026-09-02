@@ -22,5 +22,5 @@ The first playable demo should prove the main loop:
 ## Tone
 The game begins warm, grounded, and a little funny, then becomes darker and stranger the deeper the party descends. The forest should feel like the first step away from safety: readable, tactical, and dangerous without becoming overwhelming.
 
-## Scope Guardrail
-For the starter demo, Eros is single-player, 2D top-down, tabletop-token styled, and focused on one playable class: the Fighter. Multiplayer, daily challenges, multiple classes, persistent progression, and later biomes are future scope.
+## Current Demo Scope
+The original single-Fighter prototype has expanded into the persistent roster campaign defined in `RoguelikeGameLoopExpansion.md`. The target remains single-player, 2D, and top-down, with six classes, two combat modes, five regular dungeons, two secret dungeons, permadeath, merchants, and tavern meta-progression. Multiplayer and daily challenges remain outside the demo.

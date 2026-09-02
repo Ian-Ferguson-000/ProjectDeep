@@ -2,7 +2,7 @@ class_name SpellImpact
 extends Node2D
 
 const AETHER_HIT:=preload("res://assets/effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 Hit.png")
-const FIREBALL_HIT:=preload("res://assets/generated_vfx/fireball/fireball_impact.png")
+const FIREBALL_HIT:=preload("res://assets/effect_packs/fireball/fireball_impact.png")
 var frame_index:=0
 var frame_count:=6
 var frame_time:=0.0

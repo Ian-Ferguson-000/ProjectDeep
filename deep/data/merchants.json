@@ -81,6 +81,22 @@
         {"offer_id":"phoenix_ash_reliquary","kind":"item","item_id":"phoenix_ash_reliquary","gold":68,"min_rank":3,"location":"both"},
         {"offer_id":"aegis_of_the_last_king","kind":"item","item_id":"aegis_of_the_last_king","favor":55,"min_rank":4,"location":"favor"}
       ]
+    },
+    "mine": {
+      "name":"Neris Vale","title":"Drowned-Vein Salvager","description":"A mine runner trading mineral wards, diving tonics, and armor recovered below the waterline.","portrait":"res://assets/merchants/tavern_mara.png","dungeon_id":"sunken_mine",
+      "stock":[
+        {"offer_id":"mine_potion","kind":"consumable","consumable_id":"healing_potion","name":"Miner's Tonic","description":"Gain one Healing Potion immediately.","gold":8,"min_rank":0,"location":"both"},
+        {"offer_id":"mine_compass","kind":"item","item_id":"wayfinders_compass","gold":32,"min_rank":1,"location":"both"},
+        {"offer_id":"mine_crown","kind":"item","item_id":"heartwood_crown","favor":60,"min_rank":4,"location":"favor"}
+      ]
+    },
+    "foundry": {
+      "name":"Veyra Coil","title":"Last Forge Artificer","description":"An artificer dealing in tempered weapons, heat wards, and rare mechanisms.","portrait":"res://assets/merchants/tavern_mara.png","dungeon_id":"ember_foundry",
+      "stock":[
+        {"offer_id":"foundry_potion","kind":"consumable","consumable_id":"firebreak_draught","name":"Quenched Firebreak","description":"Gain one Firebreak Draught.","gold":14,"min_rank":0,"location":"both"},
+        {"offer_id":"foundry_buckle","kind":"item","item_id":"soldiers_buckle","gold":34,"min_rank":1,"location":"both"},
+        {"offer_id":"foundry_reliquary","kind":"item","item_id":"phoenix_ash_reliquary","favor":60,"min_rank":4,"location":"favor"}
+      ]
     }
   }
 }

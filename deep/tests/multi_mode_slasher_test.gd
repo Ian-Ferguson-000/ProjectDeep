@@ -2,19 +2,21 @@ extends SceneTree
 
 const SLASHER_SCENE := preload("res://scenes/slasher/SlasherForest.tscn")
 const SLASHER_RESOURCE_HUD := preload("res://assets/slasher/ui/slasher_resource_hud_frame.png")
+const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
 
 func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	_ensure_slasher_actions()
 	var failures: Array[String] = []
 	var forest := GameBalance.get_dungeon("forest")
 	_expect(forest.get("supported_modes",[]).has("strategy"),"Forest must support Strategy",failures)
 	_expect(forest.get("supported_modes",[]).has("slasher"),"Forest must support Slasher",failures)
 	var forest_slasher:Dictionary=Dictionary(forest.get("slasher",{}));_expect(int(forest.get("floors",0))==5 and int(forest_slasher.get("campaign_floors",0))==8,"Strategy must remain five floors while Slasher uses eight",failures);_expect(int(forest_slasher.get("elite_floor_in_cycle",0))==5 and int(forest_slasher.get("cycle_length",0))==8,"Slasher elite/boss cycle tuning is incorrect",failures)
-	_expect(not GameBalance.get_dungeon("crypt").get("supported_modes",[]).has("slasher"),"Crypt must remain Strategy-only",failures)
-	_expect(is_equal_approx(float(GameSettings.DEFAULTS.get("slasher_zoom",0.0)),1.30),"Default Slasher zoom must be 1.30x",failures)
-	_expect(GameSettings.RESOLUTIONS.size()==4 and GameSettings.RESOLUTIONS.has(Vector2i(1920,1080)),"Supported display resolutions are incomplete",failures)
+	_expect(GameBalance.get_dungeon("crypt").get("supported_modes",[]).has("slasher") and String(GameBalance.get_dungeon("crypt").get("slasher_runtime",""))=="crypt","Crypt must expose its dedicated Slasher runtime",failures)
+	_expect(is_equal_approx(float(SETTINGS_SERVICE.DEFAULTS.get("slasher_zoom",0.0)),1.30),"Default Slasher zoom must be 1.30x",failures)
+	_expect(SETTINGS_SERVICE.RESOLUTIONS.size()==4 and SETTINGS_SERVICE.RESOLUTIONS.has(Vector2i(1920,1080)),"Supported display resolutions are incomplete",failures)
 	var input_tuning:Dictionary=GameBalance.get_slasher_balance("input");_expect(is_equal_approx(float(input_tuning.get("held_basic_cooldown_multiplier",0.0)),1.5),"Held basic cooldown multiplier is incorrect",failures)
 	var options_panel:=GameOptionsPanel.new();root.add_child(options_panel);options_panel.setup(false);_expect(options_panel.resolution_control!=null,"Options panel did not build display controls",failures);options_panel.queue_free()
 	var progression_overlay:=SlasherProgressionOverlay.new();root.add_child(progression_overlay);await process_frame;var progression_frame:PanelContainer=progression_overlay.get_child(1) as PanelContainer;_expect(progression_frame!=null and progression_frame.anchor_left==0.5 and progression_frame.offset_left==-510 and progression_frame.offset_right==510,"Slasher progression overlay is not centered",failures);progression_overlay.queue_free()
@@ -185,7 +187,7 @@ func _run() -> void:
 		if class_id=="warrior":
 			var attack_animation:=SlasherSpriteLibrary.resolved_animation(scene.player.sprite.sprite_frames,"attack",scene.player.facing_name);var attack_cooldown:float=float(basic_tuning.get("cooldown",0.4))
 			scene.player._play_action_animation("attack",attack_cooldown)
-			var played_duration:float=float(scene.player.sprite.sprite_frames.get_frame_count(attack_animation))/maxf(0.001,absf(scene.player.sprite.get_playing_speed()))
+			var played_duration:float=float(scene.player.sprite.sprite_frames.get_frame_count(attack_animation))/maxf(0.001,scene.player.sprite.sprite_frames.get_animation_speed(attack_animation)*absf(scene.player.sprite.get_playing_speed()))
 			_expect(played_duration<=attack_cooldown+0.001,"Warrior attack animation does not complete within its basic cooldown",failures)
 			scene.player.sprite.frame=3;scene.player._play_action_animation("attack",attack_cooldown);_expect(scene.player.sprite.frame==0,"Warrior attack animation did not restart for a repeated swing",failures)
 		if basic_tuning.has("damage_coefficient"):
@@ -227,7 +229,7 @@ func _run() -> void:
 				break
 		if class_id=="summoner":scene.player._ensure_companion();_expect(is_instance_valid(scene.player.companion),"Summoner wolf was not created",failures);_expect(scene.player.companion.get("pathfinder")==scene.pathfinder,"Summoner wolf did not receive the shared obstacle-aware pathfinder",failures)
 		scene.run_state.record_enemy_defeat("feral_wolf");_expect(scene.run_state.is_enemy_discovered("feral_wolf") and scene.run_state.get_enemy_defeat_count("feral_wolf")>0,"Campaign journal did not persist enemy defeat",failures)
-		_expect(scene.codex.tabs.has("options"),"Slasher Codex is missing its Options tab",failures);scene._open_codex();_expect(scene.codex.visible and paused,"Slasher Codex did not pause gameplay",failures);scene.codex.close();_expect(not paused,"Slasher Codex did not restore pause state",failures)
+		paused=false;_expect(scene.codex.tabs.has("options"),"Slasher Codex is missing its Options tab",failures);scene._open_codex();_expect(scene.codex.visible and paused,"Slasher Codex did not pause gameplay",failures);scene.codex.close();_expect(not paused,"Slasher Codex did not restore pause state",failures)
 		scene.queue_free();await process_frame
 	var preference:=RunState.new();preference.start_new_run(GearData.create("test","Test",2,false,0,"",""),"forest","slasher");preference.finish_run("abandon","test");preference.start_new_run(preference.selected_gear,"forest","strategy")
 	_expect(preference.active_play_mode=="strategy" and preference.last_play_mode=="strategy","Mode switching leaked previous runtime state",failures)
@@ -238,3 +240,7 @@ func _run() -> void:
 
 func _expect(condition:bool,message:String,failures:Array[String])->void:
 	if not condition:failures.append(message)
+
+func _ensure_slasher_actions()->void:
+	for action in ["character_menu","extract_expedition","slasher_up","slasher_down","slasher_left","slasher_right","slasher_aim_left","slasher_aim_right","slasher_aim_up","slasher_aim_down","slasher_controller_basic","slasher_mobility","slasher_special","slasher_defend","slasher_potion","slasher_abandon","slasher_consumable_1","slasher_consumable_2","slasher_consumable_3","slasher_consumable_4"]:
+		if not InputMap.has_action(action):InputMap.add_action(action)

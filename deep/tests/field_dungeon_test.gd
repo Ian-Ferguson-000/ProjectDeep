@@ -31,11 +31,23 @@ func _run() -> void:
 	var state := RunState.new()
 	state.mark_forest_cleared()
 	_expect(state.is_dungeon_unlocked("ashen_farmstead"), "Forest clear should unlock Farmstead", failures)
-	_expect(GameBalance.are_all_dungeons_unlocked_for_testing(), "Dungeon testing unlock switch should be active", failures)
-	_expect(state.is_dungeon_unlocked("crypt"), "Testing switch should unlock Crypt without progression", failures)
+	_expect(not GameBalance.are_all_dungeons_unlocked_for_testing(), "Normal play must not enable the dungeon testing override", failures)
+	_expect(state.is_dungeon_unlocked("crypt"), "Forest clear should unlock Crypt", failures)
 	state.start_new_run(GearData.create("field_test","Field Test Gear",2,false,0,"","","warrior","none"),"ashen_farmstead")
+	state.campaign.tutorial_phase = CampaignState.TUTORIAL_COMPLETE
+	state.campaign.ensure_roster()
+	var first_recruit: CharacterRecord = state.campaign.roster.values()[0]
+	var party: Array[String] = [first_recruit.id]
+	_expect(state.campaign.begin_expedition(party,"ashen_farmstead","strategy"),"Farmstead expedition failed to launch",failures)
+	state.active_character_id = party[0]
 	state.enter_field_room(1,0); state.update_field_room(1,{"cleared":true,"reward_claimed":true})
 	_expect(state.get_field_discovered_count() == 1 and state.get_field_cleared_count() >= 2,"Field discovery and clear counters must persist",failures)
+	state.mark_extraction_available("room_1",state.get_field_cleared_count())
+	var first_reward := state.campaign.expedition.carried_relic_essence
+	state.mark_extraction_available("room_1",state.get_field_cleared_count())
+	_expect(state.can_extract() and state.campaign.expedition.carried_relic_essence==first_reward,"Farmstead room checkpoint must enable extraction and reward only once",failures)
+	_expect(state.campaign.character(party[0]).deepest_floor>=state.get_field_cleared_count(),"Room checkpoint did not update recruit history",failures)
+	state.continue_expedition();_expect(not state.can_extract(),"Entering the next uncleared Farmstead room must close extraction",failures)
 	state.enter_field_room(0,1)
 	var scene := FIELD_SCENE.instantiate(); scene.setup(null,state); root.add_child(scene)
 	await process_frame

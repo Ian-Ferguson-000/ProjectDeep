@@ -3,6 +3,7 @@ class_name RunState
 
 const PLAY_MODE_STRATEGY := "strategy"
 const PLAY_MODE_SLASHER := "slasher"
+const TUTORIAL_MAX_HEALTH := 3
 const MAX_HERO_LEVEL := 20
 const FALLBACK_XP_THRESHOLDS := [0, 0, 100, 220, 380, 580, 820, 1100, 1420, 1780, 2180, 2620, 3100, 3620, 4180, 4780, 5420, 6100, 6820, 7580, 8380]
 const FALLBACK_CLASS_STATS := {
@@ -67,10 +68,102 @@ var pending_shop_consumables: Array[String] = []
 var enemy_defeat_counts:Dictionary={}
 var slasher_endless_mode:=false
 var slasher_campaign_boss_cleared:=false
+var campaign: CampaignState = CampaignState.new()
+var active_character_id: String = ""
+
+func attach_campaign(value: CampaignState) -> void:
+	campaign = value if value != null else CampaignState.new()
+	_restore_campaign_runtime()
+	if campaign.is_tutorial_complete(): campaign.ensure_roster()
+
+func sync_campaign_runtime() -> void:
+	if campaign == null: return
+	campaign.legacy_runtime = {"completed_dungeons":completed_dungeons.duplicate(true),"forest_cleared":forest_cleared,"completed_runs":completed_runs,"deaths":deaths,"merchant_progress":merchant_progress.duplicate(true),"merchant_offer_stock":merchant_offer_stock.duplicate(true),"purchased_favor_offers":purchased_favor_offers.duplicate(true),"enemy_defeat_counts":enemy_defeat_counts.duplicate(true)}
+
+func autosave_campaign() -> bool:
+	sync_campaign_runtime()
+	return campaign.save_atomic() if campaign != null else false
+
+func _restore_campaign_runtime() -> void:
+	if campaign == null or campaign.legacy_runtime.is_empty(): return
+	var data := campaign.legacy_runtime
+	completed_dungeons = Dictionary(data.get("completed_dungeons", {})).duplicate(true); forest_cleared = bool(data.get("forest_cleared", false)); completed_runs = int(data.get("completed_runs", 0)); deaths = int(data.get("deaths", 0))
+	merchant_progress = Dictionary(data.get("merchant_progress", {})).duplicate(true); merchant_offer_stock = Dictionary(data.get("merchant_offer_stock", {})).duplicate(true); purchased_favor_offers = Dictionary(data.get("purchased_favor_offers", {})).duplicate(true); enemy_defeat_counts = Dictionary(data.get("enemy_defeat_counts", {})).duplicate(true)
+
+func get_active_party_ids() -> Array[String]:
+	var result:Array[String]=[]
+	if campaign!=null and campaign.expedition.active:return campaign.expedition.living_party_ids()
+	if not active_character_id.is_empty():result.append(active_character_id)
+	return result
+
+func get_active_character() -> CharacterRecord:
+	return campaign.character(active_character_id) if campaign != null and not active_character_id.is_empty() else null
+
+func apply_tutorial_health_cap() -> void:
+	if campaign == null or not campaign.expedition.active or not campaign.expedition.tutorial_run:
+		return
+	max_health = TUTORIAL_MAX_HEALTH
+	current_health = mini(current_health, TUTORIAL_MAX_HEALTH)
+	var member := get_active_character()
+	if member != null:
+		member.max_health = TUTORIAL_MAX_HEALTH
+		member.current_health = current_health
+
+func select_active_character(character_id: String) -> bool:
+	if campaign == null or not campaign.expedition.living_party_ids().has(character_id): return false
+	var member := campaign.character(character_id)
+	if member == null: return false
+	_sync_active_profile_to_character()
+	active_character_id = character_id; set_class(member.class_id)
+	current_health = member.current_health if member.current_health > 0 else max_health
+	return true
+
+func cycle_active_character(direction: int = 1) -> bool:
+	var living := get_active_party_ids()
+	if living.size() < 2: return false
+	var index := living.find(active_character_id); index = posmod(index + direction, living.size())
+	return select_active_character(living[index])
+
+func record_active_character_death(cause: String = "Fell in the dungeon") -> bool:
+	if campaign == null or active_character_id.is_empty(): return false
+	campaign.record_casualty(active_character_id, cause)
+	var living := campaign.expedition.living_party_ids()
+	if not living.is_empty(): select_active_character(living[0]); return true
+	return false
+
+func mark_extraction_available(checkpoint_suffix: String = "", reward_depth: int = -1) -> void:
+	if campaign != null and campaign.expedition.active:
+		campaign.expedition.clear_floor()
+		var depth := current_floor if reward_depth < 0 else maxi(1, reward_depth)
+		var checkpoint_key := str(current_floor) if checkpoint_suffix.is_empty() else checkpoint_suffix
+		var checkpoint_id := "%s:%s:%s" % [active_dungeon_id, active_play_mode, checkpoint_key]
+		var capacity_rank := int(campaign.tavern_upgrades.get("relic_capacity", 0))
+		campaign.expedition.reward_checkpoint(checkpoint_id, 1 + int(depth / 3.0) + capacity_rank)
+		for character_id in campaign.expedition.living_party_ids():
+			var member := campaign.character(character_id)
+			if member != null: member.deepest_floor = maxi(member.deepest_floor, depth)
+
+func continue_expedition() -> void:
+	if campaign != null and campaign.expedition.active: campaign.expedition.continue_from_checkpoint()
+
+func can_extract() -> bool:
+	return campaign != null and campaign.expedition.active and campaign.expedition.extraction_available
+
+func _sync_active_profile_to_character() -> void:
+	var member := get_active_character()
+	if member == null: return
+	member.current_health = current_health; member.max_health = max_health
+	member.level = get_level(); member.xp = int(hero_profiles.get(selected_class_id, {}).get("xp", member.xp))
+	member.progression = Dictionary(hero_profiles.get(selected_class_id, {})).duplicate(true)
+	member.inventory.clear()
+	for item in inventory_items: member.inventory.append(String(item.get("id", "")))
 
 func record_enemy_defeat(enemy_id:String)->int:
 	if enemy_id.is_empty():return 0
-	var count:=int(enemy_defeat_counts.get(enemy_id,0))+1;enemy_defeat_counts[enemy_id]=count;return count
+	var count:=int(enemy_defeat_counts.get(enemy_id,0))+1;enemy_defeat_counts[enemy_id]=count
+	var member:=get_active_character()
+	if member!=null:member.kills+=1
+	return count
 
 func get_enemy_defeat_count(enemy_id:String)->int:return int(enemy_defeat_counts.get(enemy_id,0))
 func is_enemy_discovered(enemy_id:String)->bool:return get_enemy_defeat_count(enemy_id)>0
@@ -101,6 +194,12 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest", play_mode: Str
 	active_dungeon_id = dungeon_id
 	active_play_mode = normalize_play_mode(play_mode)
 	last_play_mode = active_play_mode
+	if campaign != null and campaign.expedition.active:
+		var living := campaign.expedition.living_party_ids()
+		if not living.is_empty():
+			active_character_id = living[0]
+			var member := campaign.character(active_character_id)
+			if member != null: set_class(member.class_id)
 	if active_play_mode==PLAY_MODE_SLASHER:reconcile_slasher_progression()
 	var dungeon := GameBalance.get_dungeon(active_dungeon_id)
 	# TUNING: Slasher Forest campaign depth is set in dungeons.json under forest.slasher.campaign_floors; Strategy keeps its original floor count.
@@ -122,6 +221,10 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest", play_mode: Str
 		add_consumable("healing_potion")
 	for item_id in pending_shop_items:
 		add_inventory_item(item_id, 1)
+	if campaign!=null:
+		var supply_rank:=int(campaign.tavern_upgrades.get("starting_supplies",0))
+		for supply_index in supply_rank:add_consumable("healing_potion")
+		keys+=int(supply_rank/2.0)
 	pending_shop_items.clear()
 	pending_shop_potions = 0
 	pending_shop_consumables.clear()
@@ -148,12 +251,14 @@ func advance_floor() -> bool:
 	if current_floor >= max_floors:
 		return false
 	current_floor += 1
+	if campaign != null and campaign.expedition.active: campaign.expedition.floor = current_floor
 	class_resource = 0
 	_tick_inventory_floor_durations()
 	return true
 
 func advance_slasher_floor()->void:
 	current_floor+=1;class_resource=0;_tick_inventory_floor_durations()
+	if campaign != null and campaign.expedition.active:campaign.expedition.floor=current_floor
 
 func get_slasher_cycle_length()->int:
 	# TUNING: Change forest.slasher.cycle_length to alter the repeating Endless cadence.
@@ -171,6 +276,9 @@ func get_current_floor_seed() -> int:
 	return floor_seed + current_floor * 997
 
 func finish_run(outcome: String, message: String) -> void:
+	_sync_active_profile_to_character()
+	if campaign != null and campaign.expedition.active:
+		campaign.expedition.carried_gold = gold
 	run_outcome = message
 	if outcome == "victory":
 		completed_runs += 1
@@ -178,9 +286,14 @@ func finish_run(outcome: String, message: String) -> void:
 	elif outcome == "death":
 		deaths += 1
 		_clear_permanent_inventory_for_active_class()
+	if campaign != null and campaign.expedition.active:
+		if outcome == "victory": campaign.record_dungeon_clear(active_dungeon_id, active_play_mode)
+		campaign.resolve_expedition(outcome)
+		autosave_campaign()
 	_sync_crypt_unlock()
 
 func has_completed_dungeon(dungeon_id: String) -> bool:
+	if campaign != null and campaign.has_completed_dungeon(dungeon_id): return true
 	if dungeon_id == "forest" and forest_cleared: return true
 	return bool(completed_dungeons.get(dungeon_id, false))
 
@@ -195,6 +308,15 @@ func is_dungeon_unlocked(dungeon_id: String) -> bool:
 			if not has_completed_dungeon(String(unlock.get("dungeon_id", ""))): return false
 			return _highest_hero_level() >= int(unlock.get("min_level", 1))
 		"crypt_progression": return has_completed_dungeon("forest") and _highest_hero_level() >= 5
+		"any_dungeon_clear":
+			for required_id in unlock.get("dungeon_ids", []):
+				if has_completed_dungeon(String(required_id)): return true
+			return false
+		"all_dungeons_clear":
+			for required_id in unlock.get("dungeon_ids", []):
+				if not has_completed_dungeon(String(required_id)): return false
+			return true
+		"secret": return campaign != null and campaign.can_unlock_secret(dungeon_id)
 	return false
 
 func get_field_room(room_id: int) -> Dictionary:
@@ -340,7 +462,8 @@ func gain_class_resource(amount: int = 1) -> int:
 	return class_resource
 
 func get_consumable_capacity() -> int:
-	return GameBalance.get_consumable_base_capacity() + get_derived_stat("consumable_capacity")
+	var service_bonus:=int(campaign.tavern_upgrades.get("roster_services",0)) if campaign!=null else 0
+	return GameBalance.get_consumable_base_capacity() + get_derived_stat("consumable_capacity") + service_bonus
 
 func get_consumables() -> Array[String]:
 	_migrate_legacy_potions()
@@ -512,7 +635,8 @@ func get_merchant_offers(merchant_id: String, location: String) -> Array[Diction
 		else:
 			offer["rarity"] = String(offer.get("rarity", "common"))
 		var stock_key := _merchant_stock_key(merchant_id, offer_id)
-		var max_stock := 1 if int(offer.get("favor", 0)) > 0 else GameBalance.get_merchant_stock_for_rarity(String(offer["rarity"]))
+		var stock_upgrade:=int(campaign.tavern_upgrades.get("merchant_stock",0)) if campaign!=null else 0
+		var max_stock := 1 if int(offer.get("favor", 0)) > 0 else GameBalance.get_merchant_stock_for_rarity(String(offer["rarity"]))+stock_upgrade
 		if not merchant_offer_stock.has(stock_key): merchant_offer_stock[stock_key] = max_stock
 		offer["max_stock"] = max_stock
 		offer["stock_remaining"] = maxi(0, int(merchant_offer_stock.get(stock_key, max_stock)))
@@ -570,6 +694,7 @@ func purchase_merchant_offer(merchant_id: String, offer_id: String, location: St
 	var stock_key := _merchant_stock_key(merchant_id, offer_id)
 	merchant_offer_stock[stock_key] = maxi(0, int(chosen.get("stock_remaining", 1)) - 1)
 	logs.push_front("Purchased %s for %d %s." % [String(chosen.get("name", offer_id)), favor_cost if favor_cost > 0 else gold_cost, "Favor" if favor_cost > 0 else "gold"])
+	autosave_campaign()
 	return logs
 
 func _merchant_stock_key(merchant_id: String, offer_id: String) -> String:
@@ -654,6 +779,7 @@ func generate_slasher_chest_choices(floor_number:int,chest_identity:Variant,endl
 	pending_chest_choices.assign(choices);return choices
 
 func _roll_weighted_rarity(weights:Dictionary,source_rng:RandomNumberGenerator)->String:
+	weights=_rarity_weights_allowed_by_tavern(weights)
 	var total:int=0
 	for value:Variant in weights.values():total+=maxi(0,int(value))
 	if total<=0:return "common"
@@ -1218,6 +1344,7 @@ func _sync_health_from_profile(reset_current: bool) -> void:
 		current_health = max_health
 	else:
 		current_health = mini(max_health, current_health + maxi(0, max_health - previous_max))
+	apply_tutorial_health_cap()
 
 func _restore_permanent_inventory_for_active_class() -> void:
 	var profile: Dictionary = _active_profile()
@@ -1267,7 +1394,7 @@ func _make_inventory_entry(item_id: String, item: Dictionary, source_floor: int)
 	}
 
 func _roll_item_rarity(floor: int, source_rng: RandomNumberGenerator) -> String:
-	var weights: Dictionary = GameBalance.get_rarity_weights(floor)
+	var weights: Dictionary = _rarity_weights_allowed_by_tavern(GameBalance.get_rarity_weights(floor))
 	var total_weight := 0
 	for key in weights.keys():
 		total_weight += maxi(0, int(weights[key]))
@@ -1280,6 +1407,13 @@ func _roll_item_rarity(floor: int, source_rng: RandomNumberGenerator) -> String:
 		if roll <= running:
 			return String(key)
 	return "common"
+
+func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
+	var result:=source.duplicate(true);var rank:=int(campaign.tavern_upgrades.get("item_rarity",0)) if campaign!=null else 0
+	var order:Array[String]=["common","uncommon","rare","epic","legendary"];var maximum_index:=mini(order.size()-1,1+rank)
+	for rarity in result.keys():
+		if not order.has(String(rarity)) or order.find(String(rarity))>maximum_index:result[rarity]=0
+	return result
 
 func _item_ids_for_rarity(items: Dictionary, rarity: String) -> Array[String]:
 	var ids: Array[String] = []
