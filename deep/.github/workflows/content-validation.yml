@@ -1,0 +1,20 @@
+name: Content validation
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  validate-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify generated catalog is current
+        run: |
+          python tools/build_content_catalog.py
+          git diff --exit-code -- data/manifest.json data/actions data/classes data/progressions data/dungeons data/items data/merchants data/traits data/upgrades data/balance
+      - name: Validate catalog and demo profile
+        run: python tools/validate_content_catalog.py
