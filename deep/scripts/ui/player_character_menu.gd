@@ -13,6 +13,7 @@ const RELIC_SLOT_SELECTED := preload("res://assets/ui/character_menu/relic_slot_
 const SIDE_PANEL := preload("res://assets/ui/character_menu/side_panel.png")
 const TIP_PANEL := preload("res://assets/ui/character_menu/tip_panel.png")
 const CLOSE_BUTTON := preload("res://assets/ui/character_menu/close_button.png")
+const OPTIONS_PANEL := preload("res://scripts/ui/game_options_panel.gd")
 
 const ICON_ATTACK := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/2.png")
 const ICON_SPECIAL := preload("res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/10.png")
@@ -27,10 +28,13 @@ const ICON_HEALTH := preload("res://assets/pixel_art/potion.png")
 const ICON_SPELL := preload("res://assets/pixel_art/spellnode.png")
 
 var close_callback: Callable
+var active_tab := 0
+var previous_pause := false
 
 func setup(callback: Callable) -> void:
 	close_callback = callback
 	name = "CharacterMenu"
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_preset(Control.PRESET_CENTER)
@@ -40,6 +44,22 @@ func setup(callback: Callable) -> void:
 	offset_bottom = 315
 	custom_minimum_size = Vector2(940, 580)
 	add_theme_stylebox_override("panel", _texture_style(MENU_FRAME, 44.0, 24.0))
+
+func set_open(open: bool) -> void:
+	if visible == open: return
+	if open:
+		previous_pause = get_tree().paused
+		visible = true
+		move_to_front()
+		get_tree().paused = true
+	else:
+		visible = false
+		get_tree().paused = previous_pause
+
+func _unhandled_input(event: InputEvent) -> void:
+	if visible and (event.is_action_pressed("character_menu") or event.is_action_pressed("ui_cancel")):
+		_request_close()
+		get_viewport().set_input_as_handled()
 
 func sync(run_state: RunState, portrait: Texture2D, gear_name: String, derived_stats: Dictionary, relic_entries: Array[Dictionary]) -> void:
 	_clear_children_now(self)
@@ -59,31 +79,108 @@ func sync(run_state: RunState, portrait: Texture2D, gear_name: String, derived_s
 
 	body.add_child(_make_header(run_state, portrait, gear_name))
 
-	var content := HBoxContainer.new()
-	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 12)
-	body.add_child(content)
+	var tabs := TabContainer.new()
+	tabs.name = "StrategyCodexTabs"
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tabs.add_theme_font_size_override("font_size", 16)
+	body.add_child(tabs)
 
+	var stats_body := _add_tab(tabs, "Stats")
+	var stats_columns := HBoxContainer.new()
+	stats_columns.add_theme_constant_override("separation", 12)
+	stats_body.add_child(stats_columns)
 	var main_column := VBoxContainer.new()
 	main_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	main_column.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_column.add_theme_constant_override("separation", 10)
-	content.add_child(main_column)
-
+	stats_columns.add_child(main_column)
 	main_column.add_child(_make_stats_section(run_state, derived_stats))
-	main_column.add_child(_make_relics_section(relic_entries))
 	main_column.add_child(_make_tip_panel())
-
 	var side_column := VBoxContainer.new()
 	side_column.custom_minimum_size = Vector2(245, 0)
-	side_column.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side_column.add_theme_constant_override("separation", 10)
-	content.add_child(side_column)
-
+	stats_columns.add_child(side_column)
 	side_column.add_child(_make_class_panel(run_state))
 	side_column.add_child(_make_resistance_panel())
 	side_column.add_child(_make_info_panel(run_state))
-	side_column.add_child(_make_actions_panel())
+
+	var progression_body := _add_tab(tabs, "Progression")
+	progression_body.add_child(_make_progression_section(run_state))
+
+	var items_body := _add_tab(tabs, "Items")
+	items_body.add_child(_make_carried_resources_section(run_state, gear_name))
+	items_body.add_child(_make_relics_section(relic_entries))
+
+	var journal_body := _add_tab(tabs, "Journal")
+	journal_body.add_child(_make_journal_section(run_state))
+
+	var options_body := _add_tab(tabs, "Options")
+	var options: GameOptionsPanel = OPTIONS_PANEL.new()
+	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	options_body.add_child(options)
+	options.setup(false)
+	tabs.current_tab = clampi(active_tab, 0, tabs.get_tab_count() - 1)
+	tabs.tab_changed.connect(func(index: int): active_tab = index)
+
+	var hint := _make_label("M / Start: Close menu   ·   Tab / LB: Cycle party outside the menu", 12, Color(0.75, 0.60, 0.36), HORIZONTAL_ALIGNMENT_CENTER)
+	body.add_child(hint)
+
+func _add_tab(tabs: TabContainer, title: String) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name = title
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tabs.add_child(scroll)
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 10)
+	scroll.add_child(body)
+	return body
+
+func _make_progression_section(run_state: RunState) -> PanelContainer:
+	var panel := _make_texture_panel(SECTION_PANEL, Vector2(0, 390), 42.0, 18.0)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 12)
+	panel.add_child(body)
+	body.add_child(_make_section_title("STRATEGY PROGRESSION"))
+	body.add_child(_make_wrapped_label("%s · Level %d\n%s" % [run_state.selected_class_name, run_state.get_level(), run_state.get_profile_summary()], 18, Color(1.0, 0.86, 0.58)))
+	body.add_child(_make_wrapped_label(run_state.get_progression_summary(), 16, Color(0.58, 0.87, 0.95)))
+	var class_data := GameBalance.get_base_class(run_state.selected_class_id)
+	var actions: Dictionary = class_data.get("actions", {})
+	for slot in ["basic", "movement", "special", "defensive"]:
+		var action_name := _menu_action_name(actions, slot)
+		body.add_child(_make_wrapped_label("%s · %s\n%s" % [slot.capitalize(), action_name, GameBalance.get_action_tooltip(run_state.selected_class_id, slot)], 14, Color(0.88, 0.78, 0.62)))
+	if run_state.has_pending_progression_choice():
+		body.add_child(_make_wrapped_label("A progression choice is waiting and will be presented at the next reward checkpoint.", 14, Color(0.98, 0.76, 0.30)))
+	return panel
+
+func _make_carried_resources_section(run_state: RunState, gear_name: String) -> PanelContainer:
+	var panel := _make_texture_panel(SECTION_PANEL, Vector2(0, 125), 42.0, 14.0)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 9)
+	panel.add_child(body)
+	body.add_child(_make_section_title("CARRIED RESOURCES"))
+	body.add_child(_make_wrapped_label("%s\nGear: %s" % [run_state.get_resource_summary(), gear_name], 16, Color(0.94, 0.83, 0.60)))
+	var consumable_names: Array[String] = []
+	for consumable_id in run_state.get_consumables(): consumable_names.append(String(GameBalance.get_consumable(consumable_id).get("name", consumable_id.capitalize())))
+	body.add_child(_make_wrapped_label("Consumables: %s" % (", ".join(consumable_names) if not consumable_names.is_empty() else "None"), 13, Color(0.82, 0.68, 0.45)))
+	return panel
+
+func _make_journal_section(run_state: RunState) -> PanelContainer:
+	var panel := _make_texture_panel(SECTION_PANEL, Vector2(0, 390), 42.0, 18.0)
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", 9)
+	panel.add_child(body)
+	body.add_child(_make_section_title("CREATURE JOURNAL"))
+	var journal := GameBalance.get_slasher_journal()
+	var discovered_count := 0
+	for enemy_value in journal.get("order", []):
+		var enemy_id := String(enemy_value)
+		if not run_state.is_enemy_discovered(enemy_id): continue
+		discovered_count += 1
+		var entry := GameBalance.get_slasher_journal_entry(enemy_id)
+		body.add_child(_make_wrapped_label("%s · %d defeated\n%s\nTraits: %s" % [String(entry.get("name", enemy_id.capitalize())), run_state.get_enemy_defeat_count(enemy_id), String(entry.get("description", "")), ", ".join(entry.get("traits", []))], 14, Color(0.88, 0.78, 0.62)))
+	if discovered_count == 0: body.add_child(_make_wrapped_label("Defeat a creature to add its identity and field notes here.", 16, Color(0.75, 0.60, 0.36)))
+	return panel
 
 func _make_header(run_state: RunState, portrait: Texture2D, gear_name: String) -> PanelContainer:
 	var panel := _make_texture_panel(SECTION_PANEL, Vector2(0, 120), 42.0, 14.0)

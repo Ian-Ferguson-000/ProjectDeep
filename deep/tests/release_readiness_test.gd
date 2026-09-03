@@ -10,9 +10,12 @@ func _run() -> void:
 	var failures: Array[String] = []
 	var main:Node=MAIN_SCRIPT.new()
 	main._ensure_input_actions()
-	for action in ["move_up","move_down","move_left","move_right","interact","character_menu","extract_expedition","slasher_controller_basic","slasher_mobility","slasher_special","slasher_defend","slasher_potion","slasher_abandon"]:
+	for action in ["move_up","move_down","move_left","move_right","interact","character_menu","cycle_party","extract_expedition","slasher_controller_basic","slasher_mobility","slasher_special","slasher_defend","slasher_potion","slasher_abandon"]:
 		_expect(InputMap.has_action(action),"Missing required input action: %s"%action,failures)
-	_expect(_has_button("character_menu",JOY_BUTTON_LEFT_SHOULDER),"Controller party cycling must use LB",failures)
+	_expect(_has_button("character_menu",JOY_BUTTON_START),"Controller menu must use Start",failures)
+	_expect(_has_button("cycle_party",JOY_BUTTON_LEFT_SHOULDER),"Controller party cycling must use LB",failures)
+	_expect(_has_key("character_menu",KEY_M),"Strategy/Slasher menu must use M",failures)
+	_expect(_has_key("cycle_party",KEY_TAB),"Party cycling must use Tab",failures)
 	_expect(_has_button("extract_expedition",JOY_BUTTON_RIGHT_SHOULDER),"Controller extraction must use RB",failures)
 	_expect(_has_button("slasher_potion",JOY_BUTTON_LEFT_STICK),"Controller potion use must use L3",failures)
 	_expect(_has_button("slasher_abandon",JOY_BUTTON_BACK),"Controller abandonment must use View/Back",failures)
@@ -37,6 +40,11 @@ func _run() -> void:
 func _has_button(action:StringName,button:JoyButton)->bool:
 	for event in InputMap.action_get_events(action):
 		if event is InputEventJoypadButton and event.button_index==button:return true
+	return false
+
+func _has_key(action:StringName,key:Key)->bool:
+	for event in InputMap.action_get_events(action):
+		if event is InputEventKey and event.physical_keycode==key:return true
 	return false
 
 func _expect(condition:bool,message:String,failures:Array[String])->void:

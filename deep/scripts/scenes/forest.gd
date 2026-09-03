@@ -334,6 +334,15 @@ func _configure_dungeon_settings() -> void:
 	camera_ui_top_margin = 0.0
 	if ground_layer!=null:ground_layer.modulate=Color(String(runtime_profile.get("strategy_tint","ffffff")))
 
+func _strategy_rule(key: String, fallback: Variant) -> Variant:
+	return GameBalance.get_strategy_value(["rules", key], fallback)
+
+func _strategy_action_value(slot: String, key: String, fallback: Variant) -> Variant:
+	if run_state == null: return fallback
+	var tuning := GameBalance.get_strategy_class_tuning(run_state.selected_class_id)
+	var action: Variant = tuning.get(slot, {})
+	return action.get(key, fallback) if action is Dictionary else fallback
+
 func _setup_follow_camera() -> void:
 	if not use_follow_camera or follow_camera != null:
 		return
@@ -971,7 +980,7 @@ func _reset_generated_state() -> void:
 	was_below_half_health = false
 	seen_enemy_types.clear()
 	dungeon_merchant.clear()
-	movement_remaining = PLAYER_MOVE_ALLOWANCE
+	movement_remaining = int(_strategy_rule("player_move_allowance", PLAYER_MOVE_ALLOWANCE))
 	round_number = 1
 	current_actor_index = 0
 	chest = {"pos": Vector2i(-1, -1), "opened": false}
@@ -1461,7 +1470,7 @@ func _enter_free_roam_if_clear() -> bool:
 	is_defending = false
 	has_used_action = false
 	selected_action = "move"
-	movement_remaining = FREE_ROAM_MOVE_ALLOWANCE
+	movement_remaining = int(_strategy_rule("free_roam_move_allowance", FREE_ROAM_MOVE_ALLOWANCE))
 	current_actor_index = _player_initiative_index()
 	var xp_logs: Array[String] = _award_floor_clear_xp()
 	var logs: Array[String] = _consume_progression_logs()
@@ -1519,9 +1528,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if combat_log_backdrop != null and combat_log_backdrop.visible:
 		return
 	if event.is_action_pressed("character_menu"):
+		_toggle_character_menu()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("cycle_party"):
 		if run_state.get_active_party_ids().size() > 1 and not _is_free_roam(): _inspect_next_party_initiative()
 		elif run_state.get_active_party_ids().size() > 1: _cycle_strategy_member()
-		else: _toggle_character_menu()
 		return
 	if event.is_action_pressed("ui_cancel") and selected_action in ["attack", "special", "movement"]:
 		_cancel_selected_action()
@@ -1641,7 +1653,7 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 		message = "Dense trees block the way."
 		_refresh_ui()
 		return
-	var max_steps: int = FREE_ROAM_MOVE_ALLOWANCE if _is_free_roam() else movement_remaining
+	var max_steps: int = int(_strategy_rule("free_roam_move_allowance", FREE_ROAM_MOVE_ALLOWANCE)) if _is_free_roam() else movement_remaining
 	var path := _find_path(player_pos, tile, max_steps)
 	if path.is_empty():
 		message = "That is beyond your remaining movement."
@@ -1653,7 +1665,7 @@ func _try_player_move_or_interact(tile: Vector2i) -> void:
 	player_pos = tile
 	_save_strategy_member_runtime()
 	if _is_free_roam():
-		movement_remaining = FREE_ROAM_MOVE_ALLOWANCE
+		movement_remaining = int(_strategy_rule("free_roam_move_allowance", FREE_ROAM_MOVE_ALLOWANCE))
 		message = "You move through the cleared forest."
 	else:
 		movement_remaining -= maxi(0, path.size() - 1)
@@ -2008,20 +2020,20 @@ func _try_player_special(tile: Vector2i) -> void:
 
 func _execute_class_basic(tile: Vector2i, enemy_index: int) -> void:
 	var class_id := run_state.selected_class_id
-	var damage := _player_gear_damage() + (1 if empowered else 0)
+	var damage := _player_gear_damage() + int(_strategy_action_value("basic", "damage_offset", 0)) + (1 if empowered else 0)
 	_play_attack_effect(player_pos, tile)
 	match class_id:
 		"healer":
 			var target_id := int(enemies[enemy_index].get("id", -1))
-			_attack_enemy(enemy_index, maxi(1, damage - 1))
+			_attack_enemy(enemy_index, maxi(1, damage))
 			var surviving_index := _enemy_index_by_id(target_id)
 			if surviving_index != -1:
-				enemies[surviving_index]["slowed"] = 2 if empowered else 1
+				enemies[surviving_index]["slowed"] = int(_strategy_action_value("basic", "empowered_slow_turns", 2)) if empowered else int(_strategy_action_value("basic", "slow_turns", 1))
 			message = "Binding Light slows its target."
 			run_state.gain_class_resource()
 		"tank":
 			_attack_enemy(enemy_index, damage)
-			var pushed := _push_enemy_from(tile, facing, 1)
+			var pushed := _push_enemy_from(tile, facing, int(_strategy_action_value("basic", "push_tiles", 1)))
 			if pushed:
 				run_state.gain_class_resource()
 			message = "Shield Bash staggers%s." % (" and pushes the target" if pushed else " the target")
@@ -2030,7 +2042,7 @@ func _execute_class_basic(tile: Vector2i, enemy_index: int) -> void:
 			var behind := tile + facing
 			var second := _enemy_at(behind)
 			if second != -1:
-				_attack_enemy(second, maxi(1, damage - 1))
+				_attack_enemy(second, maxi(1, damage + int(_strategy_action_value("basic", "secondary_damage_offset", -1))))
 				run_state.gain_class_resource()
 			message = "Pierce slips through armor%s." % (" and the enemy behind" if second != -1 else "")
 			is_hidden = false
@@ -2039,12 +2051,12 @@ func _execute_class_basic(tile: Vector2i, enemy_index: int) -> void:
 			if _companion_active():
 				_companion_attack_marked()
 			else:
-				_attack_enemy(enemy_index, maxi(1, damage - 1))
+				_attack_enemy(enemy_index, maxi(1, _player_gear_damage() + int(_strategy_action_value("basic", "unbonded_damage_offset", -1))))
 				run_state.gain_class_resource()
 			message = "The target is marked for your bonded wolf."
 		"mage":
 			_attack_enemy(enemy_index, damage)
-			if _distance(player_pos, tile) >= 3:
+			if _distance(player_pos, tile) >= int(_strategy_action_value("basic", "resource_gain_min_range", 3)):
 				run_state.gain_class_resource()
 			message = "Arcane Missile strikes across the battlefield."
 		_:
@@ -2067,11 +2079,11 @@ func _execute_class_special(tile: Vector2i) -> bool:
 			for target in [player_pos + facing, player_pos + facing + side, player_pos + facing - side]:
 				var index := _enemy_at(target)
 				if index != -1:
-					_attack_enemy(index, _player_gear_damage() + (1 if empowered else 0))
+					_attack_enemy(index, _player_gear_damage() + int(_strategy_action_value("special", "damage_offset", 0)) + (1 if empowered else 0))
 					hit += 1
 			message = "Cleave catches %d target%s." % [hit, "" if hit == 1 else "s"]
 		"mage":
-			var cannon_range := 4 + run_state.get_derived_stat("range") + run_state.get_contextual_item_modifier("range", {"damage_type":"arcane","spell_attack":true,"area_attack":true})
+			var cannon_range := int(_strategy_action_value("special", "range", 4)) + run_state.get_derived_stat("range") + run_state.get_contextual_item_modifier("range", {"damage_type":"arcane","spell_attack":true,"area_attack":true})
 			if not _is_straight_line_target(tile, cannon_range, true):
 				message = "Arcane Cannon needs a direction within %d tiles." % cannon_range
 				_refresh_ui()
@@ -2084,7 +2096,7 @@ func _execute_class_special(tile: Vector2i) -> bool:
 				_spawn_tile_effect(AETHER_HIT, target)
 				var index := _enemy_at(target)
 				if index != -1:
-					_attack_enemy(index, _player_gear_damage() + 2 + (1 if empowered else 0))
+					_attack_enemy(index, _player_gear_damage() + int(_strategy_action_value("special", "damage_offset", 2)) + (1 if empowered else 0))
 					hits += 1
 			message = "Arcane Cannon tears through %d target%s." % [hits, "" if hits == 1 else "s"]
 		"healer":
@@ -2103,8 +2115,8 @@ func _execute_class_special(tile: Vector2i) -> bool:
 			var enemy: Dictionary = enemies[index]
 			var isolated := _adjacent_enemy_count(tile) <= 1
 			var low := int(enemy["hp"]) * 2 <= int(enemy["max_health"])
-			var bonus := 3 if isolated or low or is_hidden else 0
-			_attack_enemy(index, _player_gear_damage() + 3 + bonus)
+			var bonus := int(_strategy_action_value("special", "opening_bonus", 3)) if isolated or low or is_hidden else 0
+			_attack_enemy(index, _player_gear_damage() + int(_strategy_action_value("special", "damage_offset", 3)) + bonus)
 			is_hidden = false
 			message = "Assassinate exploits a fatal opening."
 		"summoner":
@@ -2113,7 +2125,8 @@ func _execute_class_special(tile: Vector2i) -> bool:
 					message = "Summon the wolf onto an adjacent open tile."
 					_refresh_ui()
 					return false
-				companion = {"pos": tile, "hp": 8, "max_health": 8}
+				var wolf_health := int(_strategy_action_value("special", "wolf_health", 8))
+				companion = {"pos": tile, "hp": wolf_health, "max_health": wolf_health}
 				message = "Your bonded wolf answers the call."
 			else:
 				if not _companion_attack_marked(true):
@@ -2135,42 +2148,43 @@ func _try_class_movement(tile: Vector2i) -> void:
 	var distance := _distance(player_pos, tile)
 	var movement_origin := player_pos
 	var movement_range_bonus := run_state.get_contextual_item_modifier("range", {"movement_ability":true})
+	var class_movement_range := int(_strategy_action_value("movement", "range", 3))
 	match run_state.selected_class_id:
 		"warrior":
 			_special_charge_at(tile)
 			return
 		"mage":
-			if distance < 1 or distance > 3 + movement_range_bonus or not _is_walkable(tile):
+			if distance < 1 or distance > class_movement_range + movement_range_bonus or not _is_walkable(tile):
 				message = "Blink needs an open destination within three tiles."
 				_refresh_ui(); return
 			player_pos = tile
 			message = "You Blink through intervening terrain."
 		"healer":
-			if distance < 1 or distance > 3 + movement_range_bonus or _find_path(player_pos, tile, 3 + movement_range_bonus).is_empty():
+			if distance < 1 or distance > class_movement_range + movement_range_bonus or _find_path(player_pos, tile, class_movement_range + movement_range_bonus).is_empty():
 				message = "Dash needs a reachable tile within three steps."
 				_refresh_ui(); return
 			player_pos = tile
-			if distance >= 2: run_state.heal(2)
+			if distance >= int(_strategy_action_value("movement", "heal_min_distance", 2)): run_state.heal(int(_strategy_action_value("movement", "heal_amount", 2)))
 			message = "You Dash and recover vitality."
 		"tank":
-			if distance < 1 or distance > 3 + movement_range_bonus or not _is_walkable(tile):
+			if distance < 1 or distance > class_movement_range + movement_range_bonus or not _is_walkable(tile):
 				message = "Leap needs an open landing tile within three spaces."
 				_refresh_ui(); return
 			player_pos = tile
 			for i in range(enemies.size() - 1, -1, -1):
 				if _distance(player_pos, enemies[i]["pos"]) == 1:
-					enemies[i]["taunted"] = 1
-					_attack_enemy(i, maxi(1, _player_gear_damage() - 1))
+					enemies[i]["taunted"] = int(_strategy_action_value("movement", "taunt_turns", 1))
+					_attack_enemy(i, maxi(1, _player_gear_damage() + int(_strategy_action_value("movement", "damage_offset", -1))))
 			message = "You Leap into the fray and taunt nearby foes."
 		"rogue":
-			if distance < 2 or distance > 3 + movement_range_bonus or not _is_walkable(tile):
+			if distance < int(_strategy_action_value("movement", "minimum_range", 2)) or distance > class_movement_range + movement_range_bonus or not _is_walkable(tile):
 				message = "Shadowstep needs an open destination two or three spaces away."
 				_refresh_ui(); return
 			player_pos = tile
 			is_hidden = true
 			message = "You emerge Hidden from a Shadowstep."
 		"summoner":
-			if not _companion_active() or distance < 1 or distance > 5 + movement_range_bonus or not _is_walkable(tile):
+			if not _companion_active() or distance < 1 or distance > class_movement_range + movement_range_bonus or not _is_walkable(tile):
 				message = "Mount needs your wolf and an open destination within five spaces."
 				_refresh_ui(); return
 			var old := player_pos
@@ -2516,7 +2530,7 @@ func _find_path_through_floor(start: Vector2i, goal: Vector2i) -> Array[Vector2i
 
 func _valid_move_tiles() -> Array[Vector2i]:
 	var tiles: Array[Vector2i] = []
-	var max_steps: int = FREE_ROAM_MOVE_ALLOWANCE if _is_free_roam() else movement_remaining
+	var max_steps: int = int(_strategy_rule("free_roam_move_allowance", FREE_ROAM_MOVE_ALLOWANCE)) if _is_free_roam() else movement_remaining
 	for tile in floor_cells.keys():
 		var cell := Vector2i(tile)
 		if cell != player_pos and _find_path(player_pos, cell, max_steps).size() > 0:
@@ -2741,8 +2755,8 @@ func _gear_block_limit() -> int:
 
 func _player_move_allowance() -> int:
 	if run_state == null:
-		return PLAYER_MOVE_ALLOWANCE
-	return PLAYER_MOVE_ALLOWANCE + run_state.get_derived_stat("movement")
+		return int(_strategy_rule("player_move_allowance", PLAYER_MOVE_ALLOWANCE))
+	return int(_strategy_rule("player_move_allowance", PLAYER_MOVE_ALLOWANCE)) + run_state.get_derived_stat("movement")
 
 func _mage_progression_value(flag_id: String) -> int:
 	if run_state == null or run_state.selected_class_id != "mage":
@@ -3114,12 +3128,13 @@ func _resolve_tile() -> void:
 	for i in range(traps.size() - 1, -1, -1):
 		var trap: Dictionary = traps[i]
 		if trap["pos"] == player_pos and not trap["sprung"]:
-			_apply_damage(3)
-			message = "A root-snare trap snaps shut for 3 damage."
+			var trap_damage := int(_strategy_rule("trap_damage", 3))
+			_apply_damage(trap_damage)
+			message = "A root-snare trap snaps shut for %d damage." % trap_damage
 			traps.remove_at(i)
 
 func _resolve_enemy_actor_turn(enemy_id: int) -> void:
-	await get_tree().create_timer(ENEMY_TURN_DELAY).timeout
+	await get_tree().create_timer(float(_strategy_rule("enemy_turn_delay_seconds", ENEMY_TURN_DELAY))).timeout
 	var index := _enemy_index_by_id(enemy_id)
 	if index == -1:
 		is_resolving_enemy_turn = false
@@ -3152,7 +3167,7 @@ func _resolve_enemy_actor_turn(enemy_id: int) -> void:
 	_advance_to_next_actor()
 
 func _enemy_move_toward_player(index: int) -> void:
-	var movement: int = _enemy_movement(enemies[index]) if index >= 0 and index < enemies.size() else ENEMY_MOVE_ALLOWANCE
+	var movement: int = _enemy_movement(enemies[index]) if index >= 0 and index < enemies.size() else int(_strategy_rule("enemy_fallback_move_allowance", ENEMY_MOVE_ALLOWANCE))
 	for step in range(movement):
 		if index < 0 or index >= enemies.size():
 			return
@@ -3184,7 +3199,7 @@ func _enemy_initiative_modifier(enemy: Dictionary) -> int:
 	return int(GameBalance.get_enemy_value(_enemy_type(enemy), "initiative_modifier", 0))
 
 func _enemy_movement(enemy: Dictionary) -> int:
-	var movement := int(GameBalance.get_enemy_value(_enemy_type(enemy), "movement", ENEMY_MOVE_ALLOWANCE))
+	var movement := int(GameBalance.get_enemy_value(_enemy_type(enemy), "movement", int(_strategy_rule("enemy_fallback_move_allowance", ENEMY_MOVE_ALLOWANCE))))
 	if int(enemy.get("slowed", 0)) > 0:
 		movement = maxi(1, movement - 1)
 		enemy["slowed"] = int(enemy["slowed"]) - 1
@@ -3889,7 +3904,7 @@ func _toggle_character_menu() -> void:
 		return
 	if character_menu_panel == null:
 		return
-	character_menu_panel.visible = not character_menu_panel.visible
+	character_menu_panel.set_open(not character_menu_panel.visible)
 	if character_menu_panel.visible:
 		_hide_hover_context()
 		_sync_character_menu()
@@ -5141,7 +5156,7 @@ func _companion_attack_marked(pounce: bool = false) -> bool:
 		if next != wolf_pos: companion["pos"] = next
 	if _distance(Vector2i(companion["pos"]), target) == 1:
 		# The override identifies this as Mark / Command for data-driven bonuses.
-		_attack_enemy(index, 3 if pounce else 2, "physical", "coordinated_basic")
+		_attack_enemy(index, int(_strategy_action_value("special", "pounce_damage", 3)) if pounce else int(_strategy_action_value("special", "command_damage", 2)), "physical", "coordinated_basic")
 		run_state.gain_class_resource()
 		return true
 	return pounce

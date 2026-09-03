@@ -100,6 +100,15 @@ func create_character(class_id: String = "") -> CharacterRecord:
 	var trait_data: Dictionary = TRAITS[rng.randi_range(0, TRAITS.size() - 1)]
 	var character := CharacterRecord.create("hero_%06d" % next_character_number, name, class_id, trait_data, rng.randi_range(0, 3))
 	var quality_rank:=int(tavern_upgrades.get("replacement_quality",0));character.level=mini(20,1+quality_rank);character.progression["level"]=character.level
+	var class_data := GameBalance.get_base_class(class_id)
+	var stats: Dictionary = Dictionary(class_data.get("base_stats", {}))
+	var health_rule: Dictionary = Dictionary(Dictionary(class_data.get("derived", {})).get("max_health", {}))
+	var health := int(health_rule.get("base", 1)) + (character.level - 1) * int(health_rule.get("per_level", 0))
+	var health_stat := String(health_rule.get("stat", ""))
+	if not health_stat.is_empty():
+		var modifier := int(floori(float(int(stats.get(health_stat, 10)) - 10) / 2.0)) + int(health_rule.get("stat_offset", 0))
+		health += maxi(int(health_rule.get("min", -999)), modifier)
+	character.max_health = maxi(1, health); character.current_health = character.max_health
 	next_character_number += 1; roster[character.id] = character; return character
 
 func ensure_roster() -> void:

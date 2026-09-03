@@ -268,7 +268,8 @@ func complete_forest_floor() -> void:
 		_show_extraction_choice(func():run_state.continue_expedition();run_state.advance_floor();_load_forest_floor())
 	else:
 		run_state.mark_forest_cleared()
-		return_to_tavern("victory", "You escape the five-floor forest dungeon with %d gold. Thistle Fen has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
+		favor_logs.append_array(run_state.record_active_dungeon_completion())
+		_offer_continuous_descent("You escape the five-floor forest dungeon with %d gold. Thistle Fen has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
 
 func complete_strategy_dungeon_floor() -> void:
 	if run_state.active_dungeon_id == "forest": complete_forest_floor(); return
@@ -279,7 +280,9 @@ func complete_strategy_dungeon_floor() -> void:
 	if not merchant_id.is_empty(): favor_logs = run_state.record_dungeon_floor_clear(merchant_id, run_state.current_floor, run_state.current_floor >= run_state.max_floors)
 	run_state.mark_extraction_available()
 	if run_state.current_floor < run_state.max_floors: _show_extraction_choice(func():run_state.continue_expedition();run_state.advance_floor();_load_active_dungeon())
-	else: return_to_tavern("victory", "The party clears %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(favor_logs)])
+	else:
+		favor_logs.append_array(run_state.record_active_dungeon_completion())
+		_offer_continuous_descent("The party clears %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(favor_logs)])
 
 func complete_slasher_forest_floor() -> void:
 	var cycle_boss:bool=run_state.is_slasher_boss_floor();var first_boss:bool=cycle_boss and not run_state.slasher_campaign_boss_cleared;var favor_logs:Array[String]=[]
@@ -296,10 +299,18 @@ func complete_slasher_dungeon_floor() -> void:
 	var campaign_floors := int(Dictionary(dungeon.get("slasher", {})).get("campaign_floors", dungeon.get("floors", 1)))
 	run_state.mark_extraction_available()
 	if run_state.current_floor < campaign_floors: _show_extraction_choice(func():run_state.continue_expedition();run_state.advance_slasher_floor();_load_active_dungeon())
-	else: return_to_tavern("victory", "The party clears %s in Slasher mode and returns with %d gold." % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold])
+	else:
+		var completion_logs := run_state.record_active_dungeon_completion()
+		_offer_continuous_descent("The party clears %s in Slasher mode and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(completion_logs)])
 
 func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])->void:
-	if cycle_boss:_show_slasher_endless_prompt(favor_logs);return
+	if cycle_boss:
+		if run_state.slasher_endless_mode:
+			_show_slasher_endless_prompt(favor_logs)
+			return
+		favor_logs.append_array(run_state.record_active_dungeon_completion())
+		_offer_continuous_descent("You leave the Forest after floor %d with %d gold. Thistle Fen has joined the tavern.\n%s\n%s" % [run_state.current_floor, run_state.gold, " ".join(favor_logs), run_state.get_slasher_progression_summary()], true)
+		return
 	_show_extraction_choice(func():run_state.continue_expedition();run_state.advance_slasher_floor();_load_active_dungeon())
 
 func _show_extraction_choice(on_continue:Callable)->void:
@@ -335,7 +346,37 @@ func complete_crypt_floor() -> void:
 	if run_state.current_floor < run_state.max_floors:
 		_show_extraction_choice(func():run_state.continue_expedition();run_state.advance_floor();_load_crypt_floor())
 	else:
-		return_to_tavern("victory", "You emerge from the seven-floor Stone Crypt with %d gold. Sister Caldris has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
+		favor_logs.append_array(run_state.record_active_dungeon_completion())
+		_offer_continuous_descent("You emerge from the seven-floor Stone Crypt with %d gold. Sister Caldris has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
+
+func _offer_continuous_descent(return_message: String, allow_endless: bool = false) -> void:
+	var completed_dungeon := GameBalance.get_dungeon(run_state.active_dungeon_id)
+	var next_id := String(completed_dungeon.get("continuous_next", ""))
+	if campaign.expedition.tutorial_run or next_id.is_empty() or not run_state.is_dungeon_unlocked(next_id) or not run_state.dungeon_supports_mode(next_id, run_state.active_play_mode):
+		if allow_endless:
+			_show_slasher_endless_prompt([])
+			return
+		return_to_tavern("victory", return_message)
+		return
+	run_state.autosave_campaign()
+	var next_dungeon := GameBalance.get_dungeon(next_id)
+	var layer := CanvasLayer.new(); layer.name = "DungeonResolutionLayer"; layer.layer = 120; add_child(layer)
+	var shade := ColorRect.new(); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); shade.color = Color(0.02, 0.025, 0.04, 0.88); shade.mouse_filter = Control.MOUSE_FILTER_STOP; layer.add_child(shade)
+	var panel := PanelContainer.new(); panel.set_anchors_preset(Control.PRESET_CENTER); panel.position = Vector2(-300, -180); panel.size = Vector2(600, 360); shade.add_child(panel)
+	var box := VBoxContainer.new(); box.add_theme_constant_override("separation", 18); panel.add_child(box)
+	var title := Label.new(); title.text = "DUNGEON CLEARED"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 28); box.add_child(title)
+	var detail := Label.new(); detail.text = "%s lies conquered. A passage opens into %s.\n\nCarried: %d gold · %d relic essence\n\nReturn to bank the expedition's spoils, or descend now with the surviving party and everything they carry." % [String(completed_dungeon.get("name", run_state.active_dungeon_id.capitalize())), String(next_dungeon.get("name", next_id.capitalize())), run_state.gold, campaign.expedition.carried_relic_essence]; detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; box.add_child(detail)
+	var descend_button := Button.new(); descend_button.text = "DESCEND INTO %s" % String(next_dungeon.get("name", next_id.capitalize())).to_upper(); descend_button.pressed.connect(func(): layer.queue_free(); _descend_to_dungeon(next_id), CONNECT_ONE_SHOT); box.add_child(descend_button)
+	if allow_endless:
+		var endless_button := Button.new(); endless_button.text = "CONTINUE THE ENDLESS FOREST"; endless_button.pressed.connect(func(): layer.queue_free(); run_state.enter_slasher_endless(); run_state.advance_slasher_floor(); _load_active_dungeon(), CONNECT_ONE_SHOT); box.add_child(endless_button)
+	var return_button := Button.new(); return_button.text = "RETURN TO THE HEARTH"; return_button.pressed.connect(func(): layer.queue_free(); return_to_tavern("victory", return_message), CONNECT_ONE_SHOT); box.add_child(return_button)
+	return_button.grab_focus()
+
+func _descend_to_dungeon(dungeon_id: String) -> void:
+	if not run_state.transition_to_dungeon(dungeon_id):
+		return_to_tavern("victory", "The route downward seals before the party can enter it. The expedition returns safely to the Hearth.")
+		return
+	_load_active_dungeon()
 
 func complete_ashen_farmstead() -> void:
 	var favor_logs := run_state.record_dungeon_floor_clear("farmstead", int(run_state.field_run.get("room_count", 1)), true)
@@ -368,11 +409,11 @@ func return_to_tavern(outcome: String, message: String) -> void:
 	}
 	run_state.finish_run(outcome, message)
 	if campaign.tutorial_phase == CampaignState.TUTORIAL_EXPEDITION and outcome == "death":
-		campaign.tutorial_phase = CampaignState.TUTORIAL_MOURNING; campaign.ensure_roster(); campaign.tutorial_phase = CampaignState.TUTORIAL_COMPLETE; campaign.save_atomic(); _select_first_available_character()
+		campaign.tutorial_phase = CampaignState.TUTORIAL_MOURNING; campaign.ensure_roster(); campaign.tutorial_phase = CampaignState.TUTORIAL_COMPLETE; run_state.restore_completed_tutorial_health(); campaign.save_atomic(); _select_first_available_character()
 		message = "Mara Vell bows her head. 'I warned them, and still I sent them. We remember every name here. Others have arrived—six souls willing to carry the work forward. Choose them carefully; death is final.'"
 		summary["headline"] = "The first adventurer is remembered. The tutorial is complete."
 	elif campaign.tutorial_phase == CampaignState.TUTORIAL_EXPEDITION and outcome == "victory":
-		campaign.tutorial_phase=CampaignState.TUTORIAL_COMPLETE;campaign.ensure_roster();campaign.save_atomic();_select_first_available_character();message="Mara Vell stares at the returning adventurer. 'Three heartbeats of strength, and you still cleared the Briarway. The company will remember that.'";summary["headline"]="The first adventurer survived the impossible odds. The tutorial is complete."
+		campaign.tutorial_phase=CampaignState.TUTORIAL_COMPLETE;campaign.ensure_roster();run_state.restore_completed_tutorial_health();campaign.save_atomic();_select_first_available_character();message="Mara Vell stares at the returning adventurer. 'Three heartbeats of strength, and you still cleared the Briarway. The company will remember that.'";summary["headline"]="The first adventurer survived the impossible odds. The tutorial is complete."
 	show_tavern(message, summary)
 
 func extract_expedition() -> void:
@@ -399,16 +440,19 @@ func _ensure_input_actions() -> void:
 	_add_key_action("interact", [KEY_E, KEY_SPACE])
 	_add_key_action("special", [KEY_F])
 	_add_key_action("drink_potion", [KEY_Q])
+	_reset_action("character_menu")
 	_add_key_action("character_menu", [KEY_M])
+	_reset_action("cycle_party")
+	_add_key_action("cycle_party", [KEY_TAB])
 	_add_key_action("extract_expedition", [KEY_X])
 	_add_joypad_action("character_menu",JOY_BUTTON_START)
+	_add_joypad_action("cycle_party",JOY_BUTTON_LEFT_SHOULDER)
 	_add_joypad_action("move_up", JOY_BUTTON_DPAD_UP)
 	_add_joypad_action("move_down", JOY_BUTTON_DPAD_DOWN)
 	_add_joypad_action("move_left", JOY_BUTTON_DPAD_LEFT)
 	_add_joypad_action("move_right", JOY_BUTTON_DPAD_RIGHT)
 	_add_joypad_action("interact", JOY_BUTTON_A)
 	# Shoulder/system bindings keep campaign-critical actions reachable without a mouse.
-	_add_joypad_action("character_menu",JOY_BUTTON_LEFT_SHOULDER)
 	_add_joypad_action("extract_expedition",JOY_BUTTON_RIGHT_SHOULDER)
 	_add_key_action("slasher_up", [KEY_W, KEY_UP])
 	_add_key_action("slasher_down", [KEY_S, KEY_DOWN])

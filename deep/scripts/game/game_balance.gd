@@ -14,6 +14,7 @@ const CONSUMABLES_PATH := "res://data/consumables.json"
 const DUNGEONS_PATH := "res://data/dungeons.json"
 const FIELD_ROOMS_PATH := "res://data/field_rooms.json"
 const SLASHER_BALANCE_PATH := "res://data/slasher_balance.json"
+const STRATEGY_BALANCE_PATH := "res://data/strategy_balance.json"
 const SLASHER_JOURNAL_PATH := "res://data/slasher_journal.json"
 const SLASHER_PROGRESSION_PATH := "res://data/slasher_progression.json"
 const SLASHER_ITEM_EFFECTS_PATH := "res://data/slasher_item_effects.json"
@@ -31,6 +32,7 @@ static var _consumables: Dictionary = {}
 static var _dungeons: Dictionary = {}
 static var _field_rooms: Dictionary = {}
 static var _slasher_balance: Dictionary = {}
+static var _strategy_balance: Dictionary = {}
 static var _slasher_journal: Dictionary = {}
 static var _slasher_progression: Dictionary = {}
 static var _debug_unlock_all_dungeons := false
@@ -45,6 +47,22 @@ static func get_slasher_balance(section: String = "") -> Dictionary:
 	_load_all()
 	if section.is_empty(): return _slasher_balance.duplicate(true)
 	var value: Variant = _slasher_balance.get(section, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+static func get_strategy_balance(section: String = "") -> Dictionary:
+	_load_all()
+	if section.is_empty(): return _strategy_balance.duplicate(true)
+	var value: Variant = _strategy_balance.get(section, {})
+	return value.duplicate(true) if value is Dictionary else {}
+
+static func get_strategy_value(path: Array, fallback: Variant) -> Variant:
+	_load_all()
+	return _get_nested(_strategy_balance, path, fallback)
+
+static func get_strategy_class_tuning(class_id: String) -> Dictionary:
+	_load_all()
+	var classes: Dictionary = Dictionary(_strategy_balance.get("runtime", {})).get("classes", {})
+	var value: Variant = classes.get(normalize_class_id(class_id), {})
 	return value.duplicate(true) if value is Dictionary else {}
 
 static func get_slasher_class_tuning(class_id: String) -> Dictionary:
@@ -367,7 +385,11 @@ static func get_base_classes() -> Dictionary:
 static func get_base_class(class_id: String) -> Dictionary:
 	var classes := get_base_classes()
 	var value: Variant = classes.get(normalize_class_id(class_id), {})
-	return value if value is Dictionary else {}
+	if not (value is Dictionary): return {}
+	_load_all()
+	var overrides: Dictionary = Dictionary(_strategy_balance.get("characters", {}))
+	var class_override: Variant = overrides.get(normalize_class_id(class_id), {})
+	return _deep_merge(value, class_override) if class_override is Dictionary else value
 
 static func get_class_action(class_id: String, slot: String) -> Dictionary:
 	var class_data := get_base_class(class_id)
@@ -546,6 +568,7 @@ static func _load_all() -> void:
 	_dungeons = _load_json(DUNGEONS_PATH)
 	_field_rooms = _load_json(FIELD_ROOMS_PATH)
 	_slasher_balance = _load_json(SLASHER_BALANCE_PATH)
+	_strategy_balance = _load_json(STRATEGY_BALANCE_PATH)
 	_slasher_journal = _load_json(SLASHER_JOURNAL_PATH)
 	_slasher_progression = _load_json(SLASHER_PROGRESSION_PATH)
 	_slasher_item_effects = _load_json(SLASHER_ITEM_EFFECTS_PATH)
@@ -563,6 +586,16 @@ static func _load_json(path: String) -> Dictionary:
 		return parsed
 	push_warning("Invalid balance data JSON: %s" % path)
 	return {}
+
+static func _deep_merge(base: Dictionary, overrides: Dictionary) -> Dictionary:
+	var result := base.duplicate(true)
+	for key in overrides.keys():
+		var incoming: Variant = overrides[key]
+		if result.get(key) is Dictionary and incoming is Dictionary:
+			result[key] = _deep_merge(Dictionary(result[key]), Dictionary(incoming))
+		else:
+			result[key] = incoming.duplicate(true) if incoming is Dictionary or incoming is Array else incoming
+	return result
 
 static func _get_nested(source: Dictionary, path: Array, fallback: Variant) -> Variant:
 	var cursor: Variant = source

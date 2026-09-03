@@ -29,7 +29,7 @@ func _ready()->void:
 		var button:=Button.new();button.text=tab_id.capitalize();button.toggle_mode=true;button.custom_minimum_size=Vector2(150,42);button.pressed.connect(_select_tab.bind(tab_id));tab_row.add_child(button);tabs[tab_id]=button
 	var scroll:=ScrollContainer.new();scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;body.add_child(scroll)
 	content=VBoxContainer.new();content.size_flags_horizontal=Control.SIZE_EXPAND_FILL;content.add_theme_constant_override("separation",10);scroll.add_child(content)
-	var hint:=Label.new();hint.text="M / Tab / Start: Open  ·  Esc / B: Close";hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;hint.add_theme_color_override("font_color",Color("#c7ae78"));body.add_child(hint)
+	var hint:=Label.new();hint.text="M / Start: Open or close  ·  Tab / LB: Cycle party";hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;hint.add_theme_color_override("font_color",Color("#c7ae78"));body.add_child(hint)
 
 func open(state:RunState,actor:SlasherPlayer)->void:
 	if visible:return
@@ -56,7 +56,7 @@ func _select_tab(tab_id:String)->void:
 		_:_build_stats()
 
 func _build_options()->void:
-	var options:GameOptionsPanel=OPTIONS_PANEL.new();options.size_flags_horizontal=Control.SIZE_EXPAND_FILL;options.setup(false);content.add_child(options)
+	var options:GameOptionsPanel=OPTIONS_PANEL.new();options.size_flags_horizontal=Control.SIZE_EXPAND_FILL;content.add_child(options);options.setup(false)
 
 func _build_stats()->void:
 	var header:=_section();content.add_child(header)

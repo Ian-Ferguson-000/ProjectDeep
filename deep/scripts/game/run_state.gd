@@ -74,7 +74,9 @@ var active_character_id: String = ""
 func attach_campaign(value: CampaignState) -> void:
 	campaign = value if value != null else CampaignState.new()
 	_restore_campaign_runtime()
-	if campaign.is_tutorial_complete(): campaign.ensure_roster()
+	if campaign.is_tutorial_complete():
+		campaign.ensure_roster()
+		restore_completed_tutorial_health()
 
 func sync_campaign_runtime() -> void:
 	if campaign == null: return
@@ -108,6 +110,20 @@ func apply_tutorial_health_cap() -> void:
 	if member != null:
 		member.max_health = TUTORIAL_MAX_HEALTH
 		member.current_health = current_health
+
+func restore_completed_tutorial_health() -> void:
+	if campaign == null or not campaign.is_tutorial_complete() or campaign.expedition.active: return
+	_ensure_profiles()
+	for member in campaign.living_roster():
+		# Early saves persisted the tutorial cap and created replacements with
+		# placeholder health. Only repair those unmistakable sentinel values.
+		if member.max_health > TUTORIAL_MAX_HEALTH: continue
+		var profile: Dictionary = Dictionary(hero_profiles.get(member.class_id, {}))
+		var derived: Dictionary = Dictionary(profile.get("derived_stats", {}))
+		var normal_max := maxi(TUTORIAL_MAX_HEALTH + 1, int(derived.get("max_health", member.max_health)))
+		member.max_health = normal_max
+		member.current_health = normal_max
+	if not active_character_id.is_empty(): _sync_health_from_profile(true)
 
 func select_active_character(character_id: String) -> bool:
 	if campaign == null or not campaign.expedition.living_party_ids().has(character_id): return false
@@ -256,6 +272,49 @@ func advance_floor() -> bool:
 	_tick_inventory_floor_durations()
 	return true
 
+func record_active_dungeon_completion() -> Array[String]:
+	var logs: Array[String] = []
+	completed_dungeons[active_dungeon_id] = true
+	if active_dungeon_id == "forest": mark_forest_cleared()
+	if campaign != null and campaign.expedition.active:
+		campaign.expedition.carried_gold = gold
+		logs = campaign.record_dungeon_clear(active_dungeon_id, active_play_mode)
+	autosave_campaign()
+	return logs
+
+func transition_to_dungeon(dungeon_id: String) -> bool:
+	var dungeon := GameBalance.get_dungeon(dungeon_id)
+	if dungeon.is_empty() or not dungeon_supports_mode(dungeon_id, active_play_mode): return false
+	if campaign == null or not campaign.expedition.active: return false
+	_sync_active_profile_to_character()
+	active_dungeon_id = dungeon_id
+	current_floor = 1
+	var slasher_config: Dictionary = Dictionary(dungeon.get("slasher", {}))
+	max_floors = int(slasher_config.get("campaign_floors", dungeon.get("floors", 1))) if active_play_mode == PLAY_MODE_SLASHER else int(dungeon.get("floors", 1))
+	class_resource = 0
+	floor_seed += 37
+	pending_chest_choices.clear()
+	starter_reward_claimed = false
+	slasher_endless_mode = false
+	slasher_campaign_boss_cleared = false
+	field_run.clear()
+	if String(dungeon.get("dungeon_type", "mystery")) == "field":
+		var room_count: Dictionary = dungeon.get("room_count", {"min":10, "max":12})
+		field_run = FieldDungeonGenerator.generate(get_current_floor_seed(), int(room_count.get("min", 10)), int(room_count.get("max", 12)))
+	campaign.expedition.dungeon_id = dungeon_id
+	campaign.expedition.floor = 1
+	campaign.expedition.carried_gold = gold
+	campaign.expedition.continue_from_checkpoint()
+	for character_id in campaign.expedition.member_runtime.keys():
+		var runtime: Dictionary = campaign.expedition.member_runtime[character_id]
+		runtime["position"] = []
+		runtime["strategy_turn"] = {}
+		campaign.expedition.member_runtime[character_id] = runtime
+	_tick_inventory_floor_durations()
+	run_outcome = "The expedition descends into %s without returning to the Hearth." % String(dungeon.get("name", dungeon_id.capitalize()))
+	autosave_campaign()
+	return true
+
 func advance_slasher_floor()->void:
 	current_floor+=1;class_resource=0;_tick_inventory_floor_durations()
 	if campaign != null and campaign.expedition.active:campaign.expedition.floor=current_floor
@@ -289,6 +348,7 @@ func finish_run(outcome: String, message: String) -> void:
 	if campaign != null and campaign.expedition.active:
 		if outcome == "victory": campaign.record_dungeon_clear(active_dungeon_id, active_play_mode)
 		campaign.resolve_expedition(outcome)
+		if campaign.is_tutorial_complete(): restore_completed_tutorial_health()
 		autosave_campaign()
 	_sync_crypt_unlock()
 

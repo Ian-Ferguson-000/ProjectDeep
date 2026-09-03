@@ -201,8 +201,9 @@ func _process(delta:float)->void:
 	var modal_open:bool=(merchant_shop_panel!=null and merchant_shop_panel.visible) or (relic_modal!=null and relic_modal.visible)
 	player.input_locked=modal_open or codex_open
 	if Input.is_action_just_pressed("character_menu") and not modal_open:
-		if run_state.get_active_party_ids().size()>1:_cycle_party_member();return
 		_open_codex();return
+	if Input.is_action_just_pressed("cycle_party") and not modal_open and not codex_open and run_state.get_active_party_ids().size()>1:
+		_cycle_party_member();return
 	# Modal controls consume Escape themselves. Never let the same keypress fall through to abandon.
 	if modal_open or codex_open:return
 	if Input.is_action_just_pressed("extract_expedition") and run_state.can_extract():
@@ -237,7 +238,7 @@ func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 
 func _complete_floor()->void:
 	if floor_reward_claimed:return
-	floor_reward_claimed=true;_close_codex()
+	floor_reward_claimed=true;_close_codex();_store_active_slasher_state()
 	var rewards:=GameBalance.get_slasher_balance("rewards")
 	# TUNING: Campaign, elite, boss, and Endless XP values live together in slasher_balance.json rewards.
 	var xp:float=float(rewards.get("floor_xp_base",45))+run_state.current_floor*float(rewards.get("floor_xp_per_depth",5))

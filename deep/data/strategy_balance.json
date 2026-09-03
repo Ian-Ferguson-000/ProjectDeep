@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "description": "Strategy-mode tuning source. Characters overrides numeric class definitions; runtime controls class-specific board effects; rules controls shared turn behavior. Enemy stats remain in enemy_balance.json and loot/reward tables remain in combat_balance.json.",
+  "rules": {
+	"player_move_allowance": 3,
+	"free_roam_move_allowance": 99,
+	"enemy_fallback_move_allowance": 2,
+	"enemy_turn_delay_seconds": 0.5,
+	"trap_damage": 3
+  },
+  "characters": {
+	"warrior": {
+	  "base_stats": {"str": 16, "dex": 12, "con": 15, "int": 8, "wis": 10, "cha": 10},
+	  "derived": {
+		"max_health": {"base": 12, "per_level": 3, "stat": "con"},
+		"attack_bonus": {"stat": "str", "stat_offset": -2, "min": 1, "per_levels": 4},
+		"spell_power": {"flat": 0},
+		"defense": {"stat": "con", "stat_offset": -1, "min": 0, "per_levels": 5},
+		"initiative_modifier": {"base": 1, "stat": "dex", "stat_offset": -1, "min": 0, "per_levels": 6},
+		"potion_heal_bonus": {"stat": "wis", "min": 0, "per_levels": 5, "level_basis": "level"}
+	  },
+	  "resource_rules": {"max": 3, "special_cost": 2},
+	  "actions": {"basic": {"targeting": {"range": 1}}, "special": {"cost": 2, "targeting": {"range": 1}}, "defensive": {"targeting": {"range": 0}}, "movement": {"targeting": {"range": 3}}}
+	},
+	"mage": {
+	  "base_stats": {"str": 8, "dex": 14, "con": 11, "int": 16, "wis": 12, "cha": 10},
+	  "derived": {
+		"max_health": {"base": 10, "per_level": 2, "stat": "con"},
+		"attack_bonus": {"flat": 0},
+		"spell_power": {"stat": "int", "stat_offset": -2, "min": 1, "per_levels": 4},
+		"defense": {"stat": "dex", "stat_offset": -2, "min": 0, "per_levels": 6},
+		"initiative_modifier": {"base": 2, "stat": "dex", "stat_offset": -2, "min": 0, "per_levels": 6},
+		"potion_heal_bonus": {"stat": "wis", "min": 0, "per_levels": 5, "level_basis": "level"}
+	  },
+	  "resource_rules": {"max": 3, "special_cost": 2},
+	  "actions": {"basic": {"targeting": {"range": 4}}, "special": {"cost": 2, "targeting": {"range": 4}}, "defensive": {"targeting": {"range": 0}}, "movement": {"targeting": {"range": 3}}}
+	},
+	"healer": {
+	  "base_stats": {"str": 9, "dex": 13, "con": 12, "int": 12, "wis": 16, "cha": 14},
+	  "derived": {
+		"max_health": {"base": 11, "per_level": 2, "stat": "con"},
+		"attack_bonus": {"stat": "wis", "stat_offset": -2, "min": 1, "per_levels": 4},
+		"spell_power": {"flat": 0},
+		"defense": {"stat": "dex", "stat_offset": -2, "min": 0, "per_levels": 6},
+		"initiative_modifier": {"base": 1, "stat": "dex", "stat_offset": -1, "min": 0, "per_levels": 6},
+		"potion_heal_bonus": {"stat": "wis", "min": 0, "per_levels": 5, "level_basis": "level"}
+	  },
+	  "resource_rules": {"max": 3, "special_cost": 2},
+	  "actions": {"basic": {"targeting": {"range": 3}}, "special": {"cost": 2, "targeting": {"range": 0}}, "defensive": {"targeting": {"range": 0}}, "movement": {"targeting": {"range": 3}}}
+	},
+	"tank": {
+	  "base_stats": {"str": 14, "dex": 8, "con": 17, "int": 8, "wis": 12, "cha": 10},
+	  "derived": {
+		"max_health": {"base": 15, "per_level": 3, "stat": "con"},
+		"attack_bonus": {"stat": "str", "stat_offset": -2, "min": 1, "per_levels": 5},
+		"spell_power": {"flat": 0},
+		"defense": {"stat": "con", "min": 1, "per_levels": 4},
+		"initiative_modifier": {"base": 0, "stat": "dex", "stat_offset": -2, "min": 0, "per_levels": 8},
+		"potion_heal_bonus": {"stat": "wis", "min": 0, "per_levels": 6, "level_basis": "level"}
+	  },
+	  "resource_rules": {"max": 3, "special_cost": 2},
+	  "actions": {"basic": {"targeting": {"range": 1}}, "special": {"cost": 2, "targeting": {"range": 0}}, "defensive": {"targeting": {"range": 0}}, "movement": {"targeting": {"range": 3}}}
+	},
+	"rogue": {
+	  "base_stats": {"str": 12, "dex": 17, "con": 10, "int": 11, "wis": 10, "cha": 13},
+	  "derived": {
+		"max_health": {"base": 9, "per_level": 2, "stat": "con"},
+		"attack_bonus": {"stat": "dex", "stat_offset": -2, "min": 1, "per_levels": 4},
+		"spell_power": {"flat": 0},
+		"defense": {"stat": "dex", "stat_offset": -1, "min": 0, "per_levels": 5},
+		"initiative_modifier": {"base": 3, "stat": "dex", "stat_offset": -1, "min": 0, "per_levels": 5},
+		"potion_heal_bonus": {"flat": 0}
+	  },
+	  "resource_rules": {"max": 3, "special_cost": 2},
+	  "actions": {"basic": {"targeting": {"range": 1}}, "special": {"cost": 2, "targeting": {"range": 1}}, "defensive": {"targeting": {"range": 0}}, "movement": {"targeting": {"range": 3}}}
+	},
+	"summoner": {
+	  "base_stats": {"str": 9, "dex": 13, "con": 12, "int": 14, "wis": 15, "cha": 12},
+	  "derived": {
+		"max_health": {"base": 11, "per_level": 2, "stat": "con"},
+		"attack_bonus": {"stat": "wis", "stat_offset": -2, "min": 1, "per_levels": 4},
+		"spell_power": {"flat": 0},
+		"defense": {"stat": "dex", "stat_offset": -2, "min": 0, "per_levels": 6},
+		"initiative_modifier": {"base": 1, "stat": "dex", "stat_offset": -1, "min": 0, "per_levels": 6},
+		"potion_heal_bonus": {"stat": "wis", "min": 0, "per_levels": 6, "level_basis": "level"}
+	  },
+	  "resource_rules": {"max": 3, "special_cost": 2},
+	  "actions": {"basic": {"targeting": {"range": 4}}, "special": {"cost": 2, "targeting": {"range": 4}}, "defensive": {"targeting": {"range": 0}}, "movement": {"targeting": {"range": 5}}}
+	}
+  },
+  "runtime": {
+	"classes": {
+	  "warrior": {"basic": {"damage_offset": 0}, "special": {"damage_offset": 0}, "movement": {"range": 3, "impact_damage_offset": 1}},
+	  "mage": {"basic": {"damage_offset": 0, "resource_gain_min_range": 3}, "special": {"range": 4, "damage_offset": 2}, "movement": {"range": 3}},
+	  "healer": {"basic": {"damage_offset": -1, "slow_turns": 1, "empowered_slow_turns": 2}, "movement": {"range": 3, "heal_min_distance": 2, "heal_amount": 2}},
+	  "tank": {"basic": {"damage_offset": 0, "push_tiles": 1}, "movement": {"range": 3, "damage_offset": -1, "taunt_turns": 1}},
+	  "rogue": {"basic": {"damage_offset": 0, "secondary_damage_offset": -1}, "special": {"damage_offset": 3, "opening_bonus": 3}, "movement": {"range": 3, "minimum_range": 2}},
+	  "summoner": {"basic": {"unbonded_damage_offset": -1}, "special": {"wolf_health": 8, "pounce_damage": 3, "command_damage": 2}, "movement": {"range": 5}}
+	}
+  }
+}

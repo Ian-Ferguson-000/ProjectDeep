@@ -14,7 +14,7 @@
 	},
 	"mage": {
 	  "speed": 185, "collision_radius": 18, "sprite_scale": 0.42, "sprite_offset_y": -25,
-	  "basic": {"cooldown": 0.22, "resource_cost": 0, "resource_gain": 1, "power_stat": "spell_power", "damage_coefficient": 3.0, "flat_damage": 0, "projectile_range": 360, "projectile_speed": 620, "hit_radius": 24, "area_radius": 62, "piercing": false, "visual": "aether", "focus_min_distance": 140, "animation_lock": 0.32},
+	  "basic": {"cooldown": 0.22, "resource_cost": 0, "resource_gain": 1, "power_stat": "spell_power", "damage_coefficient": 13.0, "flat_damage": 0, "projectile_range": 360, "projectile_speed": 620, "hit_radius": 24, "area_radius": 62, "piercing": false, "visual": "aether", "focus_min_distance": 140, "animation_lock": 0.32},
 	  "movement": {"cooldown": 0.5, "resource_cost": 0, "resource_gain": 0, "movement_distance": 380, "destination_clearance": 22, "invulnerability": 0.28, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.8, "resource_cost": 1, "resource_gain": 0, "power_stat": "spell_power", "damage_coefficient": 4.0, "flat_damage": 0, "projectile_range": 480, "projectile_speed": 760, "hit_radius": 30, "area_radius": 88, "piercing": true, "visual": "fireball", "visual_scale": 1.7, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 0.25, "resource_cost": 0, "resource_gain": 0, "effect_duration": 1.0, "mitigation": 0.5, "push_radius": 100, "push_distance": 70, "animation_lock": 0.32}

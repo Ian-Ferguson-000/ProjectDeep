@@ -109,6 +109,7 @@ func _process(delta:float)->void:
 	transition_cooldown=maxf(0.0,transition_cooldown-delta)
 	var modal_open:bool=(merchant_shop_panel!=null and merchant_shop_panel.visible) or (relic_modal!=null and relic_modal.visible);var codex_open:=codex!=null and codex.visible;player.input_locked=modal_open or codex_open
 	if Input.is_action_just_pressed("character_menu") and not modal_open:_open_codex();return
+	if Input.is_action_just_pressed("cycle_party") and not modal_open and not codex_open and run_state.get_active_party_ids().size()>1:_cycle_party_member();return
 	if modal_open or codex_open:return
 	for loot in loot_nodes.duplicate():
 		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<38:_open_field_treasure(loot)

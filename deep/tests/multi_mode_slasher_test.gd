@@ -242,5 +242,5 @@ func _expect(condition:bool,message:String,failures:Array[String])->void:
 	if not condition:failures.append(message)
 
 func _ensure_slasher_actions()->void:
-	for action in ["character_menu","extract_expedition","slasher_up","slasher_down","slasher_left","slasher_right","slasher_aim_left","slasher_aim_right","slasher_aim_up","slasher_aim_down","slasher_controller_basic","slasher_mobility","slasher_special","slasher_defend","slasher_potion","slasher_abandon","slasher_consumable_1","slasher_consumable_2","slasher_consumable_3","slasher_consumable_4"]:
+	for action in ["character_menu","cycle_party","extract_expedition","slasher_up","slasher_down","slasher_left","slasher_right","slasher_aim_left","slasher_aim_right","slasher_aim_up","slasher_aim_down","slasher_controller_basic","slasher_mobility","slasher_special","slasher_defend","slasher_potion","slasher_abandon","slasher_consumable_1","slasher_consumable_2","slasher_consumable_3","slasher_consumable_4"]:
 		if not InputMap.has_action(action):InputMap.add_action(action)
