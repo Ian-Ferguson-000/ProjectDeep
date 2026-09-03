@@ -38,6 +38,18 @@ As you continue to use the available adventurers and start winning runs we can s
 The tavern upgrades are consisting of Rooms - Food tiers - Drink Tiers - Armory - Blacksmith (Character who works with you from there shop) and a magician specialising in magic items
 the more we upgrade the tavern the higher skill and quality we get in terms of adventurer
 Which is progression in stats alone and gives a nice gambling affect
+So begining in the tavern we get base level stat adventurers - I.E 
+DND level 1 stat rolls Fixed array Table
+Tavern to Level 3 Fame and Level 3 Food and Beverage - Fixed array +d4 Rng To each stat 
+
+
+                                                     Tavern Level
+Str - Smash Tomato                                   Level 3+ 1d4                                 Level 5+ 1d8                                 Level 7+ 1d8
+Cha - Sell the Tomato                                Level 3+ 1d4                                 Level 5+ 1d8                                 Level 7+ 1d8
+Dex - Dodge a Tomato                                 Level 3+ 1d4                                 Level 5+ 1d8                                 Level 7+ 1d8
+Int - Know its a fruit                               Level 3+ 1d4                                 Level 5+ 1d8                                 Level 7+ 1d8
+Wis - Know it doesnt belong in a fruit salad         Level 3+ 1d4                                 Level 5+ 1d8                                 Level 7+ 1d8
+Con - Ability to eat it without vomiting             Level 3+ 1d4                                 Level 5+ 1d8                                 Level 7+ 1d8
 
 Onto the levels and such
 
@@ -59,6 +71,28 @@ Do they buy a house in the village retire and start a family and there kids will
 
 are we able to send them out again
 
-do we give them ages? and make them retire in there late 20's cause its fantasy and noone lives that long? do we give the debuffs for being old farts? is this too technical or easy? LMK
+
+Michael Note - You will constantly pick the decendant - 
+
+
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+Adventurer Variety
+
+Fighter Example =  Different hairtyles and clothing  -  Doesnt change stats just visuals - Big Json files for Backstories.
+
+
+Damage Numbers Basic 
+
+PLayer Character 
+
+1-4 Damage Based on stats / Fighter Uses Strength / Mage uses Int / Bard uses Charisma / Ranger uses Dex
+Str 1-3 = 1 Dmg
+Str 4-6 = 2 Dmg
+Str 7- 9 = 3 Dmg
+Str 10 = 4 Dmg 
+
+Enemies = 1 - 2 Dmg
