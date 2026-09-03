@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "menders_sachet",
+  "display": {
+    "name": "Mender's Sachet"
+  },
+  "tags": [
+    "healing",
+    "utility"
+  ],
+  "rarity": "common",
+  "duration_type": "temporary",
+  "duration_floors": 3,
+  "description": "A fragrant packet of bitter herbs tucked beside a potion flask.",
+  "icon_key": "potion",
+  "modifiers": {
+    "potion_heal_bonus": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "Bitter herbs release a restorative breath when blood is first drawn.",
+      "modifiers": {
+        "potion_heal_bonus": 1
+      },
+      "rules_text": "The first time you fall below half health each combat, heal 3.",
+      "effects": [
+        {
+          "trigger": "cross_low_health",
+          "heal": 3,
+          "limit": "combat"
+        }
+      ]
+    }
+  }
+}

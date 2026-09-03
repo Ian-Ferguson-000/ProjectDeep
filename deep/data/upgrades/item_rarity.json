@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "item_rarity",
+  "display": {
+    "name": "Item Rarity"
+  },
+  "tags": [
+    "tavern_upgrade"
+  ],
+  "max_rank": 5,
+  "cost_balance_id": "economy"
+}

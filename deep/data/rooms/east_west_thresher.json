@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "east_west_thresher",
+  "display": {
+    "name": "East West Thresher"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "EW",
+  "background_id": "barn",
+  "obstacles": [
+    [
+      5,
+      3
+    ],
+    [
+      8,
+      4
+    ],
+    [
+      11,
+      7
+    ],
+    [
+      6,
+      7
+    ]
+  ]
+}

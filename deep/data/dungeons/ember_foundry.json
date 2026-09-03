@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "ember_foundry",
+  "display": {
+    "name": "Ember Foundry"
+  },
+  "tags": [
+    "dungeon",
+    "demo"
+  ],
+  "subtitle": "The Furnace Below",
+  "description": "A ruined forge of conveyors, constructs, molten channels, and weapons that still remember war.",
+  "category": "Field",
+  "dungeon_type": "mystery",
+  "runtime": "ember_foundry",
+  "slasher_runtime": "ember_foundry",
+  "supported_modes": [
+    "strategy",
+    "slasher"
+  ],
+  "party_cap": 4,
+  "floors": 6,
+  "slasher": {
+    "campaign_floors": 6,
+    "elite_floor_in_cycle": 3,
+    "cycle_length": 6,
+    "endless_available": false
+  },
+  "difficulty": "Master",
+  "accent": "d45d32",
+  "merchant_id": "foundry",
+  "unlock": {
+    "type": "all_dungeons_clear",
+    "dungeon_ids": [
+      "ashen_farmstead",
+      "crypt"
+    ]
+  },
+  "unlock_text": "Clear both the Ashen Farmstead and Stone Crypt.",
+  "clue_drop": "abyssal_foundry",
+  "extraction": "cleared_floor"
+}

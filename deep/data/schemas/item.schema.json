@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/item.schema.json",
+  "allOf": [{"$ref": "definition.schema.json"}],
+  "type": "object",
+  "required": ["rarity", "effects"],
+  "properties": {
+    "rarity": {"enum": ["common", "uncommon", "rare", "epic", "legendary"]},
+    "effects": {
+      "type": "object",
+      "properties": {"strategy": {"type": "object"}, "slasher": {"type": "object"}},
+      "additionalProperties": false
+    }
+  }
+}

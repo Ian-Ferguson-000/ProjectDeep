@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "elite_wolf",
+  "display": {
+    "name": "Elite Wolf"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Elite Wolf",
+  "short_name": "Elite",
+  "add_health": 3,
+  "add_damage": 1,
+  "xp": 35,
+  "gold": 5,
+  "initiative_modifier": 1,
+  "movement": 2
+}

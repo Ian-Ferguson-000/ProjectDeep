@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "mount",
+  "display": {
+    "name": "Mount"
+  },
+  "tags": [
+    "action",
+    "summoner",
+    "movement"
+  ],
+  "class_id": "summoner",
+  "slot": "movement",
+  "description": "Ride the wolf in a long ground sprint.",
+  "targeting": {
+    "type": "ground_path",
+    "range": 5
+  },
+  "effects": [
+    "Ignore engagement penalties"
+  ]
+}

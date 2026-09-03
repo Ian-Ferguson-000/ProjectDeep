@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "runebound_bracer",
+  "display": {
+    "name": "Runebound Bracer"
+  },
+  "tags": [
+    "martial",
+    "defense"
+  ],
+  "rarity": "rare",
+  "duration_type": "permanent",
+  "description": "An old leather bracer inset with a rune that warms whenever steel is drawn.",
+  "icon_key": "attack",
+  "modifiers": {
+    "attack_bonus": 2,
+    "defense": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "A warm rune divides its loyalty between blade and guard.",
+      "modifiers": {
+        "attack_power": 2,
+        "armor_class": 1
+      },
+      "rules_text": "After a defensive reaction triggers, your next martial attack gains +2 Accuracy.",
+      "effects": [
+        {
+          "trigger": "reaction",
+          "next_attack": {
+            "accuracy": 2
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "south_west_burned_field",
+  "display": {
+    "name": "South West Burned Field"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "SW",
+  "background_id": "harvest_field",
+  "obstacles": [
+    [
+      10,
+      3
+    ],
+    [
+      6,
+      3
+    ],
+    [
+      4,
+      7
+    ]
+  ]
+}

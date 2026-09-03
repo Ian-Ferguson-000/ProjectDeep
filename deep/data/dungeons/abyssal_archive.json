@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "abyssal_archive",
+  "display": {
+    "name": "Abyssal Archive"
+  },
+  "tags": [
+    "dungeon",
+    "demo"
+  ],
+  "subtitle": "The Unwritten Stacks",
+  "description": "A forbidden archive where void-touched texts rewrite rooms and readers alike.",
+  "category": "Secret",
+  "dungeon_type": "mystery",
+  "runtime": "abyssal_archive",
+  "slasher_runtime": "abyssal_archive",
+  "supported_modes": [
+    "strategy",
+    "slasher"
+  ],
+  "party_cap": 4,
+  "floors": 7,
+  "slasher": {
+    "campaign_floors": 7,
+    "elite_floor_in_cycle": 4,
+    "cycle_length": 7,
+    "endless_available": false
+  },
+  "difficulty": "Secret",
+  "accent": "75519b",
+  "merchant_id": "",
+  "unlock": {
+    "type": "secret"
+  },
+  "unlock_text": "Find the Crypt and Foundry clues, then research secret paths at the tavern.",
+  "unique_rewards": [
+    "arcane_relic",
+    "void_relic"
+  ],
+  "extraction": "cleared_floor"
+}

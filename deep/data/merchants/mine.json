@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "mine",
+  "display": {
+    "name": "Neris Vale"
+  },
+  "tags": [
+    "merchant",
+    "demo"
+  ],
+  "title": "Drowned-Vein Salvager",
+  "description": "A mine runner trading mineral wards, diving tonics, and armor recovered below the waterline.",
+  "portrait": "res://assets/merchants/tavern_mara.png",
+  "dungeon_id": "sunken_mine",
+  "stock": [
+    {
+      "offer_id": "mine_potion",
+      "kind": "consumable",
+      "consumable_id": "healing_potion",
+      "name": "Miner's Tonic",
+      "description": "Gain one Healing Potion immediately.",
+      "gold": 8,
+      "min_rank": 0,
+      "location": "both"
+    },
+    {
+      "offer_id": "mine_compass",
+      "kind": "item",
+      "item_id": "wayfinders_compass",
+      "gold": 32,
+      "min_rank": 1,
+      "location": "both"
+    },
+    {
+      "offer_id": "mine_crown",
+      "kind": "item",
+      "item_id": "heartwood_crown",
+      "favor": 60,
+      "min_rank": 4,
+      "location": "favor"
+    }
+  ]
+}

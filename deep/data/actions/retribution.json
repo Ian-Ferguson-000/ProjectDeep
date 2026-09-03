@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "retribution",
+  "display": {
+    "name": "Retribution"
+  },
+  "tags": [
+    "action",
+    "tank",
+    "special"
+  ],
+  "class_id": "tank",
+  "slot": "special",
+  "cost": 2,
+  "description": "Store half of incoming damage and release it next turn.",
+  "targeting": {
+    "type": "self",
+    "range": 0
+  },
+  "effects": [
+    "Release stored damage to adjacent enemies"
+  ]
+}

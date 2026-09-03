@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "sunken_mine",
+  "display": {
+    "name": "Sunken Mine"
+  },
+  "tags": [
+    "dungeon",
+    "demo"
+  ],
+  "subtitle": "The Drowned Veins",
+  "description": "Flooded tunnels, unstable passages, ore machinery, and things awakened below the waterline.",
+  "category": "Mystery",
+  "dungeon_type": "mystery",
+  "runtime": "sunken_mine",
+  "slasher_runtime": "sunken_mine",
+  "supported_modes": [
+    "strategy",
+    "slasher"
+  ],
+  "party_cap": 4,
+  "floors": 6,
+  "slasher": {
+    "campaign_floors": 6,
+    "elite_floor_in_cycle": 3,
+    "cycle_length": 6,
+    "endless_available": false
+  },
+  "difficulty": "Veteran",
+  "accent": "438da1",
+  "merchant_id": "mine",
+  "unlock": {
+    "type": "any_dungeon_clear",
+    "dungeon_ids": [
+      "ashen_farmstead",
+      "crypt"
+    ]
+  },
+  "unlock_text": "Clear the Ashen Farmstead or Stone Crypt.",
+  "continuous_next": "ember_foundry",
+  "extraction": "cleared_floor"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "blood_wolf",
+  "display": {
+    "name": "Blood Wolf"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Blood Wolf",
+  "short_name": "Blood",
+  "base_health": 7,
+  "health_per_floor": 1.0,
+  "damage_before_floor": 3,
+  "damage_from_floor_4": 4,
+  "xp": 25,
+  "gold": 4,
+  "initiative_modifier": -1,
+  "movement": 1
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "scholars_lens",
+  "display": {
+    "name": "Scholar's Lens"
+  },
+  "tags": [
+    "xp",
+    "arcane"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "Every fight teaches a little more than it should.",
+  "icon_key": "mode",
+  "modifiers": {
+    "xp_bonus_percent": 15
+  },
+  "effects": {
+    "strategy": {
+      "description": "Every enemy defense becomes a lesson written in reflected light.",
+      "modifiers": {
+        "xp_bonus_percent": 15
+      },
+      "rules_text": "After an attack is stopped by Threshold or Aegis, gain +1 Penetration for the next attack.",
+      "effects": [
+        {
+          "trigger": "absorbed_attack",
+          "next_attack": {
+            "penetration": 1
+          }
+        }
+      ]
+    }
+  }
+}

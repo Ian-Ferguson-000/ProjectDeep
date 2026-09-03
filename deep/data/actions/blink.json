@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "blink",
+  "display": {
+    "name": "Blink"
+  },
+  "tags": [
+    "action",
+    "mage",
+    "movement"
+  ],
+  "class_id": "mage",
+  "slot": "movement",
+  "description": "Teleport to a visible open tile.",
+  "targeting": {
+    "type": "visible_walkable_tile",
+    "range": 3
+  },
+  "effects": [
+    "Ignore intervening units and terrain"
+  ]
+}

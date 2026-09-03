@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "repel",
+  "display": {
+    "name": "Repel"
+  },
+  "tags": [
+    "action",
+    "mage",
+    "defensive"
+  ],
+  "class_id": "mage",
+  "slot": "defensive",
+  "description": "Reduce the next hit and push a melee attacker.",
+  "targeting": {
+    "type": "self",
+    "range": 0
+  },
+  "effects": [
+    "Push melee attacker 2 tiles"
+  ]
+}

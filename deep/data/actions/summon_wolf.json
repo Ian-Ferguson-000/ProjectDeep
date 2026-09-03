@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "summon_wolf",
+  "display": {
+    "name": "Summon"
+  },
+  "tags": [
+    "action",
+    "summoner",
+    "special"
+  ],
+  "class_id": "summoner",
+  "slot": "special",
+  "cost": 2,
+  "description": "Summon the wolf or pounce on a marked target.",
+  "targeting": {
+    "type": "nearby_walkable_or_marked",
+    "range": 4
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Place wolf if absent",
+    "Pounce if active"
+  ]
+}

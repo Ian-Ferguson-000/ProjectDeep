@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "ironroot_ring",
+  "display": {
+    "name": "Ironroot Ring"
+  },
+  "tags": [
+    "defense",
+    "health"
+  ],
+  "rarity": "common",
+  "duration_type": "dungeon_bound",
+  "description": "A rough wooden ring reinforced with a thin band of iron.",
+  "icon_key": "defense",
+  "modifiers": {
+    "max_health": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "Iron-bound rootwood anchors flesh against forced movement.",
+      "modifiers": {
+        "max_health": 2,
+        "threshold": 1
+      },
+      "rules_text": "Reduce forced movement by 1 tile and gain +1 physical Aegis.",
+      "effects": [
+        {
+          "trigger": "forced_move",
+          "reduce_tiles": 1
+        },
+        {
+          "condition": "always",
+          "modifiers": {
+            "aegis_physical": 1
+          }
+        }
+      ]
+    }
+  }
+}

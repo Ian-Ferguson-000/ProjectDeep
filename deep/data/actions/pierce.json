@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "pierce",
+  "display": {
+    "name": "Pierce"
+  },
+  "tags": [
+    "action",
+    "rogue",
+    "basic"
+  ],
+  "class_id": "rogue",
+  "slot": "basic",
+  "description": "Ignore defenses and hit through a target.",
+  "targeting": {
+    "type": "enemy",
+    "range": 1
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Can hit enemy directly behind target"
+  ],
+  "modifiers": [
+    {
+      "stat": "defenses",
+      "condition": "always",
+      "ignore": [
+        "threshold",
+        "aegis"
+      ],
+      "text": "Ignores Threshold and Aegis"
+    }
+  ]
+}

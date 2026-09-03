@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "glass_magus_eye",
+  "display": {
+    "name": "Glass Magus Eye"
+  },
+  "tags": [
+    "arcane",
+    "spell"
+  ],
+  "rarity": "rare",
+  "duration_type": "permanent",
+  "description": "A polished crystal lens that fractures spell-light into sharper patterns.",
+  "icon_key": "spell",
+  "modifiers": {
+    "spell_power": 3,
+    "initiative_modifier": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "The lens exposes the thinnest seam in magical resistance.",
+      "modifiers": {
+        "spell_potency": 2,
+        "accuracy": 1
+      },
+      "rules_text": "Spell attacks gain Penetration equal to half their Range bonus.",
+      "effects": [
+        {
+          "condition": "spell_attack",
+          "penetration_from_range": 0.5
+        }
+      ]
+    }
+  }
+}

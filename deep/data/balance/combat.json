@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "id": "combat",
+  "display": {
+    "name": "Combat"
+  },
+  "tags": [
+    "balance"
+  ],
+  "source": "combat_balance.json",
+  "values": {
+    "xp": {
+      "floor_clear": 40
+    },
+    "healing": {
+      "potion_base": 5,
+      "campfire_combat": 2
+    },
+    "props": {
+      "hp": {
+        "rock": 1,
+        "barrel": 1,
+        "campfire": 99
+      },
+      "break_gold": 1
+    }
+  }
+}

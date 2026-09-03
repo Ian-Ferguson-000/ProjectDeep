@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "flameheart_talisman",
+  "display": {
+    "name": "Flameheart Talisman"
+  },
+  "tags": [
+    "arcane",
+    "fire"
+  ],
+  "rarity": "very_rare",
+  "duration_type": "permanent",
+  "description": "A pulsing talisman that rewards bold spellcasting.",
+  "icon_key": "spell",
+  "modifiers": {
+    "spell_power": 4,
+    "defense": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "The talisman rewards spellcasters who stand close enough to feel the heat.",
+      "modifiers": {
+        "spell_potency": 3,
+        "aegis_fire": 3
+      },
+      "rules_text": "Fire attacks made within 2 tiles gain +2 Spell Potency and +1 Penetration.",
+      "effects": [
+        {
+          "condition": "close_spell",
+          "damage_type": "fire",
+          "modifiers": {
+            "spell_potency": 2,
+            "penetration": 1
+          }
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: spell impacts gain an 18-pixel area burst.",
+      "trigger": "hit",
+      "area_radius_bonus": 18.0,
+      "internal_cooldown": 1.5
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "deepdelvers_lantern",
+  "display": {
+    "name": "Deepdelver's Lantern"
+  },
+  "tags": [
+    "loot",
+    "xp",
+    "utility"
+  ],
+  "rarity": "very_rare",
+  "duration_type": "dungeon_bound",
+  "description": "A hooded lantern whose pale flame seems brightest near danger and treasure alike.",
+  "icon_key": "gold",
+  "modifiers": {
+    "gold_bonus_percent": 50,
+    "xp_bonus_percent": 25
+  },
+  "effects": {
+    "strategy": {
+      "description": "Pale flame reveals danger and treasure in equal measure.",
+      "modifiers": {
+        "gold_bonus_percent": 40,
+        "xp_bonus_percent": 20
+      },
+      "rules_text": "Against undiscovered enemy types, gain +2 Accuracy and +2 Armor Class.",
+      "effects": [
+        {
+          "condition": "first_enemy_type",
+          "modifiers": {
+            "accuracy": 2,
+            "armor_class": 2
+          }
+        }
+      ]
+    }
+  }
+}

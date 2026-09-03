@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "leap",
+  "display": {
+    "name": "Leap"
+  },
+  "tags": [
+    "action",
+    "tank",
+    "movement"
+  ],
+  "class_id": "tank",
+  "slot": "movement",
+  "description": "Leap, damage, and taunt nearby enemies.",
+  "targeting": {
+    "type": "walkable_tile",
+    "range": 3
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Taunt adjacent enemies"
+  ]
+}

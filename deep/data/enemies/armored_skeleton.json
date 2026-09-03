@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "armored_skeleton",
+  "display": {
+    "name": "Armored Skeleton"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Armored Skeleton",
+  "short_name": "Armor",
+  "base_health": 10,
+  "health_per_floor": 1.3,
+  "damage_before_floor": 3,
+  "damage_from_floor_4": 4,
+  "xp": 32,
+  "gold": 6,
+  "initiative_modifier": -1,
+  "movement": 1,
+  "armor_class": 14,
+  "evasion": 7,
+  "threshold": 2,
+  "aegis_physical": 1
+}

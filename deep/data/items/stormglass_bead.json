@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "stormglass_bead",
+  "display": {
+    "name": "Stormglass Bead"
+  },
+  "tags": [
+    "arcane",
+    "lightning"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "A cloudy blue bead with tiny flashes trapped beneath its surface.",
+  "icon_key": "spell",
+  "modifiers": {
+    "spell_power": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "A captive storm leaps farther after movement.",
+      "modifiers": {
+        "spell_potency": 1,
+        "aegis_lightning": 2
+      },
+      "rules_text": "After moving, lightning attacks gain +1 Range and +2 Spell Potency.",
+      "effects": [
+        {
+          "condition": "moved",
+          "damage_type": "lightning",
+          "modifiers": {
+            "range": 1,
+            "spell_potency": 2
+          }
+        }
+      ]
+    }
+  }
+}

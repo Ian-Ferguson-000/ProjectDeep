@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "cinder_crossroads",
+  "display": {
+    "name": "Cinder Crossroads"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "NESW",
+  "background_id": "farmyard",
+  "obstacles": [
+    [
+      5,
+      4
+    ],
+    [
+      11,
+      4
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      11,
+      7
+    ],
+    [
+      8,
+      5
+    ]
+  ]
+}

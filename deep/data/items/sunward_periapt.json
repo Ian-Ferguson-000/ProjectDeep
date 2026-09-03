@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "id": "sunward_periapt",
+  "display": {
+    "name": "Sunward Periapt"
+  },
+  "tags": [
+    "health",
+    "healing"
+  ],
+  "rarity": "very_rare",
+  "duration_type": "permanent",
+  "description": "A bright charm that makes wounds close cleaner.",
+  "icon_key": "health",
+  "modifiers": {
+    "max_health": 8,
+    "potion_heal_bonus": 4
+  },
+  "effects": {
+    "strategy": {
+      "description": "Sunlight pools in the periapt and refuses to let healing go to waste.",
+      "modifiers": {
+        "max_health": 6,
+        "potion_heal_bonus": 3,
+        "aegis_necrotic": 2
+      },
+      "rules_text": "Healing at full health grants 2 temporary Aegis against all damage.",
+      "effects": [
+        {
+          "trigger": "overheal",
+          "temporary_aegis": 2
+        }
+      ]
+    }
+  }
+}

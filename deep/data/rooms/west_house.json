@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "west_house",
+  "display": {
+    "name": "West House"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "W",
+  "background_id": "cellar",
+  "obstacles": [
+    [
+      9,
+      3
+    ],
+    [
+      9,
+      7
+    ],
+    [
+      5,
+      5
+    ]
+  ]
+}

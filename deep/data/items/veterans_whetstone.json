@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "veterans_whetstone",
+  "display": {
+    "name": "Veteran's Whetstone"
+  },
+  "tags": [
+    "martial",
+    "weapon"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "temporary",
+  "duration_floors": 3,
+  "description": "A scarred stone polished smooth by blades that survived many campaigns.",
+  "icon_key": "attack",
+  "modifiers": {
+    "attack_bonus": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "A scarred whetstone favors repeated blows against the same foe.",
+      "modifiers": {
+        "attack_power": 1,
+        "penetration": 1
+      },
+      "rules_text": "Consecutive attacks against the same target gain +1 Accuracy and +1 Penetration.",
+      "effects": [
+        {
+          "condition": "repeated_target",
+          "modifiers": {
+            "accuracy": 1,
+            "penetration": 1
+          }
+        }
+      ]
+    }
+  }
+}

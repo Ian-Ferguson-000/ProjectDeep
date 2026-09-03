@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "chronomancers_pin",
+  "display": {
+    "name": "Chronomancer's Pin"
+  },
+  "tags": [
+    "speed",
+    "arcane"
+  ],
+  "rarity": "very_rare",
+  "duration_type": "permanent",
+  "description": "The tiny hands on this silver pin occasionally twitch backward.",
+  "icon_key": "special",
+  "modifiers": {
+    "initiative_modifier": 4,
+    "spell_power": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "Its hands twitch backward at the instant an action goes wrong.",
+      "modifiers": {
+        "initiative_modifier": 4,
+        "evasion": 1
+      },
+      "rules_text": "Once per combat, reroll a missed attack and keep the new result.",
+      "effects": [
+        {
+          "trigger": "miss",
+          "reroll": true,
+          "limit": "combat"
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: periodically shave 0.4 seconds from active cooldowns.",
+      "trigger": "periodic",
+      "internal_cooldown": 8.0,
+      "cooldown_flat": 0.4
+    }
+  }
+}

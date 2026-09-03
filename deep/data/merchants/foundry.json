@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "foundry",
+  "display": {
+    "name": "Veyra Coil"
+  },
+  "tags": [
+    "merchant",
+    "demo"
+  ],
+  "title": "Last Forge Artificer",
+  "description": "An artificer dealing in tempered weapons, heat wards, and rare mechanisms.",
+  "portrait": "res://assets/merchants/tavern_mara.png",
+  "dungeon_id": "ember_foundry",
+  "stock": [
+    {
+      "offer_id": "foundry_potion",
+      "kind": "consumable",
+      "consumable_id": "firebreak_draught",
+      "name": "Quenched Firebreak",
+      "description": "Gain one Firebreak Draught.",
+      "gold": 14,
+      "min_rank": 0,
+      "location": "both"
+    },
+    {
+      "offer_id": "foundry_buckle",
+      "kind": "item",
+      "item_id": "soldiers_buckle",
+      "gold": 34,
+      "min_rank": 1,
+      "location": "both"
+    },
+    {
+      "offer_id": "foundry_reliquary",
+      "kind": "item",
+      "item_id": "phoenix_ash_reliquary",
+      "favor": 60,
+      "min_rank": 4,
+      "location": "favor"
+    }
+  ]
+}

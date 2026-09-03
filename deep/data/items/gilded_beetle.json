@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "gilded_beetle",
+  "display": {
+    "name": "Gilded Beetle"
+  },
+  "tags": [
+    "loot",
+    "luck"
+  ],
+  "rarity": "rare",
+  "duration_type": "permanent",
+  "description": "A jeweled beetle figurine that always seems to turn up beside hidden valuables.",
+  "icon_key": "gold",
+  "modifiers": {
+    "gold_bonus_percent": 50
+  },
+  "effects": {
+    "strategy": {
+      "description": "The jeweled beetle wakes whenever fortune produces an excess.",
+      "modifiers": {
+        "gold_bonus_percent": 40
+      },
+      "rules_text": "Gold pickups of 10 or more restore 1 class resource.",
+      "effects": [
+        {
+          "trigger": "large_gold_pickup",
+          "resource": 1,
+          "minimum": 10
+        }
+      ]
+    }
+  }
+}

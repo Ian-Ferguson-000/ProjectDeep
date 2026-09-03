@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "boss_wolf",
+  "display": {
+    "name": "Boss Wolf"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Elder Wolf",
+  "short_name": "Boss",
+  "health": 16,
+  "damage": 5,
+  "xp": 100,
+  "gold": 12,
+  "initiative_modifier": 2,
+  "movement": 2
+}

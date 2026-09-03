@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "fortune_eaters_idol",
+  "display": {
+    "name": "Fortune-Eater's Idol"
+  },
+  "tags": [
+    "legendary",
+    "loot",
+    "xp",
+    "luck"
+  ],
+  "rarity": "legendary",
+  "duration_type": "permanent",
+  "description": "A grinning golden idol that grows heavier after every victory.",
+  "icon_key": "gold",
+  "modifiers": {
+    "gold_bonus_percent": 100,
+    "xp_bonus_percent": 40,
+    "initiative_modifier": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "The idol consumes lucky outcomes and returns them as escalating rewards.",
+      "modifiers": {
+        "gold_bonus_percent": 80,
+        "xp_bonus_percent": 35,
+        "accuracy": 1
+      },
+      "rules_text": "Natural 20s grant 3 gold; natural 1s consume 3 gold to reroll when possible.",
+      "effects": [
+        {
+          "trigger": "critical_hit",
+          "gold": 3
+        },
+        {
+          "trigger": "critical_miss",
+          "spend_gold_reroll": 3
+        }
+      ]
+    }
+  }
+}

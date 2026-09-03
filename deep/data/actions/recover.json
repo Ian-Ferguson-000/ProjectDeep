@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "recover",
+  "display": {
+    "name": "Recover"
+  },
+  "tags": [
+    "action",
+    "healer",
+    "defensive"
+  ],
+  "class_id": "healer",
+  "slot": "defensive",
+  "description": "Restore half the health lost from the next hit.",
+  "targeting": {
+    "type": "self",
+    "range": 0
+  },
+  "effects": [
+    "Cannot restore pre-existing damage"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "worldbreaker_gauntlet",
+  "display": {
+    "name": "Worldbreaker Gauntlet"
+  },
+  "tags": [
+    "legendary",
+    "martial",
+    "power"
+  ],
+  "rarity": "legendary",
+  "duration_type": "permanent",
+  "description": "A massive rune-marked gauntlet whose knuckles bear dents no mortal smith can explain.",
+  "icon_key": "attack",
+  "modifiers": {
+    "attack_bonus": 6,
+    "defense": 3,
+    "max_health": 6
+  },
+  "effects": {
+    "strategy": {
+      "description": "Its runes turn excess force into fractures that outlast the blow.",
+      "modifiers": {
+        "attack_power": 5,
+        "penetration": 3,
+        "threshold": 2
+      },
+      "rules_text": "Martial hits reduce the target's Threshold by 1 for the rest of combat.",
+      "effects": [
+        {
+          "trigger": "martial_hit",
+          "shred_threshold": 1
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: impacts gain power, knockback, and area.",
+      "trigger": "hit",
+      "area_radius_bonus": 20.0
+    }
+  }
+}

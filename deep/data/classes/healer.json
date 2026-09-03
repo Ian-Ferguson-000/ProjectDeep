@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "id": "healer",
+  "display": {
+    "name": "Healer"
+  },
+  "tags": [
+    "class",
+    "demo"
+  ],
+  "role": "Support controller",
+  "description": "Bind enemies, preserve recent wounds, and turn Grace into power.",
+  "resource": "Grace",
+  "color": "f2c95e",
+  "sprite": "res://assets/classes/healer/sheet.png",
+  "base_stats": {
+    "str": 9,
+    "dex": 13,
+    "con": 12,
+    "int": 12,
+    "wis": 16,
+    "cha": 14
+  },
+  "primary": {
+    "accuracy": [
+      "wis",
+      "int"
+    ],
+    "power": "wis"
+  },
+  "stat_growth": [
+    {
+      "stat": "wis",
+      "every": 2
+    },
+    {
+      "stat": "cha",
+      "every": 3
+    },
+    {
+      "stat": "con",
+      "every": 5
+    }
+  ],
+  "derived": {
+    "max_health": {
+      "base": 11,
+      "per_level": 2,
+      "stat": "con",
+      "explanation": "11 + 2 per level after 1 + CON modifier"
+    },
+    "attack_bonus": {
+      "stat": "wis",
+      "stat_offset": -2,
+      "min": 1,
+      "per_levels": 4,
+      "explanation": "WIS modifier - 2 (minimum 1) + level bonus"
+    },
+    "spell_power": {
+      "flat": 0,
+      "explanation": "Binding Light uses attack power"
+    },
+    "defense": {
+      "stat": "dex",
+      "stat_offset": -2,
+      "min": 0,
+      "per_levels": 6,
+      "explanation": "DEX contribution + level bonus"
+    },
+    "initiative_modifier": {
+      "base": 1,
+      "stat": "dex",
+      "stat_offset": -1,
+      "min": 0,
+      "per_levels": 6,
+      "explanation": "1 + DEX contribution + level bonus"
+    },
+    "potion_heal_bonus": {
+      "stat": "wis",
+      "min": 0,
+      "per_levels": 5,
+      "level_basis": "level",
+      "explanation": "WIS modifier + level bonus"
+    }
+  },
+  "resource_rules": {
+    "max": 3,
+    "special_cost": 2,
+    "gain": [
+      "Binding Light hits"
+    ]
+  },
+  "default_action_ids": [
+    "binding_light",
+    "empower",
+    "recover",
+    "healing_dash"
+  ],
+  "unlockable_action_ids": [],
+  "progression_id": "healer"
+}

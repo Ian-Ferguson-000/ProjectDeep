@@ -1,7 +1,7 @@
 extends RefCounted
 class_name CampaignState
 
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
 const TARGET_ROSTER_SIZE := 6
 const SAVE_SLOT_COUNT := 3
 const LEGACY_SAVE_PATH := "user://campaign.json"
@@ -34,6 +34,18 @@ var banked_relics: Array[String] = []
 var successful_levels: int = 0
 var tavern_upgrades: Dictionary = {"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
 var clues: Dictionary = {}
+var candidates: Array[Dictionary] = []
+var contracts: Array[Dictionary] = []
+var company_tabs: Array[Dictionary] = []
+var injuries: Dictionary = {}
+var recovery: Dictionary = {}
+var relationships: Dictionary = {}
+var secured_loot: Dictionary = {"gold": 0, "items": [], "relics": []}
+var applied_settlement_ids: Array[String] = []
+var reputation: Dictionary = {"company": 0, "regions": {}}
+var definition_versions: Dictionary = {"manifest": "demo-1"}
+var unknown_definition_placeholders: Array[Dictionary] = []
+var migration_diagnostics: Array[String] = []
 var next_character_number: int = 1
 var expedition := ExpeditionState.new()
 var legacy_runtime: Dictionary = {}
@@ -182,7 +194,7 @@ func purchase_upgrade(branch: String) -> Array[String]:
 func to_dict() -> Dictionary:
 	var encoded_roster: Array[Dictionary] = []
 	for value in roster.values(): if value is CharacterRecord: encoded_roster.append(value.to_dict())
-	return {"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeon_modes":completed_dungeon_modes.duplicate(true),"banked_gold":banked_gold,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true)}
+	return {"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeon_modes":completed_dungeon_modes.duplicate(true),"banked_gold":banked_gold,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"clues":clues.duplicate(true),"candidates":candidates.duplicate(true),"contracts":contracts.duplicate(true),"company_tabs":company_tabs.duplicate(true),"injuries":injuries.duplicate(true),"recovery":recovery.duplicate(true),"relationships":relationships.duplicate(true),"secured_loot":secured_loot.duplicate(true),"applied_settlement_ids":applied_settlement_ids.duplicate(),"reputation":reputation.duplicate(true),"definition_versions":definition_versions.duplicate(true),"unknown_definition_placeholders":unknown_definition_placeholders.duplicate(true),"migration_diagnostics":migration_diagnostics.duplicate(),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true)}
 
 func save_atomic() -> bool:
 	last_save_error = "";save_slot=clampi(save_slot,1,SAVE_SLOT_COUNT);last_saved_unix=int(Time.get_unix_time_from_system());var temporary:=temp_save_path(save_slot);var destination:=save_path(save_slot);var backup:=backup_save_path(save_slot);var file := FileAccess.open(temporary, FileAccess.WRITE)
@@ -234,8 +246,14 @@ static func _migrate_dict(source:Dictionary)->Dictionary:
 		data["legacy_runtime"]={"completed_dungeons":Dictionary(data.get("completed_dungeons",{})).duplicate(true),"forest_cleared":bool(data.get("forest_cleared",false)),"completed_runs":int(data.get("completed_runs",0)),"deaths":int(data.get("deaths",0))}
 	if version<=1:data["banked_relics"]=Array(data.get("banked_relics",[]))
 	if version<=2:data["save_slot"]=int(data.get("save_slot",1));data["last_saved_unix"]=int(data.get("last_saved_unix",0))
+	if version<=3:
+		data["candidates"]=Array(data.get("candidates",[]));data["contracts"]=Array(data.get("contracts",[]));data["company_tabs"]=Array(data.get("company_tabs",[]))
+		data["injuries"]=Dictionary(data.get("injuries",{}));data["recovery"]=Dictionary(data.get("recovery",{}));data["relationships"]=Dictionary(data.get("relationships",{}))
+		data["secured_loot"]=Dictionary(data.get("secured_loot",{"gold":0,"items":[],"relics":[]}));data["applied_settlement_ids"]=Array(data.get("applied_settlement_ids",[]))
+		data["reputation"]=Dictionary(data.get("reputation",{"company":0,"regions":{}}));data["definition_versions"]=Dictionary(data.get("definition_versions",{"manifest":"demo-1"}))
+		data["unknown_definition_placeholders"]=Array(data.get("unknown_definition_placeholders",[]));data["migration_diagnostics"]=Array(data.get("migration_diagnostics",[]))
 	var classes:Array=[];classes.assign(data.get("unlocked_classes",["warrior","mage"]))
-	for i in range(classes.size()):if String(classes[i])=="phantom":classes[i]="rogue"
+	for i in range(classes.size()):classes[i]=GameBalance.normalize_class_id(String(classes[i]))
 	data["unlocked_classes"]=classes;data["version"]=SAVE_VERSION;return data
 
 func _load_dict(data: Dictionary) -> void:
@@ -244,6 +262,11 @@ func _load_dict(data: Dictionary) -> void:
 	completed_dungeon_modes = Dictionary(data.get("completed_dungeon_modes", {})).duplicate(true); banked_gold = maxi(0, int(data.get("banked_gold", 0))); relic_essence = maxi(0, int(data.get("relic_essence", 0))); lifetime_relic_essence = maxi(relic_essence, int(data.get("lifetime_relic_essence", relic_essence))); successful_levels = maxi(0, int(data.get("successful_levels", 0)))
 	banked_relics.assign(data.get("banked_relics", []))
 	tavern_upgrades.merge(Dictionary(data.get("tavern_upgrades", {})), true); clues = Dictionary(data.get("clues", {})).duplicate(true); next_character_number = maxi(1, int(data.get("next_character_number", 1)))
+	candidates.assign(data.get("candidates", []));contracts.assign(data.get("contracts", []));company_tabs.assign(data.get("company_tabs", []))
+	injuries=Dictionary(data.get("injuries", {})).duplicate(true);recovery=Dictionary(data.get("recovery", {})).duplicate(true);relationships=Dictionary(data.get("relationships", {})).duplicate(true)
+	secured_loot=Dictionary(data.get("secured_loot", {"gold":0,"items":[],"relics":[]})).duplicate(true);applied_settlement_ids.assign(data.get("applied_settlement_ids", []))
+	reputation=Dictionary(data.get("reputation", {"company":0,"regions":{}})).duplicate(true);definition_versions=Dictionary(data.get("definition_versions", {"manifest":"demo-1"})).duplicate(true)
+	unknown_definition_placeholders.assign(data.get("unknown_definition_placeholders", []));migration_diagnostics.assign(data.get("migration_diagnostics", []))
 	roster.clear()
 	for value in data.get("roster", []):
 		if value is Dictionary:

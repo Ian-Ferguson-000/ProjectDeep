@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "mage",
+  "display": {
+    "name": "Mage"
+  },
+  "tags": [
+    "class",
+    "demo"
+  ],
+  "role": "Ranged controller",
+  "description": "Build Focus at range and shape the battlefield with arcane force.",
+  "resource": "Focus",
+  "color": "628de0",
+  "sprite": "res://assets/classes/mage/sheet.png",
+  "base_stats": {
+    "str": 8,
+    "dex": 14,
+    "con": 11,
+    "int": 16,
+    "wis": 12,
+    "cha": 10
+  },
+  "primary": {
+    "accuracy": [
+      "int",
+      "wis"
+    ],
+    "power": "int"
+  },
+  "stat_growth": [
+    {
+      "stat": "int",
+      "every": 2
+    },
+    {
+      "stat": "dex",
+      "every": 3
+    },
+    {
+      "stat": "con",
+      "every": 5
+    },
+    {
+      "stat": "wis",
+      "every": 7
+    }
+  ],
+  "derived": {
+    "max_health": {
+      "base": 10,
+      "per_level": 2,
+      "stat": "con",
+      "explanation": "10 + 2 per level after 1 + CON modifier"
+    },
+    "attack_bonus": {
+      "flat": 0,
+      "explanation": "No innate martial power"
+    },
+    "spell_power": {
+      "stat": "int",
+      "stat_offset": -2,
+      "min": 1,
+      "per_levels": 4,
+      "explanation": "INT modifier - 2 (minimum 1) + level bonus"
+    },
+    "defense": {
+      "stat": "dex",
+      "stat_offset": -2,
+      "min": 0,
+      "per_levels": 6,
+      "explanation": "DEX modifier - 2 + level bonus"
+    },
+    "initiative_modifier": {
+      "base": 2,
+      "stat": "dex",
+      "stat_offset": -2,
+      "min": 0,
+      "per_levels": 6,
+      "explanation": "2 + DEX contribution + level bonus"
+    },
+    "potion_heal_bonus": {
+      "stat": "wis",
+      "min": 0,
+      "per_levels": 5,
+      "level_basis": "level",
+      "explanation": "WIS modifier + level bonus"
+    }
+  },
+  "resource_rules": {
+    "max": 3,
+    "special_cost": 2,
+    "gain": [
+      "Arcane Missile cast from at least 3 tiles away"
+    ]
+  },
+  "default_action_ids": [
+    "arcane_missile",
+    "arcane_cannon",
+    "repel",
+    "blink"
+  ],
+  "unlockable_action_ids": [],
+  "progression_id": "mage"
+}

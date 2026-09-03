@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/progression.schema.json",
+  "allOf": [{"$ref": "definition.schema.json"}],
+  "type": "object",
+  "required": ["max_level", "xp_thresholds", "level_rules", "mode_overrides"],
+  "properties": {
+    "max_level": {"type": "integer", "minimum": 1},
+    "xp_thresholds": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+  }
+}

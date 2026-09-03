@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "healing_dash",
+  "display": {
+    "name": "Dash"
+  },
+  "tags": [
+    "action",
+    "healer",
+    "movement"
+  ],
+  "class_id": "healer",
+  "slot": "movement",
+  "description": "Move up to three tiles and heal after moving two.",
+  "targeting": {
+    "type": "walkable_tile",
+    "range": 3
+  },
+  "effects": [
+    "Ignore engagement penalties"
+  ]
+}

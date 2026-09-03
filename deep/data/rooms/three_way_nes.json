@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "three_way_nes",
+  "display": {
+    "name": "Three Way Nes"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "NES",
+  "background_id": "crossroads",
+  "obstacles": [
+    [
+      5,
+      5
+    ],
+    [
+      10,
+      5
+    ],
+    [
+      8,
+      7
+    ]
+  ]
+}

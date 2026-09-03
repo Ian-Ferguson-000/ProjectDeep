@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "north_lane",
+  "display": {
+    "name": "North Lane"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "N",
+  "background_id": "farmyard",
+  "obstacles": [
+    [
+      5,
+      4
+    ],
+    [
+      10,
+      6
+    ],
+    [
+      7,
+      6
+    ]
+  ]
+}

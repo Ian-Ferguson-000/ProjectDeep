@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "id": "rogue",
+  "display": {
+    "name": "Rogue Progression"
+  },
+  "tags": [
+    "progression",
+    "rogue"
+  ],
+  "max_level": 20,
+  "xp_thresholds": [
+    0,
+    0,
+    100,
+    220,
+    380,
+    580,
+    820,
+    1100,
+    1420,
+    1780,
+    2180,
+    2620,
+    3100,
+    3620,
+    4180,
+    4780,
+    5420,
+    6100,
+    6820,
+    7580,
+    8380
+  ],
+  "level_rules": {
+    "base_stats": {
+      "str": 12,
+      "dex": 17,
+      "con": 10,
+      "int": 11,
+      "wis": 10,
+      "cha": 13
+    },
+    "stat_growth": [
+      {
+        "stat": "dex",
+        "every": 2
+      },
+      {
+        "stat": "cha",
+        "every": 4
+      },
+      {
+        "stat": "str",
+        "every": 5
+      }
+    ],
+    "derived": {
+      "max_health": {
+        "base": 9,
+        "per_level": 2,
+        "stat": "con"
+      },
+      "attack_bonus": {
+        "stat": "dex",
+        "stat_offset": -2,
+        "min": 1,
+        "per_levels": 4
+      },
+      "spell_power": {
+        "flat": 0
+      },
+      "defense": {
+        "stat": "dex",
+        "stat_offset": -1,
+        "min": 0,
+        "per_levels": 5
+      },
+      "initiative_modifier": {
+        "base": 3,
+        "stat": "dex",
+        "stat_offset": -1,
+        "min": 0,
+        "per_levels": 5
+      },
+      "potion_heal_bonus": {
+        "flat": 0
+      }
+    }
+  },
+  "legacy_tree": {},
+  "mode_overrides": {
+    "slasher": {
+      "branches": [
+        {
+          "id": "executioner",
+          "name": "Executioner",
+          "stages": [
+            "Executioner",
+            "Silent Executioner",
+            "Dread Reaper",
+            "Final Shadow"
+          ],
+          "description": "Improve Assassinate thresholds, finishing damage, and resets.",
+          "focus": [
+            "special",
+            "basic"
+          ],
+          "flags": [
+            "execute_threshold",
+            "assassinate_reset",
+            "marked_for_death",
+            "execution_refund",
+            "executioner_capstone"
+          ]
+        },
+        {
+          "id": "shade",
+          "name": "Shade",
+          "stages": [
+            "Shade",
+            "Deep Shade",
+            "Umbral Adept",
+            "Living Night"
+          ],
+          "description": "Extend Hidden, Shadowstep, invulnerability, and ambush control.",
+          "focus": [
+            "movement",
+            "defensive"
+          ],
+          "flags": [
+            "hidden_extend",
+            "shadowstep_damage",
+            "evade_hidden",
+            "shadow_charge",
+            "shade_capstone"
+          ]
+        },
+        {
+          "id": "bladedancer",
+          "name": "Bladedancer",
+          "stages": [
+            "Bladedancer",
+            "Edge Dancer",
+            "Spectral Dancer",
+            "Thousand Blades"
+          ],
+          "description": "Widen Pierce and turn Evade into continuous offensive tempo.",
+          "focus": [
+            "basic",
+            "defensive"
+          ],
+          "flags": [
+            "pierce_widen",
+            "evade_counter",
+            "pierce_echo",
+            "edge_overflow",
+            "bladedancer_capstone"
+          ]
+        }
+      ]
+    }
+  }
+}

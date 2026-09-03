@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/dungeon.schema.json",
+  "allOf": [{"$ref": "definition.schema.json"}],
+  "type": "object",
+  "required": ["supported_modes", "party_cap", "unlock", "extraction"],
+  "properties": {
+    "supported_modes": {"type": "array", "items": {"enum": ["strategy", "slasher"]}, "uniqueItems": true},
+    "party_cap": {"type": "integer", "minimum": 1, "maximum": 4},
+    "merchant_id": {"type": "string"},
+    "unlock": {"type": "object"},
+    "extraction": {"enum": ["cleared_floor", "cleared_room"]}
+  }
+}

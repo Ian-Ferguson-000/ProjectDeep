@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "cover",
+  "display": {
+    "name": "Cover"
+  },
+  "tags": [
+    "action",
+    "summoner",
+    "defensive"
+  ],
+  "class_id": "summoner",
+  "slot": "defensive",
+  "description": "The nearby wolf intercepts the next hit.",
+  "targeting": {
+    "type": "self",
+    "range": 0
+  },
+  "effects": [
+    "Adjacency grants partial reduction"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "pilgrims_greaves",
+  "display": {
+    "name": "Pilgrim's Greaves"
+  },
+  "tags": [
+    "movement",
+    "defense"
+  ],
+  "rarity": "rare",
+  "duration_type": "dungeon_bound",
+  "description": "Weathered greaves said to grow lighter the farther their wearer travels.",
+  "icon_key": "move",
+  "modifiers": {
+    "movement": 1,
+    "defense": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "The greaves harden with every deliberate step.",
+      "modifiers": {
+        "movement": 1,
+        "armor_class": 1
+      },
+      "rules_text": "After moving at least 2 tiles, gain +2 Threshold until your next turn.",
+      "effects": [
+        {
+          "condition": "moved_far",
+          "modifiers": {
+            "threshold": 2
+          }
+        }
+      ]
+    }
+  }
+}

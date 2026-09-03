@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "id": "summoner",
+  "display": {
+    "name": "Summoner"
+  },
+  "tags": [
+    "class",
+    "demo"
+  ],
+  "role": "Companion tactician",
+  "description": "Fight as one with a bonded wolf using commands, Cover, and Mount.",
+  "resource": "Bond",
+  "color": "79a653",
+  "sprite": "res://assets/classes/summoner/sheet.png",
+  "base_stats": {
+    "str": 9,
+    "dex": 13,
+    "con": 12,
+    "int": 14,
+    "wis": 15,
+    "cha": 12
+  },
+  "primary": {
+    "accuracy": [
+      "wis",
+      "int"
+    ],
+    "power": "wis"
+  },
+  "stat_growth": [
+    {
+      "stat": "wis",
+      "every": 2
+    },
+    {
+      "stat": "int",
+      "every": 3
+    },
+    {
+      "stat": "con",
+      "every": 5
+    }
+  ],
+  "derived": {
+    "max_health": {
+      "base": 11,
+      "per_level": 2,
+      "stat": "con",
+      "explanation": "11 + 2 per level after 1 + CON modifier"
+    },
+    "attack_bonus": {
+      "stat": "wis",
+      "stat_offset": -2,
+      "min": 1,
+      "per_levels": 4,
+      "explanation": "WIS modifier - 2 (minimum 1) + level bonus"
+    },
+    "spell_power": {
+      "flat": 0,
+      "explanation": "Commands use attack power"
+    },
+    "defense": {
+      "stat": "dex",
+      "stat_offset": -2,
+      "min": 0,
+      "per_levels": 6,
+      "explanation": "DEX contribution + level bonus"
+    },
+    "initiative_modifier": {
+      "base": 1,
+      "stat": "dex",
+      "stat_offset": -1,
+      "min": 0,
+      "per_levels": 6,
+      "explanation": "1 + DEX contribution + level bonus"
+    },
+    "potion_heal_bonus": {
+      "stat": "wis",
+      "min": 0,
+      "per_levels": 6,
+      "level_basis": "level",
+      "explanation": "WIS modifier + level bonus"
+    }
+  },
+  "resource_rules": {
+    "max": 3,
+    "special_cost": 2,
+    "gain": [
+      "A commanded wolf attack hits its marked target"
+    ]
+  },
+  "default_action_ids": [
+    "mark_command",
+    "summon_wolf",
+    "cover",
+    "mount"
+  ],
+  "unlockable_action_ids": [],
+  "progression_id": "summoner"
+}

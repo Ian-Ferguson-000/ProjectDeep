@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "slash",
+  "display": {
+    "name": "Slash"
+  },
+  "tags": [
+    "action",
+    "warrior",
+    "basic"
+  ],
+  "class_id": "warrior",
+  "slot": "basic",
+  "description": "Strike an adjacent enemy and build Momentum.",
+  "targeting": {
+    "type": "enemy",
+    "range": 1
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Gain 1 Momentum on hit"
+  ],
+  "modifiers": [
+    {
+      "stat": "accuracy",
+      "amount": 2,
+      "condition": "adjacent_enemies_at_least",
+      "value": 2,
+      "text": "+2 Accuracy while adjacent to at least two enemies"
+    }
+  ]
+}

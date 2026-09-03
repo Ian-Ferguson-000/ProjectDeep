@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "guard",
+  "display": {
+    "name": "Guard"
+  },
+  "tags": [
+    "action",
+    "tank",
+    "defensive"
+  ],
+  "class_id": "tank",
+  "slot": "defensive",
+  "description": "Substantially reduce the next hit.",
+  "targeting": {
+    "type": "self",
+    "range": 0
+  },
+  "effects": [
+    "Gain Resolve when damage is absorbed"
+  ]
+}

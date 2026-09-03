@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "arcane_cannon",
+  "display": {
+    "name": "Arcane Cannon"
+  },
+  "tags": [
+    "action",
+    "mage",
+    "special"
+  ],
+  "class_id": "mage",
+  "slot": "special",
+  "cost": 2,
+  "description": "Damage every target in a four-tile line.",
+  "targeting": {
+    "type": "cardinal_line",
+    "range": 4
+  },
+  "damage_type": "arcane",
+  "effects": [
+    "Hits every target in line"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "shield_bash",
+  "display": {
+    "name": "Shield Bash"
+  },
+  "tags": [
+    "action",
+    "tank",
+    "basic"
+  ],
+  "class_id": "tank",
+  "slot": "basic",
+  "description": "Strike, push, and stagger an adjacent enemy.",
+  "targeting": {
+    "type": "enemy",
+    "range": 1
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Push 1 tile",
+    "Apply Stagger"
+  ],
+  "modifiers": [
+    {
+      "stat": "penetration",
+      "amount": 4,
+      "condition": "target_threshold_at_least",
+      "value": 1,
+      "text": "+4 Penetration against targets with Threshold"
+    }
+  ]
+}

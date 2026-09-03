@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "id": "summoner",
+  "display": {
+    "name": "Summoner Progression"
+  },
+  "tags": [
+    "progression",
+    "summoner"
+  ],
+  "max_level": 20,
+  "xp_thresholds": [
+    0,
+    0,
+    100,
+    220,
+    380,
+    580,
+    820,
+    1100,
+    1420,
+    1780,
+    2180,
+    2620,
+    3100,
+    3620,
+    4180,
+    4780,
+    5420,
+    6100,
+    6820,
+    7580,
+    8380
+  ],
+  "level_rules": {
+    "base_stats": {
+      "str": 9,
+      "dex": 13,
+      "con": 12,
+      "int": 14,
+      "wis": 15,
+      "cha": 12
+    },
+    "stat_growth": [
+      {
+        "stat": "wis",
+        "every": 2
+      },
+      {
+        "stat": "int",
+        "every": 3
+      },
+      {
+        "stat": "con",
+        "every": 5
+      }
+    ],
+    "derived": {
+      "max_health": {
+        "base": 11,
+        "per_level": 2,
+        "stat": "con"
+      },
+      "attack_bonus": {
+        "stat": "wis",
+        "stat_offset": -2,
+        "min": 1,
+        "per_levels": 4
+      },
+      "spell_power": {
+        "flat": 0
+      },
+      "defense": {
+        "stat": "dex",
+        "stat_offset": -2,
+        "min": 0,
+        "per_levels": 6
+      },
+      "initiative_modifier": {
+        "base": 1,
+        "stat": "dex",
+        "stat_offset": -1,
+        "min": 0,
+        "per_levels": 6
+      },
+      "potion_heal_bonus": {
+        "stat": "wis",
+        "min": 0,
+        "per_levels": 6,
+        "level_basis": "level"
+      }
+    }
+  },
+  "legacy_tree": {},
+  "mode_overrides": {
+    "slasher": {
+      "branches": [
+        {
+          "id": "packmaster",
+          "name": "Packmaster",
+          "stages": [
+            "Packmaster",
+            "Alpha Keeper",
+            "Primal Alpha",
+            "Lord of the Hunt"
+          ],
+          "description": "Increase wolf offense, pounce, and marked-target pursuit.",
+          "focus": [
+            "special",
+            "basic"
+          ],
+          "companion": true,
+          "flags": [
+            "pounce_splash",
+            "wolf_frenzy",
+            "mark_damage",
+            "pounce_chain",
+            "packmaster_capstone"
+          ]
+        },
+        {
+          "id": "warden",
+          "name": "Warden",
+          "stages": [
+            "Warden",
+            "Pack Warden",
+            "Wild Guardian",
+            "Eternal Warden"
+          ],
+          "description": "Improve Cover, interception, wolf survival, and defensive Bond.",
+          "focus": [
+            "defensive",
+            "special"
+          ],
+          "companion": true,
+          "flags": [
+            "cover_persist",
+            "wolf_intercept",
+            "cover_refund",
+            "guardian_aura",
+            "warden_capstone"
+          ]
+        },
+        {
+          "id": "wildrider",
+          "name": "Wildrider",
+          "stages": [
+            "Wildrider",
+            "Swift Rider",
+            "Storm Rider",
+            "One With the Pack"
+          ],
+          "description": "Expand Mount, commands, coordinated attacks, and trampling paths.",
+          "focus": [
+            "movement",
+            "basic"
+          ],
+          "companion": true,
+          "flags": [
+            "mount_trample",
+            "command_range",
+            "mount_charge",
+            "coordinated_strike",
+            "wildrider_capstone"
+          ]
+        }
+      ]
+    }
+  }
+}

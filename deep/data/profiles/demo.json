@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "demo",
+  "display": { "name": "Eros Demo" },
+  "tags": ["profile", "demo"],
+  "classes": ["warrior", "mage", "tank", "rogue", "healer", "summoner"],
+  "dungeons": ["forest", "ashen_farmstead", "crypt", "sunken_mine", "ember_foundry", "moonlit_grove", "abyssal_archive"],
+  "merchants": ["tavern", "forest", "farmstead", "crypt", "mine", "foundry"],
+  "deferred_systems": ["aging", "descendants", "simultaneous_expeditions", "seasons", "asynchronous_expeditions", "endless_challenges"]
+}

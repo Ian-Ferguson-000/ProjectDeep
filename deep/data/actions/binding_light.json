@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "binding_light",
+  "display": {
+    "name": "Binding Light"
+  },
+  "tags": [
+    "action",
+    "healer",
+    "basic"
+  ],
+  "class_id": "healer",
+  "slot": "basic",
+  "description": "Damage and Slow a target.",
+  "targeting": {
+    "type": "line_of_sight_enemy",
+    "range": 3
+  },
+  "damage_type": "radiant",
+  "effects": [
+    "Slow 1 turn",
+    "Gain 1 Grace on hit"
+  ],
+  "modifiers": [
+    {
+      "stat": "accuracy",
+      "amount": 3,
+      "condition": "target_status",
+      "status": "slowed",
+      "text": "+3 Accuracy against an already Slowed target"
+    }
+  ]
+}

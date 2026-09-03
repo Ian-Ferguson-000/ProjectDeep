@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "assassinate",
+  "display": {
+    "name": "Assassinate"
+  },
+  "tags": [
+    "action",
+    "rogue",
+    "special"
+  ],
+  "class_id": "rogue",
+  "slot": "special",
+  "cost": 2,
+  "description": "Heavy damage with an execution bonus.",
+  "targeting": {
+    "type": "enemy",
+    "range": 1
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Bonus vs isolated, low-health, or Hidden-attacked targets"
+  ]
+}

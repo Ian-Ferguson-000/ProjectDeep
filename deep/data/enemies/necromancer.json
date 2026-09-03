@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "necromancer",
+  "display": {
+    "name": "Necromancer"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Necromancer",
+  "short_name": "Necro",
+  "base_health": 8,
+  "health_per_floor": 1.0,
+  "damage_before_floor": 3,
+  "damage_from_floor_4": 4,
+  "xp": 45,
+  "gold": 8,
+  "initiative_modifier": 1,
+  "movement": 1,
+  "range": 4,
+  "accuracy": 4,
+  "penetration": 1,
+  "damage_type": "necrotic",
+  "aegis_necrotic": 2
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "id": "ashen_farmstead",
+  "display": {
+    "name": "Ashen Farmstead"
+  },
+  "tags": [
+    "dungeon",
+    "demo"
+  ],
+  "subtitle": "The Cinder Fields",
+  "description": "A blighted farm of sealed encounters, scorched crops, possessed fieldhands, and a harvest that refuses to die.",
+  "category": "Field",
+  "dungeon_type": "field",
+  "runtime": "ashen_farmstead",
+  "slasher_runtime": "ashen_farmstead",
+  "supported_modes": [
+    "strategy",
+    "slasher"
+  ],
+  "party_cap": 4,
+  "slasher": {
+    "campaign_floors": 1,
+    "endless_available": false,
+    "encounter_health_scale": 1.0,
+    "elite_health_scale": 1.65,
+    "elite_damage_scale": 1.25,
+    "room_clear_gold": 5,
+    "boss_xp": 150,
+    "summon_cap": 5
+  },
+  "floors": 1,
+  "room_count": {
+    "min": 10,
+    "max": 12
+  },
+  "difficulty": "Adept",
+  "accent": "c56b35",
+  "merchant_id": "farmstead",
+  "theme": "ashen_farmstead",
+  "unlock": {
+    "type": "dungeon_clear",
+    "dungeon_id": "forest"
+  },
+  "unlock_text": "Clear the Verdant Forest.",
+  "completion_unlocks": [
+    "sunken_mine",
+    "ember_foundry"
+  ],
+  "class_unlock": "healer",
+  "clue_drop": "moonlit_farmstead",
+  "extraction": "cleared_room"
+}

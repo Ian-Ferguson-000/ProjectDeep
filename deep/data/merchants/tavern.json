@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "id": "tavern",
+  "display": {
+    "name": "Mara Vell"
+  },
+  "tags": [
+    "merchant",
+    "demo"
+  ],
+  "title": "Hearth Provisioner",
+  "description": "Reliable supplies and practical charms for the road below.",
+  "portrait": "res://assets/merchants/tavern_mara.png",
+  "dungeon_id": "",
+  "stock": [
+    {
+      "offer_id": "tavern_potion",
+      "kind": "consumable",
+      "consumable_id": "healing_potion",
+      "name": "Healing Potion",
+      "description": "Begin the next expedition with one Healing Potion.",
+      "gold": 8,
+      "min_rank": 0,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "tavern_focus_tonic",
+      "kind": "consumable",
+      "consumable_id": "focus_tonic",
+      "name": "Focus Tonic",
+      "description": "Begin the next expedition with one Focus Tonic.",
+      "gold": 13,
+      "min_rank": 1,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "tavern_greater_potion",
+      "kind": "consumable",
+      "consumable_id": "greater_healing_potion",
+      "name": "Greater Healing Potion",
+      "description": "Begin the next expedition with one Greater Healing Potion.",
+      "gold": 19,
+      "min_rank": 2,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "tavern_haste_potion",
+      "kind": "consumable",
+      "consumable_id": "haste_potion",
+      "name": "Potion of Haste",
+      "description": "Double remaining movement and gain an additional action this turn.",
+      "gold": 24,
+      "min_rank": 2,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "tavern_resource_elixir",
+      "kind": "consumable",
+      "consumable_id": "resource_elixir",
+      "name": "Resource Elixir",
+      "description": "Completely fill the class resource meter.",
+      "gold": 21,
+      "min_rank": 2,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "tavern_key",
+      "kind": "key",
+      "name": "Iron Key",
+      "description": "Begin the next expedition with one key.",
+      "gold": 12,
+      "min_rank": 0,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "quickstep_charm",
+      "kind": "item",
+      "item_id": "quickstep_charm",
+      "gold": 15,
+      "min_rank": 0,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "keen_edge_oil",
+      "kind": "item",
+      "item_id": "keen_edge_oil",
+      "gold": 16,
+      "min_rank": 0,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "menders_sachet",
+      "kind": "item",
+      "item_id": "menders_sachet",
+      "gold": 18,
+      "min_rank": 1,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "soldiers_buckle",
+      "kind": "item",
+      "item_id": "soldiers_buckle",
+      "gold": 27,
+      "min_rank": 2,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "amulet_of_vigor",
+      "kind": "item",
+      "item_id": "amulet_of_vigor",
+      "gold": 44,
+      "min_rank": 3,
+      "location": "tavern"
+    },
+    {
+      "offer_id": "chronomancers_pin",
+      "kind": "item",
+      "item_id": "chronomancers_pin",
+      "favor": 45,
+      "min_rank": 4,
+      "location": "favor"
+    }
+  ]
+}

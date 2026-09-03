@@ -37,6 +37,7 @@ static var _slasher_journal: Dictionary = {}
 static var _slasher_progression: Dictionary = {}
 static var _debug_unlock_all_dungeons := false
 static var _slasher_item_effects: Dictionary = {}
+static var _content_registry: ContentRegistry
 static var _loaded := false
 
 static func get_progression() -> Dictionary:
@@ -373,9 +374,12 @@ static func get_class_data(class_id: String) -> Dictionary:
 	return {}
 
 static func normalize_class_id(class_id: String) -> String:
-	if class_id == "fighter": return "warrior"
-	if class_id == "phantom": return "rogue"
-	return class_id
+	_load_all()
+	return _content_registry.canonical_id("classes", class_id) if _content_registry != null else class_id
+
+static func get_content_registry() -> ContentRegistry:
+	_load_all()
+	return _content_registry
 
 static func get_base_classes() -> Dictionary:
 	_load_all()
@@ -572,6 +576,23 @@ static func _load_all() -> void:
 	_slasher_journal = _load_json(SLASHER_JOURNAL_PATH)
 	_slasher_progression = _load_json(SLASHER_PROGRESSION_PATH)
 	_slasher_item_effects = _load_json(SLASHER_ITEM_EFFECTS_PATH)
+	_content_registry = ContentRegistry.new()
+	if _content_registry.load_catalog():
+		var catalog_classes := _content_registry.get_legacy_catalog("classes")
+		var catalog_dungeons := _content_registry.get_legacy_catalog("dungeons")
+		var catalog_merchants := _content_registry.get_legacy_catalog("merchants")
+		var catalog_items := _content_registry.get_legacy_catalog("items")
+		if not catalog_classes.is_empty():
+			_classes["classes"] = catalog_classes
+		if not catalog_dungeons.is_empty():
+			_dungeons["dungeons"] = catalog_dungeons
+		if not catalog_merchants.is_empty():
+			_merchants["merchants"] = catalog_merchants
+		if not catalog_items.is_empty():
+			_items["items"] = catalog_items
+	else:
+		for diagnostic: String in _content_registry.diagnostics:
+			push_warning(diagnostic)
 
 static func _load_json(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

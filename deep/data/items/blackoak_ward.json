@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "blackoak_ward",
+  "display": {
+    "name": "Blackoak Ward"
+  },
+  "tags": [
+    "defense",
+    "health"
+  ],
+  "rarity": "rare",
+  "duration_type": "dungeon_bound",
+  "description": "A dark wooden token dense enough to feel more like stone than timber.",
+  "icon_key": "defense",
+  "modifiers": {
+    "defense": 3,
+    "max_health": 3
+  },
+  "effects": {
+    "strategy": {
+      "description": "Blackoak is too dense to yield to weak blows.",
+      "modifiers": {
+        "armor_class": 2,
+        "threshold": 2,
+        "max_health": 2
+      },
+      "rules_text": "Physical damage stopped by Threshold restores 1 class resource.",
+      "effects": [
+        {
+          "trigger": "threshold_block",
+          "damage_type": "physical",
+          "resource": 1
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "moonlit_grove",
+  "display": {
+    "name": "Moonlit Grove"
+  },
+  "tags": [
+    "dungeon",
+    "demo"
+  ],
+  "subtitle": "The Court Between Leaves",
+  "description": "A secret fae woodland where paths answer promises and fate can be harvested.",
+  "category": "Secret",
+  "dungeon_type": "mystery",
+  "runtime": "moonlit_grove",
+  "slasher_runtime": "moonlit_grove",
+  "supported_modes": [
+    "strategy",
+    "slasher"
+  ],
+  "party_cap": 4,
+  "floors": 5,
+  "slasher": {
+    "campaign_floors": 5,
+    "elite_floor_in_cycle": 3,
+    "cycle_length": 5,
+    "endless_available": false
+  },
+  "difficulty": "Secret",
+  "accent": "87a9e8",
+  "merchant_id": "",
+  "unlock": {
+    "type": "secret"
+  },
+  "unlock_text": "Find the Forest and Farmstead clues, then research secret paths at the tavern.",
+  "unique_rewards": [
+    "nature_relic",
+    "fate_relic"
+  ],
+  "extraction": "cleared_floor"
+}

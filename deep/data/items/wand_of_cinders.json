@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "wand_of_cinders",
+  "display": {
+    "name": "Wand of Cinders"
+  },
+  "tags": [
+    "arcane",
+    "fire"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "A soot-dark wand that flares when battle starts.",
+  "icon_key": "spell",
+  "modifiers": {
+    "spell_power": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "The wand banks heat until magic finds clustered prey.",
+      "modifiers": {
+        "spell_potency": 2
+      },
+      "rules_text": "Spell attacks that can hit multiple tiles gain +1 Range.",
+      "effects": [
+        {
+          "condition": "area_attack",
+          "modifiers": {
+            "range": 1
+          }
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: spell hits build precision; the cadence hit deals 25% bonus damage.",
+      "trigger": "hit",
+      "precision_bonus": 0.25,
+      "precision_hits": 6
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "cinderheart_locket",
+  "display": {
+    "name": "Cinderheart Locket"
+  },
+  "tags": [
+    "farmstead",
+    "health",
+    "defense"
+  ],
+  "rarity": "legendary",
+  "duration_type": "permanent",
+  "description": "A warm brass locket containing the last clean ember of the Farmstead.",
+  "icon_key": "health",
+  "modifiers": {
+    "max_health": 10,
+    "defense": 3,
+    "potion_heal_bonus": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "The Farmstead's last clean ember flares when its bearer is nearly spent.",
+      "modifiers": {
+        "max_health": 10,
+        "armor_class": 2,
+        "potion_heal_bonus": 2
+      },
+      "rules_text": "Below half health, gain 2 fire Aegis and restore 1 additional health from consumables.",
+      "effects": [
+        {
+          "condition": "low_health",
+          "modifiers": {
+            "aegis_fire": 2,
+            "potion_heal_bonus": 1
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "wyvernscale_mantle",
+  "display": {
+    "name": "Wyvernscale Mantle"
+  },
+  "tags": [
+    "defense",
+    "martial"
+  ],
+  "rarity": "very_rare",
+  "duration_type": "permanent",
+  "description": "Overlapping scales sewn into a shoulder mantle that turns blows with a dry hiss.",
+  "icon_key": "defense",
+  "modifiers": {
+    "defense": 4,
+    "attack_bonus": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "Overlapping scales turn poison and blades in different ways.",
+      "modifiers": {
+        "armor_class": 2,
+        "aegis_physical": 2,
+        "aegis_poison": 4
+      },
+      "rules_text": "When poison damage is fully absorbed, gain +2 Attack Power next turn.",
+      "effects": [
+        {
+          "trigger": "absorbed_attack",
+          "damage_type": "poison",
+          "next_attack": {
+            "attack_power": 2
+          }
+        }
+      ]
+    }
+  }
+}

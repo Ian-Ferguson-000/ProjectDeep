@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "aether_prism",
+  "display": {
+    "name": "Aether Prism"
+  },
+  "tags": [
+    "arcane",
+    "spell"
+  ],
+  "rarity": "rare",
+  "duration_type": "permanent",
+  "description": "A faceted stone that catches spell-light from strange angles.",
+  "icon_key": "spell",
+  "modifiers": {
+    "spell_power": 3
+  },
+  "effects": {
+    "strategy": {
+      "description": "Each facet converts one school of harm into another angle of force.",
+      "modifiers": {
+        "spell_potency": 2,
+        "penetration": 1
+      },
+      "rules_text": "Arcane attacks gain +1 Range and ignore 1 additional Aegis.",
+      "effects": [
+        {
+          "condition": "damage_type",
+          "damage_type": "arcane",
+          "modifiers": {
+            "range": 1,
+            "penetration": 1
+          }
+        }
+      ]
+    }
+  }
+}

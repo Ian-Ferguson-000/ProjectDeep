@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "hardy",
+  "display": {
+    "name": "Hardy"
+  },
+  "tags": [
+    "trait",
+    "balanced"
+  ],
+  "description": "Healing received +1; movement actions cannot gain bonus distance."
+}

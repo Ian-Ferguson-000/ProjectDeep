@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "soldiers_buckle",
+  "display": {
+    "name": "Soldier's Buckle"
+  },
+  "tags": [
+    "martial",
+    "defense"
+  ],
+  "rarity": "common",
+  "duration_type": "dungeon_bound",
+  "description": "A plain iron buckle etched with a guard oath.",
+  "icon_key": "defense",
+  "modifiers": {
+    "defense": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "A drilled guard-oath steadies your stance just before a blow lands.",
+      "modifiers": {
+        "armor_class": 1
+      },
+      "rules_text": "When a defensive reaction triggers, gain 1 Threshold for that attack.",
+      "effects": [
+        {
+          "trigger": "reaction",
+          "modifiers": {
+            "threshold": 1
+          }
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: reduce incoming damage by 3.5%.",
+      "trigger": "passive"
+    }
+  }
+}

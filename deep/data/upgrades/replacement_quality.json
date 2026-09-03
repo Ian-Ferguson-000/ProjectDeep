@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "replacement_quality",
+  "display": {
+    "name": "Replacement Quality"
+  },
+  "tags": [
+    "tavern_upgrade"
+  ],
+  "max_rank": 5,
+  "cost_balance_id": "economy"
+}

@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "id": "crypt",
+  "display": {
+    "name": "Sister Caldris"
+  },
+  "tags": [
+    "merchant",
+    "demo"
+  ],
+  "title": "Ossuary Lamplighter",
+  "description": "A grave-tender who sells consecrated light, binding wards, and carefully named curses.",
+  "portrait": "res://assets/merchants/crypt_caldris.png",
+  "dungeon_id": "crypt",
+  "stock": [
+    {
+      "offer_id": "crypt_potion",
+      "kind": "consumable",
+      "consumable_id": "healing_potion",
+      "name": "Grave-Salt Draught",
+      "description": "Gain one Healing Potion immediately.",
+      "gold": 7,
+      "min_rank": 0,
+      "location": "both"
+    },
+    {
+      "offer_id": "crypt_warding",
+      "kind": "consumable",
+      "consumable_id": "warding_draught",
+      "name": "Warding Draught",
+      "description": "Gain one Warding Draught.",
+      "gold": 12,
+      "min_rank": 1,
+      "location": "both"
+    },
+    {
+      "offer_id": "crypt_fury",
+      "kind": "consumable",
+      "consumable_id": "fury_potion",
+      "name": "Potion of Fury",
+      "description": "The next attack deals double damage.",
+      "gold": 25,
+      "min_rank": 2,
+      "location": "both"
+    },
+    {
+      "offer_id": "chalk_rune_tablet",
+      "kind": "item",
+      "item_id": "chalk_rune_tablet",
+      "gold": 17,
+      "min_rank": 0,
+      "location": "both"
+    },
+    {
+      "offer_id": "sunward_periapt",
+      "kind": "item",
+      "item_id": "sunward_periapt",
+      "gold": 34,
+      "min_rank": 1,
+      "location": "both"
+    },
+    {
+      "offer_id": "saints_phial",
+      "kind": "item",
+      "item_id": "saints_phial",
+      "gold": 42,
+      "min_rank": 2,
+      "location": "both"
+    },
+    {
+      "offer_id": "runebound_bracer",
+      "kind": "item",
+      "item_id": "runebound_bracer",
+      "gold": 48,
+      "min_rank": 2,
+      "location": "both"
+    },
+    {
+      "offer_id": "phoenix_ash_reliquary",
+      "kind": "item",
+      "item_id": "phoenix_ash_reliquary",
+      "gold": 68,
+      "min_rank": 3,
+      "location": "both"
+    },
+    {
+      "offer_id": "aegis_of_the_last_king",
+      "kind": "item",
+      "item_id": "aegis_of_the_last_king",
+      "favor": 55,
+      "min_rank": 4,
+      "location": "favor"
+    }
+  ]
+}

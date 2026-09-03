@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "normal_wolf",
+  "display": {
+    "name": "Normal Wolf"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Wolf",
+  "short_name": "Wolf",
+  "base_health": 4,
+  "health_per_floor": 0.75,
+  "damage_before_floor": 2,
+  "damage_from_floor_4": 3,
+  "xp": 15,
+  "gold": 3,
+  "initiative_modifier": 0,
+  "movement": 2
+}

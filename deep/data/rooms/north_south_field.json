@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "north_south_field",
+  "display": {
+    "name": "North South Field"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "NS",
+  "background_id": "farmyard",
+  "obstacles": [
+    [
+      4,
+      4
+    ],
+    [
+      11,
+      4
+    ],
+    [
+      4,
+      7
+    ],
+    [
+      11,
+      7
+    ]
+  ]
+}

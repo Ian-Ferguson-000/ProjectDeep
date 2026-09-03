@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "cleave",
+  "display": {
+    "name": "Cleave"
+  },
+  "tags": [
+    "action",
+    "warrior",
+    "special"
+  ],
+  "class_id": "warrior",
+  "slot": "special",
+  "cost": 2,
+  "description": "Sweep the three spaces ahead of you.",
+  "targeting": {
+    "type": "forward_arc",
+    "range": 1
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Hits a three-tile forward arc"
+  ]
+}

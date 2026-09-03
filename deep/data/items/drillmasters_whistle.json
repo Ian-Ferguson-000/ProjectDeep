@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "drillmasters_whistle",
+  "display": {
+    "name": "Drillmaster's Whistle"
+  },
+  "tags": [
+    "xp",
+    "martial"
+  ],
+  "rarity": "common",
+  "duration_type": "dungeon_bound",
+  "description": "Its shrill note has a way of making hard lessons stick.",
+  "icon_key": "mode",
+  "modifiers": {
+    "xp_bonus_percent": 8
+  },
+  "effects": {
+    "strategy": {
+      "description": "One sharp note turns a successful defense into a practiced lesson.",
+      "modifiers": {
+        "xp_bonus_percent": 8
+      },
+      "rules_text": "A triggered defensive reaction grants 2 bonus XP and 1 class resource.",
+      "effects": [
+        {
+          "trigger": "reaction",
+          "xp": 2,
+          "resource": 1
+        }
+      ]
+    }
+  }
+}

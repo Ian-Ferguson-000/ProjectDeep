@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "giant_bane_grip",
+  "display": {
+    "name": "Giant-Bane Grip"
+  },
+  "tags": [
+    "martial",
+    "weapon"
+  ],
+  "rarity": "rare",
+  "duration_type": "permanent",
+  "description": "A weapon wrap said to remember impossible victories.",
+  "icon_key": "attack",
+  "modifiers": {
+    "attack_bonus": 2,
+    "max_health": 3
+  },
+  "effects": {
+    "strategy": {
+      "description": "The grip tightens around weapons raised against oversized or elite prey.",
+      "modifiers": {
+        "attack_power": 2,
+        "max_health": 3
+      },
+      "rules_text": "Against elite and boss enemies, gain +3 Penetration.",
+      "effects": [
+        {
+          "condition": "elite_target",
+          "modifiers": {
+            "penetration": 3
+          }
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: deal 16% more damage to elites and bosses.",
+      "trigger": "hit",
+      "elite_damage_multiplier": 1.16
+    }
+  }
+}

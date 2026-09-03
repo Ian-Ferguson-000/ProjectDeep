@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "healers_brooch",
+  "display": {
+    "name": "Healer's Brooch"
+  },
+  "tags": [
+    "healing",
+    "utility"
+  ],
+  "rarity": "common",
+  "duration_type": "dungeon_bound",
+  "description": "A tiny clasp that makes every potion feel carefully brewed.",
+  "icon_key": "potion",
+  "modifiers": {
+    "potion_heal_bonus": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "Silver leaves unfold when restorative draughts touch the tongue.",
+      "modifiers": {
+        "potion_heal_bonus": 2
+      },
+      "rules_text": "Drinking a potion also clears Slow and restores 1 class resource.",
+      "effects": [
+        {
+          "trigger": "potion",
+          "cleanse": "slow",
+          "resource": 1
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: healing potions restore additional health.",
+      "trigger": "potion_use"
+    }
+  }
+}

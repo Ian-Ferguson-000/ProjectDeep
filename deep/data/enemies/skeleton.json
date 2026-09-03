@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "skeleton",
+  "display": {
+    "name": "Skeleton"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Skeleton",
+  "short_name": "Skel",
+  "base_health": 7,
+  "health_per_floor": 1.1,
+  "damage_before_floor": 2,
+  "damage_from_floor_4": 3,
+  "xp": 20,
+  "gold": 4,
+  "initiative_modifier": 0,
+  "movement": 2
+}

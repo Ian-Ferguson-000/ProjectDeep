@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "saints_phial",
+  "display": {
+    "name": "Saint's Phial"
+  },
+  "tags": [
+    "healing",
+    "health"
+  ],
+  "rarity": "rare",
+  "duration_type": "dungeon_bound",
+  "description": "An empty crystal vial that somehow improves anything restorative poured nearby.",
+  "icon_key": "potion",
+  "modifiers": {
+    "max_health": 4,
+    "potion_heal_bonus": 4
+  },
+  "effects": {
+    "strategy": {
+      "description": "The empty phial preserves the echo of healing for the next wound.",
+      "modifiers": {
+        "max_health": 3,
+        "potion_heal_bonus": 3
+      },
+      "rules_text": "After drinking a potion, gain 2 Aegis against the next damage type received.",
+      "effects": [
+        {
+          "trigger": "potion",
+          "temporary_aegis": 2
+        }
+      ]
+    }
+  }
+}

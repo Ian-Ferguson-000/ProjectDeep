@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "redstep_spurs",
+  "display": {
+    "name": "Redstep Spurs"
+  },
+  "tags": [
+    "movement",
+    "speed"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "Small iron spurs that click once just before their wearer moves.",
+  "icon_key": "move",
+  "modifiers": {
+    "movement": 1,
+    "initiative_modifier": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "The spurs bite only when their wearer commits to a line of attack.",
+      "modifiers": {
+        "movement": 1,
+        "initiative_modifier": 1
+      },
+      "rules_text": "After moving at least 2 tiles, gain +2 Attack Power on the next martial attack.",
+      "effects": [
+        {
+          "condition": "moved_far",
+          "modifiers": {
+            "attack_power": 2
+          }
+        }
+      ]
+    }
+  }
+}

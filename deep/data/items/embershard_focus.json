@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "embershard_focus",
+  "display": {
+    "name": "Embershard Focus"
+  },
+  "tags": [
+    "arcane",
+    "spell"
+  ],
+  "rarity": "common",
+  "duration_type": "temporary",
+  "duration_floors": 2,
+  "description": "Warm crystal splinters sharpen simple spellwork for a short stretch.",
+  "icon_key": "spell",
+  "modifiers": {
+    "spell_power": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "A disposable ember lens stretches fire beyond its natural reach.",
+      "modifiers": {
+        "spell_potency": 1,
+        "aegis_fire": 1
+      },
+      "rules_text": "Fire attacks gain +1 Range and +1 Spell Potency.",
+      "effects": [
+        {
+          "condition": "damage_type",
+          "damage_type": "fire",
+          "modifiers": {
+            "range": 1,
+            "spell_potency": 1
+          }
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: gain spell power for its remaining floors.",
+      "trigger": "passive"
+    }
+  }
+}

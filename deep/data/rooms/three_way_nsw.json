@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "three_way_nsw",
+  "display": {
+    "name": "Three Way Nsw"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "NSW",
+  "background_id": "farmyard",
+  "obstacles": [
+    [
+      10,
+      5
+    ],
+    [
+      7,
+      3
+    ],
+    [
+      7,
+      7
+    ]
+  ]
+}

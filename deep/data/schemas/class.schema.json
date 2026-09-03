@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/class.schema.json",
+  "allOf": [{"$ref": "definition.schema.json"}],
+  "type": "object",
+  "required": ["base_stats", "default_action_ids", "progression_id"],
+  "properties": {
+    "default_action_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+    "unlockable_action_ids": {"type": "array", "items": {"type": "string"}},
+    "progression_id": {"type": "string"}
+  }
+}

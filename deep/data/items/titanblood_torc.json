@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "titanblood_torc",
+  "display": {
+    "name": "Titanblood Torc"
+  },
+  "tags": [
+    "health",
+    "martial"
+  ],
+  "rarity": "very_rare",
+  "duration_type": "permanent",
+  "description": "A heavy bronze neck-ring that beats faintly like a second pulse.",
+  "icon_key": "health",
+  "modifiers": {
+    "max_health": 10,
+    "attack_bonus": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "A bronze second pulse turns pain into crushing force.",
+      "modifiers": {
+        "max_health": 9,
+        "attack_power": 2,
+        "threshold": 1
+      },
+      "rules_text": "Below half health, gain +3 Attack Power but lose 1 Evasion.",
+      "effects": [
+        {
+          "condition": "low_health",
+          "modifiers": {
+            "attack_power": 3,
+            "evasion": -1
+          }
+        }
+      ]
+    }
+  }
+}

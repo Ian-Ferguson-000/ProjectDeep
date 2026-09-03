@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "id": "healer",
+  "display": {
+    "name": "Healer Progression"
+  },
+  "tags": [
+    "progression",
+    "healer"
+  ],
+  "max_level": 20,
+  "xp_thresholds": [
+    0,
+    0,
+    100,
+    220,
+    380,
+    580,
+    820,
+    1100,
+    1420,
+    1780,
+    2180,
+    2620,
+    3100,
+    3620,
+    4180,
+    4780,
+    5420,
+    6100,
+    6820,
+    7580,
+    8380
+  ],
+  "level_rules": {
+    "base_stats": {
+      "str": 9,
+      "dex": 13,
+      "con": 12,
+      "int": 12,
+      "wis": 16,
+      "cha": 14
+    },
+    "stat_growth": [
+      {
+        "stat": "wis",
+        "every": 2
+      },
+      {
+        "stat": "cha",
+        "every": 3
+      },
+      {
+        "stat": "con",
+        "every": 5
+      }
+    ],
+    "derived": {
+      "max_health": {
+        "base": 11,
+        "per_level": 2,
+        "stat": "con"
+      },
+      "attack_bonus": {
+        "stat": "wis",
+        "stat_offset": -2,
+        "min": 1,
+        "per_levels": 4
+      },
+      "spell_power": {
+        "flat": 0
+      },
+      "defense": {
+        "stat": "dex",
+        "stat_offset": -2,
+        "min": 0,
+        "per_levels": 6
+      },
+      "initiative_modifier": {
+        "base": 1,
+        "stat": "dex",
+        "stat_offset": -1,
+        "min": 0,
+        "per_levels": 6
+      },
+      "potion_heal_bonus": {
+        "stat": "wis",
+        "min": 0,
+        "per_levels": 5,
+        "level_basis": "level"
+      }
+    }
+  },
+  "legacy_tree": {},
+  "mode_overrides": {
+    "slasher": {
+      "branches": [
+        {
+          "id": "luminary",
+          "name": "Luminary",
+          "stages": [
+            "Luminary",
+            "Dawn Luminary",
+            "Radiant Adept",
+            "Living Sun"
+          ],
+          "description": "Make Binding Light broader, brighter, and more debilitating.",
+          "focus": [
+            "basic",
+            "special"
+          ],
+          "flags": [
+            "binding_splash",
+            "slow_strength",
+            "radiant_chain",
+            "light_burst",
+            "luminary_capstone"
+          ]
+        },
+        {
+          "id": "seraph",
+          "name": "Seraph",
+          "stages": [
+            "Seraph",
+            "Mercy Seraph",
+            "Guardian Seraph",
+            "Seraph Ascendant"
+          ],
+          "description": "Transform Dash and Recover into powerful sustaining tools.",
+          "focus": [
+            "movement",
+            "defensive"
+          ],
+          "flags": [
+            "dash_heal_aura",
+            "recover_shield",
+            "dash_charge",
+            "recover_echo",
+            "seraph_capstone"
+          ]
+        },
+        {
+          "id": "exemplar",
+          "name": "Exemplar",
+          "stages": [
+            "Exemplar",
+            "Grace Exemplar",
+            "Hallowed Exemplar",
+            "Perfect Exemplar"
+          ],
+          "description": "Build Grace efficiently and amplify Empowered follow-up attacks.",
+          "focus": [
+            "special",
+            "basic"
+          ],
+          "flags": [
+            "empower_persist",
+            "grace_overflow",
+            "empower_splash",
+            "grace_refund",
+            "exemplar_capstone"
+          ]
+        }
+      ]
+    }
+  }
+}

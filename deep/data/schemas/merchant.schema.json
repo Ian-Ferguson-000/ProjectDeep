@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/merchant.schema.json",
+  "allOf": [{"$ref": "definition.schema.json"}],
+  "type": "object",
+  "required": ["stock"],
+  "properties": {
+    "stock": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item_id"],
+        "properties": {"item_id": {"type": "string"}, "weight": {"type": "number", "exclusiveMinimum": 0}}
+      }
+    }
+  }
+}

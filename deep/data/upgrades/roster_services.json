@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "roster_services",
+  "display": {
+    "name": "Roster Services"
+  },
+  "tags": [
+    "tavern_upgrade"
+  ],
+  "max_rank": 5,
+  "cost_balance_id": "economy"
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "ghoul",
+  "display": {
+    "name": "Ghoul"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Ghoul",
+  "short_name": "Ghoul",
+  "base_health": 6,
+  "health_per_floor": 1.0,
+  "damage_before_floor": 2,
+  "damage_from_floor_4": 3,
+  "xp": 24,
+  "gold": 5,
+  "initiative_modifier": 2,
+  "movement": 3,
+  "accuracy": 3,
+  "evasion": 8,
+  "damage_type": "necrotic"
+}

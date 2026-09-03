@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "heartwood_crown",
+  "display": {
+    "name": "Heartwood Crown"
+  },
+  "tags": [
+    "legendary",
+    "health"
+  ],
+  "rarity": "legendary",
+  "duration_type": "permanent",
+  "description": "Living roots woven into a crown for anyone stubborn enough to survive them.",
+  "icon_key": "health",
+  "modifiers": {
+    "max_health": 12,
+    "defense": 4,
+    "potion_heal_bonus": 6
+  },
+  "effects": {
+    "strategy": {
+      "description": "Living roots harden when their bearer refuses to move.",
+      "modifiers": {
+        "max_health": 10,
+        "threshold": 2
+      },
+      "rules_text": "If you have not moved this turn, gain +3 Armor Class and +2 Threshold.",
+      "effects": [
+        {
+          "condition": "stationary",
+          "modifiers": {
+            "armor_class": 3,
+            "threshold": 2
+          }
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: recover 2 health on each floor entry.",
+      "trigger": "floor_entry",
+      "heal": 2
+    }
+  }
+}

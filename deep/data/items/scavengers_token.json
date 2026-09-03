@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "scavengers_token",
+  "display": {
+    "name": "Scavenger's Token"
+  },
+  "tags": [
+    "loot",
+    "luck"
+  ],
+  "rarity": "common",
+  "duration_type": "dungeon_bound",
+  "description": "A brass token passed between delvers who know where to look twice.",
+  "icon_key": "gold",
+  "modifiers": {
+    "gold_bonus_percent": 10
+  },
+  "effects": {
+    "strategy": {
+      "description": "The token remembers overlooked corners after a room falls silent.",
+      "modifiers": {
+        "gold_bonus_percent": 10
+      },
+      "rules_text": "Clearing a floor grants 3 additional gold for each unopened chest or cache.",
+      "effects": [
+        {
+          "trigger": "floor_clear",
+          "gold_per_unopened_secret": 3
+        }
+      ]
+    }
+  }
+}

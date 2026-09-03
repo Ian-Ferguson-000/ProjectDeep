@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "wayfinders_compass",
+  "display": {
+    "name": "Wayfinder's Compass"
+  },
+  "tags": [
+    "movement",
+    "utility"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "Its needle ignores north and points instead toward momentum.",
+  "icon_key": "move",
+  "modifiers": {
+    "initiative_modifier": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "Its needle points toward the safest useful square.",
+      "modifiers": {
+        "initiative_modifier": 2
+      },
+      "rules_text": "Movement abilities gain +1 Range; landing unengaged restores 1 class resource.",
+      "effects": [
+        {
+          "condition": "movement_ability",
+          "modifiers": {
+            "range": 1
+          }
+        },
+        {
+          "trigger": "land_unengaged",
+          "resource": 1
+        }
+      ]
+    }
+  }
+}

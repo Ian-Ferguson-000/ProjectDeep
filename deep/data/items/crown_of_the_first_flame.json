@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "crown_of_the_first_flame",
+  "display": {
+    "name": "Crown of the First Flame"
+  },
+  "tags": [
+    "legendary",
+    "arcane",
+    "fire"
+  ],
+  "rarity": "legendary",
+  "duration_type": "permanent",
+  "description": "A blackened circlet crowned by an ember that has supposedly burned since magic first entered the world.",
+  "icon_key": "special",
+  "modifiers": {
+    "spell_power": 6,
+    "initiative_modifier": 2,
+    "max_health": 6
+  },
+  "effects": {
+    "strategy": {
+      "description": "The first flame refuses resistance and feeds on fallen magic.",
+      "modifiers": {
+        "spell_potency": 5,
+        "penetration": 2,
+        "aegis_fire": 5
+      },
+      "rules_text": "Fire attacks convert half of prevented damage into bonus damage on the next spell.",
+      "effects": [
+        {
+          "trigger": "absorbed_attack",
+          "damage_type": "fire",
+          "store_prevented_spell_damage": 0.5
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: specials gain 30% damage and a wider impact.",
+      "trigger": "action_start",
+      "special_damage_multiplier": 1.3,
+      "area_radius_bonus": 28.0
+    }
+  }
+}

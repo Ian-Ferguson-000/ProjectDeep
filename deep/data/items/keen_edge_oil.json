@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "keen_edge_oil",
+  "display": {
+    "name": "Keen Edge Oil"
+  },
+  "tags": [
+    "martial",
+    "weapon"
+  ],
+  "rarity": "common",
+  "duration_type": "temporary",
+  "duration_floors": 2,
+  "description": "A quick coat makes weapon strikes bite deeper.",
+  "icon_key": "attack",
+  "modifiers": {
+    "attack_bonus": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "Its first clean cut parts armor before the oil burns away.",
+      "modifiers": {
+        "penetration": 1
+      },
+      "rules_text": "Your first attack each combat gains +2 Penetration and +1 Attack Power.",
+      "effects": [
+        {
+          "condition": "first_attack",
+          "modifiers": {
+            "penetration": 2,
+            "attack_power": 1
+          }
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: gain attack power for its remaining floors.",
+      "trigger": "passive"
+    }
+  }
+}

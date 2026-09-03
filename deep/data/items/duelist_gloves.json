@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "duelist_gloves",
+  "display": {
+    "name": "Duelist Gloves"
+  },
+  "tags": [
+    "martial",
+    "speed"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "Supple leather gloves cut for fast, accurate strikes.",
+  "icon_key": "attack",
+  "modifiers": {
+    "attack_bonus": 1,
+    "initiative_modifier": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "The gloves guide a blade toward whichever opening appears first.",
+      "modifiers": {
+        "accuracy": 1
+      },
+      "rules_text": "Against an isolated enemy, gain +2 Accuracy and +1 Penetration.",
+      "effects": [
+        {
+          "condition": "isolated_target",
+          "modifiers": {
+            "accuracy": 2,
+            "penetration": 1
+          }
+        }
+      ]
+    }
+  }
+}

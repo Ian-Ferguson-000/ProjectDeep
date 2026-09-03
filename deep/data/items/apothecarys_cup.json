@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "apothecarys_cup",
+  "display": {
+    "name": "Apothecary's Cup"
+  },
+  "tags": [
+    "healing",
+    "utility"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "A tiny measuring cup engraved with ratios no modern herbalist recognizes.",
+  "icon_key": "potion",
+  "modifiers": {
+    "potion_heal_bonus": 3
+  },
+  "effects": {
+    "strategy": {
+      "description": "Impossible measuring marks make every draught exact rather than merely strong.",
+      "modifiers": {
+        "potion_heal_bonus": 3
+      },
+      "rules_text": "Potions cannot overheal; unused healing becomes temporary Aegis, up to 3.",
+      "effects": [
+        {
+          "trigger": "overheal",
+          "temporary_aegis_cap": 3
+        }
+      ]
+    }
+  }
+}

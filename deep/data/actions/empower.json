@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "empower",
+  "display": {
+    "name": "Empower"
+  },
+  "tags": [
+    "action",
+    "healer",
+    "special"
+  ],
+  "class_id": "healer",
+  "slot": "special",
+  "cost": 2,
+  "description": "Empower the next Basic or Special.",
+  "targeting": {
+    "type": "self",
+    "range": 0
+  },
+  "effects": [
+    "Increase damage and status duration"
+  ]
+}

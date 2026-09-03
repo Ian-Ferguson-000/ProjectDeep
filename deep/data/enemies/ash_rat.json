@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "ash_rat",
+  "display": {
+    "name": "Ash Rat"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Ash Rat",
+  "short_name": "Rat",
+  "base_health": 4,
+  "health_per_floor": 0.0,
+  "damage_before_floor": 2,
+  "damage_from_floor_4": 2,
+  "xp": 12,
+  "gold": 2,
+  "initiative_modifier": 3,
+  "movement": 3,
+  "evasion": 9
+}

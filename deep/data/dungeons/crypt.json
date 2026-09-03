@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "crypt",
+  "display": {
+    "name": "Stone Crypt"
+  },
+  "tags": [
+    "dungeon",
+    "demo"
+  ],
+  "subtitle": "The Ossuary Depths",
+  "description": "A seven-floor burial complex of restless dead, curses, sealed chambers, and necrotic hazards.",
+  "category": "Mystery",
+  "dungeon_type": "mystery",
+  "runtime": "crypt",
+  "slasher_runtime": "crypt",
+  "supported_modes": [
+    "strategy",
+    "slasher"
+  ],
+  "party_cap": 4,
+  "floors": 7,
+  "slasher": {
+    "campaign_floors": 7,
+    "elite_floor_in_cycle": 4,
+    "cycle_length": 7,
+    "endless_available": false
+  },
+  "difficulty": "Veteran",
+  "accent": "8e83b8",
+  "merchant_id": "crypt",
+  "unlock": {
+    "type": "dungeon_clear",
+    "dungeon_id": "forest"
+  },
+  "unlock_text": "Clear the Verdant Forest.",
+  "completion_unlocks": [
+    "sunken_mine",
+    "ember_foundry"
+  ],
+  "continuous_next": "sunken_mine",
+  "class_unlock": "summoner",
+  "clue_drop": "abyssal_crypt",
+  "extraction": "cleared_floor"
+}

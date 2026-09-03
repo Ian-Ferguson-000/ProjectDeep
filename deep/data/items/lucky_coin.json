@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "lucky_coin",
+  "display": {
+    "name": "Lucky Coin"
+  },
+  "tags": [
+    "loot",
+    "luck"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "Somehow, treasure always lands face up.",
+  "icon_key": "gold",
+  "modifiers": {
+    "gold_bonus_percent": 25
+  },
+  "effects": {
+    "strategy": {
+      "description": "The coin steals a little probability whenever an attack narrowly misses.",
+      "modifiers": {
+        "gold_bonus_percent": 20
+      },
+      "rules_text": "Once per turn, an attack that misses by 2 or less gains +2 Accuracy.",
+      "effects": [
+        {
+          "trigger": "near_miss",
+          "accuracy": 2,
+          "limit": "turn"
+        }
+      ]
+    }
+  }
+}

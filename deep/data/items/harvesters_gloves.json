@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "harvesters_gloves",
+  "display": {
+    "name": "Harvester's Gloves"
+  },
+  "tags": [
+    "farmstead",
+    "power"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "run",
+  "description": "Thick gloves stitched with warding straw and sharpened copper thread.",
+  "icon_key": "attack",
+  "modifiers": {
+    "attack_bonus": 2,
+    "spell_power": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "Warding straw and copper thread guide both steel and spell through chaff.",
+      "modifiers": {
+        "accuracy": 1,
+        "penetration": 1
+      },
+      "rules_text": "Against an enemy standing beside a destructible prop, gain +2 Accuracy.",
+      "effects": [
+        {
+          "condition": "target_near_prop",
+          "modifiers": {
+            "accuracy": 2
+          }
+        }
+      ]
+    }
+  }
+}

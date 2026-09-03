@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "crypt_boss",
+  "display": {
+    "name": "Crypt Boss"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Crypt Lord",
+  "short_name": "Lord",
+  "health": 32,
+  "damage": 6,
+  "xp": 160,
+  "gold": 22,
+  "initiative_modifier": 1,
+  "movement": 1,
+  "range": 5,
+  "accuracy": 6,
+  "penetration": 2,
+  "armor_class": 15,
+  "evasion": 10,
+  "threshold": 2,
+  "aegis_necrotic": 3,
+  "damage_type": "necrotic"
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "windknotted_thread",
+  "display": {
+    "name": "Windknotted Thread"
+  },
+  "tags": [
+    "movement",
+    "speed"
+  ],
+  "rarity": "common",
+  "duration_type": "temporary",
+  "duration_floors": 2,
+  "description": "A pale cord tied in seven knots, each tugging faintly toward open ground.",
+  "icon_key": "move",
+  "modifiers": {
+    "initiative_modifier": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "A pale cord pulls its wearer toward unoccupied ground.",
+      "modifiers": {
+        "initiative_modifier": 1
+      },
+      "rules_text": "With no adjacent enemies, gain +1 movement and +1 Evasion.",
+      "effects": [
+        {
+          "condition": "unengaged",
+          "modifiers": {
+            "movement": 1,
+            "evasion": 1
+          }
+        }
+      ]
+    }
+  }
+}

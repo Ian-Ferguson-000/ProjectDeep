@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "three_way_nes_croft",
+  "display": {
+    "name": "Three Way Nes Croft"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "NES",
+  "background_id": "farmyard",
+  "obstacles": [
+    [
+      4,
+      6
+    ],
+    [
+      8,
+      3
+    ],
+    [
+      11,
+      6
+    ]
+  ]
+}

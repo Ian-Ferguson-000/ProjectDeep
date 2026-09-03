@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "aegis_of_the_last_king",
+  "display": {
+    "name": "Aegis of the Last King"
+  },
+  "tags": [
+    "legendary",
+    "defense",
+    "health"
+  ],
+  "rarity": "legendary",
+  "duration_type": "permanent",
+  "description": "A broken royal seal said to carry the stubbornness of a kingdom that refused to fall.",
+  "icon_key": "defense",
+  "modifiers": {
+    "defense": 6,
+    "max_health": 14,
+    "potion_heal_bonus": 4
+  },
+  "effects": {
+    "strategy": {
+      "description": "A broken royal seal remembers a kingdom that refused every kind of ruin.",
+      "modifiers": {
+        "armor_class": 4,
+        "threshold": 3,
+        "max_health": 12,
+        "aegis_all": 2
+      },
+      "rules_text": "A triggered reaction doubles Aegis against that attack and heals 2 afterward.",
+      "effects": [
+        {
+          "trigger": "reaction",
+          "double_aegis": true,
+          "heal": 2
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: gain heavy mitigation and survive one lethal hit per floor.",
+      "trigger": "lethal_damage",
+      "once_per_floor": true
+    }
+  }
+}

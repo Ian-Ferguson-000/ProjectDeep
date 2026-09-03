@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "starfallen_sigil",
+  "display": {
+    "name": "Starfallen Sigil"
+  },
+  "tags": [
+    "legendary",
+    "power"
+  ],
+  "rarity": "legendary",
+  "duration_type": "permanent",
+  "description": "A silver mark that hums with patient, dangerous power.",
+  "icon_key": "special",
+  "modifiers": {
+    "attack_bonus": 4,
+    "spell_power": 4,
+    "initiative_modifier": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "A patient silver star aligns weapon and spell trajectories alike.",
+      "modifiers": {
+        "accuracy": 3,
+        "penetration": 2,
+        "initiative_modifier": 2
+      },
+      "rules_text": "On a natural 20, restore 1 class resource.",
+      "effects": [
+        {
+          "trigger": "critical_hit",
+          "resource": 1
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: specials create a 45% echo impact once every 4 seconds.",
+      "trigger": "action_complete",
+      "echo_multiplier": 0.45,
+      "internal_cooldown": 4.0
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "id": "warrior",
+  "display": {
+    "name": "Warrior"
+  },
+  "tags": [
+    "class",
+    "demo"
+  ],
+  "role": "Front-line striker",
+  "description": "Build Momentum in close combat, then break enemy lines.",
+  "resource": "Momentum",
+  "color": "d98942",
+  "sprite": "res://assets/sprite_packs/Player/IDLE/idle_down.png",
+  "base_stats": {
+    "str": 16,
+    "dex": 12,
+    "con": 15,
+    "int": 8,
+    "wis": 10,
+    "cha": 10
+  },
+  "primary": {
+    "accuracy": [
+      "str",
+      "dex"
+    ],
+    "power": "str"
+  },
+  "stat_growth": [
+    {
+      "stat": "str",
+      "every": 2
+    },
+    {
+      "stat": "con",
+      "every": 3
+    },
+    {
+      "stat": "dex",
+      "every": 5
+    },
+    {
+      "stat": "wis",
+      "every": 7
+    }
+  ],
+  "derived": {
+    "max_health": {
+      "base": 12,
+      "per_level": 3,
+      "stat": "con",
+      "explanation": "12 + 3 per level after 1 + CON modifier"
+    },
+    "attack_bonus": {
+      "stat": "str",
+      "stat_offset": -2,
+      "min": 1,
+      "per_levels": 4,
+      "explanation": "STR modifier - 2 (minimum 1) + level bonus"
+    },
+    "spell_power": {
+      "flat": 0,
+      "explanation": "No innate spell power"
+    },
+    "defense": {
+      "stat": "con",
+      "stat_offset": -1,
+      "min": 0,
+      "per_levels": 5,
+      "explanation": "CON modifier - 1 + level bonus"
+    },
+    "initiative_modifier": {
+      "base": 1,
+      "stat": "dex",
+      "stat_offset": -1,
+      "min": 0,
+      "per_levels": 6,
+      "explanation": "1 + DEX contribution + level bonus"
+    },
+    "potion_heal_bonus": {
+      "stat": "wis",
+      "min": 0,
+      "per_levels": 5,
+      "level_basis": "level",
+      "explanation": "WIS modifier + level bonus"
+    }
+  },
+  "resource_rules": {
+    "max": 3,
+    "special_cost": 2,
+    "gain": [
+      "Slash hits",
+      "Parry successfully counters",
+      "Charge impacts an enemy"
+    ]
+  },
+  "default_action_ids": [
+    "slash",
+    "cleave",
+    "parry",
+    "charge"
+  ],
+  "unlockable_action_ids": [],
+  "progression_id": "warrior"
+}

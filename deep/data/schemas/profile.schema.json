@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/profile.schema.json",
+  "allOf": [{"$ref": "definition.schema.json"}],
+  "type": "object",
+  "required": ["classes", "dungeons", "merchants"],
+  "properties": {
+    "classes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "dungeons": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "merchants": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

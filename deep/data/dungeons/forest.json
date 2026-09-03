@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "forest",
+  "display": {
+    "name": "Verdant Forest"
+  },
+  "tags": [
+    "dungeon",
+    "demo"
+  ],
+  "subtitle": "The Briarway",
+  "description": "A woodland descent of beasts, traps, tangled paths, and living wards.",
+  "category": "Mystery",
+  "dungeon_type": "mystery",
+  "runtime": "forest",
+  "slasher_runtime": "forest",
+  "supported_modes": [
+    "strategy",
+    "slasher"
+  ],
+  "party_cap": 2,
+  "floors": 5,
+  "slasher": {
+    "campaign_floors": 8,
+    "elite_floor_in_cycle": 5,
+    "cycle_length": 8,
+    "endless_available": true
+  },
+  "difficulty": "Novice",
+  "accent": "65a85f",
+  "merchant_id": "forest",
+  "unlock": {
+    "type": "always"
+  },
+  "unlock_text": "Available from the beginning.",
+  "completion_unlocks": [
+    "ashen_farmstead",
+    "crypt"
+  ],
+  "continuous_next": "crypt",
+  "clue_drop": "moonlit_forest",
+  "extraction": "cleared_floor"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "kobold",
+  "display": {
+    "name": "Kobold"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Kobold",
+  "short_name": "Kobold",
+  "base_health": 3,
+  "health_per_floor": 0.5,
+  "damage_before_floor": 1,
+  "damage_from_floor_4": 2,
+  "xp": 12,
+  "gold": 2,
+  "initiative_modifier": 3,
+  "movement": 3
+}

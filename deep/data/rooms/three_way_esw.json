@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "three_way_esw",
+  "display": {
+    "name": "Three Way Esw"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "ESW",
+  "background_id": "storehouse",
+  "obstacles": [
+    [
+      8,
+      3
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      11,
+      6
+    ]
+  ]
+}

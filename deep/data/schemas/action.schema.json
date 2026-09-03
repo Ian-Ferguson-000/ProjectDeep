@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/action.schema.json",
+  "allOf": [{"$ref": "definition.schema.json"}],
+  "type": "object",
+  "required": ["class_id", "slot"],
+  "properties": {
+    "class_id": {"type": "string"},
+    "slot": {"enum": ["basic", "special", "defensive", "movement"]}
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "moonleaf_cloak",
+  "display": {
+    "name": "Moonleaf Cloak"
+  },
+  "tags": [
+    "defense",
+    "speed"
+  ],
+  "rarity": "rare",
+  "duration_type": "dungeon_bound",
+  "description": "A quiet cloak that seems to move before the wind does.",
+  "icon_key": "defense",
+  "modifiers": {
+    "defense": 2,
+    "initiative_modifier": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "Moonleaf fibers blur at the edge of an attacker's vision.",
+      "modifiers": {
+        "evasion": 2,
+        "initiative_modifier": 1
+      },
+      "rules_text": "While Hidden or before your first attack, gain +2 Armor Class.",
+      "effects": [
+        {
+          "condition": "unrevealed",
+          "modifiers": {
+            "armor_class": 2
+          }
+        }
+      ]
+    }
+  }
+}

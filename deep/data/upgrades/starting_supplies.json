@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "starting_supplies",
+  "display": {
+    "name": "Starting Supplies"
+  },
+  "tags": [
+    "tavern_upgrade"
+  ],
+  "max_rank": 5,
+  "cost_balance_id": "economy"
+}

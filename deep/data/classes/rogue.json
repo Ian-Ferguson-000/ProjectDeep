@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "id": "rogue",
+  "display": {
+    "name": "Rogue"
+  },
+  "tags": [
+    "class",
+    "demo"
+  ],
+  "role": "Mobile assassin",
+  "description": "Create Edge through unfair angles, then execute isolated prey.",
+  "resource": "Edge",
+  "color": "9d62df",
+  "sprite": "res://assets/classes/rogue/sheet.png",
+  "base_stats": {
+    "str": 12,
+    "dex": 17,
+    "con": 10,
+    "int": 11,
+    "wis": 10,
+    "cha": 13
+  },
+  "primary": {
+    "accuracy": [
+      "dex",
+      "str"
+    ],
+    "power": "dex"
+  },
+  "stat_growth": [
+    {
+      "stat": "dex",
+      "every": 2
+    },
+    {
+      "stat": "cha",
+      "every": 4
+    },
+    {
+      "stat": "str",
+      "every": 5
+    }
+  ],
+  "derived": {
+    "max_health": {
+      "base": 9,
+      "per_level": 2,
+      "stat": "con",
+      "explanation": "9 + 2 per level after 1 + CON modifier"
+    },
+    "attack_bonus": {
+      "stat": "dex",
+      "stat_offset": -2,
+      "min": 1,
+      "per_levels": 4,
+      "explanation": "DEX modifier - 2 (minimum 1) + level bonus"
+    },
+    "spell_power": {
+      "flat": 0,
+      "explanation": "No innate spell power"
+    },
+    "defense": {
+      "stat": "dex",
+      "stat_offset": -1,
+      "min": 0,
+      "per_levels": 5,
+      "explanation": "DEX contribution + level bonus"
+    },
+    "initiative_modifier": {
+      "base": 3,
+      "stat": "dex",
+      "stat_offset": -1,
+      "min": 0,
+      "per_levels": 5,
+      "explanation": "3 + DEX contribution + level bonus"
+    },
+    "potion_heal_bonus": {
+      "flat": 0,
+      "explanation": "No innate potion bonus"
+    }
+  },
+  "resource_rules": {
+    "max": 3,
+    "special_cost": 2,
+    "gain": [
+      "Pierce ignores a defense or hits a second target",
+      "Evade negates an attack"
+    ]
+  },
+  "default_action_ids": [
+    "pierce",
+    "assassinate",
+    "evade",
+    "shadowstep"
+  ],
+  "unlockable_action_ids": [],
+  "progression_id": "rogue"
+}

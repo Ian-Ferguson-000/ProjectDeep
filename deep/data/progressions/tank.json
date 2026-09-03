@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "id": "tank",
+  "display": {
+    "name": "Tank Progression"
+  },
+  "tags": [
+    "progression",
+    "tank"
+  ],
+  "max_level": 20,
+  "xp_thresholds": [
+    0,
+    0,
+    100,
+    220,
+    380,
+    580,
+    820,
+    1100,
+    1420,
+    1780,
+    2180,
+    2620,
+    3100,
+    3620,
+    4180,
+    4780,
+    5420,
+    6100,
+    6820,
+    7580,
+    8380
+  ],
+  "level_rules": {
+    "base_stats": {
+      "str": 14,
+      "dex": 8,
+      "con": 17,
+      "int": 8,
+      "wis": 12,
+      "cha": 10
+    },
+    "stat_growth": [
+      {
+        "stat": "con",
+        "every": 2
+      },
+      {
+        "stat": "str",
+        "every": 3
+      },
+      {
+        "stat": "wis",
+        "every": 6
+      }
+    ],
+    "derived": {
+      "max_health": {
+        "base": 15,
+        "per_level": 3,
+        "stat": "con"
+      },
+      "attack_bonus": {
+        "stat": "str",
+        "stat_offset": -2,
+        "min": 1,
+        "per_levels": 5
+      },
+      "spell_power": {
+        "flat": 0
+      },
+      "defense": {
+        "stat": "con",
+        "stat_offset": 0,
+        "min": 1,
+        "per_levels": 4
+      },
+      "initiative_modifier": {
+        "base": 0,
+        "stat": "dex",
+        "stat_offset": -2,
+        "min": 0,
+        "per_levels": 8
+      },
+      "potion_heal_bonus": {
+        "stat": "wis",
+        "min": 0,
+        "per_levels": 6,
+        "level_basis": "level"
+      }
+    }
+  },
+  "legacy_tree": {},
+  "mode_overrides": {
+    "slasher": {
+      "branches": [
+        {
+          "id": "bulwark",
+          "name": "Bulwark",
+          "stages": [
+            "Bulwark",
+            "Iron Bulwark",
+            "Living Bastion",
+            "Eternal Bulwark"
+          ],
+          "description": "Strengthen Guard, Resolve generation, and damage interception.",
+          "focus": [
+            "defensive",
+            "basic"
+          ],
+          "flags": [
+            "guard_persist",
+            "resolve_barrier",
+            "bash_guard",
+            "guard_aura",
+            "bulwark_capstone"
+          ]
+        },
+        {
+          "id": "juggernaut",
+          "name": "Juggernaut",
+          "stages": [
+            "Juggernaut",
+            "Siege Juggernaut",
+            "Earthshaker",
+            "Worldbreaker"
+          ],
+          "description": "Turn Shield Bash and Leap into sweeping battlefield disruption.",
+          "focus": [
+            "basic",
+            "movement"
+          ],
+          "flags": [
+            "bash_widen",
+            "leap_stun",
+            "bash_chain",
+            "leap_aftershock",
+            "juggernaut_capstone"
+          ]
+        },
+        {
+          "id": "avenger",
+          "name": "Avenger",
+          "stages": [
+            "Avenger",
+            "Oath Avenger",
+            "Wrathbound",
+            "Final Reckoning"
+          ],
+          "description": "Store and release more Retribution through retaliation chains.",
+          "focus": [
+            "special",
+            "defensive"
+          ],
+          "flags": [
+            "retribution_store",
+            "release_growth",
+            "retaliation_chain",
+            "retribution_refund",
+            "avenger_capstone"
+          ]
+        }
+      ]
+    }
+  }
+}

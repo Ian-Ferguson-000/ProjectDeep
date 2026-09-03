@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "id": "chalk_rune_tablet",
+  "display": {
+    "name": "Chalk Rune Tablet"
+  },
+  "tags": [
+    "arcane",
+    "spell"
+  ],
+  "rarity": "common",
+  "duration_type": "temporary",
+  "duration_floors": 2,
+  "description": "A brittle slate covered in cramped formulae that brighten around active magic.",
+  "icon_key": "spell",
+  "modifiers": {
+    "spell_power": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "The rune can be broken to force a spell through resistant wards.",
+      "modifiers": {
+        "spell_potency": 1
+      },
+      "rules_text": "Your first spell each floor gains +3 Penetration.",
+      "effects": [
+        {
+          "condition": "first_spell_floor",
+          "modifiers": {
+            "penetration": 3
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "id": "brambleguard_clasp",
+  "display": {
+    "name": "Brambleguard Clasp"
+  },
+  "tags": [
+    "defense",
+    "health"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "A thorn-shaped bronze clasp that seems to stiffen when danger draws near.",
+  "icon_key": "defense",
+  "modifiers": {
+    "defense": 1,
+    "max_health": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "Bronze thorns punish anything that presses into the wearer's guard.",
+      "modifiers": {
+        "armor_class": 1,
+        "max_health": 2
+      },
+      "rules_text": "When a melee defensive reaction triggers, deal 1 physical damage to the attacker.",
+      "effects": [
+        {
+          "trigger": "melee_reaction",
+          "retaliate": 1,
+          "damage_type": "physical"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "forest",
+  "display": {
+    "name": "Thistle Fen"
+  },
+  "tags": [
+    "merchant",
+    "demo"
+  ],
+  "title": "Briarway Trapper",
+  "description": "A patient trail merchant dealing in roots, snares, remedies, and living wards.",
+  "portrait": "res://assets/merchants/forest_thistle.png",
+  "dungeon_id": "forest",
+  "stock": [
+    {
+      "offer_id": "forest_potion",
+      "kind": "consumable",
+      "consumable_id": "healing_potion",
+      "name": "Bitterleaf Tonic",
+      "description": "Gain one Healing Potion immediately.",
+      "gold": 6,
+      "min_rank": 0,
+      "location": "both"
+    },
+    {
+      "offer_id": "forest_smoke",
+      "kind": "consumable",
+      "consumable_id": "smoke_vial",
+      "name": "Briar-Smoke Vial",
+      "description": "Gain one Smoke Vial.",
+      "gold": 11,
+      "min_rank": 1,
+      "location": "both"
+    },
+    {
+      "offer_id": "forest_fleet",
+      "kind": "consumable",
+      "consumable_id": "fleet_draught",
+      "name": "Fleet Draught",
+      "description": "Gain one Fleet Draught.",
+      "gold": 13,
+      "min_rank": 2,
+      "location": "both"
+    },
+    {
+      "offer_id": "forest_true_strike",
+      "kind": "consumable",
+      "consumable_id": "true_strike_tonic",
+      "name": "True-Strike Tonic",
+      "description": "Gain +8 Accuracy on the next attack.",
+      "gold": 17,
+      "min_rank": 2,
+      "location": "both"
+    },
+    {
+      "offer_id": "ironroot_ring",
+      "kind": "item",
+      "item_id": "ironroot_ring",
+      "gold": 16,
+      "min_rank": 0,
+      "location": "both"
+    },
+    {
+      "offer_id": "brambleguard_clasp",
+      "kind": "item",
+      "item_id": "brambleguard_clasp",
+      "gold": 28,
+      "min_rank": 1,
+      "location": "both"
+    },
+    {
+      "offer_id": "wayfinders_compass",
+      "kind": "item",
+      "item_id": "wayfinders_compass",
+      "gold": 30,
+      "min_rank": 2,
+      "location": "both"
+    },
+    {
+      "offer_id": "moonleaf_cloak",
+      "kind": "item",
+      "item_id": "moonleaf_cloak",
+      "gold": 46,
+      "min_rank": 2,
+      "location": "both"
+    },
+    {
+      "offer_id": "blackoak_ward",
+      "kind": "item",
+      "item_id": "blackoak_ward",
+      "gold": 55,
+      "min_rank": 3,
+      "location": "both"
+    },
+    {
+      "offer_id": "heartwood_crown",
+      "kind": "item",
+      "item_id": "heartwood_crown",
+      "favor": 55,
+      "min_rank": 4,
+      "location": "favor"
+    }
+  ]
+}

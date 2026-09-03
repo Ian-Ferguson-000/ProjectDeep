@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "evade",
+  "display": {
+    "name": "Evade"
+  },
+  "tags": [
+    "action",
+    "rogue",
+    "defensive"
+  ],
+  "class_id": "rogue",
+  "slot": "defensive",
+  "description": "Negate the next attack and step away.",
+  "targeting": {
+    "type": "self",
+    "range": 0
+  },
+  "effects": [
+    "Gain Edge on trigger"
+  ]
+}

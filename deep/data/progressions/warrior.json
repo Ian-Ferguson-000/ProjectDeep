@@ -1,0 +1,641 @@
+{
+  "schema_version": 1,
+  "id": "warrior",
+  "display": {
+    "name": "Warrior Progression"
+  },
+  "tags": [
+    "progression",
+    "warrior"
+  ],
+  "max_level": 20,
+  "xp_thresholds": [
+    0,
+    0,
+    100,
+    220,
+    380,
+    580,
+    820,
+    1100,
+    1420,
+    1780,
+    2180,
+    2620,
+    3100,
+    3620,
+    4180,
+    4780,
+    5420,
+    6100,
+    6820,
+    7580,
+    8380
+  ],
+  "level_rules": {
+    "base_stats": {
+      "str": 16,
+      "dex": 12,
+      "con": 15,
+      "int": 8,
+      "wis": 10,
+      "cha": 10
+    },
+    "stat_growth": [
+      {
+        "stat": "str",
+        "every": 2
+      },
+      {
+        "stat": "con",
+        "every": 3
+      },
+      {
+        "stat": "dex",
+        "every": 5
+      },
+      {
+        "stat": "wis",
+        "every": 7
+      }
+    ],
+    "derived": {
+      "max_health": {
+        "base": 12,
+        "per_level": 3,
+        "stat": "con"
+      },
+      "attack_bonus": {
+        "stat": "str",
+        "stat_offset": -2,
+        "min": 1,
+        "per_levels": 4
+      },
+      "spell_power": {
+        "flat": 0
+      },
+      "defense": {
+        "stat": "con",
+        "stat_offset": -1,
+        "min": 0,
+        "per_levels": 5
+      },
+      "initiative_modifier": {
+        "base": 1,
+        "stat": "dex",
+        "stat_offset": -1,
+        "min": 0,
+        "per_levels": 6
+      },
+      "potion_heal_bonus": {
+        "stat": "wis",
+        "stat_offset": 0,
+        "min": 0,
+        "per_levels": 5,
+        "level_basis": "level"
+      }
+    }
+  },
+  "legacy_tree": {
+    "evolution_levels": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "ability_upgrade_levels": [
+      3,
+      7,
+      9,
+      11,
+      13,
+      17,
+      19
+    ],
+    "evolutions": [
+      {
+        "id": "champion",
+        "level": 5,
+        "name": "Champion",
+        "description": "Perfect the clean, decisive strike. Your weapon work becomes brutally reliable.",
+        "modifiers": {
+          "attack_bonus": 1,
+          "initiative_modifier": 1
+        },
+        "flags": {
+          "sweep_damage_bonus": 1
+        }
+      },
+      {
+        "id": "guardian",
+        "level": 5,
+        "name": "Guardian",
+        "description": "Plant your shield between danger and the road ahead.",
+        "modifiers": {
+          "max_health": 4,
+          "defense": 1,
+          "block_bonus": 1
+        },
+        "flags": {
+          "brace_retaliate_bonus": 1
+        }
+      },
+      {
+        "id": "berserker",
+        "level": 5,
+        "name": "Berserker",
+        "description": "Trade caution for force. Momentum turns every opening into violence.",
+        "modifiers": {
+          "attack_bonus": 2
+        },
+        "flags": {
+          "charge_damage_bonus": 1
+        }
+      },
+      {
+        "id": "weapon_master",
+        "level": 10,
+        "requires": "champion",
+        "name": "Weapon Master",
+        "description": "Your blade finds weak points even through armor and bone.",
+        "modifiers": {
+          "attack_bonus": 2
+        },
+        "flags": {
+          "sweep_damage_bonus": 1
+        }
+      },
+      {
+        "id": "stonewarden",
+        "level": 10,
+        "requires": "guardian",
+        "name": "Stonewarden",
+        "description": "A braced stance turns you into the dungeon's hardest door.",
+        "modifiers": {
+          "defense": 1,
+          "block_bonus": 1
+        },
+        "flags": {
+          "brace_block_bonus": 1
+        }
+      },
+      {
+        "id": "ravager",
+        "level": 10,
+        "requires": "berserker",
+        "name": "Ravager",
+        "description": "Your charges land like a thrown anvil.",
+        "modifiers": {
+          "max_health": 4,
+          "attack_bonus": 1
+        },
+        "flags": {
+          "charge_damage_bonus": 2
+        }
+      },
+      {
+        "id": "duelist_captain",
+        "level": 15,
+        "requires": "champion",
+        "name": "Duelist Captain",
+        "description": "You read a room before steel leaves the scabbard.",
+        "modifiers": {
+          "attack_bonus": 2,
+          "initiative_modifier": 2
+        },
+        "flags": {
+          "sweep_reach_bonus": 1
+        }
+      },
+      {
+        "id": "bulwark_captain",
+        "level": 15,
+        "requires": "guardian",
+        "name": "Bulwark Captain",
+        "description": "You hold space so completely that enemies pay to enter it.",
+        "modifiers": {
+          "max_health": 6,
+          "defense": 2
+        },
+        "flags": {
+          "brace_retaliate_bonus": 1,
+          "brace_block_bonus": 1
+        }
+      },
+      {
+        "id": "fury_captain",
+        "level": 15,
+        "requires": "berserker",
+        "name": "Fury Captain",
+        "description": "Your advance is no longer a move; it is a verdict.",
+        "modifiers": {
+          "attack_bonus": 2,
+          "movement": 1
+        },
+        "flags": {
+          "charge_range_bonus": 1
+        }
+      },
+      {
+        "id": "legendary_champion",
+        "level": 20,
+        "requires": "champion",
+        "name": "Legendary Champion",
+        "description": "The last lesson is precision without hesitation.",
+        "modifiers": {
+          "attack_bonus": 4,
+          "initiative_modifier": 2
+        },
+        "flags": {
+          "sweep_damage_bonus": 2,
+          "sweep_reach_bonus": 1
+        }
+      },
+      {
+        "id": "legendary_guardian",
+        "level": 20,
+        "requires": "guardian",
+        "name": "Legendary Guardian",
+        "description": "You become the line enemies break against.",
+        "modifiers": {
+          "max_health": 10,
+          "defense": 3,
+          "block_bonus": 2
+        },
+        "flags": {
+          "brace_retaliate_bonus": 2
+        }
+      },
+      {
+        "id": "legendary_berserker",
+        "level": 20,
+        "requires": "berserker",
+        "name": "Legendary Berserker",
+        "description": "The first impact decides the fight.",
+        "modifiers": {
+          "max_health": 6,
+          "attack_bonus": 4
+        },
+        "flags": {
+          "charge_damage_bonus": 2,
+          "charge_range_bonus": 1
+        }
+      }
+    ],
+    "ability_upgrades": [
+      {
+        "id": "soldiers_drill",
+        "level": 3,
+        "name": "Soldier's Drill",
+        "description": "Hours of footwork and cuts turn into steady damage.",
+        "modifiers": {
+          "attack_bonus": 1
+        }
+      },
+      {
+        "id": "shield_habit",
+        "level": 3,
+        "name": "Shield Habit",
+        "description": "You keep your guard alive even while advancing.",
+        "modifiers": {
+          "defense": 1
+        }
+      },
+      {
+        "id": "battle_stride",
+        "level": 3,
+        "name": "Battle Stride",
+        "description": "You enter the first round with cleaner tempo.",
+        "modifiers": {
+          "initiative_modifier": 1,
+          "movement": 1
+        }
+      },
+      {
+        "id": "wide_arc",
+        "level": 7,
+        "requires": "champion",
+        "name": "Wide Arc",
+        "description": "Sweep can reach a wider ring of nearby targets.",
+        "flags": {
+          "sweep_reach_bonus": 1
+        }
+      },
+      {
+        "id": "keen_follow_through",
+        "level": 7,
+        "requires": "champion",
+        "name": "Keen Follow-Through",
+        "description": "Sweep hits harder when enemies gather around you.",
+        "modifiers": {
+          "attack_bonus": 1
+        },
+        "flags": {
+          "sweep_damage_bonus": 1
+        }
+      },
+      {
+        "id": "shield_wall",
+        "level": 7,
+        "requires": "guardian",
+        "name": "Shield Wall",
+        "description": "Defending adds more block and makes Brace retaliation sharper.",
+        "modifiers": {
+          "block_bonus": 1
+        },
+        "flags": {
+          "brace_retaliate_bonus": 1
+        }
+      },
+      {
+        "id": "iron_lungs",
+        "level": 7,
+        "requires": "guardian",
+        "name": "Iron Lungs",
+        "description": "You recover faster and stand longer.",
+        "modifiers": {
+          "max_health": 5,
+          "potion_heal_bonus": 1
+        }
+      },
+      {
+        "id": "crashing_charge",
+        "level": 7,
+        "requires": "berserker",
+        "name": "Crashing Charge",
+        "description": "Charge hits harder.",
+        "flags": {
+          "charge_damage_bonus": 2
+        }
+      },
+      {
+        "id": "blood_stride",
+        "level": 7,
+        "requires": "berserker",
+        "name": "Blood Stride",
+        "description": "Your momentum carries you farther.",
+        "modifiers": {
+          "movement": 1
+        },
+        "flags": {
+          "charge_range_bonus": 1
+        }
+      },
+      {
+        "id": "measured_violence",
+        "level": 9,
+        "requires": "champion",
+        "name": "Measured Violence",
+        "description": "Damage and initiative rise together.",
+        "modifiers": {
+          "attack_bonus": 1,
+          "initiative_modifier": 1
+        }
+      },
+      {
+        "id": "hold_the_line",
+        "level": 9,
+        "requires": "guardian",
+        "name": "Hold the Line",
+        "description": "Brace punishes enemies harder when they close.",
+        "modifiers": {
+          "defense": 1
+        },
+        "flags": {
+          "brace_retaliate_bonus": 1
+        }
+      },
+      {
+        "id": "reckless_impact",
+        "level": 9,
+        "requires": "berserker",
+        "name": "Reckless Impact",
+        "description": "Charge becomes your signature opener.",
+        "modifiers": {
+          "attack_bonus": 1
+        },
+        "flags": {
+          "charge_damage_bonus": 1
+        }
+      },
+      {
+        "id": "veteran_precision",
+        "level": 11,
+        "requires": "champion",
+        "name": "Veteran Precision",
+        "description": "Your weapon bonus grows with disciplined aim.",
+        "modifiers": {
+          "attack_bonus": 2
+        }
+      },
+      {
+        "id": "veteran_endurance",
+        "level": 11,
+        "requires": "guardian",
+        "name": "Veteran Endurance",
+        "description": "You turn punishment into posture.",
+        "modifiers": {
+          "max_health": 6,
+          "defense": 1
+        }
+      },
+      {
+        "id": "veteran_fury",
+        "level": 11,
+        "requires": "berserker",
+        "name": "Veteran Fury",
+        "description": "Your attacks and body harden under pressure.",
+        "modifiers": {
+          "max_health": 4,
+          "attack_bonus": 2
+        }
+      },
+      {
+        "id": "cleaving_circle",
+        "level": 13,
+        "requires": "champion",
+        "name": "Cleaving Circle",
+        "description": "Sweep gains reach and damage.",
+        "flags": {
+          "sweep_reach_bonus": 1,
+          "sweep_damage_bonus": 1
+        }
+      },
+      {
+        "id": "fortress_stance",
+        "level": 13,
+        "requires": "guardian",
+        "name": "Fortress Stance",
+        "description": "Defend and Brace grow into one reliable wall.",
+        "modifiers": {
+          "block_bonus": 1,
+          "defense": 1
+        },
+        "flags": {
+          "brace_block_bonus": 1
+        }
+      },
+      {
+        "id": "juggernaut_line",
+        "level": 13,
+        "requires": "berserker",
+        "name": "Juggernaut Line",
+        "description": "Charge reaches farther and lands harder.",
+        "flags": {
+          "charge_range_bonus": 1,
+          "charge_damage_bonus": 1
+        }
+      },
+      {
+        "id": "masterful_cut",
+        "level": 17,
+        "requires": "champion",
+        "name": "Masterful Cut",
+        "description": "Your weapon mastery turns small openings into decisive damage.",
+        "modifiers": {
+          "attack_bonus": 3
+        }
+      },
+      {
+        "id": "masterful_guard",
+        "level": 17,
+        "requires": "guardian",
+        "name": "Masterful Guard",
+        "description": "Your defense rises without slowing your blade.",
+        "modifiers": {
+          "defense": 2,
+          "attack_bonus": 1
+        }
+      },
+      {
+        "id": "masterful_wrath",
+        "level": 17,
+        "requires": "berserker",
+        "name": "Masterful Wrath",
+        "description": "Fury sharpens rather than blinds you.",
+        "modifiers": {
+          "attack_bonus": 2,
+          "initiative_modifier": 1
+        },
+        "flags": {
+          "charge_damage_bonus": 1
+        }
+      },
+      {
+        "id": "perfect_arc",
+        "level": 19,
+        "requires": "champion",
+        "name": "Perfect Arc",
+        "description": "Sweep becomes a room-clearing lesson in geometry.",
+        "modifiers": {
+          "attack_bonus": 1
+        },
+        "flags": {
+          "sweep_reach_bonus": 1,
+          "sweep_damage_bonus": 2
+        }
+      },
+      {
+        "id": "perfect_bulwark",
+        "level": 19,
+        "requires": "guardian",
+        "name": "Perfect Bulwark",
+        "description": "Enemies that test your brace regret the lesson.",
+        "modifiers": {
+          "max_health": 6,
+          "block_bonus": 1
+        },
+        "flags": {
+          "brace_retaliate_bonus": 2
+        }
+      },
+      {
+        "id": "perfect_onslaught",
+        "level": 19,
+        "requires": "berserker",
+        "name": "Perfect Onslaught",
+        "description": "Your charge carries the whole fight behind it.",
+        "modifiers": {
+          "attack_bonus": 2,
+          "movement": 1
+        },
+        "flags": {
+          "charge_range_bonus": 1,
+          "charge_damage_bonus": 2
+        }
+      }
+    ]
+  },
+  "mode_overrides": {
+    "slasher": {
+      "branches": [
+        {
+          "id": "vanguard",
+          "name": "Vanguard",
+          "stages": [
+            "Vanguard",
+            "Iron Vanguard",
+            "War Vanguard",
+            "Unbroken Vanguard"
+          ],
+          "description": "Charge through enemy lines and control crowds with Cleave.",
+          "focus": [
+            "movement",
+            "special"
+          ],
+          "flags": [
+            "charge_trail",
+            "charge_widen",
+            "cleave_stagger",
+            "charge_reset",
+            "vanguard_capstone"
+          ]
+        },
+        {
+          "id": "duelist",
+          "name": "Duelist",
+          "stages": [
+            "Duelist",
+            "Blade Duelist",
+            "Master Duelist",
+            "Peerless Duelist"
+          ],
+          "description": "Refine Slash and Parry into a precise counterattacking style.",
+          "focus": [
+            "basic",
+            "defensive"
+          ],
+          "flags": [
+            "slash_double",
+            "parry_window",
+            "parry_cleave",
+            "precision_momentum",
+            "duelist_capstone"
+          ]
+        },
+        {
+          "id": "berserker",
+          "name": "Berserker",
+          "stages": [
+            "Berserker",
+            "Blood Berserker",
+            "Rageborn",
+            "Avatar of Fury"
+          ],
+          "description": "Turn Momentum and missing health into relentless offense.",
+          "focus": [
+            "basic",
+            "special"
+          ],
+          "flags": [
+            "momentum_surge",
+            "low_health_power",
+            "cleave_refund",
+            "fury_speed",
+            "berserker_capstone"
+          ]
+        }
+      ]
+    }
+  }
+}

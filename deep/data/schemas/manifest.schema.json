@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/manifest.schema.json",
+  "type": "object",
+  "required": ["schema_version", "content_version", "aliases", "catalogs"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "content_version": {"type": "string", "minLength": 1},
+    "aliases": {"type": "object"},
+    "catalogs": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}}
+  }
+}

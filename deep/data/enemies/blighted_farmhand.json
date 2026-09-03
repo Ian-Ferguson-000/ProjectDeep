@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "blighted_farmhand",
+  "display": {
+    "name": "Blighted Farmhand"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Blighted Farmhand",
+  "short_name": "Farmhand",
+  "base_health": 8,
+  "health_per_floor": 0.0,
+  "damage_before_floor": 3,
+  "damage_from_floor_4": 3,
+  "xp": 26,
+  "gold": 5,
+  "initiative_modifier": 1,
+  "movement": 2,
+  "armor_class": 12
+}

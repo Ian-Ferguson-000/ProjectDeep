@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eros://schemas/definition.schema.json",
+  "title": "Eros content definition",
+  "type": "object",
+  "required": ["schema_version", "id", "display", "tags"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "display": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {"name": {"type": "string", "minLength": 1}},
+      "additionalProperties": true
+    },
+    "tags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  },
+  "additionalProperties": true
+}

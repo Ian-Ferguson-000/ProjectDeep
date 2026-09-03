@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "possessed_scarecrow",
+  "display": {
+    "name": "Possessed Scarecrow"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Possessed Scarecrow",
+  "short_name": "Scarecrow",
+  "base_health": 9,
+  "health_per_floor": 0.0,
+  "damage_before_floor": 3,
+  "damage_from_floor_4": 3,
+  "xp": 24,
+  "gold": 4,
+  "initiative_modifier": -1,
+  "movement": 1,
+  "threshold": 1
+}

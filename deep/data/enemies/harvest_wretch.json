@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "id": "harvest_wretch",
+  "display": {
+    "name": "Harvest Wretch"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Harvest Wretch",
+  "short_name": "Wretch",
+  "health": 34,
+  "base_health": 34,
+  "health_per_floor": 0.0,
+  "damage": 6,
+  "damage_before_floor": 6,
+  "damage_from_floor_4": 6,
+  "xp": 175,
+  "gold": 24,
+  "initiative_modifier": 1,
+  "movement": 2,
+  "accuracy": 5,
+  "penetration": 1,
+  "armor_class": 14,
+  "evasion": 9,
+  "threshold": 2,
+  "damage_type": "fire"
+}

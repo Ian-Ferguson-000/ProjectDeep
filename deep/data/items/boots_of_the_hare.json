@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "boots_of_the_hare",
+  "display": {
+    "name": "Boots of the Hare"
+  },
+  "tags": [
+    "movement",
+    "speed"
+  ],
+  "rarity": "rare",
+  "duration_type": "dungeon_bound",
+  "description": "Light boots with soles that never quite touch mud.",
+  "icon_key": "move",
+  "modifiers": {
+    "movement": 1,
+    "initiative_modifier": 2
+  },
+  "effects": {
+    "strategy": {
+      "description": "A stored spring releases whenever danger closes from several sides.",
+      "modifiers": {
+        "movement": 1,
+        "evasion": 1
+      },
+      "rules_text": "While adjacent to two or more enemies, gain +2 Evasion.",
+      "effects": [
+        {
+          "condition": "surrounded",
+          "modifiers": {
+            "evasion": 2
+          }
+        }
+      ]
+    }
+  }
+}

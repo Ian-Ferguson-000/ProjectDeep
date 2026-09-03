@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "east_yard",
+  "display": {
+    "name": "East Yard"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "E",
+  "background_id": "farmyard",
+  "obstacles": [
+    [
+      6,
+      3
+    ],
+    [
+      6,
+      7
+    ],
+    [
+      10,
+      5
+    ]
+  ]
+}

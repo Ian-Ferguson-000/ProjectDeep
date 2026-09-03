@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "stalwart",
+  "display": {
+    "name": "Stalwart"
+  },
+  "tags": [
+    "trait",
+    "balanced"
+  ],
+  "description": "+1 maximum health; -1 initiative."
+}

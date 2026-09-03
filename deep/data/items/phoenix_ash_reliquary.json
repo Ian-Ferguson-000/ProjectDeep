@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "phoenix_ash_reliquary",
+  "display": {
+    "name": "Phoenix-Ash Reliquary"
+  },
+  "tags": [
+    "arcane",
+    "fire",
+    "healing"
+  ],
+  "rarity": "very_rare",
+  "duration_type": "permanent",
+  "description": "A thumb-sized reliquary containing ash that never cools completely.",
+  "icon_key": "spell",
+  "modifiers": {
+    "spell_power": 4,
+    "potion_heal_bonus": 3
+  },
+  "effects": {
+    "strategy": {
+      "description": "Uncooling ash kindles when healing would otherwise be too late.",
+      "modifiers": {
+        "spell_potency": 3,
+        "aegis_fire": 3
+      },
+      "rules_text": "Once per floor, lethal damage leaves you at 1 health and ignites adjacent enemies.",
+      "effects": [
+        {
+          "trigger": "lethal_damage",
+          "survive": 1,
+          "retaliate": 3,
+          "damage_type": "fire",
+          "limit": "floor"
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: survive one lethal hit per floor at 1 health.",
+      "trigger": "lethal_damage",
+      "once_per_floor": true
+    }
+  }
+}

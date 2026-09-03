@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "merchant_stock",
+  "display": {
+    "name": "Merchant Stock"
+  },
+  "tags": [
+    "tavern_upgrade"
+  ],
+  "max_rank": 5,
+  "cost_balance_id": "economy"
+}

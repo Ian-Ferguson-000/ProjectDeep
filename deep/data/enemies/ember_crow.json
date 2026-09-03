@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "ember_crow",
+  "display": {
+    "name": "Ember Crow"
+  },
+  "tags": [
+    "enemy"
+  ],
+  "display_name": "Ember Crow",
+  "short_name": "Crow",
+  "base_health": 5,
+  "health_per_floor": 0.0,
+  "damage_before_floor": 2,
+  "damage_from_floor_4": 2,
+  "xp": 18,
+  "gold": 3,
+  "initiative_modifier": 4,
+  "movement": 3,
+  "damage_type": "fire"
+}

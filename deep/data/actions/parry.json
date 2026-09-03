@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "parry",
+  "display": {
+    "name": "Parry"
+  },
+  "tags": [
+    "action",
+    "warrior",
+    "defensive"
+  ],
+  "class_id": "warrior",
+  "slot": "defensive",
+  "description": "Negate the next melee hit and counterattack.",
+  "targeting": {
+    "type": "self",
+    "range": 0
+  },
+  "effects": [
+    "Arms one reaction until next turn"
+  ]
+}

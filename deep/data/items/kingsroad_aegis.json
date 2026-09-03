@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "kingsroad_aegis",
+  "display": {
+    "name": "Kingsroad Aegis"
+  },
+  "tags": [
+    "defense",
+    "health"
+  ],
+  "rarity": "very_rare",
+  "duration_type": "permanent",
+  "description": "An old royal charm, sturdy enough to make a shield jealous.",
+  "icon_key": "defense",
+  "modifiers": {
+    "max_health": 6,
+    "defense": 3,
+    "block_bonus": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "A royal ward turns the first wound of every battle into a glancing blow.",
+      "modifiers": {
+        "armor_class": 2,
+        "threshold": 1,
+        "max_health": 4
+      },
+      "rules_text": "The first damaging hit each combat gains 3 Aegis against its damage type.",
+      "effects": [
+        {
+          "condition": "first_incoming_hit",
+          "modifiers": {
+            "aegis_all": 3
+          }
+        }
+      ]
+    }
+  }
+}

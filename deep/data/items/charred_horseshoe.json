@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "charred_horseshoe",
+  "display": {
+    "name": "Charred Horseshoe"
+  },
+  "tags": [
+    "farmstead",
+    "movement"
+  ],
+  "rarity": "common",
+  "duration_type": "run",
+  "description": "A smoke-black iron shoe that still remembers the open road.",
+  "icon_key": "movement",
+  "modifiers": {
+    "movement": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "A smoke-black iron shoe that still remembers the open road.",
+      "modifiers": {
+        "movement": 1
+      },
+      "rules_text": "After crossing a Field-room doorway, gain +1 Evasion until your next turn.",
+      "effects": [
+        {
+          "trigger": "field_room_enter",
+          "modifiers": {
+            "evasion": 1
+          }
+        }
+      ]
+    }
+  }
+}

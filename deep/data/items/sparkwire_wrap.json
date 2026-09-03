@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "sparkwire_wrap",
+  "display": {
+    "name": "Sparkwire Wrap"
+  },
+  "tags": [
+    "martial",
+    "weapon"
+  ],
+  "rarity": "common",
+  "duration_type": "temporary",
+  "duration_floors": 2,
+  "description": "Copper thread wound around a weapon grip to sharpen its first few strikes.",
+  "icon_key": "attack",
+  "modifiers": {
+    "attack_bonus": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "Copper wire discharges into the first target struck each round.",
+      "modifiers": {
+        "accuracy": 1
+      },
+      "rules_text": "Your first hit each round deals 2 additional lightning damage.",
+      "effects": [
+        {
+          "trigger": "first_hit_round",
+          "bonus_damage": 2,
+          "damage_type": "lightning"
+        }
+      ]
+    }
+  }
+}

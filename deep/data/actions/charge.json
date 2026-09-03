@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "charge",
+  "display": {
+    "name": "Charge"
+  },
+  "tags": [
+    "action",
+    "warrior",
+    "movement"
+  ],
+  "class_id": "warrior",
+  "slot": "movement",
+  "description": "Rush up to three cardinal tiles and strike.",
+  "targeting": {
+    "type": "cardinal_line",
+    "range": 3
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Stagger first enemy encountered"
+  ]
+}

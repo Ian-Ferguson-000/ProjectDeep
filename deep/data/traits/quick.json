@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "quick",
+  "display": {
+    "name": "Quick"
+  },
+  "tags": [
+    "trait",
+    "balanced"
+  ],
+  "description": "+1 initiative; -1 maximum health."
+}

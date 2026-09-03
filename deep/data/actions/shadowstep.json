@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "shadowstep",
+  "display": {
+    "name": "Shadowstep"
+  },
+  "tags": [
+    "action",
+    "rogue",
+    "movement"
+  ],
+  "class_id": "rogue",
+  "slot": "movement",
+  "description": "Move through an enemy and become Hidden.",
+  "targeting": {
+    "type": "through_enemy_tile",
+    "range": 3
+  },
+  "effects": [
+    "Hidden ends on attack or adjacency reveal"
+  ]
+}

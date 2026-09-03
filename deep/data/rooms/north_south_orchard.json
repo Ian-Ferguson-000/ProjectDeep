@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "north_south_orchard",
+  "display": {
+    "name": "North South Orchard"
+  },
+  "tags": [
+    "room",
+    "ashen_farmstead"
+  ],
+  "signature": "NS",
+  "background_id": "farmyard",
+  "obstacles": [
+    [
+      5,
+      3
+    ],
+    [
+      10,
+      3
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      10,
+      7
+    ]
+  ]
+}

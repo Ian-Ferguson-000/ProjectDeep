@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "mark_command",
+  "display": {
+    "name": "Mark / Command"
+  },
+  "tags": [
+    "action",
+    "summoner",
+    "basic"
+  ],
+  "class_id": "summoner",
+  "slot": "basic",
+  "description": "Mark a target and command the wolf.",
+  "targeting": {
+    "type": "enemy_or_tile",
+    "range": 4
+  },
+  "damage_type": "physical",
+  "effects": [
+    "Mark enemy or reposition wolf"
+  ],
+  "modifiers": [
+    {
+      "stat": "accuracy",
+      "amount": 3,
+      "condition": "coordinated_wolf_attack",
+      "text": "+3 Accuracy on coordinated wolf attacks"
+    }
+  ]
+}

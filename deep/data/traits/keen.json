@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "keen",
+  "display": {
+    "name": "Keen"
+  },
+  "tags": [
+    "trait",
+    "balanced"
+  ],
+  "description": "+1 accuracy; healing received is reduced by 1."
+}

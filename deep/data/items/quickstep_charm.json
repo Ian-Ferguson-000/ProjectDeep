@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "quickstep_charm",
+  "display": {
+    "name": "Quickstep Charm"
+  },
+  "tags": [
+    "movement",
+    "utility"
+  ],
+  "rarity": "common",
+  "duration_type": "temporary",
+  "duration_floors": 2,
+  "description": "A cord charm that urges your feet through danger.",
+  "icon_key": "move",
+  "modifiers": {
+    "movement": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "Seven wind-knots tighten after a committed dash.",
+      "modifiers": {
+        "movement": 1
+      },
+      "rules_text": "After using a movement ability, gain +2 Evasion until your next turn.",
+      "effects": [
+        {
+          "condition": "moved",
+          "modifiers": {
+            "evasion": 2
+          }
+        }
+      ]
+    },
+    "slasher": {
+      "rules": "Slasher: movement speed and mobility distance increase.",
+      "trigger": "passive"
+    }
+  }
+}

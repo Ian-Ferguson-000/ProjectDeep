@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "id": "tank",
+  "display": {
+    "name": "Tank"
+  },
+  "tags": [
+    "class",
+    "demo"
+  ],
+  "role": "Defender",
+  "description": "Gain Resolve by absorbing pressure and punish clustered attackers.",
+  "resource": "Resolve",
+  "color": "b57b43",
+  "sprite": "res://assets/classes/tank/sheet.png",
+  "base_stats": {
+    "str": 14,
+    "dex": 8,
+    "con": 17,
+    "int": 8,
+    "wis": 12,
+    "cha": 10
+  },
+  "primary": {
+    "accuracy": [
+      "con",
+      "str"
+    ],
+    "power": "str"
+  },
+  "stat_growth": [
+    {
+      "stat": "con",
+      "every": 2
+    },
+    {
+      "stat": "str",
+      "every": 3
+    },
+    {
+      "stat": "wis",
+      "every": 6
+    }
+  ],
+  "derived": {
+    "max_health": {
+      "base": 15,
+      "per_level": 3,
+      "stat": "con",
+      "explanation": "15 + 3 per level after 1 + CON modifier"
+    },
+    "attack_bonus": {
+      "stat": "str",
+      "stat_offset": -2,
+      "min": 1,
+      "per_levels": 5,
+      "explanation": "STR modifier - 2 (minimum 1) + level bonus"
+    },
+    "spell_power": {
+      "flat": 0,
+      "explanation": "No innate spell power"
+    },
+    "defense": {
+      "stat": "con",
+      "min": 1,
+      "per_levels": 4,
+      "explanation": "CON modifier + level bonus"
+    },
+    "initiative_modifier": {
+      "base": 0,
+      "stat": "dex",
+      "stat_offset": -2,
+      "min": 0,
+      "per_levels": 8,
+      "explanation": "DEX contribution + level bonus"
+    },
+    "potion_heal_bonus": {
+      "stat": "wis",
+      "min": 0,
+      "per_levels": 6,
+      "level_basis": "level",
+      "explanation": "WIS modifier + level bonus"
+    }
+  },
+  "resource_rules": {
+    "max": 3,
+    "special_cost": 2,
+    "gain": [
+      "Shield Bash displaces a target",
+      "Guard absorbs damage"
+    ]
+  },
+  "default_action_ids": [
+    "shield_bash",
+    "retribution",
+    "guard",
+    "leap"
+  ],
+  "unlockable_action_ids": [],
+  "progression_id": "tank"
+}

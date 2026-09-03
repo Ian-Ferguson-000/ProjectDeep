@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "amulet_of_vigor",
+  "display": {
+    "name": "Amulet of Vigor"
+  },
+  "tags": [
+    "health"
+  ],
+  "rarity": "uncommon",
+  "duration_type": "dungeon_bound",
+  "description": "A green-glass pendant that steadies breath and blood.",
+  "icon_key": "health",
+  "modifiers": {
+    "max_health": 4
+  },
+  "effects": {
+    "strategy": {
+      "description": "Green glass beats like a spare heart when yours falters.",
+      "modifiers": {
+        "max_health": 4,
+        "threshold": 1
+      },
+      "rules_text": "Below half health, gain another +2 Threshold.",
+      "effects": [
+        {
+          "condition": "low_health",
+          "modifiers": {
+            "threshold": 2
+          }
+        }
+      ]
+    }
+  }
+}

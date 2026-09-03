@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "war_scholars_codex",
+  "display": {
+    "name": "War Scholar's Codex"
+  },
+  "tags": [
+    "xp",
+    "martial",
+    "arcane"
+  ],
+  "rarity": "rare",
+  "duration_type": "permanent",
+  "description": "A battered field manual annotated by generations of adventurers.",
+  "icon_key": "mode",
+  "modifiers": {
+    "xp_bonus_percent": 25,
+    "attack_bonus": 1,
+    "spell_power": 1
+  },
+  "effects": {
+    "strategy": {
+      "description": "Margins compare monster anatomy with diagrams of battle magic.",
+      "modifiers": {
+        "xp_bonus_percent": 20,
+        "accuracy": 1
+      },
+      "rules_text": "After first hitting an enemy, gain +1 Attack Power and Spell Potency against that enemy.",
+      "effects": [
+        {
+          "condition": "studied_target",
+          "modifiers": {
+            "attack_power": 1,
+            "spell_potency": 1
+          }
+        }
+      ]
+    }
+  }
+}
