@@ -1,0 +1,143 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_forest.gd" id="1"]
+
+[node name="ForestBranchingTemplate" type="Node2D"]
+script = ExtResource("1")
+use_authored_layout = true
+designer_playtest = true
+designer_dungeon_id = "forest"
+designer_floor = 2
+
+[node name="Geometry" type="Node2D" parent="."]
+editor_description = "Move or resize these axis-aligned Polygon2D regions on the 48 px grid. Their union is the playable floor."
+
+[node name="StartRoom" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(160, 880, 544, 880, 544, 1216, 160, 1216)
+color = Color(0.18, 0.42, 0.2, 0.72)
+
+[node name="TrunkCorridor" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(496, 976, 928, 976, 928, 1120, 496, 1120)
+color = Color(0.25, 0.5, 0.24, 0.72)
+
+[node name="CentralClearing" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(880, 736, 1360, 736, 1360, 1216, 880, 1216)
+color = Color(0.2, 0.46, 0.24, 0.72)
+
+[node name="NorthBranch" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(1072, 448, 1216, 448, 1216, 736, 1072, 736)
+color = Color(0.25, 0.5, 0.24, 0.72)
+
+[node name="NorthGrove" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(880, 208, 1360, 208, 1360, 496, 880, 496)
+color = Color(0.18, 0.42, 0.2, 0.72)
+
+[node name="EastBranch" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(1312, 880, 1744, 880, 1744, 1024, 1312, 1024)
+color = Color(0.25, 0.5, 0.24, 0.72)
+
+[node name="ExitGrove" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(1696, 736, 2080, 736, 2080, 1168, 1696, 1168)
+color = Color(0.18, 0.42, 0.2, 0.72)
+
+[node name="Markers" type="Node2D" parent="."]
+editor_description = "Move marker nodes to tune the encounter. Keep them centered in a green floor region."
+
+[node name="PlayerSpawn" type="Node2D" parent="Markers"]
+position = Vector2(328, 1048)
+editor_description = "Required player start."
+[node name="Icon" type="Polygon2D" parent="Markers/PlayerSpawn"]
+polygon = PackedVector2Array(0, -18, 18, 0, 0, 18, -18, 0)
+color = Color(0.2, 0.7, 1, 1)
+[node name="Label" type="Label" parent="Markers/PlayerSpawn"]
+offset_left = -42.0
+offset_top = 20.0
+offset_right = 60.0
+offset_bottom = 43.0
+text = "PLAYER"
+
+[node name="Exit" type="Node2D" parent="Markers"]
+position = Vector2(1912, 952)
+editor_description = "Required floor exit."
+[node name="Icon" type="Polygon2D" parent="Markers/Exit"]
+polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
+color = Color(0.3, 1, 0.4, 1)
+[node name="Label" type="Label" parent="Markers/Exit"]
+offset_left = -24.0
+offset_top = 23.0
+offset_right = 42.0
+offset_bottom = 46.0
+text = "EXIT"
+
+[node name="Merchant" type="Node2D" parent="Markers"]
+position = Vector2(1048, 856)
+[node name="Icon" type="Polygon2D" parent="Markers/Merchant"]
+polygon = PackedVector2Array(0, -16, 16, 14, -16, 14)
+color = Color(1, 0.72, 0.18, 1)
+[node name="Label" type="Label" parent="Markers/Merchant"]
+offset_left = -42.0
+offset_top = 18.0
+offset_right = 62.0
+offset_bottom = 41.0
+text = "MERCHANT"
+
+[node name="NorthPack" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(1096, 328)
+[node name="Icon" type="Polygon2D" parent="Markers/NorthPack"]
+polygon = PackedVector2Array(0, -15, 15, 15, -15, 15)
+color = Color(0.9, 0.2, 0.2, 1)
+[node name="Label" type="Label" parent="Markers/NorthPack"]
+offset_left = -30.0
+offset_top = 17.0
+offset_right = 50.0
+offset_bottom = 40.0
+text = "ENEMY"
+
+[node name="HubPack" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(1192, 1048)
+[node name="Icon" type="Polygon2D" parent="Markers/HubPack"]
+polygon = PackedVector2Array(0, -15, 15, 15, -15, 15)
+color = Color(0.9, 0.2, 0.2, 1)
+[node name="Label" type="Label" parent="Markers/HubPack"]
+offset_left = -30.0
+offset_top = 17.0
+offset_right = 50.0
+offset_bottom = 40.0
+text = "ENEMY"
+
+[node name="GatePack" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(1768, 856)
+[node name="Icon" type="Polygon2D" parent="Markers/GatePack"]
+polygon = PackedVector2Array(0, -15, 15, 15, -15, 15)
+color = Color(0.9, 0.2, 0.2, 1)
+[node name="Label" type="Label" parent="Markers/GatePack"]
+offset_left = -30.0
+offset_top = 17.0
+offset_right = 50.0
+offset_bottom = 40.0
+text = "ENEMY"
+
+[node name="NorthCache" type="Node2D" parent="Markers" groups=["slasher_loot_spawn"]]
+position = Vector2(1288, 376)
+[node name="Icon" type="Polygon2D" parent="Markers/NorthCache"]
+polygon = PackedVector2Array(-13, -13, 13, -13, 13, 13, -13, 13)
+color = Color(1, 0.88, 0.2, 1)
+[node name="Label" type="Label" parent="Markers/NorthCache"]
+offset_left = -23.0
+offset_top = 15.0
+offset_right = 44.0
+offset_bottom = 38.0
+text = "LOOT"
+
+[node name="HubBarrel" type="Node2D" parent="Markers" groups=["slasher_solid_prop"]]
+position = Vector2(952, 952)
+metadata/kind = "barrel"
+[node name="Icon" type="Polygon2D" parent="Markers/HubBarrel"]
+polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+color = Color(0.48, 0.29, 0.12, 1)
+[node name="Label" type="Label" parent="Markers/HubBarrel"]
+offset_left = -24.0
+offset_top = 18.0
+offset_right = 44.0
+offset_bottom = 41.0
+text = "PROP"

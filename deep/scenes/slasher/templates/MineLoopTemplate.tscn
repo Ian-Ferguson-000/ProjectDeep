@@ -1,0 +1,86 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_mine.gd" id="1"]
+
+[node name="MineLoopTemplate" type="Node2D"]
+script = ExtResource("1")
+use_authored_layout = true
+designer_playtest = true
+designer_dungeon_id = "sunken_mine"
+designer_floor = 2
+
+[node name="Geometry" type="Node2D" parent="."]
+editor_description = "A combat loop with two cross-links. Regions snap to the 48 px slasher grid."
+[node name="WestRoom" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(160, 544, 592, 544, 592, 1072, 160, 1072)
+color = Color(0.12, 0.38, 0.44, 0.74)
+[node name="NorthTunnel" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(544, 544, 1504, 544, 1504, 688, 544, 688)
+color = Color(0.16, 0.46, 0.52, 0.74)
+[node name="EastRoom" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(1456, 448, 1936, 448, 1936, 1168, 1456, 1168)
+color = Color(0.12, 0.38, 0.44, 0.74)
+[node name="SouthTunnel" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(544, 928, 1504, 928, 1504, 1072, 544, 1072)
+color = Color(0.16, 0.46, 0.52, 0.74)
+[node name="CenterBridge" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(976, 640, 1120, 640, 1120, 976, 976, 976)
+color = Color(0.2, 0.53, 0.58, 0.74)
+
+[node name="Markers" type="Node2D" parent="."]
+[node name="PlayerSpawn" type="Node2D" parent="Markers"]
+position = Vector2(328, 808)
+[node name="Icon" type="Polygon2D" parent="Markers/PlayerSpawn"]
+polygon = PackedVector2Array(0, -18, 18, 0, 0, 18, -18, 0)
+color = Color(0.2, 0.7, 1, 1)
+[node name="Label" type="Label" parent="Markers/PlayerSpawn"]
+offset_left = -42.0
+offset_top = 20.0
+offset_right = 60.0
+offset_bottom = 43.0
+text = "PLAYER"
+[node name="Exit" type="Node2D" parent="Markers"]
+position = Vector2(1768, 808)
+[node name="Icon" type="Polygon2D" parent="Markers/Exit"]
+polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
+color = Color(0.3, 1, 0.4, 1)
+[node name="Label" type="Label" parent="Markers/Exit"]
+offset_left = -24.0
+offset_top = 23.0
+offset_right = 42.0
+offset_bottom = 46.0
+text = "EXIT"
+[node name="Merchant" type="Node2D" parent="Markers"]
+position = Vector2(424, 616)
+[node name="Icon" type="Polygon2D" parent="Markers/Merchant"]
+polygon = PackedVector2Array(0, -16, 16, 14, -16, 14)
+color = Color(1, 0.72, 0.18, 1)
+[node name="NorthEnemy" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(904, 616)
+metadata/visual_id = "ice_mage"
+[node name="Icon" type="Polygon2D" parent="Markers/NorthEnemy"]
+polygon = PackedVector2Array(0, -15, 15, 15, -15, 15)
+color = Color(0.9, 0.2, 0.2, 1)
+[node name="EastEnemy" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(1576, 616)
+metadata/visual_id = "spore_beast"
+[node name="Icon" type="Polygon2D" parent="Markers/EastEnemy"]
+polygon = PackedVector2Array(0, -15, 15, 15, -15, 15)
+color = Color(0.9, 0.2, 0.2, 1)
+[node name="SouthEnemy" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(1192, 1000)
+metadata/visual_id = "briar_guardian"
+[node name="Icon" type="Polygon2D" parent="Markers/SouthEnemy"]
+polygon = PackedVector2Array(0, -15, 15, 15, -15, 15)
+color = Color(0.9, 0.2, 0.2, 1)
+[node name="BridgeLoot" type="Node2D" parent="Markers" groups=["slasher_loot_spawn"]]
+position = Vector2(1048, 808)
+[node name="Icon" type="Polygon2D" parent="Markers/BridgeLoot"]
+polygon = PackedVector2Array(-13, -13, 13, -13, 13, 13, -13, 13)
+color = Color(1, 0.88, 0.2, 1)
+[node name="OreRock" type="Node2D" parent="Markers" groups=["slasher_solid_prop"]]
+position = Vector2(1480, 1000)
+metadata/kind = "rock"
+[node name="Icon" type="Polygon2D" parent="Markers/OreRock"]
+polygon = PackedVector2Array(0, -18, 17, -5, 12, 16, -15, 14, -19, -4)
+color = Color(0.36, 0.43, 0.46, 1)

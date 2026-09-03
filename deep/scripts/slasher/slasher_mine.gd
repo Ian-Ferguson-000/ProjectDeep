@@ -31,6 +31,8 @@ func _spawn_enemies()->void:
 	enemies_remaining=0;var spawn_index:=0
 	for spawn_value:Variant in layout.enemy_spawns:
 		var record:Dictionary=Dictionary(spawn_value);var spawn:=Vector2i(record.get("position",Vector2i.ZERO));var is_boss:=bool(record.get("is_boss",false));var is_elite:=bool(record.get("is_mini_boss",false));var spec:=_mine_enemy_spec(spawn_index,is_boss,is_elite)
+		if use_authored_layout and not String(record.get("visual_id","")).is_empty():spec.visual_id=String(record.visual_id)
+		if use_authored_layout and not String(record.get("behavior_id","")).is_empty():spec.behavior_id=String(record.behavior_id)
 		_spawn_enemy(_world(spawn),String(spec.visual_id),String(spec.behavior_id),is_boss,is_elite);spawn_index+=1
 	exit_open=enemies_remaining==0
 

@@ -17,6 +17,13 @@ const GRID_PATHFINDER:=preload("res://scripts/slasher/slasher_grid_pathfinder.gd
 const PARTY_HEALTH_PORTRAIT:=preload("res://scripts/ui/party_health_portrait.gd")
 const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
 
+@export_category("Authored map")
+@export var use_authored_layout:=false
+@export var designer_playtest:=false
+@export var designer_dungeon_id:="forest"
+@export_range(1,99,1) var designer_floor:=1
+@export_enum("warrior","mage","rogue","cleric","tank","summoner","healer") var designer_class:="warrior"
+
 var controller:Node
 var run_state:RunState
 var dungeon_context:Dictionary={}
@@ -67,19 +74,82 @@ func setup(game_controller:Node,state:RunState,context:Dictionary={})->void:
 	if is_inside_tree():_build_floor()
 
 func _ready()->void:
+	if run_state==null and use_authored_layout and designer_playtest:
+		_ensure_designer_controls()
+		var preview_state:=RunState.new();preview_state.set_class(designer_class)
+		preview_state.start_new_run(GearData.create("designer_test","Designer Test Gear",3,false,0,"","",designer_class),designer_dungeon_id,"slasher")
+		preview_state.current_floor=designer_floor;run_state=preview_state
 	if run_state!=null:_build_floor()
+
+func _ensure_designer_controls()->void:
+	var bindings:Dictionary={"interact":[KEY_E],"character_menu":[KEY_M],"cycle_party":[KEY_TAB],"extract_expedition":[KEY_X],"slasher_up":[KEY_W,KEY_UP],"slasher_down":[KEY_S,KEY_DOWN],"slasher_left":[KEY_A,KEY_LEFT],"slasher_right":[KEY_D,KEY_RIGHT],"slasher_special":[KEY_SPACE],"slasher_potion":[KEY_Q],"slasher_abandon":[KEY_ESCAPE],"slasher_consumable_1":[KEY_1],"slasher_consumable_2":[KEY_2],"slasher_consumable_3":[KEY_3],"slasher_consumable_4":[KEY_4]}
+	for action_value:Variant in bindings:
+		var action:=StringName(action_value)
+		if not InputMap.has_action(action):InputMap.add_action(action)
+		for key_value:Variant in bindings[action_value]:
+			var already_bound:=false
+			for existing:InputEvent in InputMap.action_get_events(action):
+				if existing is InputEventKey and existing.physical_keycode==int(key_value):already_bound=true;break
+			if not already_bound:
+				var event:=InputEventKey.new();event.physical_keycode=int(key_value);InputMap.action_add_event(action,event)
+	for action:StringName in [&"slasher_controller_basic",&"slasher_mobility",&"slasher_defend",&"slasher_aim_left",&"slasher_aim_right",&"slasher_aim_up",&"slasher_aim_down"]:
+		if not InputMap.has_action(action):InputMap.add_action(action)
 
 func _exit_tree()->void:
 	if get_tree()!=null:get_tree().paused=false
 
 func _build_floor()->void:
 	get_tree().paused=false
+	var authored_layout:=_layout_from_authored_nodes() if use_authored_layout else {}
 	for child in get_children():child.free()
-	layout=SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor)
+	layout=authored_layout if not authored_layout.is_empty() else SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor)
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
 	active_summons.clear();_build_world();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
 	if player.item_runtime:player.item_runtime.floor_entered()
 	if run_state.current_floor==1 and not run_state.starter_reward_claimed:call_deferred("_offer_starter_relic")
+
+func _layout_from_authored_nodes()->Dictionary:
+	var geometry:=get_node_or_null("Geometry")
+	if geometry==null:return {}
+	var cells:Dictionary={};var rooms:Array[Rect2i]=[]
+	for child:Node in geometry.get_children():
+		if not child is Polygon2D:continue
+		var area:=child as Polygon2D
+		if area.polygon.is_empty():continue
+		var minimum:=Vector2(INF,INF);var maximum:=Vector2(-INF,-INF)
+		for point:Vector2 in area.polygon:
+			var local_point:=to_local(area.to_global(point));minimum=minimum.min(local_point);maximum=maximum.max(local_point)
+		var start:=Vector2i(floori((minimum.x-ORIGIN.x)/TILE),floori((minimum.y-ORIGIN.y)/TILE))
+		var finish:=Vector2i(ceili((maximum.x-ORIGIN.x)/TILE),ceili((maximum.y-ORIGIN.y)/TILE))
+		var region:=Rect2i(start,finish-start)
+		if region.size.x<=0 or region.size.y<=0:continue
+		rooms.append(region)
+		for y:int in range(region.position.y,region.end.y):
+			for x:int in range(region.position.x,region.end.x):cells[Vector2i(x,y)]=true
+	if cells.is_empty():return {}
+	var start_cell:=_authored_marker_cell("PlayerSpawn",Vector2i(cells.keys()[0]));var exit_cell:=_authored_marker_cell("Exit",start_cell);var merchant_cell:=_authored_marker_cell("Merchant",start_cell)
+	var enemy_spawns:Array[Dictionary]=[];var loot_spawns:Array[Vector2i]=[];var solid_props:Array[Dictionary]=[];var decorations:Array[Dictionary]=[]
+	var markers:=get_node_or_null("Markers")
+	if markers!=null:
+		for marker:Node in markers.get_children():
+			if not marker is Node2D:continue
+			var cell:=_authored_node_cell(marker as Node2D)
+			if marker.is_in_group("slasher_enemy_spawn"):
+				enemy_spawns.append({"position":cell,"visual_id":String(marker.get_meta("visual_id","")),"behavior_id":String(marker.get_meta("behavior_id","")),"is_boss":bool(marker.get_meta("is_boss",false)),"is_mini_boss":bool(marker.get_meta("is_mini_boss",false))})
+			elif marker.is_in_group("slasher_loot_spawn"):loot_spawns.append(cell)
+			elif marker.is_in_group("slasher_solid_prop"):solid_props.append({"kind":String(marker.get_meta("kind","barrel")),"cell":cell})
+			elif marker.is_in_group("slasher_decoration"):decorations.append({"kind":String(marker.get_meta("kind","grass_tuft_a")),"cell":cell,"offset":Vector2.ZERO,"edge":bool(marker.get_meta("edge",false))})
+	var maximum_cell:=Vector2i.ZERO
+	for value:Variant in cells:maximum_cell=maximum_cell.max(Vector2i(value))
+	return {"width":maximum_cell.x+2,"height":maximum_cell.y+2,"cells":cells,"rooms":rooms,"start":start_cell,"exit":exit_cell,"merchant":merchant_cell,"enemy_spawns":enemy_spawns,"loot_spawns":loot_spawns,"solid_props":solid_props,"decorations":decorations,"edges":SlasherForestGenerator.classify_edges(cells),"boss_spawn":exit_cell,"is_boss_floor":bool(get_meta("is_boss_floor",false)),"is_elite_floor":bool(get_meta("is_elite_floor",false)),"cycle_floor":designer_floor,"cycle_number":1}
+
+func _authored_marker_cell(marker_name:String,fallback:Vector2i)->Vector2i:
+	var marker:=get_node_or_null("Markers/"+marker_name) as Node2D
+	return _authored_node_cell(marker) if marker!=null else fallback
+
+func _authored_node_cell(node:Node2D)->Vector2i:
+	var point:=to_local(node.global_position)
+	return Vector2i(floori((point.x-ORIGIN.x)/TILE),floori((point.y-ORIGIN.y)/TILE))
 
 func _build_world()->void:
 	var profile:=DungeonRuntimeProfile.get_profile(run_state.active_dungeon_id);var underlay:=ColorRect.new();underlay.name="DungeonDepth";underlay.color=Color("#"+String(profile.get("underlay","07100d")));underlay.position=Vector2.ZERO;underlay.size=Vector2(float(layout.width*TILE+128),float(layout.height*TILE+128));underlay.mouse_filter=Control.MOUSE_FILTER_IGNORE;underlay.z_index=-20;add_child(underlay)

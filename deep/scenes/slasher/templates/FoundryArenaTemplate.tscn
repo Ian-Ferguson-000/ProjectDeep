@@ -1,0 +1,77 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_foundry.gd" id="1"]
+
+[node name="FoundryArenaTemplate" type="Node2D"]
+script = ExtResource("1")
+use_authored_layout = true
+designer_playtest = true
+designer_dungeon_id = "ember_foundry"
+designer_floor = 3
+metadata/is_elite_floor = true
+
+[node name="Geometry" type="Node2D" parent="."]
+editor_description = "Wide arena template with a narrow onboarding lane and two flank pockets."
+[node name="EntryBay" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(160, 784, 592, 784, 592, 1120, 160, 1120)
+color = Color(0.48, 0.18, 0.08, 0.76)
+[node name="EntryLane" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(544, 880, 976, 880, 976, 1024, 544, 1024)
+color = Color(0.64, 0.25, 0.08, 0.76)
+[node name="Warforge" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(928, 400, 1888, 400, 1888, 1360, 928, 1360)
+color = Color(0.52, 0.16, 0.06, 0.76)
+[node name="NorthPocket" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(1888, 496, 2176, 496, 2176, 784, 1888, 784)
+color = Color(0.64, 0.25, 0.08, 0.76)
+[node name="SouthPocket" type="Polygon2D" parent="Geometry"]
+polygon = PackedVector2Array(1888, 976, 2176, 976, 2176, 1264, 1888, 1264)
+color = Color(0.64, 0.25, 0.08, 0.76)
+
+[node name="Markers" type="Node2D" parent="."]
+[node name="PlayerSpawn" type="Node2D" parent="Markers"]
+position = Vector2(328, 952)
+[node name="Icon" type="Polygon2D" parent="Markers/PlayerSpawn"]
+polygon = PackedVector2Array(0, -18, 18, 0, 0, 18, -18, 0)
+color = Color(0.2, 0.7, 1, 1)
+[node name="Exit" type="Node2D" parent="Markers"]
+position = Vector2(2056, 1120)
+[node name="Icon" type="Polygon2D" parent="Markers/Exit"]
+polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
+color = Color(0.3, 1, 0.4, 1)
+[node name="Merchant" type="Node2D" parent="Markers"]
+position = Vector2(1048, 1288)
+[node name="Icon" type="Polygon2D" parent="Markers/Merchant"]
+polygon = PackedVector2Array(0, -16, 16, 14, -16, 14)
+color = Color(1, 0.72, 0.18, 1)
+[node name="EliteCenter" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(1432, 856)
+metadata/visual_id = "briar_guardian"
+metadata/behavior_id = "elite_guardian"
+metadata/is_mini_boss = true
+[node name="Icon" type="Polygon2D" parent="Markers/EliteCenter"]
+polygon = PackedVector2Array(0, -25, 22, -8, 14, 22, -14, 22, -22, -8)
+color = Color(0.95, 0.12, 0.12, 1)
+[node name="NorthEnemy" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(2008, 616)
+metadata/visual_id = "fire_mage"
+[node name="Icon" type="Polygon2D" parent="Markers/NorthEnemy"]
+polygon = PackedVector2Array(0, -15, 15, 15, -15, 15)
+color = Color(0.9, 0.2, 0.2, 1)
+[node name="SouthEnemy" type="Node2D" parent="Markers" groups=["slasher_enemy_spawn"]]
+position = Vector2(2008, 1096)
+metadata/visual_id = "briar_guardian"
+[node name="Icon" type="Polygon2D" parent="Markers/SouthEnemy"]
+polygon = PackedVector2Array(0, -15, 15, 15, -15, 15)
+color = Color(0.9, 0.2, 0.2, 1)
+[node name="ArenaLoot" type="Node2D" parent="Markers" groups=["slasher_loot_spawn"]]
+position = Vector2(1096, 520)
+[node name="Icon" type="Polygon2D" parent="Markers/ArenaLoot"]
+polygon = PackedVector2Array(-13, -13, 13, -13, 13, 13, -13, 13)
+color = Color(1, 0.88, 0.2, 1)
+[node name="CenterBarrel" type="Node2D" parent="Markers" groups=["slasher_solid_prop"]]
+position = Vector2(1576, 1096)
+metadata/kind = "barrel"
+[node name="Icon" type="Polygon2D" parent="Markers/CenterBarrel"]
+polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+color = Color(0.48, 0.29, 0.12, 1)
