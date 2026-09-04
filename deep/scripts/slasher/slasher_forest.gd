@@ -23,6 +23,11 @@ const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
 @export var designer_dungeon_id:="forest"
 @export_range(1,99,1) var designer_floor:=1
 @export_enum("warrior","mage","rogue","cleric","tank","summoner","healer") var designer_class:="warrior"
+@export_category("Authored visuals")
+@export var use_authored_visuals:=false
+@export var tilemaps_define_walkability:=false
+@export var show_generated_ground:=true
+@export var show_generated_boundary_art:=true
 
 var controller:Node
 var run_state:RunState
@@ -62,6 +67,9 @@ var party_strip:HBoxContainer
 var party_portraits:Dictionary={}
 var active_summons:Dictionary={}
 var local_settings:Node
+var authored_layout_cache:Dictionary={}
+var authored_visual_cache:Array[Dictionary]=[]
+var authored_visuals_active:=false
 
 func _settings()->Node:
 	var singleton:=get_node_or_null("/root/GameSettings")
@@ -97,35 +105,47 @@ func _ensure_designer_controls()->void:
 
 func _exit_tree()->void:
 	if get_tree()!=null:get_tree().paused=false
+	for record:Dictionary in authored_visual_cache:
+		var template:=record.get("template") as Node
+		if is_instance_valid(template):template.free()
+	authored_visual_cache.clear()
 
 func _build_floor()->void:
 	get_tree().paused=false
-	var authored_layout:=_layout_from_authored_nodes() if use_authored_layout else {}
+	if use_authored_layout and authored_layout_cache.is_empty():authored_layout_cache=_layout_from_authored_nodes()
+	if use_authored_visuals and authored_visual_cache.is_empty():_cache_authored_visuals()
+	authored_visuals_active=use_authored_visuals and not authored_visual_cache.is_empty()
+	var authored_layout:=authored_layout_cache.duplicate(true)
 	for child in get_children():child.free()
 	layout=authored_layout if not authored_layout.is_empty() else SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor)
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
-	active_summons.clear();_build_world();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
+	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
 	if player.item_runtime:player.item_runtime.floor_entered()
 	if run_state.current_floor==1 and not run_state.starter_reward_claimed:call_deferred("_offer_starter_relic")
 
 func _layout_from_authored_nodes()->Dictionary:
 	var geometry:=get_node_or_null("Geometry")
-	if geometry==null:return {}
+	if geometry==null and not tilemaps_define_walkability:return {}
 	var cells:Dictionary={};var rooms:Array[Rect2i]=[]
-	for child:Node in geometry.get_children():
-		if not child is Polygon2D:continue
-		var area:=child as Polygon2D
-		if area.polygon.is_empty():continue
-		var minimum:=Vector2(INF,INF);var maximum:=Vector2(-INF,-INF)
-		for point:Vector2 in area.polygon:
-			var local_point:=to_local(area.to_global(point));minimum=minimum.min(local_point);maximum=maximum.max(local_point)
-		var start:=Vector2i(floori((minimum.x-ORIGIN.x)/TILE),floori((minimum.y-ORIGIN.y)/TILE))
-		var finish:=Vector2i(ceili((maximum.x-ORIGIN.x)/TILE),ceili((maximum.y-ORIGIN.y)/TILE))
-		var region:=Rect2i(start,finish-start)
-		if region.size.x<=0 or region.size.y<=0:continue
-		rooms.append(region)
-		for y:int in range(region.position.y,region.end.y):
-			for x:int in range(region.position.x,region.end.x):cells[Vector2i(x,y)]=true
+	if geometry!=null:
+		for child:Node in geometry.get_children():
+			if not child is Polygon2D:continue
+			var area:=child as Polygon2D
+			if area.polygon.is_empty():continue
+			var minimum:=Vector2(INF,INF);var maximum:=Vector2(-INF,-INF)
+			for point:Vector2 in area.polygon:
+				var local_point:=to_local(area.to_global(point));minimum=minimum.min(local_point);maximum=maximum.max(local_point)
+			var start:=Vector2i(floori((minimum.x-ORIGIN.x)/TILE),floori((minimum.y-ORIGIN.y)/TILE))
+			var finish:=Vector2i(ceili((maximum.x-ORIGIN.x)/TILE),ceili((maximum.y-ORIGIN.y)/TILE))
+			var region:=Rect2i(start,finish-start)
+			if region.size.x<=0 or region.size.y<=0:continue
+			rooms.append(region)
+			for y:int in range(region.position.y,region.end.y):
+				for x:int in range(region.position.x,region.end.x):cells[Vector2i(x,y)]=true
+	if tilemaps_define_walkability:
+		var painted_cells:=_walkable_cells_from_tilemaps()
+		if not painted_cells.is_empty():
+			cells=painted_cells;rooms=[_cell_bounds(cells)]
 	if cells.is_empty():return {}
 	var start_cell:=_authored_marker_cell("PlayerSpawn",Vector2i(cells.keys()[0]));var exit_cell:=_authored_marker_cell("Exit",start_cell);var merchant_cell:=_authored_marker_cell("Merchant",start_cell)
 	var enemy_spawns:Array[Dictionary]=[];var loot_spawns:Array[Vector2i]=[];var solid_props:Array[Dictionary]=[];var decorations:Array[Dictionary]=[]
@@ -139,6 +159,11 @@ func _layout_from_authored_nodes()->Dictionary:
 			elif marker.is_in_group("slasher_loot_spawn"):loot_spawns.append(cell)
 			elif marker.is_in_group("slasher_solid_prop"):solid_props.append({"kind":String(marker.get_meta("kind","barrel")),"cell":cell})
 			elif marker.is_in_group("slasher_decoration"):decorations.append({"kind":String(marker.get_meta("kind","grass_tuft_a")),"cell":cell,"offset":Vector2.ZERO,"edge":bool(marker.get_meta("edge",false))})
+	for authored_root_name:String in ["AuthoredVisuals","PlacedProps"]:
+		var authored_root:=get_node_or_null(authored_root_name)
+		if authored_root==null:continue
+		for blocker:Node in authored_root.find_children("*","Node2D",true,false):
+			if blocker.is_in_group("slasher_navigation_blocker"):solid_props.append({"kind":"_authored_static","cell":_authored_node_cell(blocker as Node2D)})
 	var maximum_cell:=Vector2i.ZERO
 	for value:Variant in cells:maximum_cell=maximum_cell.max(Vector2i(value))
 	return {"width":maximum_cell.x+2,"height":maximum_cell.y+2,"cells":cells,"rooms":rooms,"start":start_cell,"exit":exit_cell,"merchant":merchant_cell,"enemy_spawns":enemy_spawns,"loot_spawns":loot_spawns,"solid_props":solid_props,"decorations":decorations,"edges":SlasherForestGenerator.classify_edges(cells),"boss_spawn":exit_cell,"is_boss_floor":bool(get_meta("is_boss_floor",false)),"is_elite_floor":bool(get_meta("is_elite_floor",false)),"cycle_floor":designer_floor,"cycle_number":1}
@@ -151,6 +176,49 @@ func _authored_node_cell(node:Node2D)->Vector2i:
 	var point:=to_local(node.global_position)
 	return Vector2i(floori((point.x-ORIGIN.x)/TILE),floori((point.y-ORIGIN.y)/TILE))
 
+func _walkable_cells_from_tilemaps()->Dictionary:
+	var result:Dictionary={};var candidates:Array[Node]=[]
+	for root_name:String in ["Geometry","AuthoredVisuals"]:
+		var source_root:=get_node_or_null(root_name)
+		if source_root==null:continue
+		if source_root is TileMapLayer:candidates.append(source_root)
+		candidates.append_array(source_root.find_children("*","TileMapLayer",true,false))
+	for candidate:Node in candidates:
+		var tile_layer:=candidate as TileMapLayer
+		if tile_layer==null:continue
+		if not tile_layer.is_in_group("slasher_walkable_tiles") and not bool(tile_layer.get_meta("defines_walkability",false)):continue
+		for painted_cell:Vector2i in tile_layer.get_used_cells():
+			var point:=to_local(tile_layer.to_global(tile_layer.map_to_local(painted_cell)))
+			result[Vector2i(floori((point.x-ORIGIN.x)/TILE),floori((point.y-ORIGIN.y)/TILE))]=true
+	return result
+
+func _cell_bounds(cells:Dictionary)->Rect2i:
+	var minimum:=Vector2i(2147483647,2147483647);var maximum:=Vector2i(-2147483648,-2147483648)
+	for value:Variant in cells:
+		var cell:=Vector2i(value);minimum=minimum.min(cell);maximum=maximum.max(cell)
+	return Rect2i(minimum,maximum-minimum+Vector2i.ONE)
+
+func _cache_authored_visuals()->void:
+	for root_name:String in ["AuthoredVisuals","PlacedProps"]:
+		var source:=get_node_or_null(root_name) as Node2D
+		if source!=null:_cache_authored_visual_node(source,"actors" if root_name=="PlacedProps" else "root")
+	var geometry:=get_node_or_null("Geometry")
+	if geometry!=null:
+		for tile_node:Node in geometry.find_children("*","TileMapLayer",true,false):_cache_authored_visual_node(tile_node as Node2D,"ground")
+
+func _cache_authored_visual_node(source:Node2D,target_layer:String)->void:
+	var relative_transform:=global_transform.affine_inverse()*source.global_transform
+	authored_visual_cache.append({"template":source.duplicate(),"transform":relative_transform,"target":target_layer})
+
+func _install_authored_visuals()->void:
+	if not authored_visuals_active:return
+	var runtime_root:=Node2D.new();runtime_root.name="AuthoredVisualsRuntime";add_child(runtime_root)
+	for record:Dictionary in authored_visual_cache:
+		var template:=record.get("template") as Node
+		if template==null:continue
+		var instance:=template.duplicate();var target:=String(record.get("target","root"));var parent:Node=ground_layer if target=="ground" else (actor_layer if target=="actors" else runtime_root);parent.add_child(instance)
+		if instance is Node2D:(instance as Node2D).transform=Transform2D(record.get("transform",Transform2D.IDENTITY))
+
 func _build_world()->void:
 	var profile:=DungeonRuntimeProfile.get_profile(run_state.active_dungeon_id);var underlay:=ColorRect.new();underlay.name="DungeonDepth";underlay.color=Color("#"+String(profile.get("underlay","07100d")));underlay.position=Vector2.ZERO;underlay.size=Vector2(float(layout.width*TILE+128),float(layout.height*TILE+128));underlay.mouse_filter=Control.MOUSE_FILTER_IGNORE;underlay.z_index=-20;add_child(underlay)
 	ground_layer=Node2D.new();ground_layer.name="Ground";ground_layer.z_index=-10;add_child(ground_layer)
@@ -158,8 +226,9 @@ func _build_world()->void:
 	actor_layer=Node2D.new();actor_layer.name="Actors";actor_layer.y_sort_enabled=true;add_child(actor_layer)
 	canopy_layer=Node2D.new();canopy_layer.name="Canopy";canopy_layer.y_sort_enabled=true;canopy_layer.z_index=8;add_child(canopy_layer)
 	var cells:Dictionary=layout.cells
-	for value:Variant in cells:
-		var cell:Vector2i=value;var base:=SlasherForestArt.make_ground_sprite(cell,TILE);base.name="Ground_%d_%d"%[cell.x,cell.y];base.position=_world(cell);ground_layer.add_child(base)
+	if show_generated_ground or not authored_visuals_active:
+		for value:Variant in cells:
+			var cell:Vector2i=value;var base:=SlasherForestArt.make_ground_sprite(cell,TILE);base.name="Ground_%d_%d"%[cell.x,cell.y];base.position=_world(cell);ground_layer.add_child(base)
 	for value:Variant in layout.get("edges",{}):
 		var cell:Vector2i=value;var edge:Dictionary=layout.edges[cell]
 		for missing_value in edge.get("missing",[]):_add_boundary(cell,_direction(String(missing_value)))
@@ -174,7 +243,9 @@ func _build_decorations()->void:
 
 func _build_solid_props()->void:
 	for value:Variant in layout.get("solid_props",[]):
-		var prop:Dictionary=value;var body:SlasherBreakableProp=BREAKABLE_PROP.new();body.name="Breakable_%s"%String(prop.kind);body.setup(String(prop.kind),Vector2i(prop.cell));body.position=_world(Vector2i(prop.cell));body.broken.connect(_on_prop_broken);body.opened.connect(_on_chest_opened);actor_layer.add_child(body)
+		var prop:Dictionary=value
+		if String(prop.get("kind",""))=="_authored_static":continue
+		var body:SlasherBreakableProp=BREAKABLE_PROP.new();body.name="Breakable_%s"%String(prop.kind);body.setup(String(prop.kind),Vector2i(prop.cell));body.position=_world(Vector2i(prop.cell));body.broken.connect(_on_prop_broken);body.opened.connect(_on_chest_opened);actor_layer.add_child(body)
 
 func _build_landmarks()->void:
 	exit_position=_world(layout.exit);merchant_position=_world(layout.merchant)
@@ -193,10 +264,12 @@ func _build_vignette()->void:
 
 func _add_boundary(cell:Vector2i,direction:Vector2i)->void:
 	var body:=StaticBody2D.new();var shape:=CollisionShape2D.new();var rectangle:=RectangleShape2D.new();rectangle.size=Vector2(TILE,8) if direction.y!=0 else Vector2(8,TILE);shape.shape=rectangle;body.add_child(shape);body.position=_world(cell)+Vector2(direction)*TILE*0.5;add_child(body)
+	if authored_visuals_active and not show_generated_boundary_art:return
 	var outside:Vector2i=cell+direction;var key:int=absi(outside.x*31+outside.y*17)
 	var wall:=SlasherForestArt.make_boundary_sprite(direction,key);wall.position=body.position;wall.z_index=2 if direction.y>=0 else -1;actor_layer.add_child(wall)
 
 func _build_boundary_corners(cells:Dictionary)->void:
+	if authored_visuals_active and not show_generated_boundary_art:return
 	var vertices:Dictionary={}
 	for cell_value:Variant in cells:
 		var cell:Vector2i=Vector2i(cell_value)

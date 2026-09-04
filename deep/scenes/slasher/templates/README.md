@@ -21,3 +21,15 @@ Open any template in Godot to see and edit the complete layout. Press **F6** to 
 - Decorative marker nodes may use `slasher_decoration` and `metadata/kind`.
 
 The colored polygons and marker icons are authoring guides. When play starts, the slasher runtime reads them into its normal layout contract, removes the guides, and builds the themed floor, collisions, actors, loot, HUD, and camera.
+
+## Painting tiles and placing exact props
+
+Set `use_authored_visuals` on the scene root when the finished level art should come from editor nodes instead of runtime decoration.
+
+- Put painted `TileMapLayer` nodes under `Geometry` for the simplest workflow. They are copied into the runtime ground layer before the authoring guides are removed.
+- Alternatively, place a complete visual hierarchy under a top-level `AuthoredVisuals` `Node2D`. That hierarchy is retained as-is, including tile layers, sprites, particles, static bodies, and nested scenes. Use its child `z_index` values to control ground, detail, and canopy ordering.
+- Put exact foreground or collision props under a top-level `PlacedProps` `Node2D`. It is moved into the y-sorted actor layer. Add `slasher_navigation_blocker` to a placed prop when enemy pathfinding must treat its cell as blocked; include a `StaticBody2D`/`CollisionShape2D` when the player must physically collide with it.
+- Disable `show_generated_ground` to use painted tiles instead of the per-cell procedural grass sprites.
+- Disable `show_generated_boundary_art` to hide generated wall artwork while keeping the gameplay boundary collision rails.
+
+By default, the `Geometry` polygons remain the gameplay walkability source and TileMapLayers are visual-only. To paint walkability directly, enable `tilemaps_define_walkability` on the root and add `slasher_walkable_tiles` (or `defines_walkability = true` metadata) to each TileMapLayer that represents traversable ground. Painted tile centers are converted into the existing 48 px Slasher navigation grid. Decorative tile layers should not receive that group.

@@ -1,6 +1,11 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/slasher/slasher_mine.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/Campfire.png" id="2_campfire"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/rocks/rock1.png" id="3_rock"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rock"]
+radius = 18.0
 
 [node name="MineLoopTemplate" type="Node2D"]
 script = ExtResource("1")
@@ -8,6 +13,7 @@ use_authored_layout = true
 designer_playtest = true
 designer_dungeon_id = "sunken_mine"
 designer_floor = 2
+use_authored_visuals = true
 
 [node name="Geometry" type="Node2D" parent="."]
 editor_description = "A combat loop with two cross-links. Regions snap to the 48 px slasher grid."
@@ -84,3 +90,25 @@ metadata/kind = "rock"
 [node name="Icon" type="Polygon2D" parent="Markers/OreRock"]
 polygon = PackedVector2Array(0, -18, 17, -5, 12, 16, -15, 14, -19, -4)
 color = Color(0.36, 0.43, 0.46, 1)
+
+[node name="PlacedProps" type="Node2D" parent="."]
+editor_description = "Exact visual/collision props preserved in play mode and moved into the y-sorted actor layer."
+y_sort_enabled = true
+
+[node name="MinerCampfire" type="Sprite2D" parent="PlacedProps"]
+position = Vector2(424, 904)
+texture = ExtResource("2_campfire")
+scale = Vector2(0.07, 0.07)
+texture_filter = 1
+
+[node name="BlockingOre" type="StaticBody2D" parent="PlacedProps" groups=["slasher_navigation_blocker"]]
+position = Vector2(472, 712)
+
+[node name="Sprite" type="Sprite2D" parent="PlacedProps/BlockingOre"]
+position = Vector2(0, -8)
+texture = ExtResource("3_rock")
+scale = Vector2(0.7, 0.7)
+texture_filter = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlacedProps/BlockingOre"]
+shape = SubResource("CircleShape2D_rock")
