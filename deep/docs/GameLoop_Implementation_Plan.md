@@ -1,8 +1,5 @@
 # Tavernbound — Implementation-Grade Game Loop Plan
 
-**Document purpose:** Define the complete playable loop, system boundaries, formulas, data contracts, balancing targets, failure cases, and implementation order for a tavern-management roguelite in which the player recruits, equips, and sends adventurers into dangerous expeditions.
-
-**Status:** Recommended baseline. Numeric values are starting targets for playtesting, not final balance.
 
 ---
 
@@ -24,19 +21,19 @@ The player owns a struggling tavern that functions as both a business and an adv
 
 ### Player-controlled roles
 
-The player is always the **tavern keeper strategically** and controls the **selected adventuring party tactically** during expeditions. Adventurers are persistent roster characters, not autonomous timers. This preserves the strongest parts of both management and roguelike play while keeping one clear player identity.
+The player is always the **tavern keeper strategically** and controls the **selected adventurer** during expeditions. Adventurers are persistent roster characters, not autonomous timers. This preserves the strongest parts of both management and roguelike play while keeping one clear player identity.
 
+
+ONE ADVENTURER 
 ---
 
 ## 2. Loop Hierarchy
 
-### Moment-to-moment combat loop (5–20 seconds)
+### Moment-to-moment combat loop (5–20 seconds) This is still reading as turn based not Bullet hell
 
-1. Read threats, terrain, cooldowns, and party status.
+1. Read threats, terrain, cooldowns, and ADVENTURER status.
 2. Select an adventurer and one of their available actions.
-3. Resolve movement, attack, special, or defensive reaction.
-4. Enemies act according to telegraphed intent.
-5. Reassess positioning, resources, and escape options.
+
 
 ### Room loop (1–4 minutes)
 
@@ -47,22 +44,22 @@ The player is always the **tavern keeper strategically** and controls the **sele
 
 ### Floor loop (10–20 minutes)
 
-1. Generate the floor from the dungeon profile and current depth.
+1. Generate the floor from the dungeon profile aat your current depth.
 2. Traverse rooms while managing health, supplies, equipment durability, and temporary effects.
-3. Defeat the floor guardian or complete the floor objective.
+3. Defeat the Floor boss
 4. Choose **Extract**, **Descend**, or a special route when unlocked.
 
 ### Expedition loop (25–60 minutes)
 
 1. Select a destination and objective.
-2. Assemble and provision a party.
+2. Prepare your Adventurer
 3. Clear one or more floors.
 4. Extract voluntarily, complete the destination, flee, or suffer a wipe.
 5. Settle rewards, tabs, injuries, deaths, relationships, and unlocks.
 
 ### Tavern cycle (8–15 minutes)
 
-1. Receive returning adventurers and expedition results.
+1. Receive returning adventurer and expedition results.
 2. Run the tavern service phase and earn operating income.
 3. Meet, assess, recruit, dismiss, and socialize with candidates.
 4. Craft, repair, buy, sell, and upgrade.
@@ -70,10 +67,10 @@ The player is always the **tavern keeper strategically** and controls the **sele
 
 ### Campaign loop (8–20 hours for first completion)
 
-1. Restore the tavern from Tier 0 to Tier 5.
+1. Expand the tavern from Tier 0 to Tier 5.
 2. Discover and master the Forest, Crypt, and Hell regions.
-3. Build a roster capable of defeating the final Hell expedition.
-4. Resolve the former tavern keeper storyline.
+3. Build an adventurer capable of defeating the final Hell expedition.
+4. Resolve the former tavern keeper storyline. ( This is only if you win the tutorial)
 5. Continue into higher difficulties, seasonal modifiers, roster legacies, and challenge expeditions.
 
 ---
@@ -98,15 +95,11 @@ Use a single authoritative campaign state machine. UI screens may change, but st
 
 ### Saved states
 
-Autosave at these transaction boundaries:
+Autosave at every Room on first exit and return to Tavern
 
-- On entering the tavern after settlement.
-- Immediately after confirming recruitment, purchases, or upgrades.
-- At expedition launch.
-- At the start of each dungeon floor.
-- After resolving extraction, victory, flee, or wipe.
+Save retains all items and equipment in every room and state of player hp etc
 
-Never save halfway through reward settlement. Calculate a complete `SettlementResult`, commit it once, then save.
+Save Scumming Grants Penalties on multiple infractions If noticed
 
 ---
 
@@ -114,16 +107,16 @@ Never save halfway through reward settlement. Calculate a complete `SettlementRe
 
 ### Tutorial purpose
 
-Teach combat, extraction, death, and the tavern premise in no more than 20 minutes. The tutorial outcome may branch narratively, but must converge mechanically so neither success nor failure is the optimal metagame choice.
+Teach combat, extraction, death, and the tavern premise in no more than 5 per section minutes. The tutorial outcome may branch narratively, but must converge mechanically so neither success nor failure is the optimal metagame choice.
 
 ### Sequence
 
 1. The player controls a preset adventurer entering the Forest.
 2. The game teaches movement, basic attack, special action, defensive reaction, consumables, and room rewards.
-3. Before the boss, the player sees the first Extract/Descend choice.
+3. After the boss, the player sees the first Extract/Descend choice.
 4. The tutorial concludes in victory or death.
 5. The player assumes ownership of the tavern:
-   - **On death:** the keeper inherits or scavenges the failed adventurer's remaining effects and decides to build stronger parties.
+   - **On death:** the keeper gets nothing and decides to start training them
    - **On victory:** the old keeper has gone bankrupt and offers the tavern in exchange for the boss haul.
 6. Both outcomes grant the same starting state: Tavern Tier 0, 120 gold, 8 supplies, a Fighter and Mage candidate, one basic weapon for each, and the former keeper's hidden letter.
 
@@ -140,11 +133,9 @@ Each cycle represents one evening and the following morning. A typical cycle has
 Resolve the previous expedition in this order:
 
 1. Confirm extracted loot.
-2. Calculate each adventurer's gross share.
-3. Repay outstanding tabs.
-4. Apply injuries, recovery, death, and relationship changes.
-5. Update dungeon progress, merchant Favor, quests, codex, and unlocks.
-6. Present one consolidated result screen.
+2. All into Inventory (Space limited at start requires upgrades)
+3. Update dungeon progress, merchant Favor, quests, codex, and unlocks.
+4. Show a tavern ledger of Adventuring legend
 
 ### Phase B — Tavern service
 
