@@ -17,9 +17,16 @@ func _run() -> void:
 		var tavern := TAVERN.instantiate(); tavern.setup(null,state,gear_list,"Welcome home.",summary); root.add_child(tavern)
 		await process_frame
 		_expect(tavern.backdrop != null and tavern.top_hud != null, "missing backdrop or HUD at %s"%viewport_size,failures)
+		_expect(tavern.top_hud.size.y<=56.0 and tavern.hud_date_label.text.contains("Spring") and tavern.hud_bank_label.text.contains(str(state.campaign.banked_gold)),"compact status bar is missing authoritative date/bank values at %s (height %.1f, date '%s', bank '%s')"%[viewport_size,tavern.top_hud.size.y,tavern.hud_date_label.text,tavern.hud_bank_label.text],failures)
 		_expect(tavern.results_backdrop.visible and tavern.results_text.text.contains("Forest cleared"),"structured results missing at %s"%viewport_size,failures)
 		_expect(not tavern.player_token.visible and tavern.toolbar!=null and tavern.toolbar.get_child_count()==5,"static tavern did not remove the avatar or expose five toolbar actions",failures)
-		tavern._close_modal(tavern.results_backdrop)
+		_expect(tavern.toolbar.position.y>=tavern.get_viewport_rect().size.y-72 and tavern.toolbar.size.y<=64,"management navigation is not compact and bottom anchored at %s"%viewport_size,failures)
+		for toolbar_button in tavern.toolbar.get_children():_expect(toolbar_button is Button and (toolbar_button as Button).icon!=null,"toolbar action is missing its recognizable icon",failures)
+		var expedition_toolbar:=tavern.toolbar_buttons.get("Expedition") as Button;var calendar_toolbar:=tavern.toolbar_buttons.get("Calendar") as Button
+		_expect(expedition_toolbar!=null and expedition_toolbar.custom_minimum_size.x>calendar_toolbar.custom_minimum_size.x,"Expedition does not have clear primary visual priority",failures)
+		tavern._close_modal(tavern.results_backdrop);await process_frame;tavern._restore_hub_focus()
+		_expect(root.gui_get_focus_owner()==expedition_toolbar,"Expedition is not the default tavern focus target",failures)
+		tavern._open_options();_expect(tavern.options_backdrop.visible and root.gui_get_focus_owner()==tavern.options_panel.first_control,"settings gear did not open the focus-trapped options panel",failures);tavern._close_modal(tavern.options_backdrop)
 		tavern._open_dungeon_selector()
 		_expect(tavern.expedition_panel!=null and tavern.expedition_panel.size.x>=1100,"expedition planner did not expand across the viewport",failures)
 		var dungeon_button_count := 0

@@ -10,6 +10,8 @@ const TAVERN_BACKDROP := preload("res://assets/tavern/tavern_hub_backdrop.png")
 const BoardPieceScene := preload("res://scenes/components/BoardPiece.tscn")
 const DIALOGUE_CHAT := preload("res://scripts/ui/dialogue_chat.gd")
 const RECRUITMENT_DIALOGUE := preload("res://scripts/ui/recruitment_dialogue.gd")
+const TAVERN_THEME := preload("res://scripts/ui/tavern_ui_theme.gd")
+const OPTIONS_PANEL := preload("res://scripts/ui/game_options_panel.gd")
 
 var controller: Node
 var run_state: RunState
@@ -51,6 +53,12 @@ var crypt_merchant_token: BoardPiece
 var merchant_shop_panel: MerchantShopPanel
 var top_hud: PanelContainer
 var hud_label: Label
+var hud_date_label:Label
+var hud_bank_label:Label
+var hud_company_label:Label
+var settings_button:Button
+var options_backdrop:ColorRect
+var options_panel:GameOptionsPanel
 var prompt_panel: PanelContainer
 var prompt_label: Label
 var dialogue_panel: PanelContainer
@@ -84,6 +92,7 @@ var company_pages:Dictionary={}
 var company_party_dungeon_id:="forest"
 var company_party_initialized:=false
 var toolbar:HBoxContainer
+var toolbar_buttons:Dictionary={}
 var calendar_backdrop:ColorRect
 var calendar_text:RichTextLabel
 var recruitment_dialogue:RecruitmentDialogue
@@ -124,6 +133,7 @@ func _ready() -> void:
 	_build_results_modal()
 	_build_company_modal()
 	_build_calendar_modal()
+	_build_options_modal()
 	_build_recruitment_dialogue()
 	_build_tutorial_prompt()
 	_build_story_dialogue()
@@ -213,13 +223,15 @@ func _open_npc_merchant(merchant_id:String)->void:
 	if not arrivals_running and not _modal_visible():_open_merchant_shop(merchant_id)
 
 func _add_npc_target(id:String,label_text:String,action:Callable)->void:
-	var button:=Button.new();button.name="%sNpcTarget"%id.capitalize();button.text=label_text;button.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND;button.tooltip_text="Speak with %s"%label_text;button.pressed.connect(action);FantasyButton.apply_dark(button,13,Vector2(150,38));ui_root.add_child(button);npc_hit_targets[id]=button
+	var button:=Button.new();button.name="%sNpcTarget"%id.capitalize();button.text=label_text;button.tooltip_text="Speak with %s"%label_text;button.pressed.connect(action);TAVERN_THEME.apply_nameplate(button,"",false,true);ui_root.add_child(button);npc_hit_targets[id]=button
 
 func _build_toolbar()->void:
-	toolbar=HBoxContainer.new();toolbar.name="TavernToolbar";toolbar.set_anchors_preset(Control.PRESET_TOP_WIDE);toolbar.offset_left=180;toolbar.offset_right=-180;toolbar.offset_top=78;toolbar.offset_bottom=124;toolbar.alignment=BoxContainer.ALIGNMENT_CENTER;toolbar.add_theme_constant_override("separation",8);ui_root.add_child(toolbar)
-	toolbar.offset_left=12;toolbar.offset_right=-12
-	for entry in [["Calendar",Callable(self,"_open_calendar")],["Company Ledger",Callable(self,"_open_company_ledger")],["Armory",Callable(self,"_open_armory")],["Merchants",Callable(self,"_open_tavern_merchant")],["Expedition",Callable(self,"_open_dungeon_selector")]]:
-		var button:=Button.new();button.name="%sToolbarButton"%String(entry[0]).replace(" ","");button.text=String(entry[0]);button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.pressed.connect(entry[1]);FantasyButton.apply_dark(button,14,Vector2(0,42));toolbar.add_child(button)
+	toolbar=HBoxContainer.new();toolbar.name="TavernToolbar";toolbar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE);toolbar.offset_left=190;toolbar.offset_right=-190;toolbar.offset_top=-70;toolbar.offset_bottom=-10;toolbar.alignment=BoxContainer.ALIGNMENT_CENTER;toolbar.add_theme_constant_override("separation",8);ui_root.add_child(toolbar)
+	var entries := [["Calendar","calendar",Callable(self,"_open_calendar")],["Company Ledger","ledger",Callable(self,"_open_company_ledger")],["Armory","armory",Callable(self,"_open_armory")],["Merchants","merchants",Callable(self,"_open_tavern_merchant")],["Expedition","expedition",Callable(self,"_open_dungeon_selector")]]
+	for entry in entries:
+		var title:=String(entry[0]);var button:=Button.new();button.name="%sToolbarButton"%title.replace(" ","");button.text=title;button.icon=TAVERN_THEME.icon(String(entry[1]));button.expand_icon=true;button.icon_alignment=HORIZONTAL_ALIGNMENT_LEFT;button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.pressed.connect(entry[2]);TAVERN_THEME.apply_button(button,title=="Expedition",14,Vector2(190 if title=="Expedition" else 150,56));toolbar.add_child(button);toolbar_buttons[title]=button
+	for index in toolbar.get_child_count():
+		var button:=toolbar.get_child(index) as Button;button.focus_neighbor_left=toolbar.get_child((index-1+toolbar.get_child_count())%toolbar.get_child_count()).get_path();button.focus_neighbor_right=toolbar.get_child((index+1)%toolbar.get_child_count()).get_path()
 
 func _open_tavern_merchant()->void:_open_merchant_shop("tavern")
 
@@ -244,7 +256,13 @@ func _build_candidate_stage()->void:
 	candidate_stage.name="CandidateStage";board.add_child(candidate_stage);_rebuild_candidate_targets(false)
 
 func _candidate_seat(index:int)->Vector2:
-	var viewport_size:=get_viewport_rect().size;var seats:=[Vector2(viewport_size.x*0.30,viewport_size.y*0.50),Vector2(viewport_size.x*0.70,viewport_size.y*0.50),Vector2(viewport_size.x*0.37,viewport_size.y*0.65),Vector2(viewport_size.x*0.63,viewport_size.y*0.65),Vector2(viewport_size.x*0.46,viewport_size.y*0.53),Vector2(viewport_size.x*0.54,viewport_size.y*0.53),Vector2(viewport_size.x*0.50,viewport_size.y*0.70)]
+	var viewport_size:=get_viewport_rect().size
+	var total:=mini(7,run_state.campaign.get_candidates().size()+run_state.campaign.living_roster().size()) if run_state!=null and run_state.campaign!=null else 2
+	var seats:Array[Vector2]
+	if total<=2:seats=[Vector2(viewport_size.x*0.30,viewport_size.y*0.50),Vector2(viewport_size.x*0.70,viewport_size.y*0.50)]
+	elif total==3:seats=[Vector2(viewport_size.x*0.25,viewport_size.y*0.50),Vector2(viewport_size.x*0.50,viewport_size.y*0.50),Vector2(viewport_size.x*0.75,viewport_size.y*0.50)]
+	elif total==4:seats=[Vector2(viewport_size.x*0.20,viewport_size.y*0.50),Vector2(viewport_size.x*0.40,viewport_size.y*0.50),Vector2(viewport_size.x*0.60,viewport_size.y*0.50),Vector2(viewport_size.x*0.80,viewport_size.y*0.50)]
+	else:seats=[Vector2(viewport_size.x*0.20,viewport_size.y*0.43),Vector2(viewport_size.x*0.40,viewport_size.y*0.43),Vector2(viewport_size.x*0.60,viewport_size.y*0.43),Vector2(viewport_size.x*0.80,viewport_size.y*0.43),Vector2(viewport_size.x*0.30,viewport_size.y*0.64),Vector2(viewport_size.x*0.50,viewport_size.y*0.64),Vector2(viewport_size.x*0.70,viewport_size.y*0.64)]
 	return seats[index%seats.size()]
 
 func _candidate_sprite_scale(class_id:String)->Vector2:
@@ -257,12 +275,19 @@ func _rebuild_candidate_targets(animate:bool)->void:
 	for candidate in records:
 		var sprite:=AnimatedSprite2D.new();sprite.name="%sArrivalSprite"%candidate.id;sprite.sprite_frames=SlasherSpriteLibrary.player_frames(candidate.adventurer.class_id);sprite.scale=_candidate_sprite_scale(candidate.adventurer.class_id);sprite.position=Vector2(-80,430) if animate else _candidate_seat(index);candidate_stage.add_child(sprite);candidate_sprites[candidate.id]=sprite
 		var idle:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle","down");if not idle.is_empty():sprite.play(idle)
-		var button:=Button.new();button.name="%sCandidateButton"%candidate.id;button.text="%s\n%s · Level %d"%[candidate.adventurer.display_name,candidate.adventurer.class_id.capitalize(),candidate.adventurer.level];button.position=_candidate_seat(index)+Vector2(-78,46);button.size=Vector2(156,56);button.tooltip_text="Speak with %s"%candidate.adventurer.display_name;button.pressed.connect(_open_candidate.bind(candidate.id));FantasyButton.apply_dark(button,13,button.size);button.visible=not animate;ui_root.add_child(button);candidate_buttons[candidate.id]=button;index+=1
+		var button:=Button.new();button.name="%sCandidateButton"%candidate.id;button.text="%s\n%s · Level %d"%[candidate.adventurer.display_name,candidate.adventurer.class_id.capitalize(),candidate.adventurer.level];button.position=_candidate_seat(index)+Vector2(-88,43);button.size=Vector2(176,48);button.tooltip_text="Speak with %s"%candidate.adventurer.display_name;button.pressed.connect(_open_candidate.bind(candidate.id));TAVERN_THEME.apply_nameplate(button,candidate.adventurer.class_id);_bind_character_highlight(button,sprite);button.visible=not animate;ui_root.add_child(button);candidate_buttons[candidate.id]=button;index+=1
 	if not animate:
 		for member in run_state.campaign.living_roster():
 			if index>=7:break
 			var sprite:=AnimatedSprite2D.new();sprite.name="%sRecruitedSprite"%member.id;sprite.sprite_frames=SlasherSpriteLibrary.player_frames(member.class_id);sprite.scale=_candidate_sprite_scale(member.class_id);sprite.position=_candidate_seat(index);candidate_stage.add_child(sprite);var idle:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle","down");if not idle.is_empty():sprite.play(idle)
-			var button:=Button.new();button.name="%sRecruitedButton"%member.id;button.text="%s\n✓ RECRUITED"%member.display_name;button.position=_candidate_seat(index)+Vector2(-78,46);button.size=Vector2(156,56);button.tooltip_text="Open %s's summary"%member.display_name;button.pressed.connect(_open_recruited_summary.bind(member.id));FantasyButton.apply_light(button,13,button.size);ui_root.add_child(button);candidate_buttons[member.id]=button;index+=1
+			var button:=Button.new();button.name="%sRecruitedButton"%member.id;button.text="%s  ✓\n%s · Level %d"%[member.display_name,member.class_id.capitalize(),member.level];button.position=_candidate_seat(index)+Vector2(-88,43);button.size=Vector2(176,48);button.tooltip_text="Recruited · Open %s's summary"%member.display_name;button.pressed.connect(_open_recruited_summary.bind(member.id));TAVERN_THEME.apply_nameplate(button,member.class_id,true);_bind_character_highlight(button,sprite);ui_root.add_child(button);candidate_buttons[member.id]=button;index+=1
+
+func _bind_character_highlight(button:Button,sprite:AnimatedSprite2D)->void:
+	var show_highlight:=func():
+		if is_instance_valid(sprite):sprite.modulate=Color("#fff0b8")
+	var clear_highlight:=func():
+		if is_instance_valid(sprite):sprite.modulate=Color.WHITE
+	button.mouse_entered.connect(show_highlight);button.focus_entered.connect(show_highlight);button.mouse_exited.connect(clear_highlight);button.focus_exited.connect(clear_highlight)
 
 func _open_recruited_summary(character_id:String)->void:
 	var member:=run_state.campaign.character(character_id)
@@ -308,10 +333,30 @@ func _finish_arrivals()->void:
 
 func _build_hud() -> void:
 	top_hud = PanelContainer.new(); top_hud.name = "TavernHUD"; top_hud.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_hud.offset_left = 24; top_hud.offset_top = 16; top_hud.offset_right = -24; top_hud.offset_bottom = 70
-	top_hud.add_theme_stylebox_override("panel", _panel_style(Color(0.055,0.04,0.025,0.94), Color(0.65,0.43,0.18), 8)); ui_root.add_child(top_hud)
-	var margin := MarginContainer.new(); margin.add_theme_constant_override("margin_left",16); margin.add_theme_constant_override("margin_right",16); margin.add_theme_constant_override("margin_top",8); margin.add_theme_constant_override("margin_bottom",8); top_hud.add_child(margin)
-	hud_label = Label.new(); hud_label.add_theme_font_size_override("font_size",16); hud_label.add_theme_color_override("font_color",Color(0.94,0.84,0.66)); margin.add_child(hud_label)
+	top_hud.offset_left = 18; top_hud.offset_top = 8; top_hud.offset_right = -18; top_hud.offset_bottom = 64
+	var hud_style:=TAVERN_THEME.panel(Color("#0b0d0df5"),TAVERN_THEME.BRONZE,4,2);hud_style.set_content_margin_all(0);top_hud.add_theme_stylebox_override("panel",hud_style); ui_root.add_child(top_hud)
+	var margin := MarginContainer.new(); margin.add_theme_constant_override("margin_left",10); margin.add_theme_constant_override("margin_right",8); margin.add_theme_constant_override("margin_top",4); margin.add_theme_constant_override("margin_bottom",4); top_hud.add_child(margin)
+	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",10);margin.add_child(row)
+	var crest:=TextureRect.new();crest.name="HearthCrest";crest.texture=TAVERN_THEME.icon("hearth");crest.custom_minimum_size=Vector2(40,40);crest.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;crest.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;row.add_child(crest)
+	var title:=Label.new();title.name="HearthTitle";title.text="THE HEARTH";title.custom_minimum_size.x=170;title.add_theme_font_size_override("font_size",19);title.add_theme_color_override("font_color",TAVERN_THEME.HIGHLIGHT_GOLD);title.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;row.add_child(title)
+	_add_hud_divider(row);hud_date_label=_add_hud_group(row,"season","DateStatus");_add_hud_divider(row);hud_bank_label=_add_hud_group(row,"bank","BankStatus");_add_hud_divider(row);hud_company_label=_add_hud_group(row,"roster","CompanyStatus");hud_company_label.get_parent().size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	settings_button=Button.new();settings_button.name="SettingsButton";settings_button.icon=TAVERN_THEME.icon("settings");settings_button.tooltip_text="Options";settings_button.accessibility_name="Options";settings_button.pressed.connect(_open_options);TAVERN_THEME.apply_button(settings_button,false,14,Vector2(42,42));settings_button.text="";row.add_child(settings_button)
+	hud_label=hud_date_label
+
+func _add_hud_divider(row:HBoxContainer)->void:
+	var divider:=VSeparator.new();divider.custom_minimum_size.x=1;divider.add_theme_constant_override("separation",4);row.add_child(divider)
+
+func _add_hud_group(row:HBoxContainer,icon_id:String,node_name:String)->Label:
+	var group:=HBoxContainer.new();group.name=node_name+"Group";group.add_theme_constant_override("separation",7);row.add_child(group)
+	var symbol:=TextureRect.new();symbol.texture=TAVERN_THEME.icon(icon_id);symbol.custom_minimum_size=Vector2(25,25);symbol.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;symbol.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;group.add_child(symbol)
+	var label:=Label.new();label.name=node_name;label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;label.add_theme_font_size_override("font_size",15);label.add_theme_color_override("font_color",TAVERN_THEME.IVORY);group.add_child(label);return label
+
+func _build_options_modal()->void:
+	options_backdrop=_modal_backdrop("OptionsModal");var body:=_modal_panel(options_backdrop,"Hearth Options",Vector2(690,590))
+	options_panel=OPTIONS_PANEL.new();options_panel.name="TavernOptionsPanel";options_panel.size_flags_vertical=Control.SIZE_EXPAND_FILL;options_panel.close_requested.connect(_close_modal.bind(options_backdrop));body.add_child(options_panel);options_panel.setup(true)
+
+func _open_options()->void:
+	_show_modal(options_backdrop,options_panel.first_control)
 
 func _build_dialogue_banner() -> void:
 	dialogue_panel = PanelContainer.new(); dialogue_panel.name = "ContextBanner"; dialogue_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -334,13 +379,13 @@ func _modal_backdrop(name_value: String) -> ColorRect:
 
 func _modal_panel(parent: Control, title: String, size_value: Vector2) -> VBoxContainer:
 	var preferred:=size_value;var available:=get_viewport_rect().size-Vector2(36,36);size_value=Vector2(minf(size_value.x,available.x),minf(size_value.y,available.y))
-	var panel := PanelContainer.new();panel.set_anchors_preset(Control.PRESET_TOP_LEFT);panel.position=(get_viewport_rect().size-size_value)/2.0;panel.size=size_value;panel.set_meta("preferred_size",preferred);panel.add_theme_stylebox_override("panel",_panel_style(Color(0.07,0.045,0.025,0.99),Color(0.82,0.57,0.22),10));parent.add_child(panel)
+	var panel := PanelContainer.new();panel.set_anchors_preset(Control.PRESET_TOP_LEFT);panel.position=(get_viewport_rect().size-size_value)/2.0;panel.size=size_value;panel.set_meta("preferred_size",preferred);panel.add_theme_stylebox_override("panel",TAVERN_THEME.panel(Color("#21160ffb"),TAVERN_THEME.GOLD,6,2));parent.add_child(panel)
 	var margin := MarginContainer.new()
 	for side in ["left","right","top","bottom"]:
 		margin.add_theme_constant_override("margin_%s"%side,18)
 	panel.add_child(margin)
 	var body := VBoxContainer.new(); body.add_theme_constant_override("separation",10); margin.add_child(body)
-	var heading := Label.new(); heading.text = title; heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_theme_font_size_override("font_size",25); heading.add_theme_color_override("font_color",Color(1,0.82,0.43)); body.add_child(heading)
+	var heading := Label.new(); heading.text = title; heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_theme_font_size_override("font_size",25); heading.add_theme_color_override("font_color",TAVERN_THEME.HIGHLIGHT_GOLD); body.add_child(heading)
 	return body
 
 func _build_armory_modal() -> void:
@@ -834,6 +879,7 @@ func _close_modal(modal: Control) -> void:
 func _close_top_modal() -> void:
 	if merchant_shop_panel != null and merchant_shop_panel.visible: merchant_shop_panel.close()
 	elif recruitment_dialogue!=null and recruitment_dialogue.visible:recruitment_dialogue.close()
+	elif options_backdrop!=null and options_backdrop.visible:_close_modal(options_backdrop)
 	elif calendar_backdrop!=null and calendar_backdrop.visible:_close_modal(calendar_backdrop)
 	elif company_backdrop!=null and company_backdrop.visible:_close_modal(company_backdrop)
 	elif results_backdrop.visible: _close_modal(results_backdrop)
@@ -841,18 +887,22 @@ func _close_top_modal() -> void:
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
 
 func _modal_visible() -> bool:
-	return (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
+	return (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
 
 func _restore_hub_focus() -> void:
-	ui_root.grab_focus()
+	var expedition_button:=toolbar_buttons.get("Expedition") as Button
+	if expedition_button!=null and expedition_button.visible and not expedition_button.disabled:expedition_button.grab_focus()
+	else:ui_root.grab_focus()
 
 func _refresh_ui() -> void:
 	if hud_label == null or run_state == null: return
-	var tavern_favor := int(run_state.get_merchant_progress("tavern").get("available_favor",0))
-	var date:=run_state.campaign.get_calendar_date();var company := "Roster %d/%d · Candidates %d" % [run_state.campaign.living_roster().size(), run_state.campaign.get_roster_capacity(),run_state.campaign.candidate_pool.size()] if run_state.campaign != null else ""
-	hud_label.text = "THE HEARTH     %s, %s %d, Y%d     Bank %d     %s" % [date.weekday,date.season,date.season_day,date.year,run_state.campaign.banked_gold if run_state.campaign != null else run_state.gold,company]
+	var date:=run_state.campaign.get_calendar_date();var compact:=get_viewport_rect().size.x<1100
+	hud_date_label.text="%s %d · Y%d"%[date.season,date.season_day,date.year] if compact else "%s, %s %d, Y%d"%[date.weekday,date.season,date.season_day,date.year]
+	hud_bank_label.text=str(run_state.campaign.banked_gold) if compact else "Bank %d"%run_state.campaign.banked_gold
+	hud_company_label.text="%d/%d · %d waiting"%[run_state.campaign.living_roster().size(),run_state.campaign.get_roster_capacity(),run_state.campaign.candidate_pool.size()] if compact else "Roster %d/%d · Candidates %d"%[run_state.campaign.living_roster().size(),run_state.campaign.get_roster_capacity(),run_state.campaign.candidate_pool.size()]
 	dialogue_panel.visible = false
 	prompt_panel.visible = arrivals_running
+	if settings_button!=null:settings_button.disabled=arrivals_running
 	if arrivals_running:prompt_label.text="Click, E, or Space to fast-forward arrivals"
 
 func _refresh_station_markers() -> void:
@@ -915,7 +965,7 @@ func _distance(a: Vector2i,b: Vector2i) -> int: return abs(a.x-b.x)+abs(a.y-b.y)
 func _layout_scene() -> void:
 	_update_token_positions();_refresh_station_markers()
 	var available:=get_viewport_rect().size-Vector2(36,36)
-	for modal in [armory_backdrop,expedition_backdrop,results_backdrop,company_backdrop,calendar_backdrop]:
+	for modal in [armory_backdrop,expedition_backdrop,results_backdrop,company_backdrop,calendar_backdrop,options_backdrop]:
 		if modal==null:continue
 		for child in modal.get_children():
 			if child is PanelContainer and child.has_meta("preferred_size"):
@@ -926,6 +976,19 @@ func _layout_scene() -> void:
 	if npc_hit_targets.has("mara"):(npc_hit_targets.mara as Button).position=_grid_center(Vector2i(9,1))+Vector2(-75,40)
 	if npc_hit_targets.has("forest"):(npc_hit_targets.forest as Button).position=_grid_center(Vector2i(2,3))+Vector2(-75,40)
 	if npc_hit_targets.has("crypt"):(npc_hit_targets.crypt as Button).position=_grid_center(Vector2i(15,3))+Vector2(-75,40)
+	var index:=0
+	for candidate in run_state.campaign.get_candidates() if run_state!=null and run_state.campaign!=null else []:
+		var sprite:=candidate_sprites.get(candidate.id) as AnimatedSprite2D;if sprite!=null and not arrivals_running:sprite.position=_candidate_seat(index)
+		var button:=candidate_buttons.get(candidate.id) as Button;if button!=null:button.position=_candidate_seat(index)+Vector2(-88,43)
+		index+=1
+	if run_state!=null and run_state.campaign!=null:
+		for member in run_state.campaign.living_roster():
+			var recruited_sprite:=candidate_stage.get_node_or_null("%sRecruitedSprite"%member.id) as AnimatedSprite2D;if recruited_sprite!=null:recruited_sprite.position=_candidate_seat(index)
+			var recruited_button:=candidate_buttons.get(member.id) as Button;if recruited_button!=null:recruited_button.position=_candidate_seat(index)+Vector2(-88,43)
+			index+=1
+	if toolbar!=null:
+		var width:=minf(900.0,get_viewport_rect().size.x-32.0);toolbar.offset_left=(get_viewport_rect().size.x-width)/2.0;toolbar.offset_right=toolbar.offset_left+width-get_viewport_rect().size.x
+	_refresh_ui()
 
 func _grid_origin() -> Vector2:
 	var viewport_size := get_viewport_rect().size
@@ -961,5 +1024,4 @@ func _panel_style(fill: Color,border: Color,radius: int) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new(); style.bg_color=fill; style.border_color=border; style.set_border_width_all(2); style.set_corner_radius_all(radius); style.set_content_margin_all(8); return style
 
 func _style_button(button: Button) -> void:
-	FantasyButton.apply_light(button,15,Vector2(220,42)); button.focus_mode = Control.FOCUS_ALL
-	button.add_theme_color_override("font_focus_color",Color(0.18,0.10,0.035))
+	TAVERN_THEME.apply_button(button,true,15,Vector2(220,42))
