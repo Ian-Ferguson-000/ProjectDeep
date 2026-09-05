@@ -8,6 +8,8 @@ const PLAYER_IDLE_DOWN := preload("res://assets/sprite_packs/Player/IDLE/idle_do
 const TAVERN_KEEPER := preload("res://assets/generated_characters/tavern_keeper.png")
 const TAVERN_BACKDROP := preload("res://assets/tavern/tavern_hub_backdrop.png")
 const BoardPieceScene := preload("res://scenes/components/BoardPiece.tscn")
+const DIALOGUE_CHAT := preload("res://scripts/ui/dialogue_chat.gd")
+const RECRUITMENT_DIALOGUE := preload("res://scripts/ui/recruitment_dialogue.gd")
 
 var controller: Node
 var run_state: RunState
@@ -15,6 +17,8 @@ var gear_options: Array[GearData] = []
 var selected_gear: GearData
 var arrival_summary: Dictionary = {}
 var message := ""
+var pending_story_lines: Array = []
+var pending_story_context := ""
 var player_pos := Vector2i(9, 8)
 var layout: Dictionary = {}
 var stations: Array[Dictionary] = []
@@ -71,6 +75,7 @@ var selected_party_ids: Array[String] = []
 var results_backdrop: ColorRect
 var results_text: RichTextLabel
 var tutorial_continue: Button
+var story_dialogue: DialogueChat
 var company_backdrop:ColorRect
 var company_panel:PanelContainer
 var company_list:VBoxContainer
@@ -78,13 +83,29 @@ var company_tabs:TabContainer
 var company_pages:Dictionary={}
 var company_party_dungeon_id:="forest"
 var company_party_initialized:=false
+var toolbar:HBoxContainer
+var calendar_backdrop:ColorRect
+var calendar_text:RichTextLabel
+var recruitment_dialogue:RecruitmentDialogue
+var candidate_stage:=Node2D.new()
+var candidate_buttons:Dictionary={}
+var candidate_sprites:Dictionary={}
+var npc_hit_targets:Dictionary={}
+var arrival_tween:Tween
+var arrivals_running:=false
+var arrivals_need_sequence:=false
+var dismissal_confirmation:ConfirmationDialog
+var pending_dismissal_id:=""
 
-func setup(game_controller: Node, state: RunState, options: Array[GearData], intro_message: String, summary: Dictionary = {}) -> void:
+func setup(game_controller: Node, state: RunState, options: Array[GearData], intro_message: String, summary: Dictionary = {}, story_lines: Array = [], story_context: String = "") -> void:
 	controller = game_controller
 	run_state = state
 	gear_options = options
 	message = intro_message
 	arrival_summary = summary.duplicate(true)
+	if arrival_summary.is_empty() and state!=null and state.campaign!=null:arrival_summary=state.campaign.pending_settlement_summary.duplicate(true)
+	pending_story_lines = story_lines.duplicate(true)
+	pending_story_context = story_context
 	selected_gear = _remembered_gear_or_default()
 	if run_state != null and selected_gear != null: run_state.set_selected_gear(selected_gear)
 	if is_inside_tree(): _refresh_ui()
@@ -96,21 +117,50 @@ func _ready() -> void:
 	_setup_backdrop()
 	_setup_tokens()
 	_build_hud()
+	_build_toolbar()
 	_build_dialogue_banner()
 	_build_armory_modal()
 	_build_expedition_modal()
 	_build_results_modal()
 	_build_company_modal()
+	_build_calendar_modal()
+	_build_recruitment_dialogue()
 	_build_tutorial_prompt()
+	_build_story_dialogue()
 	_setup_merchant_shops()
 	get_viewport().size_changed.connect(_layout_scene)
 	_layout_scene()
 	_refresh_ui()
+	_build_candidate_stage()
 	if not arrival_summary.is_empty() or not message.is_empty(): _show_arrival_results()
-	if run_state != null and run_state.campaign != null and not run_state.campaign.is_tutorial_complete(): _show_tutorial_prompt()
+	elif not pending_story_lines.is_empty(): call_deferred("_play_pending_story")
+	else:call_deferred("_continue_arrival_queue")
 
 func _build_tutorial_prompt() -> void:
 	tutorial_continue = Button.new(); tutorial_continue.name = "TutorialContinue"; tutorial_continue.text = "Choose the First Adventurer"; tutorial_continue.set_anchors_preset(Control.PRESET_BOTTOM_WIDE); tutorial_continue.offset_left = 430; tutorial_continue.offset_right = -430; tutorial_continue.offset_top = -92; tutorial_continue.offset_bottom = -36; tutorial_continue.pressed.connect(_continue_tutorial); _style_button(tutorial_continue); ui_root.add_child(tutorial_continue); tutorial_continue.visible = false
+
+func _build_story_dialogue() -> void:
+	story_dialogue = DIALOGUE_CHAT.new()
+	story_dialogue.name = "StoryDialogue"
+	story_dialogue.conversation_finished.connect(_on_story_finished)
+	ui_root.add_child(story_dialogue)
+
+func _play_pending_story() -> void:
+	if story_dialogue == null or pending_story_lines.is_empty(): return
+	var lines := pending_story_lines.duplicate(true)
+	pending_story_lines.clear()
+	story_dialogue.play(lines)
+
+func _on_story_finished() -> void:
+	var context := pending_story_context
+	pending_story_context = ""
+	if context == "tutorial_opening" and controller != null and controller.has_method("advance_tutorial_from_tavern"):
+		controller.advance_tutorial_from_tavern()
+	else:
+		if run_state!=null and run_state.campaign!=null:
+			if context=="former_keeper_confrontation":run_state.campaign.mark_former_keeper_encounter_seen()
+			run_state.campaign.pending_story_context="";run_state.campaign.save_atomic()
+		_continue_arrival_queue()
 
 func _show_tutorial_prompt() -> void:
 	if tutorial_continue == null: return
@@ -141,7 +191,7 @@ func _setup_backdrop() -> void:
 	backdrop = TextureRect.new(); backdrop.texture = TAVERN_BACKDROP; backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE; backdrop_layer.add_child(backdrop)
-	station_markers.name = "StationMarkers"; board.add_child(station_markers)
+	station_markers.name = "StationMarkers"; board.add_child(station_markers);station_markers.visible=false
 	expedition_gate_hit_target=Button.new();expedition_gate_hit_target.name="ExpeditionGateHitTarget";expedition_gate_hit_target.flat=true;expedition_gate_hit_target.focus_mode=Control.FOCUS_NONE;expedition_gate_hit_target.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND;expedition_gate_hit_target.tooltip_text="Expedition Gate · Choose a dungeon";expedition_gate_hit_target.pressed.connect(_on_expedition_gate_clicked);ui_root.add_child(expedition_gate_hit_target)
 
 func _setup_tokens() -> void:
@@ -154,6 +204,107 @@ func _setup_tokens() -> void:
 	crypt_merchant_token = BoardPieceScene.instantiate(); crypt_merchant_token.name = "CryptMerchantToken"; tokens_root.add_child(crypt_merchant_token)
 	_configure_merchant_token(forest_merchant_token, "forest")
 	_configure_merchant_token(crypt_merchant_token, "crypt")
+	player_token.visible=false
+	_add_npc_target("mara","Mara Vell",_open_npc_merchant.bind("tavern"))
+	if forest_merchant_token.visible:_add_npc_target("forest","Thistle Fen",_open_npc_merchant.bind("forest"))
+	if crypt_merchant_token.visible:_add_npc_target("crypt","Sister Caldris",_open_npc_merchant.bind("crypt"))
+
+func _open_npc_merchant(merchant_id:String)->void:
+	if not arrivals_running and not _modal_visible():_open_merchant_shop(merchant_id)
+
+func _add_npc_target(id:String,label_text:String,action:Callable)->void:
+	var button:=Button.new();button.name="%sNpcTarget"%id.capitalize();button.text=label_text;button.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND;button.tooltip_text="Speak with %s"%label_text;button.pressed.connect(action);FantasyButton.apply_dark(button,13,Vector2(150,38));ui_root.add_child(button);npc_hit_targets[id]=button
+
+func _build_toolbar()->void:
+	toolbar=HBoxContainer.new();toolbar.name="TavernToolbar";toolbar.set_anchors_preset(Control.PRESET_TOP_WIDE);toolbar.offset_left=180;toolbar.offset_right=-180;toolbar.offset_top=78;toolbar.offset_bottom=124;toolbar.alignment=BoxContainer.ALIGNMENT_CENTER;toolbar.add_theme_constant_override("separation",8);ui_root.add_child(toolbar)
+	toolbar.offset_left=12;toolbar.offset_right=-12
+	for entry in [["Calendar",Callable(self,"_open_calendar")],["Company Ledger",Callable(self,"_open_company_ledger")],["Armory",Callable(self,"_open_armory")],["Merchants",Callable(self,"_open_tavern_merchant")],["Expedition",Callable(self,"_open_dungeon_selector")]]:
+		var button:=Button.new();button.name="%sToolbarButton"%String(entry[0]).replace(" ","");button.text=String(entry[0]);button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.pressed.connect(entry[1]);FantasyButton.apply_dark(button,14,Vector2(0,42));toolbar.add_child(button)
+
+func _open_tavern_merchant()->void:_open_merchant_shop("tavern")
+
+func _build_calendar_modal()->void:
+	calendar_backdrop=_modal_backdrop("CalendarModal");var body:=_modal_panel(calendar_backdrop,"The Hearth Calendar",Vector2(820,610))
+	calendar_text=RichTextLabel.new();calendar_text.bbcode_enabled=true;calendar_text.size_flags_vertical=Control.SIZE_EXPAND_FILL;calendar_text.add_theme_font_size_override("normal_font_size",16);body.add_child(calendar_text)
+	calendar_text.focus_mode=Control.FOCUS_ALL
+	var close:=Button.new();close.text="Close Calendar";close.pressed.connect(_close_modal.bind(calendar_backdrop));_style_button(close);body.add_child(close)
+
+func _open_calendar()->void:
+	var campaign:=run_state.campaign;var date:=campaign.get_calendar_date();var lines:Array[String]=["[font_size=26][color=#f1c565]%s, %s %d, Year %d[/color][/font_size]"%[date.weekday,date.season,date.season_day,date.year],"Season progress: Day %d of 28     Candidate wave: %d"%[date.season_day,campaign.candidate_wave_id],"\n[b]RECENT HEARTH HISTORY[/b]"]
+	if campaign.calendar_history.is_empty():lines.append("No entries yet.")
+	else:
+		for index in range(campaign.calendar_history.size()-1,-1,-1):
+			var event:Dictionary=campaign.calendar_history[index];lines.append("Day %d · %s — %s"%[int(event.get("day",1)),String(event.get("kind","event")).capitalize(),String(event.get("text",""))])
+	calendar_text.text="\n".join(lines);_show_modal(calendar_backdrop,calendar_text)
+
+func _build_recruitment_dialogue()->void:
+	recruitment_dialogue=RECRUITMENT_DIALOGUE.new();recruitment_dialogue.recruit_requested.connect(_recruit_candidate);recruitment_dialogue.conversation_closed.connect(_restore_hub_focus);ui_root.add_child(recruitment_dialogue)
+
+func _build_candidate_stage()->void:
+	candidate_stage.name="CandidateStage";board.add_child(candidate_stage);_rebuild_candidate_targets(false)
+
+func _candidate_seat(index:int)->Vector2:
+	var viewport_size:=get_viewport_rect().size;var seats:=[Vector2(viewport_size.x*0.30,viewport_size.y*0.50),Vector2(viewport_size.x*0.70,viewport_size.y*0.50),Vector2(viewport_size.x*0.37,viewport_size.y*0.65),Vector2(viewport_size.x*0.63,viewport_size.y*0.65),Vector2(viewport_size.x*0.46,viewport_size.y*0.53),Vector2(viewport_size.x*0.54,viewport_size.y*0.53),Vector2(viewport_size.x*0.50,viewport_size.y*0.70)]
+	return seats[index%seats.size()]
+
+func _candidate_sprite_scale(class_id:String)->Vector2:
+	return Vector2(2.5,2.5) if class_id=="warrior" else Vector2(1.3,1.3)
+
+func _rebuild_candidate_targets(animate:bool)->void:
+	for child in candidate_stage.get_children():child.queue_free()
+	for button in candidate_buttons.values():if is_instance_valid(button):button.queue_free()
+	candidate_buttons.clear();candidate_sprites.clear();var records:=run_state.campaign.get_candidates();var index:=0
+	for candidate in records:
+		var sprite:=AnimatedSprite2D.new();sprite.name="%sArrivalSprite"%candidate.id;sprite.sprite_frames=SlasherSpriteLibrary.player_frames(candidate.adventurer.class_id);sprite.scale=_candidate_sprite_scale(candidate.adventurer.class_id);sprite.position=Vector2(-80,430) if animate else _candidate_seat(index);candidate_stage.add_child(sprite);candidate_sprites[candidate.id]=sprite
+		var idle:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle","down");if not idle.is_empty():sprite.play(idle)
+		var button:=Button.new();button.name="%sCandidateButton"%candidate.id;button.text="%s\n%s · Level %d"%[candidate.adventurer.display_name,candidate.adventurer.class_id.capitalize(),candidate.adventurer.level];button.position=_candidate_seat(index)+Vector2(-78,46);button.size=Vector2(156,56);button.tooltip_text="Speak with %s"%candidate.adventurer.display_name;button.pressed.connect(_open_candidate.bind(candidate.id));FantasyButton.apply_dark(button,13,button.size);button.visible=not animate;ui_root.add_child(button);candidate_buttons[candidate.id]=button;index+=1
+	if not animate:
+		for member in run_state.campaign.living_roster():
+			if index>=7:break
+			var sprite:=AnimatedSprite2D.new();sprite.name="%sRecruitedSprite"%member.id;sprite.sprite_frames=SlasherSpriteLibrary.player_frames(member.class_id);sprite.scale=_candidate_sprite_scale(member.class_id);sprite.position=_candidate_seat(index);candidate_stage.add_child(sprite);var idle:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle","down");if not idle.is_empty():sprite.play(idle)
+			var button:=Button.new();button.name="%sRecruitedButton"%member.id;button.text="%s\n✓ RECRUITED"%member.display_name;button.position=_candidate_seat(index)+Vector2(-78,46);button.size=Vector2(156,56);button.tooltip_text="Open %s's summary"%member.display_name;button.pressed.connect(_open_recruited_summary.bind(member.id));FantasyButton.apply_light(button,13,button.size);ui_root.add_child(button);candidate_buttons[member.id]=button;index+=1
+
+func _open_recruited_summary(character_id:String)->void:
+	var member:=run_state.campaign.character(character_id)
+	if member!=null:_show_dialogue(member.display_name,"%s · Level %d · %s · %s · HP %d/%d"%[member.class_id.capitalize(),member.level,member.gear_id.replace("_"," ").capitalize(),member.trait_name,member.current_health,member.max_health])
+
+func _open_candidate(candidate_id:String)->void:
+	if arrivals_running:return
+	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord
+	if candidate!=null:recruitment_dialogue.open(candidate)
+
+func _recruit_candidate(candidate_id:String)->void:
+	var result:=run_state.campaign.recruit_candidate(candidate_id)
+	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Recruitment failed.")));return
+	recruitment_dialogue.close();message=String(result.get("message","Recruitment complete."));_select_recruited_character();_rebuild_candidate_targets(false);_refresh_ui()
+
+func _select_recruited_character()->void:
+	if not run_state.active_character_id.is_empty():return
+	var living:=run_state.campaign.living_roster();if not living.is_empty():run_state.active_character_id=living[0].id;run_state.set_class(living[0].class_id)
+
+func _continue_arrival_queue()->void:
+	if run_state==null or run_state.campaign==null:return
+	if run_state.campaign.last_presented_wave_id<run_state.campaign.candidate_wave_id and not run_state.campaign.candidate_pool.is_empty():arrivals_need_sequence=true;run_state.campaign.tavern_phase=CampaignState.TAVERN_CALENDAR;_open_calendar()
+	else:_restore_hub_focus()
+
+func _start_arrivals()->void:
+	arrivals_running=true;run_state.campaign.tavern_phase=CampaignState.TAVERN_ARRIVALS;toolbar.visible=false
+	for target in npc_hit_targets.values():(target as Button).visible=false
+	_rebuild_candidate_targets(true);arrival_tween=create_tween();arrival_tween.set_parallel(true);var index:=0
+	for candidate in run_state.campaign.get_candidates():
+		var sprite:AnimatedSprite2D=candidate_sprites[candidate.id];var run_animation:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"run","right");if not run_animation.is_empty():sprite.play(run_animation)
+		arrival_tween.tween_property(sprite,"position",_candidate_seat(index),0.8).set_delay(index*0.28).set_trans(Tween.TRANS_SINE);index+=1
+	arrival_tween.chain().tween_callback(_finish_arrivals)
+
+func _finish_arrivals()->void:
+	if not arrivals_running:return
+	if arrival_tween!=null and arrival_tween.is_valid():arrival_tween.kill()
+	for candidate in run_state.campaign.get_candidates():
+		var sprite:AnimatedSprite2D=candidate_sprites.get(candidate.id);if sprite!=null:sprite.position=_candidate_seat(run_state.campaign.get_candidates().find(candidate));var idle:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle","down");if not idle.is_empty():sprite.play(idle)
+		var button:Button=candidate_buttons.get(candidate.id);if button!=null:button.visible=true
+	arrivals_running=false;arrivals_need_sequence=false;toolbar.visible=true
+	for target in npc_hit_targets.values():(target as Button).visible=true
+	run_state.campaign.mark_arrivals_presented(run_state.campaign.candidate_wave_id);_refresh_ui();_restore_hub_focus()
 
 func _build_hud() -> void:
 	top_hud = PanelContainer.new(); top_hud.name = "TavernHUD"; top_hud.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -161,7 +312,6 @@ func _build_hud() -> void:
 	top_hud.add_theme_stylebox_override("panel", _panel_style(Color(0.055,0.04,0.025,0.94), Color(0.65,0.43,0.18), 8)); ui_root.add_child(top_hud)
 	var margin := MarginContainer.new(); margin.add_theme_constant_override("margin_left",16); margin.add_theme_constant_override("margin_right",16); margin.add_theme_constant_override("margin_top",8); margin.add_theme_constant_override("margin_bottom",8); top_hud.add_child(margin)
 	hud_label = Label.new(); hud_label.add_theme_font_size_override("font_size",16); hud_label.add_theme_color_override("font_color",Color(0.94,0.84,0.66)); margin.add_child(hud_label)
-	var company_button:=Button.new();company_button.name="CompanyLedgerButton";company_button.text="Company Ledger";company_button.set_anchors_preset(Control.PRESET_TOP_RIGHT);company_button.position=Vector2(-190,78);company_button.size=Vector2(166,40);company_button.pressed.connect(_open_company_ledger);_style_button(company_button);ui_root.add_child(company_button)
 
 func _build_dialogue_banner() -> void:
 	dialogue_panel = PanelContainer.new(); dialogue_panel.name = "ContextBanner"; dialogue_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -183,7 +333,8 @@ func _modal_backdrop(name_value: String) -> ColorRect:
 	var layer := ColorRect.new(); layer.name = name_value; layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); layer.color = Color(0.015,0.01,0.008,0.78); layer.mouse_filter = Control.MOUSE_FILTER_STOP; layer.visible = false; ui_root.add_child(layer); return layer
 
 func _modal_panel(parent: Control, title: String, size_value: Vector2) -> VBoxContainer:
-	var panel := PanelContainer.new(); panel.set_anchors_preset(Control.PRESET_CENTER); panel.position = -size_value/2.0; panel.size = size_value; panel.add_theme_stylebox_override("panel",_panel_style(Color(0.07,0.045,0.025,0.99),Color(0.82,0.57,0.22),10)); parent.add_child(panel)
+	var preferred:=size_value;var available:=get_viewport_rect().size-Vector2(36,36);size_value=Vector2(minf(size_value.x,available.x),minf(size_value.y,available.y))
+	var panel := PanelContainer.new();panel.set_anchors_preset(Control.PRESET_TOP_LEFT);panel.position=(get_viewport_rect().size-size_value)/2.0;panel.size=size_value;panel.set_meta("preferred_size",preferred);panel.add_theme_stylebox_override("panel",_panel_style(Color(0.07,0.045,0.025,0.99),Color(0.82,0.57,0.22),10));parent.add_child(panel)
 	var margin := MarginContainer.new()
 	for side in ["left","right","top","bottom"]:
 		margin.add_theme_constant_override("margin_%s"%side,18)
@@ -241,7 +392,7 @@ func _build_company_modal()->void:
 	var body:=_modal_panel(company_backdrop,"Company Ledger",Vector2(1160,650));company_panel=body.get_parent().get_parent() as PanelContainer
 	var subtitle:=Label.new();subtitle.text="Manage the company between expeditions. Changes here are permanent unless a recruit dies.";subtitle.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;subtitle.add_theme_color_override("font_color",Color(0.78,0.72,0.62));body.add_child(subtitle)
 	company_tabs=TabContainer.new();company_tabs.name="CompanyLedgerTabs";company_tabs.focus_mode=Control.FOCUS_ALL;company_tabs.size_flags_vertical=Control.SIZE_EXPAND_FILL;company_tabs.add_theme_font_size_override("font_size",17);body.add_child(company_tabs)
-	for page_name in ["Resources","Party Builder","Improvements","Memorial"]:
+	for page_name in ["Resources","Party Builder","Improvements","Hall of Heroes","Memorial"]:
 		var scroll:=ScrollContainer.new();scroll.name=page_name;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;company_tabs.add_child(scroll)
 		var margin:=MarginContainer.new();margin.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		for side in ["left","right","top","bottom"]:margin.add_theme_constant_override("margin_%s"%side,14)
@@ -249,6 +400,7 @@ func _build_company_modal()->void:
 		var page:=VBoxContainer.new();page.name="%sPage"%page_name.replace(" ","");page.size_flags_horizontal=Control.SIZE_EXPAND_FILL;page.add_theme_constant_override("separation",12);margin.add_child(page);company_pages[page_name]=page
 	company_list=company_pages["Improvements"]
 	var close:=Button.new();close.text="Close Ledger";close.pressed.connect(_close_modal.bind(company_backdrop));_style_button(close);body.add_child(close)
+	dismissal_confirmation=ConfirmationDialog.new();dismissal_confirmation.title="Dismiss Adventurer";dismissal_confirmation.dialog_text="This adventurer will leave the Hearth without compensation.";dismissal_confirmation.confirmed.connect(_confirm_dismissal);add_child(dismissal_confirmation)
 
 func _open_company_ledger()->void:
 	_refresh_company_ledger()
@@ -265,20 +417,37 @@ func _refresh_company_ledger()->void:
 	_refresh_resources_page(campaign)
 	_refresh_party_page(campaign)
 	_refresh_improvements_page(campaign)
+	_refresh_hall_page(campaign)
 	_refresh_memorial_page(campaign)
 
 func _refresh_resources_page(campaign:CampaignState)->void:
 	var page:VBoxContainer=company_pages["Resources"]
 	_add_ledger_heading("TAVERN RESOURCES",Color(1,0.78,0.32),page)
-	_add_resource_card(page,"BANKED GOLD",str(campaign.banked_gold),"Spend with merchants or on Hearth improvements. Gold carried in a dungeon is not safe until extraction or victory.",Color(0.95,0.72,0.25))
+	_add_resource_card(page,"BANKED GOLD",str(campaign.banked_gold),"Spend with merchants or on Hearth improvements. Dungeon rewards are banked only after boss victory.",Color(0.95,0.72,0.25))
+	_add_resource_card(page,"SUPPLIES",str(campaign.supplies),"Provision stock held by the Hearth. Supply spending will be introduced with the preparation system.",Color(0.78,0.72,0.48))
 	_add_resource_card(page,"RELIC ESSENCE",str(campaign.relic_essence),"Permanent upgrade currency recovered from cleared checkpoints and banked on a safe return.",Color(0.55,0.84,1.0))
 	_add_resource_card(page,"SUCCESSFUL LEVELS",str(campaign.successful_levels),"Lifetime levels brought home by victorious recruits. Requirements check this total but never spend it.",Color(0.58,0.9,0.62))
 	_add_ledger_heading("UNIQUE RELICS",Color(0.76,0.62,0.9),page)
 	var relics:=Label.new();relics.text="No unique relics recovered yet. Secret dungeons hold relics that remain with the company." if campaign.banked_relics.is_empty() else "  •  ".join(campaign.banked_relics).replace("_"," ").capitalize();relics.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;relics.add_theme_font_size_override("font_size",16);page.add_child(relics)
+	_add_ledger_heading("HEARTH KEEPSAKES",Color(0.9,0.66,0.46),page)
+	var keepsake := Label.new()
+	keepsake.text = "No keepsake has been placed in the Hearth." if campaign.tutorial_keepsake_id.is_empty() else campaign.tutorial_keepsake_id.replace("_", " ").capitalize()+"\nA story keepsake only; it grants no combat or economy modifiers."
+	keepsake.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	keepsake.add_theme_font_size_override("font_size",16)
+	page.add_child(keepsake)
+	if campaign.tutorial_letter_unlocked:
+		_add_ledger_heading("THE FORMER KEEPER'S LETTER",Color(0.72,0.78,0.9),page)
+		var letter := Label.new()
+		letter.text = "To whoever warms my hearth: profit from it while you can. A deed records a debt; it does not settle a claim. — Mara Vell"
+		letter.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		letter.add_theme_font_size_override("font_size",16)
+		letter.add_theme_color_override("font_color",Color(0.84,0.82,0.72))
+		page.add_child(letter)
 
 func _refresh_party_page(campaign:CampaignState)->void:
 	var page:VBoxContainer=company_pages["Party Builder"]
 	_add_ledger_heading("EXPEDITION PARTY BUILDER",Color(0.58,0.82,1.0),page)
+	var capacity:=Label.new();capacity.text="Rooms %d / %d     Waiting candidates %d"%[campaign.living_roster().size(),campaign.get_roster_capacity(),campaign.candidate_pool.size()];capacity.add_theme_color_override("font_color",Color(1,0.78,0.32));page.add_child(capacity)
 	var help:=Label.new();help.text="Plan the party that will be preselected at the Expedition Gate. Each recruit keeps independent health, equipment, resources, traits, and progression. Death is permanent.";help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;help.add_theme_color_override("font_color",Color(0.74,0.82,0.88));page.add_child(help)
 	var controls:=HBoxContainer.new();controls.add_theme_constant_override("separation",12);page.add_child(controls)
 	var dungeon_label:=Label.new();dungeon_label.text="Plan for:";dungeon_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;controls.add_child(dungeon_label)
@@ -301,6 +470,9 @@ func _refresh_party_page(campaign:CampaignState)->void:
 	var selection_help:=Label.new();selection_help.name="PartySelectionHelp";selection_help.text="Selected recruits are numbered by party slot. Deselect a recruit or use Clear when the party is full.";selection_help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;selection_help.add_theme_color_override("font_color",Color(0.7,0.76,0.82));page.add_child(selection_help)
 	var grid:=GridContainer.new();grid.name="PartyRosterGrid";grid.columns=2;grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL;grid.add_theme_constant_override("h_separation",12);grid.add_theme_constant_override("v_separation",10);page.add_child(grid)
 	for member in campaign.living_roster():_add_party_builder_card(grid,member,cap)
+	for member in campaign.living_roster():
+		if member.status!=CharacterRecord.STATUS_AVAILABLE:continue
+		var dismiss:=Button.new();dismiss.text="Dismiss %s"%member.display_name;dismiss.disabled=not campaign.first_normal_launch_completed and campaign.first_company_ids.has(member.id);dismiss.tooltip_text="Brina and Eamon must attend the first expedition briefing." if dismiss.disabled else "Remove this adventurer from the company for free.";dismiss.pressed.connect(_request_dismissal.bind(member.id));FantasyButton.apply_dark(dismiss,13);page.add_child(dismiss)
 	var open_setup:=Button.new();open_setup.text="Continue to Expedition Setup";open_setup.pressed.connect(_open_planned_expedition);_style_button(open_setup);page.add_child(open_setup)
 
 func _refresh_improvements_page(campaign:CampaignState)->void:
@@ -318,6 +490,24 @@ func _refresh_memorial_page(campaign:CampaignState)->void:
 	else:
 		for record in campaign.memorial:
 			var panel:=PanelContainer.new();panel.add_theme_stylebox_override("panel",_panel_style(Color(0.055,0.04,0.065,0.94),Color(0.42,0.3,0.5),7));page.add_child(panel);var fallen:=Label.new();fallen.text="✦ %s · %s · Level %d\n%d expeditions · %d victories · %s"%[String(record.get("name","Unknown")),String(record.get("class_id","hero")).capitalize(),int(record.get("level",1)),int(record.get("expeditions",0)),int(record.get("victories",0)),String(record.get("cause","Fell in the dungeon"))];fallen.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;fallen.add_theme_color_override("font_color",Color(0.86,0.8,0.9));panel.add_child(fallen)
+
+func _refresh_hall_page(campaign:CampaignState)->void:
+	var page:VBoxContainer=company_pages["Hall of Heroes"]
+	_add_ledger_heading("HALL OF HEROES  ·  %d RETIRED"%campaign.retired_heroes.size(),Color(0.95,0.76,0.34),page)
+	var help:=Label.new();help.text="Victorious expedition members retire here. Their records are honorary and grant no power or economy bonus.";help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;page.add_child(help)
+	if campaign.retired_heroes.is_empty():var empty:=Label.new();empty.text="No company adventurer has yet retired after a boss victory.";page.add_child(empty)
+	else:
+		for record in campaign.retired_heroes:
+			var date:=_calendar_date_for_day(int(record.get("retired_day",campaign.calendar_day)));var label:=Label.new();label.text="✦ %s · %s · Level %d\nRetired %s, %s %d, Year %d · %d expeditions · %d victories"%[String(record.get("name","Unknown")),String(record.get("class_id","hero")).capitalize(),int(record.get("level",1)),date.weekday,date.season,date.season_day,date.year,int(record.get("expeditions",0)),int(record.get("victories",0))];label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;page.add_child(label)
+
+func _calendar_date_for_day(day:int)->Dictionary:
+	var current:=run_state.campaign.calendar_day;run_state.campaign.calendar_day=day;var date:=run_state.campaign.get_calendar_date();run_state.campaign.calendar_day=current;return date
+
+func _request_dismissal(character_id:String)->void:
+	pending_dismissal_id=character_id;var member:=run_state.campaign.character(character_id);dismissal_confirmation.dialog_text="Dismiss %s? They will leave the Hearth without compensation."%member.display_name;dismissal_confirmation.popup_centered()
+
+func _confirm_dismissal()->void:
+	var result:=run_state.campaign.dismiss_character(pending_dismissal_id);message=String(result.get("message",result.get("error","Dismissal failed.")));selected_party_ids.erase(pending_dismissal_id);pending_dismissal_id="";_rebuild_candidate_targets(false);_refresh_company_ledger();_refresh_ui()
 
 func _add_ledger_heading(text_value:String,color:Color,target:VBoxContainer)->void:
 	var heading:=Label.new();heading.text=text_value;heading.add_theme_font_size_override("font_size",19);heading.add_theme_color_override("font_color",color);target.add_child(heading)
@@ -407,18 +597,13 @@ func _setup_merchant_shops() -> void:
 	merchant_shop_panel = MerchantShopPanel.new(); merchant_shop_panel.name = "MerchantShopPanel"; merchant_shop_panel.purchase_completed.connect(_on_shop_purchase); merchant_shop_panel.closed.connect(_restore_hub_focus); $UI.add_child(merchant_shop_panel)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if arrivals_running:
+		if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):get_viewport().set_input_as_handled();_finish_arrivals()
+		return
 	if _modal_visible():
 		if event.is_action_pressed("ui_cancel"): _close_top_modal()
 		return
-	if click_navigation_active: return
-	if event.is_action_pressed("interact"): _interact()
-	elif event.is_action_pressed("move_up"): _try_move(Vector2i.UP)
-	elif event.is_action_pressed("move_down"): _try_move(Vector2i.DOWN)
-	elif event.is_action_pressed("move_left"): _try_move(Vector2i.LEFT)
-	elif event.is_action_pressed("move_right"): _try_move(Vector2i.RIGHT)
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var tile := _screen_to_grid(event.position)
-		if _is_inside_grid(tile): _handle_tile_click(tile)
+	if event.is_action_pressed("interact") and toolbar!=null and toolbar.get_child_count()>0:(toolbar.get_child(0) as Button).grab_focus()
 
 func _try_move(delta: Vector2i) -> void:
 	var target := player_pos + delta
@@ -442,9 +627,8 @@ func _handle_tile_click(tile: Vector2i) -> void:
 	_walk_click_path(_find_navigation_path(player_pos,tile),{})
 
 func _on_expedition_gate_clicked()->void:
-	if click_navigation_active or _modal_visible():return
-	var gate:=_station_by_id("expedition_gate")
-	if not gate.is_empty():_handle_tile_click(_station_position(gate))
+	if _modal_visible() or arrivals_running:return
+	_open_dungeon_selector()
 
 func _walk_click_path(path: Array[Vector2i], station: Dictionary) -> void:
 	if path.is_empty():
@@ -554,12 +738,12 @@ func _select_dungeon(dungeon_id: String) -> void:
 	var progress := run_state.get_merchant_progress(merchant_id)
 	_populate_party_selector(dungeon_id)
 	expedition_title.text = "%s\n%s"%[String(dungeon.get("name",dungeon_id.capitalize())),String(dungeon.get("subtitle",""))]
-	var slasher_config:Dictionary=Dictionary(dungeon.get("slasher",{}));var displayed_floors:int=int(slasher_config.get("campaign_floors",dungeon.get("floors",1))) if expedition_mode==RunState.PLAY_MODE_SLASHER else int(dungeon.get("floors",1));var extent := "Single field: %d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "Floors: %d%s" % [displayed_floors," · Endless available after boss" if expedition_mode==RunState.PLAY_MODE_SLASHER and bool(slasher_config.get("endless_available",false)) else ""]
+	var slasher_config:Dictionary=Dictionary(dungeon.get("slasher",{}));var displayed_floors:int=int(slasher_config.get("campaign_floors",dungeon.get("floors",1))) if expedition_mode==RunState.PLAY_MODE_SLASHER else int(dungeon.get("floors",1));var extent := "Single field: %d–%d rooms" % [int(dungeon.get("room_count",{}).get("min",10)),int(dungeon.get("room_count",{}).get("max",12))] if String(dungeon.get("dungeon_type","mystery")) == "field" else "Floors: %d" % displayed_floors
 	if GameBalance.are_all_dungeons_unlocked_for_testing(): extent += " · Testing unlock active"
 	var mode_supported := run_state.dungeon_supports_mode(dungeon_id, expedition_mode)
 	var mode_copy := "Turn-based command of every recruit. Position carefully and spend each character's actions independently." if expedition_mode == RunState.PLAY_MODE_STRATEGY else "Real-time party combat. Move with WASD or Left Stick and press Tab to cycle the directly controlled survivor."
 	var access_copy:="Testing unlock active" if GameBalance.are_all_dungeons_unlocked_for_testing() else ("Available to the company" if unlocked else "UNLOCK: %s"%String(dungeon.get("unlock_text","Progress further to reveal this destination.")))
-	expedition_detail.text = "%s\n\n%s\n\n%s\n\nDIFFICULTY  %s\nSCOPE  %s\nBEST DEPTH  %d\nEXTRACTION  After a cleared %s\nMERCHANT  %s%s\n\nLOADOUT\n%s · %d damage\nConsumables %d/%d · Carried gold %d\n\n%s" % [String(dungeon.get("description","")),mode_copy,access_copy,String(dungeon.get("difficulty","Unknown")),extent,int(progress.get("highest_depth",0)),"room" if String(dungeon.get("extraction","cleared_floor"))=="cleared_room" else "floor",merchant_name," · Recruited" if not merchant_id.is_empty() and run_state.is_merchant_recruited(merchant_id) else "",selected_gear.display_name if selected_gear else "No compatible gear selected",_gear_damage(selected_gear),run_state.get_consumables().size(),run_state.get_consumable_capacity(),run_state.gold,run_state.get_slasher_progression_summary() if expedition_mode==RunState.PLAY_MODE_SLASHER else "Strategy mode uses each recruit's independent turn state."]
+	expedition_detail.text = "%s\n\n%s\n\n%s\n\nDIFFICULTY  %s\nSCOPE  %s\nBEST DEPTH  %d\nOUTCOME  Boss victory or total party defeat\nMERCHANT  %s%s\n\nLOADOUT\n%s · %d damage\nConsumables %d/%d · Carried gold %d\n\n%s" % [String(dungeon.get("description","")),mode_copy,access_copy,String(dungeon.get("difficulty","Unknown")),extent,int(progress.get("highest_depth",0)),merchant_name," · Recruited" if not merchant_id.is_empty() and run_state.is_merchant_recruited(merchant_id) else "",selected_gear.display_name if selected_gear else "No compatible gear selected",_gear_damage(selected_gear),run_state.get_consumables().size(),run_state.get_consumable_capacity(),run_state.gold,run_state.get_slasher_progression_summary() if expedition_mode==RunState.PLAY_MODE_SLASHER else "Strategy mode uses each recruit's independent turn state."]
 	expedition_launch.disabled = not unlocked or selected_gear == null or not mode_supported or selected_party_ids.is_empty()
 	var readiness_reasons:Array[String]=[]
 	if not unlocked:readiness_reasons.append("Destination locked")
@@ -639,17 +823,25 @@ func _show_modal(modal: Control, focus: Control) -> void:
 	if focus != null: focus.grab_focus()
 
 func _close_modal(modal: Control) -> void:
-	modal.visible = false; _restore_hub_focus()
+	modal.visible = false
+	if modal==results_backdrop:
+		if run_state!=null and run_state.campaign!=null:run_state.campaign.pending_settlement_summary.clear();run_state.campaign.save_atomic()
+		if not pending_story_lines.is_empty():call_deferred("_play_pending_story")
+		else:call_deferred("_continue_arrival_queue")
+	elif modal==calendar_backdrop and arrivals_need_sequence:call_deferred("_start_arrivals")
+	else: _restore_hub_focus()
 
 func _close_top_modal() -> void:
 	if merchant_shop_panel != null and merchant_shop_panel.visible: merchant_shop_panel.close()
+	elif recruitment_dialogue!=null and recruitment_dialogue.visible:recruitment_dialogue.close()
+	elif calendar_backdrop!=null and calendar_backdrop.visible:_close_modal(calendar_backdrop)
 	elif company_backdrop!=null and company_backdrop.visible:_close_modal(company_backdrop)
 	elif results_backdrop.visible: _close_modal(results_backdrop)
 	elif expedition_backdrop.visible: _close_modal(expedition_backdrop)
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
 
 func _modal_visible() -> bool:
-	return (merchant_shop_panel != null and merchant_shop_panel.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
+	return (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
 
 func _restore_hub_focus() -> void:
 	ui_root.grab_focus()
@@ -657,13 +849,11 @@ func _restore_hub_focus() -> void:
 func _refresh_ui() -> void:
 	if hud_label == null or run_state == null: return
 	var tavern_favor := int(run_state.get_merchant_progress("tavern").get("available_favor",0))
-	var company := "Roster %d/6 · Memorial %d" % [run_state.campaign.living_roster().size(), run_state.campaign.memorial.size()] if run_state.campaign != null else ""
-	hud_label.text = "EROS · THE HEARTH     %s  %s     Bank %d     %s     Gear: %s" % [run_state.selected_class_name,run_state.get_profile_summary(),run_state.campaign.banked_gold if run_state.campaign != null else run_state.gold,company,selected_gear.display_name if selected_gear else "None"]
+	var date:=run_state.campaign.get_calendar_date();var company := "Roster %d/%d · Candidates %d" % [run_state.campaign.living_roster().size(), run_state.campaign.get_roster_capacity(),run_state.campaign.candidate_pool.size()] if run_state.campaign != null else ""
+	hud_label.text = "THE HEARTH     %s, %s %d, Y%d     Bank %d     %s" % [date.weekday,date.season,date.season_day,date.year,run_state.campaign.banked_gold if run_state.campaign != null else run_state.gold,company]
 	dialogue_panel.visible = false
-	var station := _nearest_station()
-	prompt_panel.visible = not station.is_empty()
-	if not station.is_empty(): prompt_label.text = "[E / A]  %s · %s" % [String(station.get("name","Interact")),_station_prompt(station)]
-	_refresh_station_markers()
+	prompt_panel.visible = arrivals_running
+	if arrivals_running:prompt_label.text="Click, E, or Space to fast-forward arrivals"
 
 func _refresh_station_markers() -> void:
 	for child in station_markers.get_children(): child.queue_free()
@@ -724,9 +914,18 @@ func _distance(a: Vector2i,b: Vector2i) -> int: return abs(a.x-b.x)+abs(a.y-b.y)
 
 func _layout_scene() -> void:
 	_update_token_positions();_refresh_station_markers()
+	var available:=get_viewport_rect().size-Vector2(36,36)
+	for modal in [armory_backdrop,expedition_backdrop,results_backdrop,company_backdrop,calendar_backdrop]:
+		if modal==null:continue
+		for child in modal.get_children():
+			if child is PanelContainer and child.has_meta("preferred_size"):
+				var preferred:Vector2=child.get_meta("preferred_size");child.size=Vector2(minf(preferred.x,available.x),minf(preferred.y,available.y));child.position=(get_viewport_rect().size-child.size)/2.0
 	if expedition_gate_hit_target!=null:
 		var gate:=_station_by_id("expedition_gate")
 		if not gate.is_empty():expedition_gate_hit_target.position=_grid_center(_station_position(gate))-Vector2(TILE_SIZE,TILE_SIZE)/2.0;expedition_gate_hit_target.size=Vector2(TILE_SIZE,TILE_SIZE)
+	if npc_hit_targets.has("mara"):(npc_hit_targets.mara as Button).position=_grid_center(Vector2i(9,1))+Vector2(-75,40)
+	if npc_hit_targets.has("forest"):(npc_hit_targets.forest as Button).position=_grid_center(Vector2i(2,3))+Vector2(-75,40)
+	if npc_hit_targets.has("crypt"):(npc_hit_targets.crypt as Button).position=_grid_center(Vector2i(15,3))+Vector2(-75,40)
 
 func _grid_origin() -> Vector2:
 	var viewport_size := get_viewport_rect().size

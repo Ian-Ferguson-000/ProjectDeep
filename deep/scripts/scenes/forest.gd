@@ -1514,9 +1514,6 @@ func _input(event: InputEvent) -> void:
 		_update_hover_context(event.position)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("extract_expedition") and run_state.can_extract():
-		if controller != null and controller.has_method("extract_expedition"): controller.extract_expedition()
-		return
 	if consumables_backdrop != null and consumables_backdrop.visible and event.is_action_pressed("ui_cancel"):
 		_close_consumables()
 		return
@@ -3541,7 +3538,7 @@ func _on_exit_door_entered(_door: ExitDoor) -> void:
 
 func _finish_floor() -> void:
 	_save_strategy_member_runtime()
-	run_state.mark_extraction_available()
+	run_state.record_floor_checkpoint()
 	if controller != null and controller.has_method(complete_floor_method):
 		controller.call(complete_floor_method)
 		return

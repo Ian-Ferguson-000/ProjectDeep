@@ -10,15 +10,14 @@ func _run() -> void:
 	var failures: Array[String] = []
 	var main:Node=MAIN_SCRIPT.new()
 	main._ensure_input_actions()
-	for action in ["move_up","move_down","move_left","move_right","interact","character_menu","cycle_party","extract_expedition","slasher_controller_basic","slasher_mobility","slasher_special","slasher_defend","slasher_potion","slasher_abandon"]:
+	for action in ["move_up","move_down","move_left","move_right","interact","character_menu","cycle_party","slasher_controller_basic","slasher_mobility","slasher_special","slasher_defend","slasher_potion"]:
 		_expect(InputMap.has_action(action),"Missing required input action: %s"%action,failures)
 	_expect(_has_button("character_menu",JOY_BUTTON_START),"Controller menu must use Start",failures)
 	_expect(_has_button("cycle_party",JOY_BUTTON_LEFT_SHOULDER),"Controller party cycling must use LB",failures)
 	_expect(_has_key("character_menu",KEY_M),"Strategy/Slasher menu must use M",failures)
 	_expect(_has_key("cycle_party",KEY_TAB),"Party cycling must use Tab",failures)
-	_expect(_has_button("extract_expedition",JOY_BUTTON_RIGHT_SHOULDER),"Controller extraction must use RB",failures)
 	_expect(_has_button("slasher_potion",JOY_BUTTON_LEFT_STICK),"Controller potion use must use L3",failures)
-	_expect(_has_button("slasher_abandon",JOY_BUTTON_BACK),"Controller abandonment must use View/Back",failures)
+	_expect(not InputMap.has_action("extract_expedition") and not InputMap.has_action("slasher_abandon"),"Expedition exit actions must not be exposed",failures)
 	var panel: GameOptionsPanel = OPTIONS.new()
 	root.add_child(panel)
 	panel.setup(true)
@@ -31,7 +30,7 @@ func _run() -> void:
 	var labels: Array[String] = []
 	for node in panel._descendants(panel):
 		if node is Label: labels.append(node.text)
-	_expect(" ".join(labels).contains("LB party") and " ".join(labels).contains("RB extract"),"Options must teach keyboard and controller campaign controls",failures)
+	_expect(" ".join(labels).contains("LB party") and not " ".join(labels).contains("extract"),"Options must teach party controls without an extraction shortcut",failures)
 	main.free();panel.queue_free();await process_frame
 	if failures.is_empty():print("RELEASE_READINESS_TESTS_PASSED");quit(0);return
 	for failure in failures:push_error(failure)

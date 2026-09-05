@@ -13,7 +13,7 @@ This document is the onboarding source of truth for the current playable Godot d
 ## Scene Map
 
 - `scenes/main/Main.tscn`: root controller scene. It owns scene transitions and run state through `scripts/main.gd`.
-- `scenes/tavern/Tavern.tscn`: starting hub. It contains tilemap layers, player/bartender/gear/door tokens, and dialogue/gear UI.
+- `scenes/tavern/Tavern.tscn`: static point-and-click management hub. It retains the illustrated backdrop and NPC tokens, while candidates, merchants, Calendar, Company Ledger, Armory, and Expedition are direct focusable UI targets; there is no controllable tavern avatar.
 - `scenes/forest/Forest.tscn`: first dungeon floor. It contains `Board/Tiles` as a `TileMapLayer`, `Board/Decorations` for non-blocking forest dressing, marker/enemy/token roots, an `ExitDoor`, HUD, minimap, and action buttons.
 - `scenes/components/BoardPiece.tscn`: reusable tabletop token with `Panel`, `Sprite2D`, and `Label` child nodes.
 - `scenes/components/ExitDoor.tscn`: reusable exit marker that emits door signals.

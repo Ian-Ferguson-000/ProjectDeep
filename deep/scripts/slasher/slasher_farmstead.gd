@@ -117,14 +117,9 @@ func _process(delta:float)->void:
 		_show_message("Orin Cinder · press E to trade.",0.15)
 		if Input.is_action_just_pressed("interact"):merchant_shop_panel.setup(run_state,"farmstead","dungeon");merchant_shop_panel.open()
 	if room_role=="boss" and bool(room.get("cleared",false)) and player.global_position.distance_to(_world(Vector2i(8,5)))<45:_complete_farmstead()
-	if Input.is_action_just_pressed("extract_expedition") and run_state.can_extract():
-		_snapshot_room();_close_codex()
-		if controller and controller.has_method("extract_expedition"):controller.extract_expedition()
-		return
 	if Input.is_action_just_pressed("slasher_potion"):_use_potion()
 	for index in range(4):
 		if Input.is_action_just_pressed("slasher_consumable_%d"%(index+1)):_use_consumable_slot(index)
-	if Input.is_action_just_pressed("slasher_abandon"):_abandon_run()
 	_process_hazards(delta);_check_door_transition();_refresh_hud()
 
 func _on_farmstead_effect(kind:String,origin:Vector2,payload:Dictionary)->void:
@@ -159,10 +154,10 @@ func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	super._on_enemy_defeated(enemy,reward)
 	if enemies_remaining==0:
 		exit_open=true;room_reward_claimed=true;run_state.update_field_room(room_id,{"cleared":true,"reward_claimed":true,"slasher":{"activated":true,"surviving_enemies":[]}})
-		run_state.mark_extraction_available("room_%d"%room_id,run_state.get_field_cleared_count());run_state.autosave_campaign()
+		run_state.record_floor_checkpoint("room_%d"%room_id,run_state.get_field_cleared_count());run_state.autosave_campaign()
 		if room_role=="boss":run_state.field_run["boss_defeated"]=true;_build_landmarks();_show_message("The Harvest Wretch falls · enter the return gate.")
 		else:
-			var amount:=run_state.apply_reward_bonus(int(Dictionary(GameBalance.get_dungeon("ashen_farmstead").get("slasher",{})).get("room_clear_gold",5)),"gold");run_state.gold+=amount;_show_message("Room cleared · doors open · +%d gold · X extracts."%amount)
+			var amount:=run_state.apply_reward_bonus(int(Dictionary(GameBalance.get_dungeon("ashen_farmstead").get("slasher",{})).get("room_clear_gold",5)),"gold");run_state.gold+=amount;_show_message("Room cleared · doors open · +%d gold · choose the next route."%amount)
 
 func _open_field_treasure(area:Area2D)->void:
 	loot_nodes.erase(area);area.queue_free();run_state.update_field_room(room_id,{"reward_claimed":true});relic_choice_source="field_treasure";var choices:=run_state.generate_slasher_chest_choices(1,"farmstead_room_%d"%room_id,0);relic_modal.open(run_state,choices,true)
@@ -221,7 +216,3 @@ func _complete_farmstead()->void:
 func _on_player_defeated()->void:
 	_snapshot_room();_close_codex()
 	if controller and controller.has_method("return_to_tavern"):controller.return_to_tavern("death","You fall in the Ashen Farmstead with %d gold."%run_state.gold)
-
-func _abandon_run()->void:
-	_snapshot_room();_close_codex()
-	if controller and controller.has_method("return_to_tavern"):controller.return_to_tavern("abandon","You abandon the Ashen Farmstead and return with %d gold."%run_state.gold)

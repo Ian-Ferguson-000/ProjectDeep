@@ -42,12 +42,12 @@ func _run() -> void:
 	state.active_character_id = party[0]
 	state.enter_field_room(1,0); state.update_field_room(1,{"cleared":true,"reward_claimed":true})
 	_expect(state.get_field_discovered_count() == 1 and state.get_field_cleared_count() >= 2,"Field discovery and clear counters must persist",failures)
-	state.mark_extraction_available("room_1",state.get_field_cleared_count())
+	state.record_floor_checkpoint("room_1",state.get_field_cleared_count())
 	var first_reward := state.campaign.expedition.carried_relic_essence
-	state.mark_extraction_available("room_1",state.get_field_cleared_count())
-	_expect(state.can_extract() and state.campaign.expedition.carried_relic_essence==first_reward,"Farmstead room checkpoint must enable extraction and reward only once",failures)
+	state.record_floor_checkpoint("room_1",state.get_field_cleared_count())
+	_expect(not state.can_extract() and state.campaign.expedition.carried_relic_essence==first_reward,"Farmstead room checkpoint must reward only once without enabling extraction",failures)
 	_expect(state.campaign.character(party[0]).deepest_floor>=state.get_field_cleared_count(),"Room checkpoint did not update recruit history",failures)
-	state.continue_expedition();_expect(not state.can_extract(),"Entering the next uncleared Farmstead room must close extraction",failures)
+	state.continue_expedition();_expect(not state.can_extract(),"Field expeditions must never expose extraction",failures)
 	state.enter_field_room(0,1)
 	var scene := FIELD_SCENE.instantiate(); scene.setup(null,state); root.add_child(scene)
 	await process_frame

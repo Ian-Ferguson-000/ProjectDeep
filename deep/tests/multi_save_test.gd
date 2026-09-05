@@ -23,7 +23,7 @@ func _run()->void:
 	for slot in range(1,4):paths.append(CampaignState.save_path(slot))
 	_expect(paths.duplicate().size()==3 and paths[0]!=paths[1] and paths[1]!=paths[2],"Save slots do not use independent paths",failures)
 	var campaign:=CampaignState.new();campaign.save_slot=3;campaign.tutorial_phase=CampaignState.TUTORIAL_COMPLETE;campaign.ensure_roster();var restored:=CampaignState.new();restored._load_dict(campaign.to_dict())
-	_expect(restored.save_slot==3 and restored.living_roster().size()==6,"Save-slot identity did not round trip",failures)
+	_expect(restored.save_slot==3 and restored.living_roster().size()==2,"Save-slot identity did not round trip",failures)
 	var migrated:=CampaignState._migrate_dict({"version":2,"tutorial_phase":"complete"})
 	_expect(int(migrated.get("version",0))==CampaignState.SAVE_VERSION and int(migrated.get("save_slot",0))==1,"Version-2 single save did not migrate to slot 1",failures)
 	var controller:=MockController.new();root.add_child(controller);var screen:=START.instantiate();screen.setup(controller);root.add_child(screen);await process_frame

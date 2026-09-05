@@ -4,6 +4,7 @@ class_name CharacterRecord
 const STATUS_AVAILABLE := "available"
 const STATUS_EXPEDITION := "expedition"
 const STATUS_DEAD := "dead"
+const STATUS_RETIRED := "retired"
 
 var id: String = ""
 var display_name: String = ""

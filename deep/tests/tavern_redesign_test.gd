@@ -18,14 +18,8 @@ func _run() -> void:
 		await process_frame
 		_expect(tavern.backdrop != null and tavern.top_hud != null, "missing backdrop or HUD at %s"%viewport_size,failures)
 		_expect(tavern.results_backdrop.visible and tavern.results_text.text.contains("Forest cleared"),"structured results missing at %s"%viewport_size,failures)
-		_expect(tavern._grid_center(Vector2i(9,8)).x > 0 and tavern._grid_center(Vector2i(9,8)).x < viewport_size.x,"grid failed responsive centering at %s"%viewport_size,failures)
-		var floor_path: Array[Vector2i] = tavern._find_navigation_path(tavern.player_pos,Vector2i(12,7))
-		_expect(not floor_path.is_empty() and floor_path[floor_path.size()-1] == Vector2i(12,7),"click navigation could not route across Tavern floor",failures)
-		var gate_station: Dictionary = tavern._station_at(Vector2i(11,1)); var gate_approach: Vector2i = tavern._best_station_approach(Vector2i(11,1))
-		_expect(not gate_station.is_empty() and gate_approach != Vector2i(-1,-1) and tavern._distance(gate_approach,Vector2i(11,1))==1,"click navigation could not approach expedition gate",failures)
-		_expect(tavern.expedition_gate_hit_target!=null and tavern.expedition_gate_hit_target.mouse_default_cursor_shape==Control.CURSOR_POINTING_HAND,"expedition gate mouse hit target missing",failures)
-		tavern._on_expedition_gate_clicked();_expect(not tavern.expedition_backdrop.visible,"gate click bypassed modal ownership",failures)
-		tavern._close_modal(tavern.results_backdrop);tavern.player_pos=Vector2i(10,1);tavern._on_expedition_gate_clicked();_expect(tavern.expedition_backdrop.visible,"adjacent gate click did not open expedition selector",failures);tavern._close_modal(tavern.expedition_backdrop)
+		_expect(not tavern.player_token.visible and tavern.toolbar!=null and tavern.toolbar.get_child_count()==5,"static tavern did not remove the avatar or expose five toolbar actions",failures)
+		tavern._close_modal(tavern.results_backdrop)
 		tavern._open_dungeon_selector()
 		_expect(tavern.expedition_panel!=null and tavern.expedition_panel.size.x>=1100,"expedition planner did not expand across the viewport",failures)
 		var dungeon_button_count := 0
@@ -46,11 +40,11 @@ func _run() -> void:
 		tavern._close_modal(tavern.armory_backdrop)
 		state.campaign.banked_gold=200;state.campaign.relic_essence=100;state.campaign.successful_levels=50;tavern._open_company_ledger()
 		_expect(tavern.company_panel!=null and tavern.company_panel.size.x>=1100,"company ledger did not expand across the viewport",failures)
-		_expect(tavern.company_tabs!=null and tavern.company_tabs.get_tab_count()==4,"company ledger must expose four distinct tabs",failures)
-		for required_page in ["Resources","Party Builder","Improvements","Memorial"]:_expect(tavern.company_pages.has(required_page),"company ledger missing %s tab"%required_page,failures)
+		_expect(tavern.company_tabs!=null and tavern.company_tabs.get_tab_count()==5,"company ledger must expose five distinct tabs",failures)
+		for required_page in ["Resources","Party Builder","Improvements","Hall of Heroes","Memorial"]:_expect(tavern.company_pages.has(required_page),"company ledger missing %s tab"%required_page,failures)
 		_expect(tavern.company_pages["Resources"].find_child("UpgradeStartingSuppliesButton",true,false)==null and tavern.company_pages["Improvements"].find_child("PartyRosterGrid",true,false)==null,"ledger tab content leaked between categories",failures)
 		var party_grid:=tavern.company_pages["Party Builder"].find_child("PartyRosterGrid",true,false) as GridContainer;var selection_count:=tavern.company_pages["Party Builder"].find_child("PartySelectionCount",true,false) as Label
-		_expect(party_grid!=null and party_grid.columns==2 and party_grid.get_child_count()==6,"party builder must show six recruits in a two-column card grid",failures)
+		_expect(party_grid!=null and party_grid.columns==2 and party_grid.get_child_count()==2,"party builder must show the two starting recruits in a two-column card grid",failures)
 		_expect(selection_count!=null and selection_count.text.contains("2 / 2"),"party builder does not explain the Forest party cap",failures)
 		var clear_party:=tavern.company_pages["Party Builder"].find_child("ClearPartyButton",true,false) as Button;var auto_fill:=tavern.company_pages["Party Builder"].find_child("AutoFillPartyButton",true,false) as Button
 		_expect(clear_party!=null and auto_fill!=null,"party builder is missing clear or auto-fill controls",failures)

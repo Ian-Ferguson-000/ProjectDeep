@@ -7,7 +7,7 @@ The starter demo should be easy to inspect in the Godot editor. Scenes use named
 - Tavern and forest scenes are swapped through this controller.
 
 ## Tavern
-- `Tavern`: handles tavern input and interactions.
+- `Tavern`: handles the static calendar/recruitment management phase, clickable NPCs, arrival animation, and toolbar interactions without player movement.
 - `Board`: parent for the tavern board.
 - `Board/GroundLayer`: `TileMapLayer` for tavern floor tiles.
 - `Board/WallLayer`: `TileMapLayer` for tavern boundary/wall tiles.

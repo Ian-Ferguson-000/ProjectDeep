@@ -110,12 +110,12 @@ func _physics_process(delta:float)->void:
 	velocity=direction*speed*consumable_speed_multiplier*movement_debuff_multiplier*(item_runtime.conversion("speed_multiplier",1.0) if item_runtime else 1.0);move_and_slide()
 	_enforce_field_bounds()
 	if animation_lock<=0.0:_play_animation("run" if direction.length()>0.1 else "idle")
-	if Input.is_action_just_pressed("slasher_controller_basic"):use_action("basic")
-	if Input.is_action_just_pressed("slasher_mobility"):use_action("movement")
-	if Input.is_action_just_pressed("slasher_special"):use_action("special")
-	if Input.is_action_just_pressed("slasher_defend"):use_action("defensive")
+	if Input.is_action_just_pressed("slasher_controller_basic"):use_action("basic", "controller")
+	if Input.is_action_just_pressed("slasher_mobility"):use_action("movement", "controller")
+	if Input.is_action_just_pressed("slasher_special"):use_action("special", "keyboard" if Input.is_physical_key_pressed(KEY_SPACE) else "controller")
+	if Input.is_action_just_pressed("slasher_defend"):use_action("defensive", "controller")
 	if basic_mouse_held and not Input.is_key_pressed(KEY_SHIFT) and float(cooldowns.get("basic",0.0))<=0.0:
-		var held_result:Dictionary=use_action("basic")
+		var held_result:Dictionary=use_action("basic", "mouse")
 		if bool(held_result.get("started",false)):cooldowns.basic=float(_ability_tuning("basic").get("cooldown",0.4))*float(GameBalance.get_slasher_balance("input").get("held_basic_cooldown_multiplier",1.5))
 
 func _unhandled_input(event:InputEvent)->void:
@@ -123,16 +123,16 @@ func _unhandled_input(event:InputEvent)->void:
 	if event is InputEventMouseButton:
 		if event.button_index==MOUSE_BUTTON_LEFT:
 			if event.pressed:
-				basic_mouse_held=not event.shift_pressed;use_action("defensive" if event.shift_pressed else "basic")
+				basic_mouse_held=not event.shift_pressed;use_action("defensive" if event.shift_pressed else "basic", "mouse_shift" if event.shift_pressed else "mouse")
 			else:basic_mouse_held=false
 			get_viewport().set_input_as_handled()
-		elif event.button_index==MOUSE_BUTTON_RIGHT and event.pressed:use_action("movement");get_viewport().set_input_as_handled()
+		elif event.button_index==MOUSE_BUTTON_RIGHT and event.pressed:use_action("movement", "mouse");get_viewport().set_input_as_handled()
 
 func _notification(what:int)->void:
 	if what==NOTIFICATION_WM_WINDOW_FOCUS_OUT:basic_mouse_held=false
 
-func use_action(slot:String)->Dictionary:
-	var result:={"started":false,"slot":slot,"class_id":class_id,"targets_hit":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
+func use_action(slot:String,input_source:String="system")->Dictionary:
+	var result:={"started":false,"slot":slot,"class_id":class_id,"input_source":input_source,"targets_hit":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
 	if float(cooldowns.get(slot,0.0))>0.0:result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
 	var tuning:Dictionary=_ability_tuning(slot)
 	var resource_cost:=int(tuning.get("resource_cost",2 if slot=="special" else 0))

@@ -75,7 +75,6 @@ func attach_campaign(value: CampaignState) -> void:
 	campaign = value if value != null else CampaignState.new()
 	_restore_campaign_runtime()
 	if campaign.is_tutorial_complete():
-		campaign.ensure_roster()
 		restore_completed_tutorial_health()
 
 func sync_campaign_runtime() -> void:
@@ -148,8 +147,12 @@ func record_active_character_death(cause: String = "Fell in the dungeon") -> boo
 	return false
 
 func mark_extraction_available(checkpoint_suffix: String = "", reward_depth: int = -1) -> void:
+	# Legacy compatibility alias. New expeditions record checkpoint rewards but can
+	# never extract before their boss resolves the run.
+	record_floor_checkpoint(checkpoint_suffix,reward_depth)
+
+func record_floor_checkpoint(checkpoint_suffix:String="",reward_depth:int=-1)->void:
 	if campaign != null and campaign.expedition.active:
-		campaign.expedition.clear_floor()
 		var depth := current_floor if reward_depth < 0 else maxi(1, reward_depth)
 		var checkpoint_key := str(current_floor) if checkpoint_suffix.is_empty() else checkpoint_suffix
 		var checkpoint_id := "%s:%s:%s" % [active_dungeon_id, active_play_mode, checkpoint_key]
@@ -163,7 +166,7 @@ func continue_expedition() -> void:
 	if campaign != null and campaign.expedition.active: campaign.expedition.continue_from_checkpoint()
 
 func can_extract() -> bool:
-	return campaign != null and campaign.expedition.active and campaign.expedition.extraction_available
+	return false
 
 func _sync_active_profile_to_character() -> void:
 	var member := get_active_character()
@@ -347,7 +350,7 @@ func finish_run(outcome: String, message: String) -> void:
 		_clear_permanent_inventory_for_active_class()
 	if campaign != null and campaign.expedition.active:
 		if outcome == "victory": campaign.record_dungeon_clear(active_dungeon_id, active_play_mode)
-		campaign.resolve_expedition(outcome)
+		campaign.settle_expedition(campaign.expedition.expedition_id, outcome, {"headline":message.split("\n", false)[0] if not message.is_empty() else message})
 		if campaign.is_tutorial_complete(): restore_completed_tutorial_health()
 		autosave_campaign()
 	_sync_crypt_unlock()

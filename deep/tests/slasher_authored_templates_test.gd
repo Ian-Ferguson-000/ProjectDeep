@@ -19,8 +19,9 @@ func _run()->void:
 		var map:=packed.instantiate();map.designer_playtest=false;root.add_child(map)
 		var editor_tile_layers:=map.find_children("*","TileMapLayer",true,false)
 		if not editor_tile_layers.is_empty():
-			var walkable_layer:TileMapLayer=editor_tile_layers[0] as TileMapLayer;walkable_layer.set_meta("defines_walkability",true)
-			_expect(not map._walkable_cells_from_tilemaps().is_empty(),"%s could not derive walkability from painted tiles"%path,failures);walkable_layer.remove_meta("defines_walkability")
+			var walkable_layer:TileMapLayer=editor_tile_layers[0] as TileMapLayer;var already_defined:=walkable_layer.has_meta("defines_walkability");walkable_layer.set_meta("defines_walkability",true)
+			_expect(not map._walkable_cells_from_tilemaps().is_empty(),"%s could not derive walkability from painted tiles"%path,failures)
+			if not already_defined:walkable_layer.remove_meta("defines_walkability")
 		var layout:Dictionary=map._layout_from_authored_nodes()
 		_expect(not layout.is_empty(),"%s produced no authored layout"%path,failures)
 		if layout.is_empty():map.queue_free();continue

@@ -16,6 +16,7 @@ const POTION_UI_ICON:=preload("res://assets/pixel_art/potion.png")
 const GRID_PATHFINDER:=preload("res://scripts/slasher/slasher_grid_pathfinder.gd")
 const PARTY_HEALTH_PORTRAIT:=preload("res://scripts/ui/party_health_portrait.gd")
 const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
+const TUTORIAL_SEQUENCE:=preload("res://scripts/slasher/forest_tutorial_sequence.gd")
 
 @export_category("Authored map")
 @export var use_authored_layout:=false
@@ -55,9 +56,9 @@ var merchant_shop_panel:MerchantShopPanel
 var codex:SlasherCodexMenu
 var relic_modal:SlasherRelicChoiceModal
 var relic_choice_source:=""
-var tutorial_layer:CanvasLayer
-var tutorial_origin:Vector2=Vector2.ZERO
-var tutorial_elapsed:float=0.0
+var tutorial_canvas:CanvasLayer
+var tutorial_sequence:ForestTutorialSequence
+var tutorial_reward_spawned:=false
 var ground_layer:Node2D
 var low_decor_layer:Node2D
 var actor_layer:Node2D
@@ -90,7 +91,7 @@ func _ready()->void:
 	if run_state!=null:_build_floor()
 
 func _ensure_designer_controls()->void:
-	var bindings:Dictionary={"interact":[KEY_E],"character_menu":[KEY_M],"cycle_party":[KEY_TAB],"extract_expedition":[KEY_X],"slasher_up":[KEY_W,KEY_UP],"slasher_down":[KEY_S,KEY_DOWN],"slasher_left":[KEY_A,KEY_LEFT],"slasher_right":[KEY_D,KEY_RIGHT],"slasher_special":[KEY_SPACE],"slasher_potion":[KEY_Q],"slasher_abandon":[KEY_ESCAPE],"slasher_consumable_1":[KEY_1],"slasher_consumable_2":[KEY_2],"slasher_consumable_3":[KEY_3],"slasher_consumable_4":[KEY_4]}
+	var bindings:Dictionary={"interact":[KEY_E],"character_menu":[KEY_M],"cycle_party":[KEY_TAB],"slasher_up":[KEY_W,KEY_UP],"slasher_down":[KEY_S,KEY_DOWN],"slasher_left":[KEY_A,KEY_LEFT],"slasher_right":[KEY_D,KEY_RIGHT],"slasher_special":[KEY_SPACE],"slasher_potion":[KEY_Q],"slasher_consumable_1":[KEY_1],"slasher_consumable_2":[KEY_2],"slasher_consumable_3":[KEY_3],"slasher_consumable_4":[KEY_4]}
 	for action_value:Variant in bindings:
 		var action:=StringName(action_value)
 		if not InputMap.has_action(action):InputMap.add_action(action)
@@ -121,7 +122,7 @@ func _build_floor()->void:
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
 	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
 	if player.item_runtime:player.item_runtime.floor_entered()
-	if run_state.current_floor==1 and not run_state.starter_reward_claimed:call_deferred("_offer_starter_relic")
+	if run_state.current_floor==1 and not run_state.starter_reward_claimed and (not _is_tutorial_expedition() or run_state.campaign.expedition.tutorial_controls_complete):call_deferred("_offer_starter_relic")
 
 func _layout_from_authored_nodes()->Dictionary:
 	var geometry:=get_node_or_null("Geometry")
@@ -286,7 +287,6 @@ func _spawn_player()->void:
 	player=PLAYER_SCRIPT.new();player.name="SlasherPlayer";player.position_sanitizer=sanitize_player_position;player.pathfinder=pathfinder;player.setup(run_state);actor_layer.add_child(player);player.global_position=_world(layout.start);player.health_changed.connect(_on_health_changed);player.resource_changed.connect(_on_resource_changed);player.ability_resolved.connect(_on_ability_resolved);player.defeated.connect(_on_player_defeated)
 	_restore_active_slasher_state()
 	player.add_to_group("slasher_party_target")
-	tutorial_origin=player.global_position;tutorial_elapsed=0.0
 	if player.item_runtime:player.item_runtime.effect_activated.connect(_show_message)
 	var camera:=Camera2D.new();camera.position_smoothing_enabled=true;camera.position_smoothing_speed=7
 	# Let the player roam through the central half of the viewport before the camera follows.
@@ -337,21 +337,18 @@ func _process(delta:float)->void:
 	_tick_benched_party(delta)
 	var abandon_is_suppressed:bool=suppress_abandon_frames>0
 	suppress_abandon_frames=maxi(0,suppress_abandon_frames-1)
-	if tutorial_layer!=null:
-		tutorial_elapsed+=delta
-		if tutorial_elapsed>14.0 or player.global_position.distance_to(tutorial_origin)>150.0:_dismiss_tutorial()
+	if tutorial_sequence!=null and tutorial_sequence.visible:
+		var keyboard_move:=Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_D)
+		tutorial_sequence.observe_movement(player.global_position,keyboard_move)
 	var codex_open:bool=codex!=null and codex.visible
 	var modal_open:bool=(merchant_shop_panel!=null and merchant_shop_panel.visible) or (relic_modal!=null and relic_modal.visible)
 	player.input_locked=modal_open or codex_open
 	if Input.is_action_just_pressed("character_menu") and not modal_open:
-		_open_codex();return
+		_open_codex("keyboard" if Input.is_physical_key_pressed(KEY_M) else "controller");return
 	if Input.is_action_just_pressed("cycle_party") and not modal_open and not codex_open and run_state.get_active_party_ids().size()>1:
 		_cycle_party_member();return
 	# Modal controls consume Escape themselves. Never let the same keypress fall through to abandon.
 	if modal_open or codex_open:return
-	if Input.is_action_just_pressed("extract_expedition") and run_state.can_extract():
-		if controller and controller.has_method("extract_expedition"):controller.extract_expedition()
-		return
 	var interaction_used:=false;var nearby_chest:SlasherBreakableProp=_nearby_chest()
 	if nearby_chest!=null:
 		_show_message("Locked chest · find a key." if run_state.keys<=0 else "Chest ready · press E to unlock and open.",0.15)
@@ -368,10 +365,12 @@ func _process(delta:float)->void:
 	if player.global_position.distance_to(exit_position)<42:
 		if exit_open:_complete_floor()
 		else:_show_message("The way onward is sealed · %d foes remain."%enemies_remaining,0.15)
-	if Input.is_action_just_pressed("slasher_potion"):_use_potion()
+	if Input.is_action_just_pressed("slasher_potion"):
+		if _use_potion() and tutorial_sequence!=null:tutorial_sequence.observe_consumable("potion","keyboard" if Input.is_physical_key_pressed(KEY_Q) else "controller")
 	for slot_index:int in range(4):
-		if Input.is_action_just_pressed("slasher_consumable_%d"%(slot_index+1)):_use_consumable_slot(slot_index);break
-	if Input.is_action_just_pressed("slasher_abandon") and not abandon_is_suppressed:_abandon_run()
+		if Input.is_action_just_pressed("slasher_consumable_%d"%(slot_index+1)):
+			if _use_consumable_slot(slot_index) and tutorial_sequence!=null:tutorial_sequence.observe_consumable("slot","keyboard")
+			break
 	_refresh_hud()
 
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
@@ -389,11 +388,14 @@ func _complete_floor()->void:
 	if bool(layout.get("is_boss_floor",false)):xp+=float(rewards.get("campaign_boss_bonus",70))
 	if run_state.slasher_endless_mode:xp*=float(rewards.get("endless_xp_multiplier",0.35))
 	run_state.gain_xp(maxi(1,int(round(xp))),"Slasher Forest%s floor %d cleared"%[" Endless" if run_state.slasher_endless_mode else "",run_state.current_floor])
-	run_state.mark_extraction_available()
+	if not _is_tutorial_expedition():run_state.record_floor_checkpoint()
 	if controller and controller.has_method("complete_slasher_dungeon_floor"):controller.complete_slasher_dungeon_floor()
 	elif controller and controller.has_method("complete_slasher_forest_floor"):controller.complete_slasher_forest_floor()
 func _on_player_defeated()->void:
 	_close_codex()
+	if _is_tutorial_expedition() and not run_state.campaign.expedition.tutorial_controls_complete:
+		if controller and controller.has_method("restart_tutorial_onboarding"):controller.restart_tutorial_onboarding()
+		return
 	var fallen_id:=run_state.active_character_id;var death_position:=player.global_position;var fallen_summon:Node=player.companion
 	_store_active_slasher_state()
 	if not is_instance_valid(fallen_summon):fallen_summon=active_summons.get(fallen_id) as Node
@@ -447,22 +449,20 @@ func _tick_benched_party(delta:float)->void:
 		for key in item_cooldowns:item_cooldowns[key]=maxf(0.0,float(item_cooldowns[key])-delta)
 		item_state["cooldowns"]=item_cooldowns;state["item_runtime"]=item_state
 		runtime["slasher"]=state;run_state.campaign.expedition.member_runtime[character_id]=runtime
-func _abandon_run()->void:
-	_close_codex()
-	if controller and controller.has_method("return_to_tavern"):controller.return_to_tavern("abandon","You abandon the Slasher expedition and return with %d gold."%run_state.gold)
-
-func _use_potion()->void:
+func _use_potion()->bool:
 	var consumables:=run_state.get_consumables();var index:=consumables.find("healing_potion")
-	if index<0:_show_message("No healing potion available.");return
+	if index<0:_show_message("No healing potion available.");return false
 	run_state.remove_consumable_at(index);player.heal(6+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
+	return true
 
-func _use_consumable_slot(index:int)->void:
+func _use_consumable_slot(index:int)->bool:
 	var consumables:Array[String]=run_state.get_consumables()
-	if index<0 or index>=consumables.size():_show_message("Consumable slot %d is empty."%(index+1));return
+	if index<0 or index>=consumables.size():_show_message("Consumable slot %d is empty."%(index+1));return false
 	var consumable_id:String=consumables[index];var record:Dictionary=GameBalance.get_consumable(consumable_id);var effects:Dictionary=Dictionary(record.get("effects",{}))
 	run_state.remove_consumable_at(index);player.apply_consumable(effects)
 	if String(effects.get("item_trigger",""))=="potion" and player.item_runtime:player.item_runtime.handle_event({"trigger":"potion_use"})
 	_show_message("Used %s from slot %d."%[String(record.get("name",consumable_id.capitalize())),index+1]);_refresh_hud()
+	return true
 func _collect_loot(loot:Area2D)->void:
 	loot.set_deferred("monitoring",false)
 	match String(loot.get_meta("kind","gold")):
@@ -473,6 +473,7 @@ func _collect_loot(loot:Area2D)->void:
 		_:
 			var rewards:=GameBalance.get_slasher_balance("rewards");var raw_amount:int=int(loot.get_meta("amount",int(rewards.get("loot_gold_base",5))+run_state.current_floor));var amount:=run_state.apply_reward_bonus(raw_amount,"gold");run_state.gold+=amount;_show_message("Collected %d gold."%amount)
 	var tween:=create_tween();tween.set_parallel(true);tween.tween_property(loot,"global_position",player.global_position-Vector2(0,28),0.22).set_trans(Tween.TRANS_QUAD);tween.tween_property(loot,"scale",Vector2(1.35,1.35),0.16);tween.tween_property(loot,"modulate:a",0.0,0.22);tween.chain().tween_callback(loot.queue_free)
+	if bool(loot.get_meta("tutorial_reward",false)) and tutorial_sequence!=null:tutorial_sequence.observe_reward()
 
 func _on_prop_broken(_prop:SlasherBreakableProp,kind:String,cell:Vector2i)->void:
 	if pathfinder!=null:pathfinder.set_cell_blocked(cell,false)
@@ -516,9 +517,9 @@ func _build_hud()->void:
 	_build_resource_hud(canvas)
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
-	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_suppress_abandon_once);canvas.add_child(codex)
+	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)
 	relic_modal=RELIC_MODAL.new();relic_modal.name="SlasherRelicChoice";relic_modal.relic_selected.connect(_claim_relic);canvas.add_child(relic_modal)
-	if run_state.current_floor==1:_build_control_tutorial()
+	if _is_tutorial_expedition() and not run_state.campaign.expedition.tutorial_controls_complete:_build_control_tutorial()
 
 func _refresh_hud()->void:
 	if not is_instance_valid(player) or objective_label==null:return
@@ -588,40 +589,71 @@ func _class_resource_color()->Color:
 		_:return Color("#245ee8")
 
 func _build_control_tutorial()->void:
-	tutorial_layer=CanvasLayer.new();tutorial_layer.name="FirstFloorControls";tutorial_layer.layer=3;add_child(tutorial_layer)
-	var shade:=ColorRect.new();shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);shade.color=Color(0.01,0.04,0.025,0.16);shade.mouse_filter=Control.MOUSE_FILTER_IGNORE;tutorial_layer.add_child(shade)
-	_add_tutorial_label("MOVE\n[ W ]\n[A][S][D]",Vector2(-90,88),Vector2(180,112))
-	_add_tutorial_label("BASIC ATTACK\n[ LEFT MOUSE ] / [ A ]",Vector2(105,12),Vector2(285,64))
-	_add_tutorial_label("MOBILITY\n[ RIGHT MOUSE ] / [ B ]",Vector2(105,82),Vector2(285,64))
-	_add_tutorial_label("SPECIAL\n[ SPACE ] / [ X ]",Vector2(105,-58),Vector2(285,64))
-	_add_tutorial_label("DEFEND\n[ SHIFT + LEFT MOUSE ] / [ Y ]",Vector2(-390,22),Vector2(300,72))
-	_add_tutorial_label("CHARACTER & JOURNAL\n[ M ] or [ TAB ] / [ START ]",Vector2(-390,-64),Vector2(300,72))
-	_add_tutorial_label("USE CONSUMABLE SLOTS\n[ 1 ] [ 2 ] [ 3 ] [ 4 ]",Vector2(-90,-62),Vector2(240,64))
+	tutorial_canvas=CanvasLayer.new();tutorial_canvas.name="SequentialForestTutorial";tutorial_canvas.layer=30;add_child(tutorial_canvas)
+	tutorial_sequence=TUTORIAL_SEQUENCE.new();tutorial_sequence.name="ForestTutorialSequence";tutorial_canvas.add_child(tutorial_sequence)
+	tutorial_sequence.step_changed.connect(_on_tutorial_step_changed)
+	tutorial_sequence.tutorial_completed.connect(_on_tutorial_completed)
+	var step:=run_state.campaign.expedition.tutorial_step
+	_prepare_tutorial_items(step)
+	tutorial_sequence.begin(step,player.global_position)
+	_on_tutorial_step_entered(step)
 
-func _add_tutorial_label(text:String,offset:Vector2,size:Vector2)->void:
-	var label:=Label.new();label.set_anchors_preset(Control.PRESET_CENTER);label.position=offset;label.size=size;label.text=text;label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;label.add_theme_font_size_override("font_size",16);label.add_theme_color_override("font_color",Color(0.82,0.94,0.84,0.78));label.add_theme_color_override("font_outline_color",Color(0.02,0.08,0.04,0.9));label.add_theme_constant_override("outline_size",5);label.mouse_filter=Control.MOUSE_FILTER_IGNORE;tutorial_layer.add_child(label)
+func _prepare_tutorial_items(step:int)->void:
+	var consumables:=run_state.get_consumables()
+	if step<=5 and not consumables.has("healing_potion"):run_state.add_consumable("healing_potion")
+	consumables=run_state.get_consumables()
+	if step<=6 and not consumables.has("focus_tonic"):run_state.add_consumable("focus_tonic")
 
-func _dismiss_tutorial()->void:
-	if tutorial_layer==null:return
-	var departing:CanvasLayer=tutorial_layer;tutorial_layer=null;var tween:=create_tween();tween.set_parallel(true)
-	for child_value:Variant in departing.get_children():
-		var child:CanvasItem=child_value as CanvasItem
-		if child!=null:tween.tween_property(child,"modulate:a",0.0,0.45)
-	tween.chain().tween_callback(departing.queue_free)
+func _on_tutorial_step_changed(step:int)->void:
+	if not _is_tutorial_expedition():return
+	run_state.campaign.expedition.tutorial_step=step
+	_on_tutorial_step_entered(step)
+	run_state.autosave_campaign()
 
-func _open_codex()->void:
+func _on_tutorial_step_entered(step:int)->void:
+	if step==3:
+		run_state.class_resource=maxi(run_state.class_resource,int(GameBalance.get_slasher_ability_tuning("warrior","special").get("resource_cost",2)))
+		player.resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
+	elif step==7:_spawn_tutorial_reward()
+
+func _spawn_tutorial_reward()->void:
+	if tutorial_reward_spawned:return
+	tutorial_reward_spawned=true
+	var reward_position:=sanitize_player_position(player.global_position+player.aim_direction*72.0)
+	var area:=Area2D.new();area.name="TutorialRoomReward";area.position=reward_position;area.set_meta("kind","gold");area.set_meta("amount",8);area.set_meta("tutorial_reward",true)
+	var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=15;shape.shape=circle;area.add_child(shape)
+	var sprite:=SlasherForestArt.make_sprite("gold");sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#fff09a"),24));actor_layer.add_child(area);loot_nodes.append(area)
+	_show_message("A room reward glows nearby. Walk over it to collect it.",3.0)
+
+func _on_tutorial_completed()->void:
+	if not _is_tutorial_expedition():return
+	run_state.campaign.expedition.tutorial_step=ForestTutorialSequence.STEP_COUNT
+	run_state.campaign.expedition.tutorial_controls_complete=true
+	run_state.autosave_campaign()
+	_show_message("Controls learned. Alden's life is now in your hands.",4.0)
+
+func _is_tutorial_expedition()->bool:
+	return run_state!=null and run_state.campaign!=null and run_state.campaign.expedition.active and run_state.campaign.expedition.tutorial_run
+
+func _open_codex(input_source:String="system")->void:
 	if codex==null or merchant_shop_panel.visible:return
 	player.basic_mouse_held=false;codex.open(run_state,player)
+	if tutorial_sequence!=null:tutorial_sequence.observe_menu_opened(input_source)
 func _close_codex()->void:
-	if codex!=null and codex.visible:codex.close()
+	if codex!=null and codex.visible:
+		codex.close()
+		if _is_tutorial_expedition() and run_state.campaign.expedition.tutorial_controls_complete and not run_state.starter_reward_claimed:call_deferred("_offer_starter_relic")
 	elif get_tree()!=null:get_tree().paused=false
+func _on_codex_closed()->void:
+	_suppress_abandon_once()
+	if _is_tutorial_expedition() and run_state.campaign.expedition.tutorial_controls_complete and not run_state.starter_reward_claimed:call_deferred("_offer_starter_relic")
 func _suppress_abandon_once()->void:suppress_abandon_frames=2
 func _on_health_changed(_current:int,_maximum:int)->void:_refresh_hud()
 func _on_resource_changed(_current:int,_maximum:int)->void:_refresh_hud()
 func _on_game_setting_changed(key:String,value:Variant)->void:
 	if key in ["slasher_zoom","reset"] and is_instance_valid(player) and player.camera!=null:player.camera.zoom=Vector2.ONE*(_settings().get_float("slasher_zoom",1.30) if key=="reset" else float(value))
 func _on_ability_resolved(result:Dictionary)->void:
-	if bool(result.get("started",false)):_dismiss_tutorial()
+	if tutorial_sequence!=null:tutorial_sequence.observe_ability(result)
 	var failure:=String(result.get("failure",""))
 	if not failure.is_empty():_show_message(failure)
 func _show_message(text:String,duration:float=2.5)->void:

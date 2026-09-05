@@ -231,9 +231,9 @@ func _enter_free_roam_if_clear() -> bool:
 		if reward:
 			var room_gold := 10 if role == "elite" else (25 if role == "boss" else 4)
 			run_state.gold += room_gold; message += "\nRoom clear: +%d gold." % room_gold
-			run_state.mark_extraction_available("room_%d" % field_room_id, run_state.get_field_cleared_count())
+			run_state.record_floor_checkpoint("room_%d" % field_room_id, run_state.get_field_cleared_count())
 			run_state.autosave_campaign()
-			message += "\nSafe checkpoint reached. Press X to extract or choose a door."
+			message += "\nCheckpoint saved. Choose a door to continue the expedition."
 		if role == "boss": run_state.field_run["boss_defeated"] = true; message += "\nA hearth-gate blooms from the Wretch's ashes."
 	return entered
 

@@ -6,26 +6,26 @@ The demo is a persistent, single-player roster roguelike built around the Hearth
 
 ## First-Run Tutorial
 
-1. **Start Game** opens in the tavern with Mara Vell explaining that nearby dungeons must be cleared by an adventurer.
-2. Select a **Warrior** or **Mage** starter.
-3. Select **Strategy** or **Slasher** mode.
-4. Enter the Verdant Forest immediately. The opening encounter teaches the selected mode.
-5. The starter enters the normal Forest campaign with maximum and current health capped at **3 HP**. There is no ward, forced damage, timer, or authored death: the Forest's ordinary encounters create the danger and teach that survival is fragile.
-6. On the starter's natural death, Mara mourns the adventurer, introduces the memorial and permadeath rules, and the tutorial ends. If an exceptional player clears the Forest at 3 HP, the tutorial also completes and Mara recognizes the survival so campaign progression cannot become stuck.
-7. Six recruits are generated from the currently unlocked class pool.
+1. **Start Game** opens in the tavern with Mara Vell warning Alden about the Forest and permanent death in a portrait dialogue.
+2. Alden is a preset 3 HP Warrior with the Steady trait, Sword and Shield, and forced **Slasher** mode; class and mode selection are bypassed.
+3. The first Forest floor teaches one successful action at a time: WASD movement, left-click attack, right-click dash, Space special, Shift + left-click defend, Q potion, slot 1 consumable, room-reward collection, and M character/journal menu.
+4. Tutorial progress is saved. A death before the M step restarts Alden on floor one without loot or a memorial record; afterward ordinary permadeath applies.
+5. Extraction and Endless choices are disabled while Alden automatically continues through the normal eight-floor Forest campaign.
+6. Death and boss-victory epilogues converge on the same mechanical state: 120 gold, 8 Supplies, the former keeper's letter, a statless outcome keepsake, and exactly two deterministic candidates (Warrior Brina and Mage Eamon) with basic weapons.
+7. A victorious Alden retires. A permanently slain Alden is memorialized. On the victory path only, Mara returns once after the next non-tutorial Forest victory for a narrative confrontation.
 
 ## Campaign Loop
 
 The repeatable loop is:
 
-`Tavern → dungeon and mode → party and equipment → expedition → clear encounter → continue or extract → bank rewards → replace casualties → upgrade tavern`
+`Calendar arrival → recruit in the static Tavern → choose party and equipment → expedition to boss or defeat → settle → advance one day → retire victors → next candidate wave`
 
 - The Forest permits two characters. Clearing it raises the cap to four for later dungeons.
 - A dead character is removed immediately. Survivors may continue shorthanded.
-- Extraction is available only from a cleared floor or room.
-- Victory and extraction bank carried gold, relic essence, and relics. Full defeat loses unbanked rewards.
-- Abandoning during combat forfeits carried rewards but returns living characters.
-- The roster returns to six after an expedition resolves. Replacements receive a deterministic name, portrait variant, unlocked class, and one balanced tradeoff trait.
+- Intermediate floor and room clears autosave and continue automatically. Only boss victory or total-party defeat resolves an expedition.
+- Victory banks carried gold, relic essence, and relics before every surviving participant retires. Defeat loses unbanked rewards and records deaths.
+- The Hearth begins with six rooms and gains two per Roster Services rank. Each new day brings `clamp(2 + rank, 2, 7)` free deterministic candidates; recruitment, departure, dismissal, victory, death, and retirement are recorded in the calendar.
+- The calendar uses seven weekdays, four 28-day seasons, and 112-day years. The first post-tutorial day is Monday, Spring 1, Year 1.
 - Three selectable campaign slots each maintain an independent versioned autosave and backup committed atomically at safe campaign transitions. Continue shows populated slots; New Game selects an empty slot or confirms before overwriting one.
 
 ## Party Control
@@ -63,42 +63,43 @@ Clearing the Forest in both modes is required to unlock both Tank and Rogue. Cha
 | Moonlit Grove | Secret | Forest + Farmstead clues and Secret Research I | Unique nature and fate relics |
 | Abyssal Archive | Secret | Crypt + Foundry clues and Secret Research I | Unique arcane and void relics |
 
-All seven dungeon definitions declare runtime, supported modes, party cap, extent, unlock rule, merchant, clue/reward data, and extraction checkpoint. Every dungeon now routes explicitly in both modes; shared combat foundations are themed by dedicated Crypt, Mine, Foundry, Grove, and Archive runtime scripts.
+All seven dungeon definitions declare runtime, supported modes, party cap, extent, unlock rule, merchant, and clue/reward data. Every dungeon routes explicitly in both modes and automatically advances after non-final clears; field doors remain navigation choices.
 
 ## Tavern Progression
 
 - **Banked gold:** ordinary supplies, equipment, and upgrade costs.
-- **Relic essence:** extracted permanent-upgrade currency.
+- **Relic essence:** permanent-upgrade currency banked after boss victory.
 - **Successful levels:** lifetime total of levels brought home on victorious characters; used as a non-spendable upgrade requirement.
 - **Merchant Favor:** existing merchant-specific rank and exclusive-stock progression.
 - **Upgrade branches:** roster services, starting supplies, item rarity, merchant stock, relic capacity, secret research, and replacement quality.
 - **Memorial:** immutable records of name, class, level, cause, expeditions, and victories for every dead recruit.
+- **Hall of Heroes:** dated, statless records of every participant who survives a victorious expedition and retires.
 
 ## State Contracts
 
 `CharacterRecord` owns stable character identity, class, level/XP, health, gear, inventory, trait, Slasher choices, status, and history.
 
-`ExpeditionState` owns party IDs, per-member runtime snapshots, dungeon/mode, depth, provisional rewards, casualties, extraction eligibility, and tutorial status.
+`ExpeditionState` owns its id, party IDs, per-member runtime snapshots, dungeon/mode, depth, provisional rewards, casualties, legacy extraction fields, and tutorial status.
 
-`CampaignState` owns tutorial phase, roster, memorial, unlocks, completed dungeon modes, banked progression, clue flags, tavern upgrades, replacement sequence, active expedition, and save serialization.
+`CampaignState` owns tutorial phase, calendar/date history, tavern phase, candidate waves, roster, Memorial, Hall of Heroes, unlocks, completed dungeon modes, banked progression, clue flags, tavern upgrades, idempotent launch/settlement IDs, active expedition, and save serialization.
 
 Existing `RunState` remains a compatibility façade for combat code and mirrors the currently controlled `CharacterRecord` until every combat resolver accepts an explicit character ID.
 
 ## Delivery Status
 
 - [x] Typed campaign, character, and expedition foundations.
-- [x] Six-person roster, traits, memorial, permadeath, and replacement resolution.
+- [x] Dynamic room capacity, deterministic saved candidate waves, free recruitment/dismissal, Hall of Heroes, memorial, and permadeath resolution.
 - [x] Atomic versioned autosave and recovery fallback.
 - [x] Three-slot save selection with Continue/New Game routing, slot summaries, overwrite confirmation, independent backups, and legacy single-save import into Slot 1.
-- [x] First-run tavern/class/mode routing with a natural-difficulty 3 HP Forest tutorial.
+- [x] Preset-Alden first-run routing, sequential Slasher controls, saved retry rules, eight-floor resolution, portrait dialogue, and mechanically equivalent endings.
 - [x] Data-driven seven-dungeon graph, six merchants, class unlocks, clues, and party caps.
 - [x] Party assembly selector, multi-recruit Strategy initiative/tokens, and mode-specific party control.
 - [x] Refined dungeon party control: Slasher uses one on-map recruit with persistent Tab/LB bench swapping and health-ring portraits, while Strategy control follows initiative and preserves independent occupied positions across turns.
-- [x] Extraction and provisional reward contracts.
+- [x] Boss-bound expeditions with automatic floor continuation and provisional rewards banked only on victory.
 - [x] Full simultaneous Strategy tokens and per-character initiative entries.
 - [x] Persistent Slasher bench swapping with one recruit actor, independent runtime state, surviving summons, automatic death handoff, and party health-ring HUD.
 - [x] Bespoke Mine, Foundry, Grove, Archive, and Crypt Slasher environments and encounters.
-- [x] Wide, tabbed Company Ledger with distinct Resources, Party Builder, Improvements, and Memorial workspaces; dungeon-aware party caps, numbered party slots, clear/auto-fill controls, recruit role summaries, and rebuilt unclipped upgrade cards.
+- [x] Static point-and-click Tavern with clickable candidates/NPCs, a focusable toolbar, staggered arrivals, recruitment dialogue, Calendar, and a five-tab Company Ledger including Hall of Heroes.
 - [x] Wide expedition planner with grouped destination cards, explicit selected/available/locked states, unlock guidance, separate mode and party decisions, concise destination briefing, numbered party slots, and a live readiness/launch summary.
 - [x] Four generated recruit portrait variants per class, shown in party selection and the Company Ledger.
 - [x] New-player ledger guidance, resource explanations, affordability/tooltips, and signal-safe deferred refresh after purchases.
@@ -107,8 +108,8 @@ Existing `RunState` remains a compatibility façade for combat code and mirrors 
 - [x] Bespoke Ember Foundry Strategy and Slasher routing with conveyor/forge hazards, molten damage lanes, construct encounter tables, Last Warmachine routing, and Veyra Coil trading.
 - [x] Moonlit Grove and Abyssal Archive clue/research unlocks, merchant-free Strategy/Slasher runtimes, bespoke encounter themes, and persistent one-time unique relic rewards.
 - [x] Dedicated Stone Crypt Slasher routing with necrotic slow zones, Crypt encounter tables, curse-tinted presentation, and Crypt boss routing.
-- [x] Final automated campaign acceptance: exact class/dungeon/merchant counts, portrait coverage, partial casualty, extraction, upgrade purchase, all unlock paths, four secret relics, save migration/round-trip, full regression suite, editor compile, and project boot.
-- [x] Release-readiness controls pass: keyboard/controller bindings for party cycling, extraction, potion use, and abandonment; visible control reference; initial keyboard focus; scroll-safe options at 150% UI scale; audio bus, mute, and reduced-shake settings contracts.
+- [x] Final automated campaign acceptance: exact class/dungeon/merchant counts, portrait coverage, partial casualty, retirement/candidate settlement, upgrade purchase, all unlock paths, four secret relics, and save migration/round-trip.
+- [x] Release-readiness controls remove extraction and abandonment while retaining party cycling, potion use, visible references, keyboard focus, scroll-safe options, audio, mute, and reduced-shake contracts.
 - [x] Windows export preset, clean editor resource graph, successful release PCK export, packaged PCK boot, and rendered 1280×720 / 150% Options inspection.
 - [ ] Final hands-on balance/audio/accessibility playtest on the target PC build.
 
