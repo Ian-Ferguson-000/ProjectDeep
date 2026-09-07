@@ -17,10 +17,22 @@ static func companion_frames() -> SpriteFrames:
 static func enemy_frames(enemy_id: String) -> SpriteFrames:
 	var generated_path:="res://assets/enemies/%s/generated_source.png"%enemy_id
 	if ResourceLoader.exists(generated_path):return generated_enemy_frames(generated_path)
+	var crypt_static_path:="res://assets/enemies/crypt/%s.png"%enemy_id
+	if ResourceLoader.exists(crypt_static_path):return static_enemy_frames(crypt_static_path)
 	if enemy_id.begins_with("wolf_"):
 		enemy_id="feral_wolf"
 	var path := "res://assets/enemies/%s/frames.tres" % enemy_id
 	return load(path) as SpriteFrames if ResourceLoader.exists(path) else null
+
+static func static_enemy_frames(path:String)->SpriteFrames:
+	if _generated_cache.has(path):return _generated_cache[path] as SpriteFrames
+	var texture:=load(path) as Texture2D;if texture==null:return null
+	var source:=texture.get_image();var bounds:=_alpha_bounds(source);var isolated:=source.get_region(bounds);var scale_factor:=minf(88.0/maxf(1.0,isolated.get_width()),74.0/maxf(1.0,isolated.get_height()));isolated.resize(maxi(1,roundi(isolated.get_width()*scale_factor)),maxi(1,roundi(isolated.get_height()*scale_factor)),Image.INTERPOLATE_LANCZOS);var canvas:=Image.create(96,80,false,Image.FORMAT_RGBA8);canvas.fill(Color.TRANSPARENT);canvas.blit_rect(isolated,Rect2i(Vector2i.ZERO,isolated.get_size()),Vector2i((96-isolated.get_width())/2,80-isolated.get_height()));var normalized:=ImageTexture.create_from_image(canvas)
+	var frames:=SpriteFrames.new();frames.remove_animation("default")
+	for direction:String in DIRECTIONS:
+		for state:String in ["idle","run","attack"]:
+			var animation:=StringName("%s_%s"%[state,direction]);frames.add_animation(animation);frames.set_animation_loop(animation,state!="attack");frames.set_animation_speed(animation,6.0);frames.add_frame(animation,normalized);frames.add_frame(animation,normalized)
+	_generated_cache[path]=frames;return frames
 
 static func generated_enemy_frames(path:String)->SpriteFrames:
 	if _generated_cache.has(path):return _generated_cache[path] as SpriteFrames

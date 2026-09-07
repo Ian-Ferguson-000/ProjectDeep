@@ -118,7 +118,7 @@ func _build_floor()->void:
 	authored_visuals_active=use_authored_visuals and not authored_visual_cache.is_empty()
 	var authored_layout:=authored_layout_cache.duplicate(true)
 	for child in get_children():child.free()
-	layout=authored_layout if not authored_layout.is_empty() else SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor)
+	layout=authored_layout if not authored_layout.is_empty() else SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor,run_state.active_dungeon_id)
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
 	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
 	if player.item_runtime:player.item_runtime.floor_entered()
@@ -387,7 +387,7 @@ func _complete_floor()->void:
 	if bool(layout.get("is_elite_floor",false)):xp+=float(rewards.get("elite_floor_bonus",55))
 	if bool(layout.get("is_boss_floor",false)):xp+=float(rewards.get("campaign_boss_bonus",70))
 	if run_state.slasher_endless_mode:xp*=float(rewards.get("endless_xp_multiplier",0.35))
-	run_state.gain_xp(maxi(1,int(round(xp))),"Slasher Forest%s floor %d cleared"%[" Endless" if run_state.slasher_endless_mode else "",run_state.current_floor])
+	var dungeon_name:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Dungeon"));run_state.gain_xp(maxi(1,int(round(xp))),"%s Slasher%s floor %d cleared"%[dungeon_name," Endless" if run_state.slasher_endless_mode else "",run_state.current_floor])
 	if not _is_tutorial_expedition():run_state.record_floor_checkpoint()
 	if controller and controller.has_method("complete_slasher_dungeon_floor"):controller.complete_slasher_dungeon_floor()
 	elif controller and controller.has_method("complete_slasher_forest_floor"):controller.complete_slasher_forest_floor()
@@ -526,7 +526,7 @@ func _refresh_hud()->void:
 	_store_active_slasher_state();_refresh_party_strip()
 	var depth_text:String="ENDLESS CYCLE %d · FLOOR %d"%[run_state.get_slasher_cycle_number(),run_state.current_floor] if run_state.slasher_endless_mode else "FLOOR %d/%d"%[run_state.current_floor,run_state.max_floors]
 	var encounter_text:String="BOSS" if bool(layout.get("is_boss_floor",false)) else ("ELITE GUARDIAN" if bool(layout.get("is_elite_floor",false)) else ("GATE OPEN" if exit_open else "%d FOES"%enemies_remaining))
-	objective_label.text="VERDANT FOREST  ·  %s  ·  %s"%[depth_text,encounter_text]
+	var dungeon_name:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Dungeon"));objective_label.text="%s  ·  %s  ·  %s"%[dungeon_name.to_upper(),depth_text,encounter_text]
 	health_bar.max_value=maxi(1,player.max_health);health_bar.value=player.health;health_value_label.text="%d / %d"%[player.health,player.max_health]
 	resource_bar.max_value=maxi(1,run_state.get_class_resource_max());resource_bar.value=run_state.class_resource;resource_value_label.text="%s  %d / %d"%[run_state.get_class_resource_name(),run_state.class_resource,run_state.get_class_resource_max()]
 	gold_value_label.text=str(run_state.gold);key_value_label.text=str(run_state.keys);potion_value_label.text=str(run_state.get_consumables().count("healing_potion"))

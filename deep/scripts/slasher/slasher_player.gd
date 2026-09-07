@@ -4,6 +4,8 @@ const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
 
 signal health_changed(current:int,maximum:int)
 signal resource_changed(current:int,maximum:int)
+
+var resource_suppression_time:=0.0
 signal ability_resolved(result:Dictionary)
 signal defeated
 
@@ -91,6 +93,7 @@ func _refresh_presentation()->void:
 	sprite.sprite_frames=SlasherSpriteLibrary.player_frames(class_id);sprite.position=Vector2(float(tuning.get("sprite_offset_x",0.0)),float(tuning.get("sprite_offset_y",-30.0)));sprite.scale=Vector2.ONE*float(tuning.get("sprite_scale",0.9));presentation_ready=true;_play_animation("idle");queue_redraw()
 
 func _physics_process(delta:float)->void:
+	resource_suppression_time=maxf(0.0,resource_suppression_time-delta)
 	for key in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-delta)
 	var was_invulnerable:=invulnerable>0.0
 	invulnerable=maxf(0.0,invulnerable-delta);defense_window=maxf(0.0,defense_window-delta);animation_lock=maxf(0.0,animation_lock-delta);hidden_time=maxf(0.0,hidden_time-delta)
@@ -214,7 +217,7 @@ func _defensive(result:Dictionary)->Dictionary:
 func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->void:
 	var tuning:=_ability_tuning("special" if defense_kind=="retribution_ready" else "defensive")
 	if invulnerable>0.0:
-		if defense_kind=="evade":run_state.gain_class_resource(int(tuning.get("resource_gain",1)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
+		if defense_kind=="evade":_award_resource(int(tuning.get("resource_gain",1)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
 		return
 	var prevented:=0
 	if defense_window>0.0:
@@ -227,7 +230,7 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 				if is_instance_valid(attacker):attacker.position+=global_position.direction_to(attacker.global_position)*float(tuning.get("push_distance",70.0))
 			"guard":
 				prevented=int(round(amount*float(tuning.get("mitigation",0.75))))
-				if prevented>0:run_state.gain_class_resource(int(tuning.get("resource_gain",1)))
+				if prevented>0:_award_resource(int(tuning.get("resource_gain",1)))
 			"cover":
 				var wolf:=GameBalance.get_slasher_companion_tuning("wolf");var nearby:=is_instance_valid(companion) and companion.global_position.distance_to(global_position)<float(wolf.get("interception_radius",90.0))
 				prevented=int(round(amount*float(wolf.get("cover_mitigation_near" if nearby else "cover_mitigation_far",0.6 if nearby else 0.3))))
@@ -259,7 +262,7 @@ func _spawn_projectile(data:Dictionary,gain_on_hit:bool)->void:
 	if gain_on_hit:projectile.hit_landed.connect(func(hit_target:Node2D,distance:float):
 		if not hit_target.is_in_group("slasher_enemy"):return
 		var tuning:=_ability_tuning("basic");var minimum:=float(tuning.get("focus_min_distance",0.0))
-		if class_id!="mage" or distance>=minimum:run_state.gain_class_resource(int(tuning.get("resource_gain",1))+int(tuning.get("resource_refund_on_hit",0)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max()))
+		if class_id!="mage" or distance>=minimum:_award_resource(int(tuning.get("resource_gain",1))+int(tuning.get("resource_refund_on_hit",0)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max()))
 
 func _melee_attack(data:Dictionary)->int:
 	var hits:=0;var reach:=float(data.get("reach",64.0));var threshold:=cos(deg_to_rad(float(data.get("arc_degrees",70.0))*0.5))
@@ -384,7 +387,11 @@ func _apply_echo_hit(target:Node,data:Dictionary)->void:
 	if multiplier<=0.0:return
 	var echo:Dictionary=data.duplicate(true);echo.erase("echo_damage_multiplier");echo.damage=maxi(1,int(round(int(data.damage)*multiplier)));echo.knockback=float(data.get("knockback",0.0))*0.5;target.call("receive_attack",echo,self)
 func _action_name(slot:String)->String:return String(GameBalance.get_class_action(class_id,slot).get("name",slot.capitalize()))
-func _gain_resource(result:Dictionary,amount:int)->void:run_state.gain_class_resource(amount);result.resource_gained=int(result.get("resource_gained",0))+amount
+func suppress_resource_gain(duration:float)->void:resource_suppression_time=maxf(resource_suppression_time,duration)
+func _award_resource(amount:int)->int:
+	if resource_suppression_time>0.0:return 0
+	run_state.gain_class_resource(amount);return amount
+func _gain_resource(result:Dictionary,amount:int)->void:var awarded:=_award_resource(amount);result.resource_gained=int(result.get("resource_gained",0))+awarded
 func heal(amount:int)->void:health=mini(max_health,health+amount);run_state.current_health=health;health_changed.emit(health,max_health)
 func add_impact_shake(strength:float,duration:float)->void:
 	strength*=_settings().get_float("screen_shake_intensity",1.0)

@@ -18,6 +18,11 @@ func _run() -> void:
 	var alden := tutorial_campaign.create_tutorial_adventurer()
 	_expect(alden.id=="tutorial_alden" and alden.display_name=="Alden" and alden.class_id=="warrior" and alden.portrait_variant==0 and alden.gear_id=="sword_shield" and alden.current_health==3 and alden.max_health==3,"Preset Alden contract is incomplete",failures)
 	_expect(tutorial_campaign.begin_expedition([alden.id],"forest","slasher",true),"Tutorial expedition did not start",failures)
+	var tutorial_run:=RunState.new();tutorial_run.attach_campaign(tutorial_campaign);tutorial_run.active_character_id=alden.id;tutorial_run.start_new_run(null,"forest","slasher")
+	var tutorial_profile:Dictionary=tutorial_run.hero_profiles.get("warrior",{})
+	_expect(tutorial_profile.has("total_xp") and tutorial_profile.has("derived_stats"),"Tutorial adventurer did not receive a complete runtime progression profile",failures)
+	var floor_xp:=17;tutorial_run.gain_xp(floor_xp,"tutorial first floor cleared")
+	_expect(int(tutorial_run.hero_profiles["warrior"].get("total_xp",-1))==floor_xp,"Tutorial first-floor XP could not be awarded",failures)
 	tutorial_campaign.expedition.tutorial_step=4
 	var restored_expedition:=ExpeditionState.from_dict(tutorial_campaign.expedition.to_dict())
 	_expect(restored_expedition.tutorial_step==4 and not restored_expedition.tutorial_controls_complete,"Tutorial step did not survive expedition serialization",failures)

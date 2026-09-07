@@ -129,7 +129,7 @@ func select_active_character(character_id: String) -> bool:
 	var member := campaign.character(character_id)
 	if member == null: return false
 	_sync_active_profile_to_character()
-	active_character_id = character_id; set_class(member.class_id)
+	active_character_id = character_id; _load_character_profile(member);set_class(member.class_id)
 	current_health = member.current_health if member.current_health > 0 else max_health
 	return true
 
@@ -174,6 +174,7 @@ func _sync_active_profile_to_character() -> void:
 	member.current_health = current_health; member.max_health = max_health
 	member.level = get_level(); member.xp = int(hero_profiles.get(selected_class_id, {}).get("xp", member.xp))
 	member.progression = Dictionary(hero_profiles.get(selected_class_id, {})).duplicate(true)
+	member.attributes=Dictionary(member.progression.get("base_stats",member.attributes)).duplicate(true)
 	member.inventory.clear()
 	for item in inventory_items: member.inventory.append(String(item.get("id", "")))
 
@@ -218,7 +219,7 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest", play_mode: Str
 		if not living.is_empty():
 			active_character_id = living[0]
 			var member := campaign.character(active_character_id)
-			if member != null: set_class(member.class_id)
+			if member != null:_load_character_profile(member);set_class(member.class_id)
 	if active_play_mode==PLAY_MODE_SLASHER:reconcile_slasher_progression()
 	var dungeon := GameBalance.get_dungeon(active_dungeon_id)
 	# TUNING: Slasher Forest campaign depth is set in dungeons.json under forest.slasher.campaign_floors; Strategy keeps its original floor count.
@@ -1116,6 +1117,20 @@ func _create_profile(class_id: String) -> Dictionary:
 	}
 	_recalculate_profile(profile)
 	return profile
+
+func _load_character_profile(member:CharacterRecord)->void:
+	# Character records intentionally persist only their mutable progression. Merge
+	# that data over a complete runtime profile so tutorial and migrated characters
+	# cannot omit fields (such as total_xp) required by dungeon rewards.
+	var profile:=_create_profile(member.class_id)
+	profile.merge(Dictionary(member.progression).duplicate(true),true)
+	profile["class_id"]=member.class_id
+	profile["level"]=maxi(1,member.level)
+	profile["xp"]=maxi(0,member.xp)
+	profile["total_xp"]=maxi(int(profile.get("total_xp",0)),member.xp)
+	if not member.attributes.is_empty():profile["base_stats"]=member.attributes.duplicate(true)
+	for key in ["permanent_items","evolution_path","ability_upgrades","pending_progression_choices","slasher_evolution_path","slasher_ability_upgrades","pending_slasher_progression_choices"]:if not (profile.get(key) is Array):profile[key]=[]
+	_recalculate_profile(profile);hero_profiles[member.class_id]=profile
 
 func _base_stats_for_class(class_id: String) -> Dictionary:
 	var class_data: Dictionary = GameBalance.get_class_data(class_id)

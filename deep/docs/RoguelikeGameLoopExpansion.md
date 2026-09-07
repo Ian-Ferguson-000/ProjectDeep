@@ -102,6 +102,7 @@ Existing `RunState` remains a compatibility façade for combat code and mirrors 
 - [x] Static point-and-click Tavern with clickable candidates/NPCs, a focusable toolbar, staggered arrivals, recruitment dialogue, Calendar, and a five-tab Company Ledger including Hall of Heroes.
 - [x] Wide expedition planner with grouped destination cards, explicit selected/available/locked states, unlock guidance, separate mode and party decisions, concise destination briefing, numbered party slots, and a live readiness/launch summary.
 - [x] Four generated recruit portrait variants per class, shown in party selection and the Company Ledger.
+- [x] Data-driven adventurer dossiers, truthful recruitment assessment, multi-expedition careers, weekly calendar settlements, and bounded seasonal descendants.
 - [x] New-player ledger guidance, resource explanations, affordability/tooltips, and signal-safe deferred refresh after purchases.
 - [x] Bespoke Sunken Mine Strategy runtime with mine room graphs, flooded/cave-in machinery hazards, encounter progression, and Drowned Engine boss chamber.
 - [x] Bespoke Sunken Mine Slasher environment with deep-water slowdown, ore-machinery damage zones, Mine encounter tables, Drowned Foreman routing, and Neris Vale trading.

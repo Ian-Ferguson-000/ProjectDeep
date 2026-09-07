@@ -250,7 +250,16 @@ func _open_calendar()->void:
 	calendar_text.text="\n".join(lines);_show_modal(calendar_backdrop,calendar_text)
 
 func _build_recruitment_dialogue()->void:
-	recruitment_dialogue=RECRUITMENT_DIALOGUE.new();recruitment_dialogue.recruit_requested.connect(_recruit_candidate);recruitment_dialogue.conversation_closed.connect(_restore_hub_focus);ui_root.add_child(recruitment_dialogue)
+	recruitment_dialogue=RECRUITMENT_DIALOGUE.new();recruitment_dialogue.recruit_requested.connect(_recruit_candidate);recruitment_dialogue.assessment_requested.connect(_assess_candidate);recruitment_dialogue.conversation_closed.connect(_restore_hub_focus);ui_root.add_child(recruitment_dialogue)
+
+func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
+	var result:Dictionary
+	if action=="trial":result=run_state.campaign.run_candidate_trial(candidate_id)
+	elif action=="appraise":result=run_state.campaign.appraise_candidate(candidate_id,stat_id)
+	else:result=run_state.campaign.inspect_candidate(candidate_id,action)
+	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Assessment failed.")));return
+	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord;if candidate!=null:recruitment_dialogue.open(candidate)
+	_refresh_ui()
 
 func _build_candidate_stage()->void:
 	candidate_stage.name="CandidateStage";board.add_child(candidate_stage);_rebuild_candidate_targets(false)
@@ -472,6 +481,7 @@ func _refresh_resources_page(campaign:CampaignState)->void:
 	_add_resource_card(page,"SUPPLIES",str(campaign.supplies),"Provision stock held by the Hearth. Supply spending will be introduced with the preparation system.",Color(0.78,0.72,0.48))
 	_add_resource_card(page,"RELIC ESSENCE",str(campaign.relic_essence),"Permanent upgrade currency recovered from cleared checkpoints and banked on a safe return.",Color(0.55,0.84,1.0))
 	_add_resource_card(page,"SUCCESSFUL LEVELS",str(campaign.successful_levels),"Lifetime levels brought home by victorious recruits. Requirements check this total but never spend it.",Color(0.58,0.9,0.62))
+	_add_resource_card(page,"HEARTH REPUTATION",str(campaign.reputation)+" / 100","Standing earned by returning victorious companies. Reputation improves the average quality of future arrivals.",Color(0.94,0.62,0.28))
 	_add_ledger_heading("UNIQUE RELICS",Color(0.76,0.62,0.9),page)
 	var relics:=Label.new();relics.text="No unique relics recovered yet. Secret dungeons hold relics that remain with the company." if campaign.banked_relics.is_empty() else "  •  ".join(campaign.banked_relics).replace("_"," ").capitalize();relics.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;relics.add_theme_font_size_override("font_size",16);page.add_child(relics)
 	_add_ledger_heading("HEARTH KEEPSAKES",Color(0.9,0.66,0.46),page)
@@ -539,11 +549,11 @@ func _refresh_memorial_page(campaign:CampaignState)->void:
 func _refresh_hall_page(campaign:CampaignState)->void:
 	var page:VBoxContainer=company_pages["Hall of Heroes"]
 	_add_ledger_heading("HALL OF HEROES  ·  %d RETIRED"%campaign.retired_heroes.size(),Color(0.95,0.76,0.34),page)
-	var help:=Label.new();help.text="Victorious expedition members retire here. Their records are honorary and grant no power or economy bonus.";help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;page.add_child(help)
+	var help:=Label.new();help.text="Adventurers retire here after completing their full careers. Their records and lineages are honorary and grant no power or economy bonus.";help.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;page.add_child(help)
 	if campaign.retired_heroes.is_empty():var empty:=Label.new();empty.text="No company adventurer has yet retired after a boss victory.";page.add_child(empty)
 	else:
 		for record in campaign.retired_heroes:
-			var date:=_calendar_date_for_day(int(record.get("retired_day",campaign.calendar_day)));var label:=Label.new();label.text="✦ %s · %s · Level %d\nRetired %s, %s %d, Year %d · %d expeditions · %d victories"%[String(record.get("name","Unknown")),String(record.get("class_id","hero")).capitalize(),int(record.get("level",1)),date.weekday,date.season,date.season_day,date.year,int(record.get("expeditions",0)),int(record.get("victories",0))];label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;page.add_child(label)
+			var date:=_calendar_date_for_day(int(record.get("retired_day",campaign.calendar_day)));var label:=Label.new();label.text="✦ %s %s · %s · Generation %d\n%s · %s\nRetired %s, %s %d, Year %d · %d/%d expeditions · %d victories"%[String(record.get("name","Unknown")),String(record.get("family_name","")),String(record.get("class_id","hero")).capitalize(),int(record.get("generation",1)),String(record.get("origin","Unknown origin")),String(record.get("biography","No biography recorded.")),date.weekday,date.season,date.season_day,date.year,int(record.get("expeditions",0)),int(record.get("career_limit",8)),int(record.get("victories",0))];label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;page.add_child(label)
 
 func _calendar_date_for_day(day:int)->Dictionary:
 	var current:=run_state.campaign.calendar_day;run_state.campaign.calendar_day=day;var date:=run_state.campaign.get_calendar_date();run_state.campaign.calendar_day=current;return date
@@ -584,7 +594,7 @@ func _add_resource_card(target:VBoxContainer,title_text:String,value_text:String
 func _add_party_builder_card(target:GridContainer,member:CharacterRecord,cap:int)->void:
 	var selected:=selected_party_ids.has(member.id);var available:=member.status==CharacterRecord.STATUS_AVAILABLE
 	var card:=CheckButton.new();card.name="%sLedgerPartyToggle"%member.id;card.toggle_mode=true;card.button_pressed=selected;card.disabled=not available or (not selected and selected_party_ids.size()>=cap);card.custom_minimum_size=Vector2(500,112);card.alignment=HORIZONTAL_ALIGNMENT_LEFT
-	var class_data:=GameBalance.get_base_class(member.class_id);var role:=String(class_data.get("role","Adventurer"));var slot_prefix:="SLOT %d  ·  "%[selected_party_ids.find(member.id)+1] if selected else "";card.text="%s%s  ·  %s  Level %d\n%s  ·  %s\nHP %d/%d  ·  %d expeditions  ·  %d victories"%[slot_prefix,member.display_name,member.class_id.capitalize(),member.level,role,member.trait_name,member.current_health,member.max_health,member.expeditions,member.victories]
+	var class_data:=GameBalance.get_base_class(member.class_id);var role:=String(class_data.get("role","Adventurer"));var slot_prefix:="SLOT %d  ·  "%[selected_party_ids.find(member.id)+1] if selected else "";card.text="%s%s %s  ·  %s  Level %d  ·  Gen %d\n%s  ·  %s  ·  %s\nHP %d/%d  ·  Career %d/%d  ·  %d victories"%[slot_prefix,member.display_name,member.family_name,member.class_id.capitalize(),member.level,member.generation,role,member.trait_name,member.origin,member.current_health,member.max_health,member.expeditions,member.career_limit,member.victories]
 	var portrait_path:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant];if ResourceLoader.exists(portrait_path):card.icon=load(portrait_path);card.expand_icon=true;card.add_theme_constant_override("icon_max_width",76)
 	var action_hint:="Selected in party slot %d. Deselect to make room."%[selected_party_ids.find(member.id)+1] if selected else ("Party full—deselect a selected recruit or use Clear." if selected_party_ids.size()>=cap else "Select this recruit for the planned party.")
 	card.tooltip_text="%s\n%s\n%s"%[role,member.trait_description,action_hint];card.toggled.connect(_ledger_party_member_toggled.bind(member.id));FantasyButton.apply_dark(card,15);target.add_child(card)

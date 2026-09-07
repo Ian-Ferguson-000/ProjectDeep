@@ -23,7 +23,9 @@ Current build evidence: `build/ErosDemo.pck` exports and boots successfully with
 - Confirm the Tavern has no controllable avatar. Use mouse, keyboard, and controller focus to open Calendar, Ledger, Armory, Merchants, and Expedition.
 - Watch Brina and Eamon enter from the door, fast-forward once, reload before and after acknowledgement, and verify the arrival safely replays or remains seated as appropriate.
 - Open both recruitment conversations, recruit both for free, and launch the first Forest with either one or both. Confirm unrecruited later-wave candidates leave at launch.
-- Suffer one casualty and continue with the survivor to the boss. Confirm defeat discards carried loot; confirm victory banks loot, memorializes the casualty, retires the survivor into the Hall of Heroes, advances one calendar day, and creates one candidate wave.
+- Suffer one casualty and continue with the survivor to the boss. Confirm defeat discards carried loot; confirm victory banks loot, memorializes the casualty, returns the survivor to the roster, advances seven calendar days, and creates one candidate wave.
+- Review, Observe, Talk, Trial, and Appraise several candidates. Confirm every reveal remains true and survives reload, duplicate trials never change gold twice, and exact appraisal costs 12 gold once.
+- Complete a recruit's 6–10 expedition career and confirm automatic Hall retirement. Advance four seasons and confirm an eligible descendant can arrive with family history but without inherited power.
 - Verify 28-day season boundaries, seven weekdays, the recent 40-event history, dynamic room capacity, free dismissal confirmation, and zero-roster recovery candidates.
 - Purchase one tavern upgrade and one merchant item, restart, and confirm both persist.
 - Clear Forest in Strategy and Slasher, Farmstead, and Crypt; verify Tank, Rogue, Healer, Summoner, the four-person cap, Mine, and Foundry unlock at the expected points.

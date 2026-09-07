@@ -5,11 +5,11 @@ class_name SlasherForestGenerator
 const DEFAULT_CYCLE_LENGTH:=8
 const DEFAULT_ELITE_FLOOR:=5
 
-static func generate(seed_value:int,floor_number:int)->Dictionary:
+static func generate(seed_value:int,floor_number:int,dungeon_id:String="forest")->Dictionary:
 	var config:=GameBalance.get_slasher_balance("generation")
 	var width:=int(config.get("width",44));var height:=int(config.get("height",28))
 	var rng:=RandomNumberGenerator.new();rng.seed=seed_value
-	var dungeon_tuning:Dictionary=Dictionary(GameBalance.get_dungeon("forest").get("slasher",{}));var cycle_length:int=maxi(1,int(dungeon_tuning.get("cycle_length",DEFAULT_CYCLE_LENGTH)));var cycle_floor:int=((floor_number-1)%cycle_length)+1;var is_boss_floor:bool=cycle_floor==cycle_length;var is_elite_floor:bool=cycle_floor==int(dungeon_tuning.get("elite_floor_in_cycle",DEFAULT_ELITE_FLOOR))
+	var dungeon_tuning:Dictionary=Dictionary(GameBalance.get_dungeon(dungeon_id).get("slasher",{}));var cycle_length:int=maxi(1,int(dungeon_tuning.get("cycle_length",DEFAULT_CYCLE_LENGTH)));var cycle_floor:int=((floor_number-1)%cycle_length)+1;var is_boss_floor:bool=cycle_floor==cycle_length;var is_elite_floor:bool=cycle_floor==int(dungeon_tuning.get("elite_floor_in_cycle",DEFAULT_ELITE_FLOOR))
 	var cells:Dictionary={};var rooms:Array[Rect2i]=[]
 	var room_count:=int(config.get("base_rooms",6))+mini(int(config.get("room_growth_cap",3)),maxi(0,floor_number-1)*int(config.get("room_growth_per_floor",1)))
 	var corridor_width:=maxi(2,int(config.get("corridor_width",2)))
