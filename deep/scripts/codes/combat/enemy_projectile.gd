@@ -6,11 +6,15 @@ var packet:DamagePacket
 var remaining_range:=320.0
 var damage_type:="physical"
 var resolved:=false
+var visual_type:=""
+var sprite:AnimatedSprite2D
 
 ## Configures travel, packet metadata, collision, and elemental presentation before the projectile is added.
 func setup(origin:Vector2,direction:Vector2,ability:EnemyAbility,source:Node) -> EnemyProjectile:
 	global_position=origin; velocity=direction.normalized()*ability.projectile_speed; remaining_range=ability.projectile_range
 	damage_type=ability.damage_type
+	if source is EnemyCharacter and source.profile and source.profile.enemy_id=="necromancer":visual_type="necrotic_skull"
+	elif damage_type=="fire":visual_type="hellfire_orb"
 	packet=DamagePacket.create(source,ability.damage,ability.damage_type,ability.status_effect,ability.status_power,ability.knockback,direction)
 	queue_redraw()
 	return self
@@ -19,6 +23,8 @@ func setup(origin:Vector2,direction:Vector2,ability:EnemyAbility,source:Node) ->
 func _ready() -> void:
 	collision_layer=0; collision_mask=3
 	var shape:=CollisionShape2D.new(); var circle:=CircleShape2D.new(); circle.radius=8; shape.shape=circle; add_child(shape)
+	var frames:=SlasherSpriteLibrary.hostile_projectile_frames(visual_type)
+	if frames!=null:sprite=AnimatedSprite2D.new();sprite.name="ProjectileAnimation";sprite.sprite_frames=frames;sprite.rotation=velocity.angle();sprite.scale=Vector2.ONE*SlasherSpriteLibrary.hostile_projectile_scale(visual_type);sprite.play("flight");add_child(sprite)
 	body_entered.connect(_on_body_entered)
 	queue_redraw()
 
@@ -36,5 +42,6 @@ func _on_body_entered(body:Node) -> void:
 
 ## Draws a compact placeholder bolt colored by its data-driven damage type.
 func _draw() -> void:
+	if sprite!=null:return
 	var colors:={"fire":Color("#ff6b35"),"ice":Color("#73d9ff"),"poison":Color("#83d640"),"aether":Color("#aa7cff")}
 	draw_circle(Vector2.ZERO,8,colors.get(damage_type,Color.WHITE)); draw_circle(Vector2.ZERO,3,Color.WHITE)

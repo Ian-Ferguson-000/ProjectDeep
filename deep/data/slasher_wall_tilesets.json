@@ -1,0 +1,96 @@
+{
+  "spec_version": 3,
+  "atlas_spec": {
+	"logical_tile_size": 16,
+	"subtiles_per_cell": 3,
+	"facade_rows": 3,
+	"boundary_roles": {
+	  "north": [[48,32,16,16],[64,32,16,16],[80,32,16,16],[96,32,16,16]],
+	  "north_after_left": [[48,32,16,16]],
+	  "north_before_right": [[96,32,16,16]],
+	  "east": [[112,48,16,16],[112,64,16,16],[112,80,16,16]],
+	  "south": [[48,96,16,16],[64,96,16,16],[80,96,16,16],[96,96,16,16]],
+	  "south_after_left": [[48,96,16,16]],
+	  "south_before_right": [[96,96,16,16]],
+	  "west": [[32,48,16,16],[32,64,16,16],[32,80,16,16]],
+	  "north_east": [[112,32,16,16]],
+	  "south_east": [[112,96,16,16]],
+	  "south_west": [[32,96,16,16]],
+	  "north_west": [[32,32,16,16]]
+	  ,"concave_east_top": [[144,32,16,16]]
+	  ,"concave_west_top": [[256,32,16,16]]
+	  ,"concave_east_bottom": [[144,128,16,16]]
+	  ,"concave_west_bottom": [[256,128,16,16]]
+	  ,"right_bend_cap_0": [[96,192,16,16]]
+	  ,"right_bend_cap_1": [[112,192,16,16]]
+	  ,"right_bend_cap_2": [[128,192,16,16]]
+	  ,"right_bend_cap_3": [[144,192,16,16]]
+	},
+	"mask_composition": {
+	  "1": ["north"], "2": ["east"], "3": ["north_east"],
+	  "4": ["south"], "5": ["north","south"], "6": ["south_east"],
+	  "7": ["north_east","south"], "8": ["west"], "9": ["north_west"],
+	  "10": ["west","east"], "11": ["north_east","west"], "12": ["south_west"],
+	  "13": ["north_west","south"], "14": ["south_west","east"],
+	  "15": ["north_west","south_east"]
+	},
+	"required_roles": ["north","north_after_left","north_before_right","east","south","south_after_left","south_before_right","west","north_east","south_east","south_west","north_west","concave_east_top","concave_west_top","concave_east_bottom","concave_west_bottom","right_bend_cap_0","right_bend_cap_1","right_bend_cap_2","right_bend_cap_3"],
+	"facade_roles": {
+	  "facade_1_left": [[32,112,16,16]], "facade_1_after_left": [[48,112,16,16]], "facade_1": [[64,112,16,16],[80,112,16,16]], "facade_1_before_right": [[96,112,16,16]], "facade_1_right": [[112,112,16,16]],
+	  "facade_2_left": [[32,128,16,16]], "facade_2_after_left": [[48,128,16,16]], "facade_2": [[64,128,16,16],[80,128,16,16]], "facade_2_before_right": [[96,128,16,16]], "facade_2_right": [[112,128,16,16]],
+	  "facade_3_left": [[32,144,16,16]], "facade_3_after_left": [[48,144,16,16]], "facade_3": [[64,144,16,16],[80,144,16,16]], "facade_3_before_right": [[96,144,16,16]], "facade_3_right": [[112,144,16,16]]
+	  ,"right_bend_1_0": [[96,208,16,16]], "right_bend_1_1": [[112,208,16,16]], "right_bend_1_2": [[128,208,16,16]], "right_bend_1_3": [[144,208,16,16]]
+	  ,"right_bend_2_0": [[96,224,16,16]], "right_bend_2_1": [[112,224,16,16]], "right_bend_2_2": [[128,224,16,16]], "right_bend_2_3": [[144,224,16,16]]
+	  ,"right_bend_3_0": [[96,240,16,16]], "right_bend_3_1": [[112,240,16,16]], "right_bend_3_2": [[128,240,16,16]], "right_bend_3_3": [[144,240,16,16]]
+	},
+	"required_facade_roles": ["facade_1_left","facade_1_after_left","facade_1","facade_1_before_right","facade_1_right","facade_2_left","facade_2_after_left","facade_2","facade_2_before_right","facade_2_right","facade_3_left","facade_3_after_left","facade_3","facade_3_before_right","facade_3_right","right_bend_1_0","right_bend_1_1","right_bend_1_2","right_bend_1_3","right_bend_2_0","right_bend_2_1","right_bend_2_2","right_bend_2_3","right_bend_3_0","right_bend_3_1","right_bend_3_2","right_bend_3_3"]
+  },
+  "profiles": {
+	"stone_wall": {
+	  "texture": "res://assets/pixel_art/TX Tileset Wall.png",
+	  "atlas_size": [512,512],
+	  "pixel_scale": 1.0,
+	  "variant_seed": 83492791,
+	  "modulate": "ffffff"
+	},
+	"hell_wall": {
+	  "texture": "res://assets/pixel_art/TX tileset Hellwall.png",
+	  "atlas_size": [1374,1145],
+	  "pixel_scale": 1.0,
+	  "variant_seed": 666013,
+	  "modulate": "ffffff",
+	  "atlas_spec": {
+		"logical_tile_size": 72,
+		"subtiles_per_cell": 3,
+		"facade_rows": 3,
+		"boundary_roles": {
+		  "north": [[40,840,72,72],[112,840,72,72],[184,840,72,72]],
+		  "north_after_left": [[112,840,72,72]], "north_before_right": [[184,840,72,72]],
+		  "east": [[184,912,72,72],[184,984,72,72]],
+		  "south": [[40,996,72,72],[112,996,72,72],[184,996,72,72]],
+		  "south_after_left": [[112,996,72,72]], "south_before_right": [[184,996,72,72]],
+		  "west": [[40,912,72,72],[40,984,72,72]],
+		  "north_east": [[184,840,72,72]], "south_east": [[184,996,72,72]],
+		  "south_west": [[40,996,72,72]], "north_west": [[40,840,72,72]],
+		  "concave_east_top": [[336,840,72,72]], "concave_west_top": [[336,912,72,72]],
+		  "concave_east_bottom": [[408,840,72,72]], "concave_west_bottom": [[408,912,72,72]],
+		  "right_bend_cap_0": [[40,840,72,72]], "right_bend_cap_1": [[112,840,72,72]],
+		  "right_bend_cap_2": [[184,840,72,72]], "right_bend_cap_3": [[112,996,72,72]]
+		},
+		"mask_composition": {
+		  "1":["north"],"2":["east"],"3":["north_east"],"4":["south"],"5":["north","south"],"6":["south_east"],"7":["north_east","south"],"8":["west"],"9":["north_west"],"10":["west","east"],"11":["north_east","west"],"12":["south_west"],"13":["north_west","south"],"14":["south_west","east"],"15":["north_west","south_east"]
+		},
+		"required_roles": ["north","north_after_left","north_before_right","east","south","south_after_left","south_before_right","west","north_east","south_east","south_west","north_west","concave_east_top","concave_west_top","concave_east_bottom","concave_west_bottom","right_bend_cap_0","right_bend_cap_1","right_bend_cap_2","right_bend_cap_3"],
+		"facade_roles": {
+		  "facade_1_left":[[40,840,72,72]],"facade_1_after_left":[[112,840,72,72]],"facade_1":[[112,912,72,72],[112,984,72,72]],"facade_1_before_right":[[184,840,72,72]],"facade_1_right":[[184,912,72,72]],
+		  "facade_2_left":[[40,912,72,72]],"facade_2_after_left":[[112,912,72,72]],"facade_2":[[112,984,72,72],[184,912,72,72]],"facade_2_before_right":[[184,984,72,72]],"facade_2_right":[[184,996,72,72]],
+		  "facade_3_left":[[40,984,72,72]],"facade_3_after_left":[[112,984,72,72]],"facade_3":[[112,996,72,72],[184,984,72,72]],"facade_3_before_right":[[184,996,72,72]],"facade_3_right":[[184,996,72,72]],
+		  "right_bend_1_0":[[40,840,72,72]],"right_bend_1_1":[[112,840,72,72]],"right_bend_1_2":[[184,840,72,72]],"right_bend_1_3":[[112,912,72,72]],
+		  "right_bend_2_0":[[40,912,72,72]],"right_bend_2_1":[[112,912,72,72]],"right_bend_2_2":[[184,912,72,72]],"right_bend_2_3":[[112,984,72,72]],
+		  "right_bend_3_0":[[40,984,72,72]],"right_bend_3_1":[[112,984,72,72]],"right_bend_3_2":[[184,984,72,72]],"right_bend_3_3":[[112,996,72,72]]
+		},
+		"required_facade_roles": ["facade_1_left","facade_1_after_left","facade_1","facade_1_before_right","facade_1_right","facade_2_left","facade_2_after_left","facade_2","facade_2_before_right","facade_2_right","facade_3_left","facade_3_after_left","facade_3","facade_3_before_right","facade_3_right","right_bend_1_0","right_bend_1_1","right_bend_1_2","right_bend_1_3","right_bend_2_0","right_bend_2_1","right_bend_2_2","right_bend_2_3","right_bend_3_0","right_bend_3_1","right_bend_3_2","right_bend_3_3"]
+	  }
+	}
+  }
+}

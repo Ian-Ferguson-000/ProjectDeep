@@ -3206,7 +3206,7 @@ func _enemy_can_ranged_cast(index: int) -> bool:
 	if index < 0 or index >= enemies.size():
 		return false
 	var enemy_type: String = _enemy_type(enemies[index])
-	if enemy_type != "necromancer" and enemy_type != "crypt_boss":
+	if int(GameBalance.get_enemy_value(enemy_type, "range", 1)) <= 1:
 		return false
 	var distance: int = _line_distance(enemies[index]["pos"], player_pos)
 	if distance <= 1 or distance > int(GameBalance.get_enemy_value(enemy_type, "range", 4)):
@@ -3236,7 +3236,7 @@ func _enemy_ranged_cast(index: int) -> void:
 		movement_remaining = 0
 		var push_direction := Vector2i(_sign_int(player_pos.x - Vector2i(enemy["pos"]).x), _sign_int(player_pos.y - Vector2i(enemy["pos"]).y))
 		_apply_forced_player_move(push_direction, 2)
-	message = "%s hurls grave-light for %d damage." % [_enemy_display_name(enemy), applied_damage]
+	message = "%s launches a ranged attack for %d damage." % [_enemy_display_name(enemy), applied_damage]
 
 func _enemy_sprite_key(enemy: Dictionary) -> String:
 	match _enemy_type(enemy):

@@ -11,6 +11,7 @@ const SunkenMineScene := preload("res://scenes/mine/SunkenMine.tscn")
 const EmberFoundryScene := preload("res://scenes/foundry/EmberFoundry.tscn")
 const MoonlitGroveScene := preload("res://scenes/secret/MoonlitGrove.tscn")
 const AbyssalArchiveScene := preload("res://scenes/secret/AbyssalArchive.tscn")
+const HellScene := preload("res://scenes/hell/Hell.tscn")
 const SlasherForestScene := preload("res://scenes/slasher/SlasherForest.tscn")
 const SlasherFarmsteadScene := preload("res://scenes/slasher/SlasherFarmstead.tscn")
 const SlasherMineScene := preload("res://scenes/slasher/SlasherMine.tscn")
@@ -18,7 +19,9 @@ const SlasherFoundryScene := preload("res://scenes/slasher/SlasherFoundry.tscn")
 const SlasherGroveScene := preload("res://scenes/slasher/SlasherGrove.tscn")
 const SlasherArchiveScene := preload("res://scenes/slasher/SlasherArchive.tscn")
 const SlasherCryptScene := preload("res://scenes/slasher/SlasherCrypt.tscn")
+const SlasherHellScene := preload("res://scenes/slasher/SlasherHell.tscn")
 const SlasherProgressionOverlay := preload("res://scripts/slasher/slasher_progression_overlay.gd")
+const DialogueChatScene := preload("res://scripts/ui/dialogue_chat.gd")
 
 var run_state := RunState.new()
 var all_gear_options: Array[GearData] = []
@@ -255,6 +258,7 @@ func _load_active_dungeon() -> void:
 		match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher_runtime", run_state.active_dungeon_id)):
 			"forest": scene = SlasherForestScene
 			"crypt": scene = SlasherCryptScene
+			"balors_hell": scene = SlasherHellScene
 			"ashen_farmstead": scene = SlasherFarmsteadScene
 			"sunken_mine": scene = SlasherMineScene
 			"ember_foundry": scene = SlasherFoundryScene
@@ -265,6 +269,7 @@ func _load_active_dungeon() -> void:
 		match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)):
 			"forest": scene = ForestScene
 			"crypt": scene = CryptScene
+			"balors_hell": scene = HellScene
 			"ashen_farmstead": scene = AshenFarmsteadScene
 			"sunken_mine": scene = SunkenMineScene
 			"ember_foundry": scene = EmberFoundryScene
@@ -295,6 +300,7 @@ func complete_forest_floor() -> void:
 	else:
 		run_state.mark_forest_cleared()
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
+		if _continue_connected_expedition(favor_logs): return
 		return_to_tavern("victory","You conquer the forest dungeon with %d gold.\n%s" % [run_state.gold, " ".join(favor_logs)])
 
 func complete_strategy_dungeon_floor() -> void:
@@ -308,6 +314,7 @@ func complete_strategy_dungeon_floor() -> void:
 	if run_state.current_floor < run_state.max_floors:run_state.continue_expedition();run_state.advance_floor();run_state.autosave_campaign();_load_active_dungeon()
 	else:
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
+		if _continue_connected_expedition(favor_logs): return
 		return_to_tavern("victory","The party clears %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(favor_logs)])
 
 func complete_slasher_forest_floor() -> void:
@@ -333,11 +340,13 @@ func complete_slasher_dungeon_floor() -> void:
 	if run_state.current_floor < campaign_floors:run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_campaign();_load_active_dungeon()
 	else:
 		var completion_logs := run_state.record_active_dungeon_completion()
+		if _continue_connected_expedition(completion_logs): return
 		return_to_tavern("victory","The party clears %s in Slasher mode and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(completion_logs)])
 
 func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])->void:
 	if cycle_boss:
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
+		if _continue_connected_expedition(favor_logs): return
 		return_to_tavern("victory","You conquer the Forest after floor %d with %d gold.\n%s\n%s" % [run_state.current_floor, run_state.gold, " ".join(favor_logs), run_state.get_slasher_progression_summary()])
 		return
 	run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_campaign();_load_active_dungeon()
@@ -349,7 +358,42 @@ func complete_crypt_floor() -> void:
 		run_state.continue_expedition();run_state.advance_floor();run_state.autosave_campaign();_load_crypt_floor()
 	else:
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
+		if _continue_connected_expedition(favor_logs): return
 		return_to_tavern("victory","You conquer the seven-floor Stone Crypt with %d gold.\n%s" % [run_state.gold, " ".join(favor_logs)])
+
+func _continue_connected_expedition(completion_logs:Array[String]=[]) -> bool:
+	if campaign==null or not campaign.expedition.active or campaign.expedition.tutorial_run:return false
+	var completed_id:=run_state.active_dungeon_id
+	var completed:=GameBalance.get_dungeon(completed_id)
+	var next_id:=String(completed.get("continuous_next",""))
+	if next_id.is_empty() or GameBalance.get_dungeon(next_id).is_empty():return false
+	if not run_state.is_dungeon_unlocked(next_id) or not run_state.dungeon_supports_mode(next_id,run_state.active_play_mode):return false
+	var completed_name:=String(completed.get("name",completed_id.capitalize()))
+	var next_name:=String(GameBalance.get_dungeon(next_id).get("name",next_id.capitalize()))
+	if not run_state.transition_to_dungeon(next_id):return false
+	var dialogue:=_connected_dungeon_dialogue(completed_name,next_name,completion_logs)
+	_show_connected_dungeon_dialogue(dialogue)
+	return true
+
+func _connected_dungeon_dialogue(completed_name:String,next_name:String,_completion_logs:Array[String]) -> Array[Dictionary]:
+	var member:=campaign.character(run_state.active_character_id) if campaign!=null else null
+	var hero_name:=member.display_name if member!=null else "Adventurer"
+	var hero_portrait:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant] if member!=null else ALDEN_PORTRAIT
+	return [
+		{"speaker":"Mara Vell","text":"The %s is broken, but this road does not turn back toward the Hearth. The passage ahead descends into the %s."%[completed_name,next_name],"portrait":MARA_PORTRAIT,"side":"left"},
+		{"speaker":hero_name,"text":"Then we keep what we have carried, tend our wounds as we walk, and finish the road before we call it a victory.","portrait":hero_portrait,"side":"right"},
+		{"speaker":"Mara Vell","text":"No fresh recruits. No resupply. No warm beds between connected depths. Go on—the company settles its account only when the whole descent ends.","portrait":MARA_PORTRAIT,"side":"left"},
+	]
+
+func _show_connected_dungeon_dialogue(lines:Array[Dictionary])->void:
+	var layer:=CanvasLayer.new();layer.name="ConnectedDungeonDialogueLayer";layer.layer=120;add_child(layer)
+	var chat:DialogueChat=DialogueChatScene.new();chat.name="ConnectedDungeonDialogue";layer.add_child(chat)
+	chat.conversation_finished.connect(_on_connected_dungeon_dialogue_finished.bind(layer),CONNECT_ONE_SHOT)
+	chat.play(lines)
+
+func _on_connected_dungeon_dialogue_finished(layer:CanvasLayer)->void:
+	if is_instance_valid(layer):layer.queue_free()
+	_load_active_dungeon()
 
 func complete_ashen_farmstead() -> void:
 	var favor_logs := run_state.record_dungeon_floor_clear("farmstead", int(run_state.field_run.get("room_count", 1)), true)

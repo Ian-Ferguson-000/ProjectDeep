@@ -3,6 +3,16 @@ class_name SlasherSpriteLibrary
 
 const NORMALIZED_FRAME_SIZE := Vector2(96,80)
 const DIRECTIONS := ["down","left","right","up"]
+const HOSTILE_PROJECTILE_ART := {
+	"flaming_disk":"res://assets/projectiles/hostile/balor_flaming_disk.png",
+	"necrotic_skull":"res://assets/projectiles/hostile/necrotic_skull.png",
+	"soul":"res://assets/projectiles/hostile/soul_flame.png",
+	"soul_flame":"res://assets/projectiles/hostile/soul_flame.png",
+	"arrow":"res://assets/projectiles/hostile/spectral_arrow.png",
+	"spectral_arrow":"res://assets/projectiles/hostile/spectral_arrow.png",
+	"hellfire_orb":"res://assets/projectiles/hostile/hellfire_orb.png",
+	"rift_shard":"res://assets/projectiles/hostile/rift_shard.png"
+}
 static var _generated_cache: Dictionary = {}
 
 static func player_frames(class_id: String) -> SpriteFrames:
@@ -49,6 +59,29 @@ static func generated_enemy_frames(path:String)->SpriteFrames:
 				var bounds:=_alpha_bounds(cell);var isolated:=cell.get_region(bounds);var scale_factor:=minf(88.0/isolated.get_width(),74.0/isolated.get_height());isolated.resize(maxi(1,roundi(isolated.get_width()*scale_factor)),maxi(1,roundi(isolated.get_height()*scale_factor)),Image.INTERPOLATE_NEAREST)
 				var canvas:=Image.create(96,80,false,Image.FORMAT_RGBA8);canvas.fill(Color.TRANSPARENT);canvas.blit_rect(isolated,Rect2i(Vector2i.ZERO,isolated.get_size()),Vector2i((96-isolated.get_width())/2,80-isolated.get_height()));frames.add_frame(animation,ImageTexture.create_from_image(canvas))
 	_generated_cache[path]=frames;return frames
+
+static func hostile_projectile_frames(visual_type:String)->SpriteFrames:
+	var path:=String(HOSTILE_PROJECTILE_ART.get(visual_type,""))
+	if path.is_empty() or not ResourceLoader.exists(path):return null
+	var cache_key:="projectile:%s"%visual_type
+	if _generated_cache.has(cache_key):return _generated_cache[cache_key] as SpriteFrames
+	var texture:=load(path) as Texture2D
+	if texture==null:return null
+	var source:=texture.get_image();var frames:=SpriteFrames.new();frames.remove_animation("default");frames.add_animation("flight");frames.set_animation_loop("flight",true);frames.set_animation_speed("flight",12.0)
+	for frame_index:int in 8:
+		var column:=frame_index%4;var row:=frame_index/4
+		var left:=roundi(float(column)*source.get_width()/4.0);var right:=roundi(float(column+1)*source.get_width()/4.0);var top:=roundi(float(row)*source.get_height()/2.0);var bottom:=roundi(float(row+1)*source.get_height()/2.0)
+		var cell:=source.get_region(Rect2i(left,top,right-left,bottom-top));_remove_generated_background(cell)
+		var bounds:=_alpha_bounds(cell);var isolated:=cell.get_region(bounds);var scale_factor:=minf(60.0/maxf(1.0,isolated.get_width()),42.0/maxf(1.0,isolated.get_height()));isolated.resize(maxi(1,roundi(isolated.get_width()*scale_factor)),maxi(1,roundi(isolated.get_height()*scale_factor)),Image.INTERPOLATE_LANCZOS)
+		var canvas:=Image.create(64,48,false,Image.FORMAT_RGBA8);canvas.fill(Color.TRANSPARENT);canvas.blit_rect(isolated,Rect2i(Vector2i.ZERO,isolated.get_size()),Vector2i((64-isolated.get_width())/2,(48-isolated.get_height())/2));frames.add_frame("flight",ImageTexture.create_from_image(canvas))
+	_generated_cache[cache_key]=frames;return frames
+
+static func hostile_projectile_scale(visual_type:String)->float:
+	match visual_type:
+		"flaming_disk","hellfire_orb":return 0.56
+		"arrow","spectral_arrow":return 0.66
+		"rift_shard":return 0.60
+		_:return 0.54
 
 static func _remove_generated_background(image:Image)->void:
 	image.convert(Image.FORMAT_RGBA8)

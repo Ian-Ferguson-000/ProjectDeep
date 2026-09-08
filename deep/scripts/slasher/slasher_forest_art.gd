@@ -3,7 +3,6 @@ class_name SlasherForestArt
 
 const TX_GRASS:=preload("res://assets/pixel_art/TX Tileset Grass.png")
 const TX_PLANTS:=preload("res://assets/pixel_art/TX Plant.png")
-const TX_WALLS:=preload("res://assets/pixel_art/TX Tileset Wall.png")
 const TX_PROPS:=preload("res://assets/pixel_art/TX Props.png")
 const CAMPFIRE:=preload("res://assets/pixel_art/Campfire.png")
 const MERCHANT:=preload("res://assets/merchants/forest_thistle.png")
@@ -13,10 +12,6 @@ const KEY:=preload("res://assets/pixel_art/key.png")
 
 const TX_TILE_SIZE:=32
 const TX_GROUND_VARIANTS:=3
-const TX_WALL_CAP_REGIONS:Array[Rect2]=[Rect2(32,192,32,32),Rect2(64,192,32,32),Rect2(96,192,32,32),Rect2(128,192,32,32)]
-const TX_WALL_FACE_REGIONS:Array[Rect2]=[Rect2(32,224,32,32),Rect2(64,224,32,32),Rect2(96,224,32,32),Rect2(128,224,32,32)]
-const TX_WALL_SIDE_REGION:=Rect2(48,32,32,8)
-const TX_WALL_TIP_REGION:=Rect2(32,32,10,10)
 const TX_PROP_REGIONS:Dictionary={
 	"mossy_rock":Rect2(66,487,28,18),
 	"rock":Rect2(2,429,61,55),
@@ -47,23 +42,6 @@ static func make_ground_sprite(cell:Vector2i,cell_size:int=48)->Sprite2D:
 
 static func ground_base_texture(_cell:Vector2i)->Texture2D:
 	return TX_GRASS
-
-static func make_boundary_sprite(direction:Vector2i,variant:int)->Node2D:
-	var root:=Node2D.new();root.name="TXWallSegment"
-	if direction.x!=0:
-		var side:=Sprite2D.new();side.name="SideStrip";side.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;_atlas_scaled(side,TX_WALLS,TX_WALL_SIDE_REGION,Vector2(1.5,1.5),Vector2.ZERO);side.rotation=PI*0.5;side.flip_v=direction.x>0;root.add_child(side)
-	else:
-		var index:int=absi(variant)%TX_WALL_CAP_REGIONS.size();var cap:=_wall_piece(TX_WALL_CAP_REGIONS[index]);cap.name="Cap";var face:=_wall_piece(TX_WALL_FACE_REGIONS[index]);face.name="Face"
-		if direction.y<0:
-			cap.flip_v=true;face.flip_v=true;cap.position.y=-24;face.position.y=-72
-		else:
-			cap.position.y=24;face.position.y=72
-		root.add_child(cap);root.add_child(face)
-	return root
-
-static func make_corner_pillar(variant:int)->Node2D:
-	var root:=Node2D.new();root.name="TXWallTip";var tip:=Sprite2D.new();tip.name="RoundedTip";tip.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;_atlas(tip,TX_WALLS,TX_WALL_TIP_REGION,1.5,Vector2.ZERO)
-	var orientation:int=absi(variant)%4;tip.flip_h=orientation in [1,3];tip.flip_v=orientation in [2,3];root.add_child(tip);return root
 
 static func make_sprite(kind:String)->Sprite2D:
 	var sprite:=Sprite2D.new();sprite.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
@@ -96,12 +74,6 @@ static func make_sprite(kind:String)->Sprite2D:
 
 static func _atlas(sprite:Sprite2D,texture:Texture2D,region:Rect2,scale_value:float,offset:Vector2)->void:
 	sprite.texture=_texture_region(texture,region);sprite.scale=Vector2.ONE*scale_value;sprite.offset=offset
-
-static func _atlas_scaled(sprite:Sprite2D,texture:Texture2D,region:Rect2,scale_value:Vector2,offset:Vector2)->void:
-	sprite.texture=_texture_region(texture,region);sprite.scale=scale_value;sprite.offset=offset
-
-static func _wall_piece(region:Rect2)->Sprite2D:
-	var sprite:=Sprite2D.new();sprite.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;_atlas(sprite,TX_WALLS,region,1.5,Vector2.ZERO);return sprite
 
 static func _fit_to_pixels(sprite:Sprite2D,target_maximum:float)->void:
 	if sprite.texture==null:return

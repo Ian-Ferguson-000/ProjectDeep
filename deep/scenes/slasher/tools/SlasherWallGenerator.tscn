@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c6un4v5mtvfa"]
+
+[ext_resource type="Script" uid="uid://dt7xjvc1jbahg" path="res://scripts/slasher/slasher_wall_generator.gd" id="1_generator"]
+
+[node name="SlasherWallGenerator" type="Node2D" unique_id=310080999]
+script = ExtResource("1_generator")

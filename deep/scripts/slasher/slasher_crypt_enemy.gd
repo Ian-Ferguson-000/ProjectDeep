@@ -155,7 +155,7 @@ class SlasherCryptImpactMarker:
 			if is_instance_valid(target) and global_position.distance_to(target.global_position)<=58.0:target.receive_damage(damage,global_position.direction_to(target.global_position)*90.0,source)
 			for index:int in 8:
 				if not is_instance_valid(source):break
-				var direction:=Vector2.RIGHT.rotated(TAU*float(index)/8.0);var projectile:=HOSTILE_PROJECTILE.new().setup(source,target,global_position,direction,maxi(1,damage/2),{"projectile_speed":145.0,"projectile_range":210.0,"hit_radius":9.0,"color":"#aa74ff","visual_type":"soul"});get_parent().add_child(projectile);projectile.add_to_group("crypt_projectile")
+				var direction:=Vector2.RIGHT.rotated(TAU*float(index)/8.0);var projectile_visual:="necrotic_skull" if source.behavior_id=="grave_acolyte" else "soul";var projectile:=HOSTILE_PROJECTILE.new().setup(source,target,global_position,direction,maxi(1,damage/2),{"projectile_speed":145.0,"projectile_range":210.0,"hit_radius":9.0,"color":"#aa74ff","visual_type":projectile_visual});get_parent().add_child(projectile);projectile.add_to_group("crypt_projectile")
 			queue_free()
 	func _draw()->void:
 		var progress:=clampf(1.0-timer/0.8,0.0,1.0);draw_circle(Vector2.ZERO,58.0,Color(0.45,0.18,0.72,0.12+progress*0.18));draw_arc(Vector2.ZERO,58.0,0.0,TAU,40,Color("#d39cff"),2.0+progress*3.0)

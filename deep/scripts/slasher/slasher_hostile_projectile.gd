@@ -18,6 +18,7 @@ var age:=0.0
 var visual_type:="bolt"
 var collision_mask_value:=1
 var target_snapshot:=Vector2.ZERO
+var sprite:AnimatedSprite2D
 
 func setup(owner:SlasherEnemy,player:SlasherPlayer,origin:Vector2,aim:Vector2,projectile_damage:int,config:Dictionary,target_point:Vector2=Vector2.INF)->SlasherHostileProjectile:
 	source=owner;target=player;global_position=origin;direction=aim.normalized() if not aim.is_zero_approx() else Vector2.RIGHT
@@ -25,13 +26,18 @@ func setup(owner:SlasherEnemy,player:SlasherPlayer,origin:Vector2,aim:Vector2,pr
 	movement_pattern=String(config.get("movement_pattern","straight"));angular_velocity=float(config.get("angular_velocity",0.0));lifetime=float(config.get("lifetime",maxf(1.0,max_range/maxf(1.0,speed)+0.5)));visual_type=String(config.get("visual_type","bolt"));collision_mask_value=int(config.get("collision_mask",1));target_snapshot=target_point if target_point!=Vector2.INF else (player.global_position if is_instance_valid(player) else origin+direction*max_range);return self
 
 func _ready()->void:
-	z_index=4;queue_redraw()
+	z_index=4
+	var frames:=SlasherSpriteLibrary.hostile_projectile_frames(visual_type)
+	if frames!=null:
+		sprite=AnimatedSprite2D.new();sprite.name="ProjectileAnimation";sprite.sprite_frames=frames;sprite.rotation=direction.angle();sprite.scale=Vector2.ONE*SlasherSpriteLibrary.hostile_projectile_scale(visual_type);sprite.play("flight");add_child(sprite)
+	queue_redraw()
 
 func _physics_process(delta:float)->void:
 	if impacted:return
 	age+=delta
 	if age>=lifetime:_finish();return
 	if movement_pattern in ["curve","orbit"]:direction=direction.rotated(angular_velocity*delta)
+	if sprite!=null:sprite.rotation=direction.angle()
 	var movement:=direction*speed*delta
 	var query:=PhysicsRayQueryParameters2D.create(global_position,global_position+movement,collision_mask_value)
 	if is_instance_valid(source):query.exclude.append(source.get_rid())
@@ -47,6 +53,7 @@ func _finish()->void:
 	impacted=true;queue_free()
 
 func _draw()->void:
+	if sprite!=null:return
 	if visual_type=="soul":draw_circle(Vector2.ZERO,8.0,tint);draw_circle(Vector2.ZERO,3.5,Color("#e8ffff"));return
 	if visual_type=="arrow":draw_line(-direction*13.0,direction*13.0,tint,3.0);draw_colored_polygon(PackedVector2Array([direction*15.0,direction*7.0+direction.orthogonal()*5.0,direction*7.0-direction.orthogonal()*5.0]),tint);return
 	var forward:=direction*11.0;var side:=direction.orthogonal()*5.0;draw_colored_polygon(PackedVector2Array([forward,-forward*0.65+side,-forward,-forward*0.65-side]),tint);draw_polyline(PackedVector2Array([forward,-forward*0.65+side,-forward,-forward*0.65-side,forward]),tint.darkened(0.55),2.0)

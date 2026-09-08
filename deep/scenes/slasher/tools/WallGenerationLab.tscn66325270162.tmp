@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://darmagrw73rhs"]
+
+[ext_resource type="Script" uid="uid://be21r0m62hjlj" path="res://scripts/slasher/wall_generation_lab.gd" id="1_lab"]
+[ext_resource type="PackedScene" uid="uid://c6un4v5mtvfa" path="res://scenes/slasher/tools/SlasherWallGenerator.tscn" id="2_generator"]
+
+[node name="WallGenerationLab" type="Node2D" unique_id=1914138056]
+script = ExtResource("1_lab")
+
+[node name="SlasherWallGenerator" parent="." unique_id=1671516549 instance=ExtResource("2_generator")]
+render_collisions = false

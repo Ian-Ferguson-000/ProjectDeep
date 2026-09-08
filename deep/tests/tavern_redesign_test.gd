@@ -32,10 +32,11 @@ func _run() -> void:
 		var dungeon_button_count := 0
 		for entry in tavern.expedition_list.get_children():
 			if entry is Button: dungeon_button_count += 1
-		_expect(dungeon_button_count==7,"dungeon selector did not list all demo dungeons",failures)
+		_expect(dungeon_button_count==8,"dungeon selector did not list all demo dungeons",failures)
 		_expect(tavern.expedition_list.find_child("ForestDungeonButton",false,false) != null,"Forest selector entry missing",failures)
 		_expect(tavern.expedition_list.find_child("AshenFarmsteadDungeonButton",false,false) != null,"Farmstead selector entry missing",failures)
 		_expect(tavern.expedition_list.find_child("CryptDungeonButton",false,false) != null,"Crypt selector entry missing",failures)
+		_expect(tavern.expedition_list.find_child("BalorsHellDungeonButton",false,false) != null,"Balor's Hell selector entry missing",failures)
 		var forest_button:=tavern.expedition_list.find_child("ForestDungeonButton",false,false) as Button;var crypt_button:=tavern.expedition_list.find_child("CryptDungeonButton",false,false) as Button
 		_expect(forest_button.text.begins_with("▶") and crypt_button.has_meta("base_text"),"destination selection feedback is unclear",failures)
 		_expect(tavern.expedition_party_count!=null and tavern.expedition_party_count.text=="2 / 2","expedition planner does not expose its party cap",failures)

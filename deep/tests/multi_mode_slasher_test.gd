@@ -72,11 +72,11 @@ func _run() -> void:
 	_expect(ground_a.region_enabled and ground_a.region_rect.size==Vector2(32,32),"Slasher ground cell does not use one 32 px TX atlas tile",failures)
 	_expect(ground_a.scale==Vector2(1.5,1.5) and ground_a.region_rect.position.y==0.0,"Slasher TX grass tile is not fitted to the 48 px grid or escaped the grass variant row",failures)
 	ground_a.free();ground_b.free()
-	for direction in [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]:
-		var boundary:=SlasherForestArt.make_boundary_sprite(direction,3);var expected_pieces:=1 if direction.x!=0 else 2;_expect(boundary.get_child_count()==expected_pieces,"TX boundary assembly for %s has the wrong layer count"%direction,failures)
-		for piece:Node in boundary.get_children():_expect(piece is Sprite2D and (piece as Sprite2D).texture!=null and (piece as Sprite2D).texture_filter==CanvasItem.TEXTURE_FILTER_NEAREST,"Missing or filtered TX boundary layer for %s"%direction,failures)
-		boundary.free()
-	var tx_wall_tip:=SlasherForestArt.make_corner_pillar(0);var tip_sprite:=tx_wall_tip.get_child(0) as Sprite2D;_expect(tip_sprite!=null and tip_sprite.texture.get_width()==10 and tip_sprite.texture.get_height()==10,"TX wall junction does not use the small rounded tip crop",failures);tx_wall_tip.free()
+	var wall_fixture:Dictionary={Vector2i.ZERO:true,Vector2i.RIGHT:true,Vector2i.DOWN:true};var wall_topology:=SlasherWallTopology.build(wall_fixture,[],2);var wall_visuals:=SlasherWallRenderer.build_visuals(wall_topology,"stone_wall",Vector2.ZERO,48)
+	_expect(wall_visuals.get_child_count()>0 and WallTilesetProfile.validate().is_empty(),"Topology-aware TX wall assembly or profile validation failed",failures)
+	for segment in wall_visuals.get_children():
+		for piece in segment.get_children():_expect(piece is Sprite2D and (piece as Sprite2D).texture!=null and (piece as Sprite2D).texture_filter==CanvasItem.TEXTURE_FILTER_NEAREST,"Missing or filtered topology wall layer",failures)
+	wall_visuals.free()
 	var tx_barrel:=SlasherForestArt.make_sprite("barrel");var tx_rock:=SlasherForestArt.make_sprite("rock");var tx_chest:=SlasherForestArt.make_sprite("chest")
 	_expect(tx_barrel.texture.get_width()==31 and tx_barrel.texture.get_height()==55,"TX barrel crop does not follow the full sprite bounds",failures)
 	_expect(tx_rock.texture.get_width()==61 and tx_rock.texture.get_height()==55,"TX rock crop does not follow the full sprite bounds",failures)
@@ -88,7 +88,7 @@ func _run() -> void:
 	for pickup_id in ["gold","potion","key"]:
 		var pickup:=SlasherForestArt.make_sprite(pickup_id);var footprint:float=maxf(pickup.texture.get_width()*pickup.scale.x,pickup.texture.get_height()*pickup.scale.y);_expect(footprint<=33.0,"%s pickup is oversized at %.1f px"%[pickup_id,footprint],failures);pickup.free()
 	var gate_art:=SlasherForestArt.make_sprite("exit");var gate_size:float=maxf(gate_art.texture.get_width()*gate_art.scale.x,gate_art.texture.get_height()*gate_art.scale.y);_expect(gate_size>=50.0,"Slasher exit art is too small to read",failures);gate_art.free()
-	_expect(GameBalance.get_slasher_journal().get("entries",{}).size()==11,"Slasher journal catalog is incomplete",failures)
+	_expect(GameBalance.get_slasher_journal().get("entries",{}).size()==18,"Slasher journal catalog is incomplete",failures)
 	var relic_items:Dictionary=GameBalance.get_items();_expect(relic_items.size()==52,"Shared relic catalog no longer contains 52 items",failures)
 	for relic_id:Variant in relic_items:
 		var slasher_record:Dictionary=GameBalance.get_slasher_item_effects(String(relic_id));_expect(not slasher_record.is_empty() and not GameBalance.get_slasher_item_rules_text(String(relic_id)).is_empty(),"%s is missing its Slasher translation"%String(relic_id),failures)

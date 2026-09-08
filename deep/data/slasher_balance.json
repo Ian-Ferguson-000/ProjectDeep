@@ -59,6 +59,13 @@
 	"grave_acolyte": {"health_base":22,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":61,"preferred_range":225,"telegraph":0.92,"cooldown":2.55,"reward":7,"projectile_cap":72},
 	"soul_wisp": {"health_base":13,"health_per_floor":3,"damage_base":2,"damage_per_floor":1,"speed":104,"preferred_range":190,"cooldown":1.6,"burst_cooldown":5.2,"reward":6,"projectile_cap":72},
 	"crypt_lord": {"health_base":190,"health_per_floor":20,"damage_base":5,"damage_per_floor":1,"speed":54,"preferred_range":210,"reward":30,"projectile_cap":72,"phase_two":0.70,"phase_three":0.35},
+	"infernal_caster":{"health_base":18,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":74,"preferred_range":245,"reward":7,"projectile_cap":96},
+	"rift_stalker":{"health_base":16,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":92,"preferred_range":175,"teleport_windup":1.0,"teleport_recovery":1.5,"reward":7,"projectile_cap":96},
+	"hellcharger":{"health_base":27,"health_per_floor":5,"damage_base":4,"damage_per_floor":1,"speed":88,"reward":8,"projectile_cap":96},
+	"cinder_bomber":{"health_base":22,"health_per_floor":4,"damage_base":4,"damage_per_floor":1,"speed":64,"preferred_range":235,"reward":8,"projectile_cap":96},
+	"fire_spirit":{"health_base":7,"health_per_floor":2,"damage_base":3,"damage_per_floor":1,"speed":142,"reward":1,"projectile_cap":96},
+	"infernal_legate":{"health_base":105,"health_per_floor":12,"damage_base":5,"damage_per_floor":1,"speed":68,"preferred_range":190,"reward":22,"projectile_cap":96},
+	"balor":{"health_base":285,"health_per_floor":24,"damage_base":6,"damage_per_floor":1,"speed":45,"preferred_range":230,"reward":42,"projectile_cap":96},
 	"forest_boss": {"health_base": 75, "health_per_floor": 18, "damage_base": 6, "damage_per_floor": 2, "speed_base": 62, "speed_per_floor": 0, "attack_range": 44, "attack_cooldown": 0.75, "attack_knockback": 120, "collision_radius": 24, "reward": 18, "animation_lock": 0.35, "hit_stun_duration": 0.06, "received_knockback_multiplier": 0.35, "screen_shake_strength": 6.5, "screen_shake_duration": 0.20, "slow_multiplier": 0.55, "slow_duration": 1.5, "stagger_multiplier": 0.0, "stagger_duration": 0.45}
   },
   "wolf_archetypes": {
@@ -88,5 +95,12 @@
 	,"soul_wisp": {"sprite_offset_x":0,"sprite_offset_y":-17,"sprite_scale":0.67}
 	,"crypt_boss": {"sprite_offset_x":0,"sprite_offset_y":-25,"sprite_scale":1.08}
 	,"skeleton": {"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.48}
+	,"infernal_caster":{"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.72}
+	,"rift_stalker":{"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.72}
+	,"hellcharger":{"sprite_offset_x":0,"sprite_offset_y":-14,"sprite_scale":0.78}
+	,"cinder_bomber":{"sprite_offset_x":0,"sprite_offset_y":-16,"sprite_scale":0.74}
+	,"fire_spirit":{"sprite_offset_x":0,"sprite_offset_y":-13,"sprite_scale":0.62}
+	,"infernal_legate":{"sprite_offset_x":0,"sprite_offset_y":-22,"sprite_scale":0.95}
+	,"balor":{"sprite_offset_x":0,"sprite_offset_y":-30,"sprite_scale":1.20}
   }
 }

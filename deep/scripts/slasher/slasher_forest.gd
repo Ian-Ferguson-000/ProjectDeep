@@ -29,6 +29,7 @@ const TUTORIAL_SEQUENCE:=preload("res://scripts/slasher/forest_tutorial_sequence
 @export var tilemaps_define_walkability:=false
 @export var show_generated_ground:=true
 @export var show_generated_boundary_art:=true
+@export var show_wall_topology_debug:=false
 
 var controller:Node
 var run_state:RunState
@@ -71,6 +72,8 @@ var local_settings:Node
 var authored_layout_cache:Dictionary={}
 var authored_visual_cache:Array[Dictionary]=[]
 var authored_visuals_active:=false
+var wall_topology:Dictionary={}
+var wall_generator:SlasherWallGenerator
 
 func _settings()->Node:
 	var singleton:=get_node_or_null("/root/GameSettings")
@@ -230,11 +233,12 @@ func _build_world()->void:
 	if show_generated_ground or not authored_visuals_active:
 		for value:Variant in cells:
 			var cell:Vector2i=value;var base:=SlasherForestArt.make_ground_sprite(cell,TILE);base.name="Ground_%d_%d"%[cell.x,cell.y];base.position=_world(cell);ground_layer.add_child(base)
-	for value:Variant in layout.get("edges",{}):
-		var cell:Vector2i=value;var edge:Dictionary=layout.edges[cell]
-		for missing_value in edge.get("missing",[]):_add_boundary(cell,_direction(String(missing_value)))
-	_build_boundary_corners(cells)
+	_build_topology_walls(cells)
 	_build_decorations();_build_solid_props();_build_landmarks();_build_mist();_build_vignette()
+
+func _build_topology_walls(cells:Dictionary)->void:
+	wall_generator=SlasherWallGenerator.new();wall_generator.name="WallGenerator";var profile:=DungeonRuntimeProfile.get_profile(run_state.active_dungeon_id);wall_generator.profile_id=String(profile.get("wall_profile","stone_wall"));wall_generator.tile_size=TILE;wall_generator.render_visuals=not (authored_visuals_active and not show_generated_boundary_art);wall_generator.render_collisions=true;wall_generator.generate_deep_facades=true;wall_generator.show_topology_debug=show_wall_topology_debug;add_child(wall_generator)
+	wall_topology=wall_generator.generate(cells,Array(layout.get("doorway_edges",[])),ORIGIN)
 
 func _build_decorations()->void:
 	for value:Variant in layout.get("decorations",[]):
@@ -262,26 +266,6 @@ func _build_vignette()->void:
 	var layer:=CanvasLayer.new();layer.name="ForestLighting";layer.layer=0;add_child(layer)
 	var vignette:=ColorRect.new();vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);vignette.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	var material:=ShaderMaterial.new();var shader:=Shader.new();shader.code="shader_type canvas_item; void fragment(){vec2 p=UV-vec2(0.5);float edge=smoothstep(0.28,0.72,length(p));COLOR=vec4(0.01,0.035,0.02,edge*0.48);}";material.shader=shader;vignette.material=material;layer.add_child(vignette)
-
-func _add_boundary(cell:Vector2i,direction:Vector2i)->void:
-	var body:=StaticBody2D.new();var shape:=CollisionShape2D.new();var rectangle:=RectangleShape2D.new();rectangle.size=Vector2(TILE,8) if direction.y!=0 else Vector2(8,TILE);shape.shape=rectangle;body.add_child(shape);body.position=_world(cell)+Vector2(direction)*TILE*0.5;add_child(body)
-	if authored_visuals_active and not show_generated_boundary_art:return
-	var outside:Vector2i=cell+direction;var key:int=absi(outside.x*31+outside.y*17)
-	var wall:=SlasherForestArt.make_boundary_sprite(direction,key);wall.position=body.position;wall.z_index=2 if direction.y>=0 else -1;actor_layer.add_child(wall)
-
-func _build_boundary_corners(cells:Dictionary)->void:
-	if authored_visuals_active and not show_generated_boundary_art:return
-	var vertices:Dictionary={}
-	for cell_value:Variant in cells:
-		var cell:Vector2i=Vector2i(cell_value)
-		for offset:Vector2i in [Vector2i.ZERO,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.ONE]:vertices[cell+offset]=true
-	for vertex_value:Variant in vertices:
-		var vertex:Vector2i=Vector2i(vertex_value);var quadrants:Array[Vector2i]=[vertex+Vector2i(-1,-1),vertex+Vector2i(0,-1),vertex+Vector2i(-1,0),vertex];var occupied:Array[bool]=[];var occupied_count:=0
-		for quadrant:Vector2i in quadrants:
-			var present:bool=cells.has(quadrant);occupied.append(present);occupied_count+=1 if present else 0
-		if occupied_count not in [1,3]:continue
-		var target_state:bool=occupied_count==1;var quadrant_index:=occupied.find(target_state);var corner_index:int=[3,2,1,0][quadrant_index]
-		var corner:=SlasherForestArt.make_corner_pillar(corner_index);corner.position=ORIGIN+Vector2(vertex)*TILE;corner.z_index=4;actor_layer.add_child(corner)
 
 func _spawn_player()->void:
 	player=PLAYER_SCRIPT.new();player.name="SlasherPlayer";player.position_sanitizer=sanitize_player_position;player.pathfinder=pathfinder;player.setup(run_state);actor_layer.add_child(player);player.global_position=_world(layout.start);player.health_changed.connect(_on_health_changed);player.resource_changed.connect(_on_resource_changed);player.ability_resolved.connect(_on_ability_resolved);player.defeated.connect(_on_player_defeated)
