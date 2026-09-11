@@ -16,10 +16,11 @@ func _run() -> void:
 		var gear_list: Array[GearData] = [gear]
 		var tavern := TAVERN.instantiate(); tavern.setup(null,state,gear_list,"Welcome home.",summary); root.add_child(tavern)
 		await process_frame
-		_expect(tavern.backdrop != null and tavern.top_hud != null, "missing backdrop or HUD at %s"%viewport_size,failures)
+		_expect(tavern.get_node_or_null("TavernWorld/Walls") != null and tavern.get_node_or_null("TavernWorld/Decor") != null and tavern.top_hud != null, "missing modular world layers or HUD at %s"%viewport_size,failures)
 		_expect(tavern.top_hud.size.y<=56.0 and tavern.hud_date_label.text.contains("Spring") and tavern.hud_bank_label.text.contains(str(state.campaign.banked_gold)),"compact status bar is missing authoritative date/bank values at %s (height %.1f, date '%s', bank '%s')"%[viewport_size,tavern.top_hud.size.y,tavern.hud_date_label.text,tavern.hud_bank_label.text],failures)
 		_expect(tavern.results_backdrop.visible and tavern.results_text.text.contains("Forest cleared"),"structured results missing at %s"%viewport_size,failures)
-		_expect(not tavern.player_token.visible and tavern.toolbar!=null and tavern.toolbar.get_child_count()==5,"static tavern did not remove the avatar or expose five toolbar actions",failures)
+		_expect(tavern.player_token==null and tavern.activity_controller!=null and tavern.toolbar!=null and tavern.toolbar.get_child_count()==5,"living tavern world did not replace the legacy avatar/grid or expose five toolbar actions",failures)
+		_expect(tavern.world.get_node("Props").get_child_count()==3 and tavern.navigation_region.navigation_polygon!=null,"editable tavern tables or NavigationRegion2D are missing",failures)
 		_expect(tavern.toolbar.position.y>=tavern.get_viewport_rect().size.y-72 and tavern.toolbar.size.y<=64,"management navigation is not compact and bottom anchored at %s"%viewport_size,failures)
 		for toolbar_button in tavern.toolbar.get_children():_expect(toolbar_button is Button and (toolbar_button as Button).icon!=null,"toolbar action is missing its recognizable icon",failures)
 		var expedition_toolbar:=tavern.toolbar_buttons.get("Expedition") as Button;var calendar_toolbar:=tavern.toolbar_buttons.get("Calendar") as Button

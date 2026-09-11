@@ -592,7 +592,6 @@ func _on_tutorial_step_changed(step:int)->void:
 	if not _is_tutorial_expedition():return
 	run_state.campaign.expedition.tutorial_step=step
 	_on_tutorial_step_entered(step)
-	run_state.autosave_campaign()
 
 func _on_tutorial_step_entered(step:int)->void:
 	if step==3:
@@ -613,7 +612,6 @@ func _on_tutorial_completed()->void:
 	if not _is_tutorial_expedition():return
 	run_state.campaign.expedition.tutorial_step=ForestTutorialSequence.STEP_COUNT
 	run_state.campaign.expedition.tutorial_controls_complete=true
-	run_state.autosave_campaign()
 	_show_message("Controls learned. Alden's life is now in your hands.",4.0)
 
 func _is_tutorial_expedition()->bool:

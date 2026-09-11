@@ -2,13 +2,13 @@
   "generation": {"width": 44, "height": 28, "base_rooms": 6, "room_growth_per_floor": 1, "room_growth_cap": 3, "room_width_min": 9, "room_width_max": 14, "room_height_min": 7, "room_height_max": 11, "corridor_width": 2, "tile_size": 48, "decoration_density": 0.16, "edge_decoration_density": 0.48, "solid_prop_density": 0.025, "spawn_clearance_cells": 2,"enemy_count_per_room_cap":7},
   "rewards": {"floor_xp_base":45,"floor_xp_per_depth":5,"elite_floor_bonus":55,"campaign_boss_bonus":70,"endless_xp_multiplier":0.35,"loot_gold_base":5},
   "boss_durability": {"max_damage_fraction":0.05,"shield_reduction":0.75,"shield_duration":0.5,"shield_color":"#8fd8ff"},
-  "input": {"held_basic_cooldown_multiplier": 1.5},
+  "input": {"held_basic_cooldown_multiplier": 2.25},
   "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
   "classes": {
 	"warrior": {
 	  "speed": 285, "collision_radius": 18, "sprite_scale": 1.58, "sprite_offset_y": -30,
-	  "basic": {"cooldown": 0.18, "resource_cost": 0, "resource_gain": 2, "power_stat": "attack_power", "damage_coefficient": 3.0, "flat_damage": 0, "reach": 118, "arc_degrees": 92, "knockback": 10, "animation_lock": 0.32},
-	  "movement": {"cooldown": 0.2, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 2.0, "flat_damage": 0, "movement_distance": 355, "destination_clearance": 22, "path_radius": 36, "invulnerability": 0.38, "reach": 58, "arc_degrees": 75, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
+	  "basic": {"cooldown": 0.18, "resource_cost": 0, "resource_gain": 2, "power_stat": "attack_power", "damage_coefficient": 3.0, "flat_damage": 0, "reach": 118, "arc_degrees": 92, "knockback": 10, "deflect_reach": 128, "deflect_arc_degrees": 110, "animation_lock": 0.32},
+	  "movement": {"cooldown": 0.2, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 2.0, "flat_damage": 0, "movement_distance": 355, "dash_speed": 1120, "landing_invulnerability": 0.08, "destination_clearance": 22, "path_radius": 36, "invulnerability": 0.38, "reach": 58, "arc_degrees": 75, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 4.0, "flat_damage": 0, "reach": 208, "arc_degrees": 140, "knockback": 30, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 3.5, "resource_cost": 0, "resource_gain": 0, "effect_duration": 0.65, "mitigation": 1.0, "counter_coefficient": 1.0, "counter_flat_damage": 0, "counter_knockback": 35, "animation_lock": 0.32}
 	},
@@ -35,10 +35,10 @@
 	},
 	"rogue": {
 	  "speed": 215, "collision_radius": 18, "sprite_scale": 0.42, "sprite_offset_y": -57,
-	  "basic": {"cooldown": 0.12, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 2, "reach": 72, "arc_degrees": 28, "knockback": 10, "piercing": true, "animation_lock": 0.32},
-	  "movement": {"cooldown": 0.7, "resource_cost": 0, "resource_gain": 0, "movement_distance": 175, "destination_clearance": 22, "invulnerability": 0.5, "hidden_duration": 0.5, "animation_lock": 0.32},
+	  "basic": {"cooldown": 0.12, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 2, "reach": 104, "line_radius": 18, "arc_degrees": 28, "knockback": 10, "piercing": true, "deflect_reach": 110, "deflect_arc_degrees": 54, "animation_lock": 0.32},
+	  "movement": {"cooldown": 0.7, "resource_cost": 0, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "movement_distance": 175, "pass_through_distance": 36, "aim_dot_threshold": 0.72, "path_radius": 22, "destination_clearance": 22, "invulnerability": 0.5, "hidden_duration": 0.5, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.2, "resource_cost": 2, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 2.0, "bonus_damage_coefficient": 3.0, "flat_damage": 0, "target_range": 100, "aim_dot_threshold": 0.65, "isolation_radius": 95, "low_health_fraction": 0.5, "knockback": 15, "animation_lock": 0.32},
-	  "defensive": {"cooldown": 3.2, "resource_cost": 0, "resource_gain": 1, "effect_duration": 0.7, "invulnerability": 0.7, "movement_distance": 70, "destination_clearance": 22, "animation_lock": 0.32}
+	  "defensive": {"cooldown": 3.2, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "effect_duration": 0.7, "invulnerability": 0.7, "movement_distance": 70, "hidden_duration": 0.5, "destination_clearance": 22, "animation_lock": 0.32}
 	},
 	"summoner": {
 	  "speed": 180, "collision_radius": 18, "sprite_scale": 0.42, "sprite_offset_y": -57,

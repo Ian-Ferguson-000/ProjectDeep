@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "conversations": {
+    "keeper_intro": {
+      "start": "welcome",
+      "nodes": {
+        "welcome": {
+          "lines": [{"speaker":"The Hearth","text":"The room is yours now. Every road begins with a conversation."}],
+          "effects": {"add_flags":["keeper_welcomed"]}
+        }
+      }
+    },
+    "candidate_default": {
+      "start": "greeting",
+      "nodes": {
+        "greeting": {
+          "lines": [{"speaker":"Candidate","text":"I am looking for a company that keeps its word."}],
+          "effects": {"add_flags":["candidate_spoken"]}
+        }
+      }
+    },
+    "merchant_default": {
+      "start": "shop",
+      "nodes": {"shop": {"lines": [{"speaker":"Merchant","text":"The shelves are stocked. Ask what you need."}]}}
+    }
+  }
+}

@@ -2,6 +2,10 @@
 
 This project is still using a mix of imported asset packs, generated art, and early prototype files. As the dungeon set grows, migrate art into domain folders while keeping original vendor/source packs intact for reference.
 
+## Usage Audit
+
+See [AssetUsage.md](AssetUsage.md) for the generated inventory of runtime-used, dynamically loaded, tool/test-only, and unreferenced assets. Refresh it from the repository root with `./tools/audit_asset_usage.ps1` before planning a cleanup pass. Files already quarantined outside the live asset tree are recorded in [UnusedAssetMigration.md](UnusedAssetMigration.md).
+
 ## Proposed Hierarchy
 
 ```text

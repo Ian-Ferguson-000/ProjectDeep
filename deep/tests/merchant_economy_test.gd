@@ -65,7 +65,7 @@ func _run() -> void:
 	root.add_child(tavern)
 	await process_frame
 	_expect(tavern.merchant_shop_panel != null, "Tavern shop modal did not initialize", failures)
-	_expect(tavern.forest_merchant_token.visible, "recruited Forest merchant did not appear in Tavern", failures)
+	_expect(tavern.activity_controller.actors.has("forest") and (tavern.activity_controller.actors["forest"] as TavernActor).visible, "recruited Forest merchant did not appear in Tavern", failures)
 	tavern._open_merchant_shop("forest")
 	_expect(tavern.merchant_shop_panel.visible, "Tavern merchant shop did not open", failures)
 	tavern.free()

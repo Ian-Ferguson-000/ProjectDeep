@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/scenes/tavern_prop.gd" id="1_prop"]
+
+[node name="TavernProp" type="Node2D"]
+script = ExtResource("1_prop")
+
+[node name="Visual" type="Sprite2D" parent="."]
+
+[node name="InteractionMarker" type="Marker2D" parent="."]
+
+[node name="CollisionBody" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CollisionBody"]
+
+[node name="NavigationObstacle2D" type="NavigationObstacle2D" parent="."]
+vertices = PackedVector2Array(-60, -24, 60, -24, 60, 24, -60, 24)
+avoidance_enabled = false

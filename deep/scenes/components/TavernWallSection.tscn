@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/scenes/tavern_wall_section.gd" id="1_wall"]
+
+[node name="TavernWallSection" type="Node2D"]
+script = ExtResource("1_wall")
+
+[node name="Visual" type="Sprite2D" parent="."]
+
+[node name="CollisionBody" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CollisionBody"]
+
+[node name="NavigationObstacle2D" type="NavigationObstacle2D" parent="."]

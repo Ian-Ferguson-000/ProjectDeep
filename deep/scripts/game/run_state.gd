@@ -81,7 +81,7 @@ func sync_campaign_runtime() -> void:
 	if campaign == null: return
 	campaign.legacy_runtime = {"completed_dungeons":completed_dungeons.duplicate(true),"forest_cleared":forest_cleared,"completed_runs":completed_runs,"deaths":deaths,"merchant_progress":merchant_progress.duplicate(true),"merchant_offer_stock":merchant_offer_stock.duplicate(true),"purchased_favor_offers":purchased_favor_offers.duplicate(true),"enemy_defeat_counts":enemy_defeat_counts.duplicate(true)}
 
-func autosave_campaign() -> bool:
+func autosave_on_floor_entry() -> bool:
 	sync_campaign_runtime()
 	return campaign.save_atomic() if campaign != null else false
 
@@ -283,7 +283,6 @@ func record_active_dungeon_completion() -> Array[String]:
 	if campaign != null and campaign.expedition.active:
 		campaign.expedition.carried_gold = gold
 		logs = campaign.record_dungeon_clear(active_dungeon_id, active_play_mode)
-	autosave_campaign()
 	return logs
 
 func transition_to_dungeon(dungeon_id: String) -> bool:
@@ -316,7 +315,7 @@ func transition_to_dungeon(dungeon_id: String) -> bool:
 		campaign.expedition.member_runtime[character_id] = runtime
 	_tick_inventory_floor_durations()
 	run_outcome = "The expedition descends into %s without returning to the Hearth." % String(dungeon.get("name", dungeon_id.capitalize()))
-	autosave_campaign()
+	autosave_on_floor_entry()
 	return true
 
 func advance_slasher_floor()->void:
@@ -353,7 +352,6 @@ func finish_run(outcome: String, message: String) -> void:
 		if outcome == "victory": campaign.record_dungeon_clear(active_dungeon_id, active_play_mode)
 		campaign.settle_expedition(campaign.expedition.expedition_id, outcome, {"headline":message.split("\n", false)[0] if not message.is_empty() else message})
 		if campaign.is_tutorial_complete(): restore_completed_tutorial_health()
-		autosave_campaign()
 	_sync_crypt_unlock()
 
 func has_completed_dungeon(dungeon_id: String) -> bool:
@@ -758,7 +756,6 @@ func purchase_merchant_offer(merchant_id: String, offer_id: String, location: St
 	var stock_key := _merchant_stock_key(merchant_id, offer_id)
 	merchant_offer_stock[stock_key] = maxi(0, int(chosen.get("stock_remaining", 1)) - 1)
 	logs.push_front("Purchased %s for %d %s." % [String(chosen.get("name", offer_id)), favor_cost if favor_cost > 0 else gold_cost, "Favor" if favor_cost > 0 else "gold"])
-	autosave_campaign()
 	return logs
 
 func _merchant_stock_key(merchant_id: String, offer_id: String) -> String:

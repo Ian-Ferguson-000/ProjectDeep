@@ -154,7 +154,7 @@ func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	super._on_enemy_defeated(enemy,reward)
 	if enemies_remaining==0:
 		exit_open=true;room_reward_claimed=true;run_state.update_field_room(room_id,{"cleared":true,"reward_claimed":true,"slasher":{"activated":true,"surviving_enemies":[]}})
-		run_state.record_floor_checkpoint("room_%d"%room_id,run_state.get_field_cleared_count());run_state.autosave_campaign()
+		run_state.record_floor_checkpoint("room_%d"%room_id,run_state.get_field_cleared_count())
 		if room_role=="boss":run_state.field_run["boss_defeated"]=true;_build_landmarks();_show_message("The Harvest Wretch falls · enter the return gate.")
 		else:
 			var amount:=run_state.apply_reward_bonus(int(Dictionary(GameBalance.get_dungeon("ashen_farmstead").get("slasher",{})).get("room_clear_gold",5)),"gold");run_state.gold+=amount;_show_message("Room cleared · doors open · +%d gold · choose the next route."%amount)

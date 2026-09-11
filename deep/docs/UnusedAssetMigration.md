@@ -1,0 +1,1568 @@
+# Unused Asset Migration
+
+Generated on 2026-09-09 02:21 -04:00. This records assets moved from `assets/` to the Godot-ignored `unused_assets/` quarantine.
+
+- Source assets moved: 1539
+- Source size moved: 79.52 MiB
+- Selection rule: `Unreferenced` in `docs/AssetUsage.md`; runtime-directory and test/tool-only files were retained.
+- Restore rule: move a file and its `.import` sidecar back to the same relative path below `assets/`.
+
+## By top-level folder
+
+| Folder | Files | Size |
+| --- | ---: | ---: |
+| `effect_packs` | 65 | 0.24 MiB |
+| `enemies` | 6 | 12.02 MiB |
+| `field` | 1 | 1.81 MiB |
+| `generated_maps` | 1 | 1.92 MiB |
+| `generated_ui` | 1 | 0.45 MiB |
+| `Humble Gift - Paper UI System v1.1` | 1397 | 5.18 MiB |
+| `merchants` | 3 | 6.68 MiB |
+| `pixel_art` | 25 | 5.38 MiB |
+| `slasher` | 1 | 1.95 MiB |
+| `sprite_packs` | 5 | 0.03 MiB |
+| `tavern` | 2 | 4.26 MiB |
+| `tile_sets` | 10 | 14.47 MiB |
+| `ui` | 22 | 25.12 MiB |
+
+## Files
+
+- `effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 192x192.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1.aseprite`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Hit1.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Hit2.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Hit3.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Hit4.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Hit5.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Hit6.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Hit7.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Hit8.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable1.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable10.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable2.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable3.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable4.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable5.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable6.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable7.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable8.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Repeatable9.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Start1.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Start2.png`
+- `effect_packs/Aether Effect 01/Aether VFX 1/Separated Frames/VFX 1 Start3.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Ice VFX 2 192x192.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Ice VFX 2 Active.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Ice VFX 2 Ending.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Ice VFX 2 Start.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Ice VFX 2.aseprite`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active1.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active2.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active3.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active4.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active5.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active6.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active7.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active8.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Active9.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending1.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending10.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending11.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending12.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending13.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending14.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending15.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending16.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending17.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending18.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending2.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending3.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending4.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending5.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending6.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending7.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending8.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Ending9.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start1.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start2.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start3.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start4.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start5.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start6.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start7.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start8.png`
+- `effect_packs/Aether Effect 01/Aether VFX 2/Separated Frames/Ice VFX 2 Start9.png`
+- `effect_packs/fireball/fireball_generated_source.png`
+- `enemies/ash_rat/sources/slasher_animation_source.png`
+- `enemies/blighted_farmhand/sources/slasher_animation_source.png`
+- `enemies/boss_atlas/generated_boss_lineup.png`
+- `enemies/ember_crow/sources/slasher_animation_source.png`
+- `enemies/harvest_wretch/sources/slasher_animation_source.png`
+- `enemies/possessed_scarecrow/sources/slasher_animation_source.png`
+- `field/farmstead/sources/farmstead_atlas_source.png`
+- `generated_maps/tavern_floor_wood.png`
+- `generated_ui/wooden_exit_door.webp`
+- `Humble Gift - Paper UI System v1.1/Aseprite/Animated/Folding & Cutout Paper UI.aseprite`
+- `Humble Gift - Paper UI System v1.1/Aseprite/Animated/Items Holder Day & Night Cycle.aseprite`
+- `Humble Gift - Paper UI System v1.1/Aseprite/Animated/Plain Paper UI.aseprite`
+- `Humble Gift - Paper UI System v1.1/Aseprite/Folding & Cutout Paper UI SpriteSheet.aseprite`
+- `Humble Gift - Paper UI System v1.1/Aseprite/Plain Paper UI SpriteSheet.aseprite`
+- `Humble Gift - Paper UI System v1.1/License.pdf`
+- `Humble Gift - Paper UI System v1.1/Sprites/Book Desk/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Book Desk/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Book Desk/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Book Desk/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Book Desk/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/1/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/2/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/3/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/1 Headers/4/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/37.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/38.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/39.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/40.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/2 item Holder/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/1/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/3 Rewards/2/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/1/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/4 Notification/2/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/5 Mini Map/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/6 Player HUD/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/37.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/38.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/39.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/40.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/41.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/42.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/43.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/44.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/7 Dialogue Box/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/8 Shop/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/37.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/38.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/39.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/40.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/41.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/42.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/43.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/44.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/45.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/46.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/47.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/48.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/49.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Folding & Cutout/9 Calender/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/1/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/2/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/3/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/1 Headers/4/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/37.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/38.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/39.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/40.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/2 item Holder/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/1/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/3 Rewards/2/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/1/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/4 Notification/2/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/5 Mini Map/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/6 Player HUD/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/37.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/38.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/39.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/40.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/41.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/42.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/43.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/44.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/7 Dialogue Box/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/8 Shop/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/37.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/38.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/39.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/40.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/41.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/42.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/43.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/44.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/45.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/46.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/47.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/48.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/49.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content Appear Animation/Plain/9 Calender/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Cutout/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/10 Banners & Headers/Plain/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/3 Progress Bars/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/0.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/4 Buttons/Sliced/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/5 Holders/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/6 Highlighter/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/6 Highlighter/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/6 Highlighter/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/6 Highlighter/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/6 Highlighter/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/6 Highlighter/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/6 Highlighter/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/6 Highlighter/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/7 Day & Night Cycle/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/8 Equipment/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp Mark/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/idle/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Content/9 Stamp/Stamp/Stamped/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/1 Dawn/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/2 Day/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/3 Noon/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/4 Night/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/5 Lightning 1/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/6 Lightning 2/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Full/7 Raining/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/1 Dawn/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/2 Day/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/3 Noon/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/4 Night/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/5 Lightning 1/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/6 Lightning 2/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Day & Night Cycle/Half/7 Raining/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/37.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/38.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/39.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/40.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/41.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/42.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/43.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/44.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/45.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/46.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/47.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/48.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/49.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/50.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/51.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/52.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/53.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/54.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/55.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/56.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/1 Paper/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/10 Calander/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/2 Headers/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/2 Headers/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/2 Headers/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/2 Headers/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/3 Item Holder/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/4 Notification/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/4 Notification/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/5 Mini Map/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/6 Player HUD/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/7 Dialogue Box/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/8 Shop/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/9 Rewards/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Folding & Cutout/9 Rewards/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/10.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/11.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/12.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/13.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/14.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/15.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/16.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/17.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/18.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/19.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/20.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/21.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/22.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/23.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/24.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/25.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/26.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/27.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/28.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/29.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/30.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/31.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/32.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/33.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/34.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/35.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/36.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/37.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/38.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/39.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/40.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/41.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/42.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/43.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/44.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/45.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/46.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/47.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/48.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/49.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/5.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/50.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/51.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/52.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/53.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/6.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/7.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/8.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/1 Paper/9.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/10 Calander/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/3.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/4.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/4 Notification/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/4 Notification/2.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/5 Mini Map/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/6 Player HUD/1.png`
+- `Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/9 Rewards/2.png`
+- `Humble Gift - Paper UI System v1.1/SpriteSheet/Folding & Cutout Paper UI SpriteSheet.png`
+- `Humble Gift - Paper UI System v1.1/SpriteSheet/Plain Paper UI SpriteSheet.png`
+- `merchants/sources/crypt_caldris_source.png`
+- `merchants/sources/forest_thistle_source.png`
+- `merchants/sources/tavern_mara_source.png`
+- `pixel_art/atlas_transparency.gdshader.uid`
+- `pixel_art/bambusfackel.png`
+- `pixel_art/barrel1.png`
+- `pixel_art/barrel2.jpg`
+- `pixel_art/chest3.jpg.avif`
+- `pixel_art/chests/chest.png`
+- `pixel_art/dead-swamp-v4.png`
+- `pixel_art/dreck auf dreck.png`
+- `pixel_art/forest_art/decor/tree_large.png`
+- `pixel_art/forest_art/decor/tree_wide.png`
+- `pixel_art/forest_art/green-grass-vector-seamless-texture-lawn-nature-meadow-plant-field-natural-outdoor-illustration_1284-47056.jpg.avif`
+- `pixel_art/forest_art/istockphoto-2210710944-612x612.jpg`
+- `pixel_art/green-grass-vector-seamless-texture-lawn-nature-meadow-plant-field-natural-outdoor-illustration_1284-47056.jpg.avif`
+- `pixel_art/il_1080xN.4843205612_npga.jpg.avif`
+- `pixel_art/MediavelFree.png`
+- `pixel_art/rocks/rock3.jpg`
+- `pixel_art/swamp blubbeln.png`
+- `pixel_art/swamp-brühe animated-v5.png`
+- `pixel_art/swamp-v3 - shrooms-preview.png`
+- `pixel_art/tree-trunk-swamp.png`
+- `pixel_art/TX Brickman.png`
+- `pixel_art/TX Shadow Plant.png`
+- `pixel_art/TX Shadow.png`
+- `pixel_art/TX Tileset CryptWall.png`
+- `pixel_art/windspiel.png`
+- `slasher/forest/verdant_tileset.png`
+- `sprite_packs/Kobold/License.txt`
+- `sprite_packs/Kobold/Preview.png`
+- `sprite_packs/Kobold/Sprites/without_outline/ATTACK 1.png`
+- `sprite_packs/Kobold/Sprites/without_outline/IDLE.png`
+- `sprite_packs/Kobold/Sprites/without_outline/RUN.png`
+- `tavern/sources/tavern_hub_backdrop_source.png`
+- `tavern/sources/tavern_props_source.png`
+- `tile_sets/Free_pixel_tiles_pack/cobblestone_1.png`
+- `tile_sets/Free_pixel_tiles_pack/cobblestone_2.png`
+- `tile_sets/Free_pixel_tiles_pack/cobblestone_3.png`
+- `tile_sets/Free_pixel_tiles_pack/dirty_1.png`
+- `tile_sets/Free_pixel_tiles_pack/dirty_2.png`
+- `tile_sets/Free_pixel_tiles_pack/dirty_3.png`
+- `tile_sets/Free_pixel_tiles_pack/grass_2.png`
+- `tile_sets/Free_pixel_tiles_pack/sand_1.png`
+- `tile_sets/Free_pixel_tiles_pack/sand_2.png`
+- `tile_sets/Free_pixel_tiles_pack/sand_3.png`
+- `ui/buttons/begin_button.png`
+- `ui/buttons/fantasy_button_compact_dark.png`
+- `ui/buttons/fantasy_button_dark.png`
+- `ui/buttons/fantasy_button_light.png`
+- `ui/character_menu/section_panel.webp`
+- `ui/character_menu/source/gold_panel_sheet.png`
+- `ui/character_menu/stat_tile.png`
+- `ui/class_cards/sources/healer_source.png`
+- `ui/class_cards/sources/mage_source.png`
+- `ui/class_cards/sources/phantom_source.png`
+- `ui/class_cards/sources/summoner_source.png`
+- `ui/class_cards/sources/tank_source.png`
+- `ui/class_cards/sources/warrior_source.png`
+- `ui/item_card/ard_background_light.png`
+- `ui/item_card/artwork_frame.png`
+- `ui/item_card/card_background_light.png`
+- `ui/item_card/card_background.png`
+- `ui/item_card/card_border.png`
+- `ui/item_card/footer_panel.png`
+- `ui/item_card/header_panel.png`
+- `ui/item_card/rarity/rarity_strip.png`
+- `ui/item_card/stat_panel.png`

@@ -19,6 +19,8 @@ var visual_type:="bolt"
 var collision_mask_value:=1
 var target_snapshot:=Vector2.ZERO
 var sprite:AnimatedSprite2D
+var deflected_by:SlasherPlayer
+var deflected_hit_ids:Dictionary={}
 
 func setup(owner:SlasherEnemy,player:SlasherPlayer,origin:Vector2,aim:Vector2,projectile_damage:int,config:Dictionary,target_point:Vector2=Vector2.INF)->SlasherHostileProjectile:
 	source=owner;target=player;global_position=origin;direction=aim.normalized() if not aim.is_zero_approx() else Vector2.RIGHT
@@ -27,6 +29,7 @@ func setup(owner:SlasherEnemy,player:SlasherPlayer,origin:Vector2,aim:Vector2,pr
 
 func _ready()->void:
 	z_index=4
+	add_to_group("slasher_hostile_projectile")
 	var frames:=SlasherSpriteLibrary.hostile_projectile_frames(visual_type)
 	if frames!=null:
 		sprite=AnimatedSprite2D.new();sprite.name="ProjectileAnimation";sprite.sprite_frames=frames;sprite.rotation=direction.angle();sprite.scale=Vector2.ONE*SlasherSpriteLibrary.hostile_projectile_scale(visual_type);sprite.play("flight");add_child(sprite)
@@ -44,9 +47,28 @@ func _physics_process(delta:float)->void:
 	var collision:=get_world_2d().direct_space_state.intersect_ray(query)
 	if not collision.is_empty() and collision.get("collider") is StaticBody2D:_finish();return
 	global_position+=movement;traveled+=movement.length()
+	if is_instance_valid(deflected_by):
+		for node_value:Variant in get_tree().get_nodes_in_group("slasher_enemy"):
+			var enemy:SlasherEnemy=node_value as SlasherEnemy
+			if not is_instance_valid(enemy) or deflected_hit_ids.has(enemy.get_instance_id()):continue
+			if global_position.distance_to(enemy.global_position)<=hit_radius:
+				deflected_hit_ids[enemy.get_instance_id()]=true
+				enemy.receive_attack({"damage":damage,"damage_type":"physical","knockback":95.0},deflected_by)
+				_finish();return
+		if traveled>=max_range:_finish()
+		return
 	if is_instance_valid(target) and global_position.distance_to(target.global_position)<=hit_radius:
 		target.receive_damage(damage,direction*95.0,source if is_instance_valid(source) else null);_finish();return
 	if traveled>=max_range:_finish()
+
+func deflect(deflector:SlasherPlayer,outgoing_direction:Vector2)->bool:
+	if impacted or is_instance_valid(deflected_by) or not is_instance_valid(deflector):return false
+	deflected_by=deflector
+	direction=outgoing_direction.normalized() if not outgoing_direction.is_zero_approx() else -direction
+	movement_pattern="straight";angular_velocity=0.0;traveled=0.0;age=0.0
+	if sprite!=null:sprite.rotation=direction.angle();sprite.modulate=Color("#dffcff")
+	queue_redraw()
+	return true
 
 func _finish()->void:
 	if impacted:return

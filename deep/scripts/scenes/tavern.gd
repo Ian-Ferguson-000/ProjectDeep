@@ -1,13 +1,7 @@
 extends Node2D
 
-const TILE_SIZE := 60
-const GRID_W := 18
-const GRID_H := 10
-const LAYOUT_PATH := "res://data/tavern_layout.json"
-const PLAYER_IDLE_DOWN := preload("res://assets/sprite_packs/Player/IDLE/idle_down.png")
-const TAVERN_KEEPER := preload("res://assets/generated_characters/tavern_keeper.png")
-const TAVERN_BACKDROP := preload("res://assets/tavern/tavern_hub_backdrop.png")
-const BoardPieceScene := preload("res://scenes/components/BoardPiece.tscn")
+const WORLD_SIZE:=Vector2(1664,1008)
+const WORLD_ORIGIN:=Vector2(0,-48)
 const DIALOGUE_CHAT := preload("res://scripts/ui/dialogue_chat.gd")
 const RECRUITMENT_DIALOGUE := preload("res://scripts/ui/recruitment_dialogue.gd")
 const TAVERN_THEME := preload("res://scripts/ui/tavern_ui_theme.gd")
@@ -21,35 +15,19 @@ var arrival_summary: Dictionary = {}
 var message := ""
 var pending_story_lines: Array = []
 var pending_story_context := ""
-var player_pos := Vector2i(9, 8)
-var layout: Dictionary = {}
-var stations: Array[Dictionary] = []
-var blocked_cells: Dictionary = {}
-var click_navigation_active := false
-var active_station: Dictionary = {}
-var backdrop_layer: CanvasLayer
-var backdrop: TextureRect
-var station_markers := Node2D.new()
-var expedition_gate_hit_target: Button
 
-@onready var board: Node2D = $Board
-@onready var ground_layer: TileMapLayer = $Board/GroundLayer
-@onready var wall_layer: TileMapLayer = $Board/WallLayer
-@onready var fixture_layer: TileMapLayer = $Board/FixtureLayer
-@onready var prop_sprites: Node2D = $Board/PropSprites
-@onready var tokens_root: Node2D = $Board/Tokens
-@onready var player_token: BoardPiece = $Board/Tokens/PlayerToken
-@onready var bartender_token: BoardPiece = $Board/Tokens/BartenderToken
-@onready var gear_rack_token: BoardPiece = $Board/Tokens/GearRackToken
-@onready var forest_door_token: BoardPiece = $Board/Tokens/ForestDoorToken
+@onready var world:Node2D=$TavernWorld
+@onready var actors_root:Node2D=$TavernWorld/Actors
+@onready var activity_anchors:Node2D=$TavernWorld/ActivityAnchors
+@onready var navigation_region:NavigationRegion2D=$TavernWorld/NavigationRegion2D
+@onready var stairway_target:Button=$TavernWorld/StairwayTarget
+@onready var keeper:TavernKeeperController=$TavernWorld/Keeper
+var player_token:Node=null # Compatibility sentinel: the management hub has no player avatar.
 @onready var ui_root: Control = $UI/Root
 @onready var legacy_dialogue_panel: Panel = $UI/Root/DialoguePanel
 @onready var legacy_title: Label = $UI/Root/TitleLabel
 @onready var legacy_status: Label = $UI/Root/StatusLabel
 
-var crypt_door_token: BoardPiece
-var forest_merchant_token: BoardPiece
-var crypt_merchant_token: BoardPiece
 var merchant_shop_panel: MerchantShopPanel
 var top_hud: PanelContainer
 var hud_label: Label
@@ -96,15 +74,16 @@ var toolbar_buttons:Dictionary={}
 var calendar_backdrop:ColorRect
 var calendar_text:RichTextLabel
 var recruitment_dialogue:RecruitmentDialogue
-var candidate_stage:=Node2D.new()
-var candidate_buttons:Dictionary={}
-var candidate_sprites:Dictionary={}
-var npc_hit_targets:Dictionary={}
-var arrival_tween:Tween
 var arrivals_running:=false
 var arrivals_need_sequence:=false
 var dismissal_confirmation:ConfirmationDialog
 var pending_dismissal_id:=""
+var activity_controller:TavernActivityController
+var departure_running:=false
+var active_living_actor_id:=""
+var tavern_dialogue_service:TavernDialogueService
+var actor_dialogue:DialogueChat
+var pending_actor_dialogue_callback:Callable
 
 func setup(game_controller: Node, state: RunState, options: Array[GearData], intro_message: String, summary: Dictionary = {}, story_lines: Array = [], story_context: String = "") -> void:
 	controller = game_controller
@@ -121,10 +100,8 @@ func setup(game_controller: Node, state: RunState, options: Array[GearData], int
 
 func _ready() -> void:
 	ui_root.focus_mode = Control.FOCUS_ALL
-	_load_layout()
 	_hide_legacy_presentation()
 	_setup_backdrop()
-	_setup_tokens()
 	_build_hud()
 	_build_toolbar()
 	_build_dialogue_banner()
@@ -137,11 +114,20 @@ func _ready() -> void:
 	_build_recruitment_dialogue()
 	_build_tutorial_prompt()
 	_build_story_dialogue()
+	actor_dialogue=DIALOGUE_CHAT.new();actor_dialogue.name="ActorDialogue";actor_dialogue.conversation_finished.connect(_on_actor_dialogue_finished);ui_root.add_child(actor_dialogue)
 	_setup_merchant_shops()
 	get_viewport().size_changed.connect(_layout_scene)
 	_layout_scene()
 	_refresh_ui()
-	_build_candidate_stage()
+	_setup_activity()
+	tavern_dialogue_service=TavernDialogueService.new()
+	if run_state!=null and run_state.campaign!=null:
+		var keeper_intro:=tavern_dialogue_service.play("keeper_intro",{"campaign":run_state.campaign,"run_state":run_state})
+		tavern_dialogue_service.apply_effects(Dictionary(keeper_intro.get("effects",{})),{"campaign":run_state.campaign,"run_state":run_state})
+	if keeper!=null:
+		keeper.interaction_requested.connect(_on_keeper_interaction)
+		keeper.prompt_changed.connect(_on_keeper_prompt)
+		keeper.possession_changed.connect(func(_value:bool):_refresh_ui())
 	if not arrival_summary.is_empty() or not message.is_empty(): _show_arrival_results()
 	elif not pending_story_lines.is_empty(): call_deferred("_play_pending_story")
 	else:call_deferred("_continue_arrival_queue")
@@ -157,6 +143,7 @@ func _build_story_dialogue() -> void:
 
 func _play_pending_story() -> void:
 	if story_dialogue == null or pending_story_lines.is_empty(): return
+	if keeper!=null:keeper.set_modal_paused(true)
 	var lines := pending_story_lines.duplicate(true)
 	pending_story_lines.clear()
 	story_dialogue.play(lines)
@@ -169,7 +156,7 @@ func _on_story_finished() -> void:
 	else:
 		if run_state!=null and run_state.campaign!=null:
 			if context=="former_keeper_confrontation":run_state.campaign.mark_former_keeper_encounter_seen()
-			run_state.campaign.pending_story_context="";run_state.campaign.save_atomic()
+			run_state.campaign.pending_story_context=""
 		_continue_arrival_queue()
 
 func _show_tutorial_prompt() -> void:
@@ -180,50 +167,59 @@ func _show_tutorial_prompt() -> void:
 func _continue_tutorial() -> void:
 	if controller != null and controller.has_method("advance_tutorial_from_tavern"): controller.advance_tutorial_from_tavern()
 
-func _load_layout() -> void:
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(LAYOUT_PATH))
-	layout = parsed if parsed is Dictionary else {}
-	var spawn: Array = layout.get("player_spawn", [9, 8])
-	player_pos = Vector2i(int(spawn[0]), int(spawn[1]))
-	for entry in layout.get("stations", []):
-		if entry is Dictionary: stations.append(entry.duplicate(true))
-	for value in layout.get("blocked", []):
-		if value is Array and value.size() >= 2: blocked_cells[Vector2i(int(value[0]), int(value[1]))] = true
-
 func _hide_legacy_presentation() -> void:
 	legacy_dialogue_panel.visible = false
 	legacy_title.visible = false
 	legacy_status.visible = false
-	ground_layer.visible = false; wall_layer.visible = false; fixture_layer.visible = false; prop_sprites.visible = false
 
 func _setup_backdrop() -> void:
-	backdrop_layer = CanvasLayer.new(); backdrop_layer.layer = -10; add_child(backdrop_layer)
-	backdrop = TextureRect.new(); backdrop.texture = TAVERN_BACKDROP; backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE; backdrop_layer.add_child(backdrop)
-	station_markers.name = "StationMarkers"; board.add_child(station_markers);station_markers.visible=false
-	expedition_gate_hit_target=Button.new();expedition_gate_hit_target.name="ExpeditionGateHitTarget";expedition_gate_hit_target.flat=true;expedition_gate_hit_target.focus_mode=Control.FOCUS_NONE;expedition_gate_hit_target.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND;expedition_gate_hit_target.tooltip_text="Expedition Gate · Choose a dungeon";expedition_gate_hit_target.pressed.connect(_on_expedition_gate_clicked);ui_root.add_child(expedition_gate_hit_target)
+	stairway_target.pressed.connect(func():_show_dialogue("The Hearth","The upstairs rooms are being restored. For now, the company gathers below."))
 
-func _setup_tokens() -> void:
-	player_token.sprite_texture = PLAYER_IDLE_DOWN; player_token.sprite_region_enabled = true; player_token.sprite_region = Rect2(0,0,96,80); player_token.sprite_scale = Vector2(0.92,0.92); player_token.show_label = false; player_token.show_panel = false
-	bartender_token.sprite_texture = TAVERN_KEEPER; bartender_token.sprite_region_enabled = false; bartender_token.sprite_scale = Vector2(0.036,0.036); bartender_token.show_label = false; bartender_token.show_panel = false
-	gear_rack_token.visible = false
-	forest_door_token.visible = false
-	crypt_door_token = BoardPieceScene.instantiate(); crypt_door_token.name = "CryptDoorToken"; crypt_door_token.visible = false; tokens_root.add_child(crypt_door_token)
-	forest_merchant_token = BoardPieceScene.instantiate(); forest_merchant_token.name = "ForestMerchantToken"; tokens_root.add_child(forest_merchant_token)
-	crypt_merchant_token = BoardPieceScene.instantiate(); crypt_merchant_token.name = "CryptMerchantToken"; tokens_root.add_child(crypt_merchant_token)
-	_configure_merchant_token(forest_merchant_token, "forest")
-	_configure_merchant_token(crypt_merchant_token, "crypt")
-	player_token.visible=false
-	_add_npc_target("mara","Mara Vell",_open_npc_merchant.bind("tavern"))
-	if forest_merchant_token.visible:_add_npc_target("forest","Thistle Fen",_open_npc_merchant.bind("forest"))
-	if crypt_merchant_token.visible:_add_npc_target("crypt","Sister Caldris",_open_npc_merchant.bind("crypt"))
+func _setup_activity()->void:
+	activity_controller=TavernActivityController.new();activity_controller.name="TavernActivityController";add_child(activity_controller)
+	activity_controller.actor_interaction_requested.connect(_on_living_actor_interaction)
+	activity_controller.setup(run_state,actors_root,activity_anchors)
 
-func _open_npc_merchant(merchant_id:String)->void:
-	if not arrivals_running and not _modal_visible():_open_merchant_shop(merchant_id)
+func _on_living_actor_interaction(kind:String,id:String)->void:
+	if arrivals_running or departure_running or _modal_visible():return
+	active_living_actor_id=id
+	match kind:
+		"candidate":_open_candidate_with_dialogue(id)
+		"roster":
+			_open_recruited_summary(id)
+			get_tree().create_timer(3.6).timeout.connect(func():if activity_controller!=null:activity_controller.resume_actor(id))
+		"merchant":_open_merchant_shop(id)
 
-func _add_npc_target(id:String,label_text:String,action:Callable)->void:
-	var button:=Button.new();button.name="%sNpcTarget"%id.capitalize();button.text=label_text;button.tooltip_text="Speak with %s"%label_text;button.pressed.connect(action);TAVERN_THEME.apply_nameplate(button,"",false,true);ui_root.add_child(button);npc_hit_targets[id]=button
+func _open_candidate_with_dialogue(candidate_id:String)->void:
+	if tavern_dialogue_service==null or actor_dialogue==null:
+		_open_candidate(candidate_id);return
+	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord
+	if candidate==null:return
+	var packet:=tavern_dialogue_service.play("candidate_default",{"campaign":run_state.campaign,"run_state":run_state,"candidate":candidate})
+	tavern_dialogue_service.apply_effects(Dictionary(packet.get("effects",{})),{"campaign":run_state.campaign,"run_state":run_state,"candidate":candidate})
+	var lines:Array=packet.get("lines",[])
+	if lines.is_empty():_open_candidate(candidate_id);return
+	if keeper!=null:keeper.set_modal_paused(true)
+	pending_actor_dialogue_callback=Callable(self,"_open_candidate").bind(candidate_id)
+	actor_dialogue.play(lines)
+
+func _on_actor_dialogue_finished()->void:
+	var callback:=pending_actor_dialogue_callback;pending_actor_dialogue_callback=Callable()
+	if callback.is_valid():callback.call()
+
+func _on_keeper_interaction(target:Node)->void:
+	if target is TavernActor:
+		var actor:=target as TavernActor
+		_on_living_actor_interaction(actor.actor_kind,actor.actor_id)
+	elif target is TavernProp:
+		var prop:=target as TavernProp
+		var text_value:=prop.interact(keeper)
+		if not text_value.is_empty():_show_dialogue("The Hearth",text_value)
+
+func _on_keeper_prompt(text_value:String)->void:
+	if prompt_label!=null and not arrivals_running and not _modal_visible():
+		prompt_panel.visible=not text_value.is_empty()
+		prompt_label.text=text_value
 
 func _build_toolbar()->void:
 	toolbar=HBoxContainer.new();toolbar.name="TavernToolbar";toolbar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE);toolbar.offset_left=190;toolbar.offset_right=-190;toolbar.offset_top=-70;toolbar.offset_bottom=-10;toolbar.alignment=BoxContainer.ALIGNMENT_CENTER;toolbar.add_theme_constant_override("separation",8);ui_root.add_child(toolbar)
@@ -261,43 +257,6 @@ func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
 	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord;if candidate!=null:recruitment_dialogue.open(candidate)
 	_refresh_ui()
 
-func _build_candidate_stage()->void:
-	candidate_stage.name="CandidateStage";board.add_child(candidate_stage);_rebuild_candidate_targets(false)
-
-func _candidate_seat(index:int)->Vector2:
-	var viewport_size:=get_viewport_rect().size
-	var total:=mini(7,run_state.campaign.get_candidates().size()+run_state.campaign.living_roster().size()) if run_state!=null and run_state.campaign!=null else 2
-	var seats:Array[Vector2]
-	if total<=2:seats=[Vector2(viewport_size.x*0.30,viewport_size.y*0.50),Vector2(viewport_size.x*0.70,viewport_size.y*0.50)]
-	elif total==3:seats=[Vector2(viewport_size.x*0.25,viewport_size.y*0.50),Vector2(viewport_size.x*0.50,viewport_size.y*0.50),Vector2(viewport_size.x*0.75,viewport_size.y*0.50)]
-	elif total==4:seats=[Vector2(viewport_size.x*0.20,viewport_size.y*0.50),Vector2(viewport_size.x*0.40,viewport_size.y*0.50),Vector2(viewport_size.x*0.60,viewport_size.y*0.50),Vector2(viewport_size.x*0.80,viewport_size.y*0.50)]
-	else:seats=[Vector2(viewport_size.x*0.20,viewport_size.y*0.43),Vector2(viewport_size.x*0.40,viewport_size.y*0.43),Vector2(viewport_size.x*0.60,viewport_size.y*0.43),Vector2(viewport_size.x*0.80,viewport_size.y*0.43),Vector2(viewport_size.x*0.30,viewport_size.y*0.64),Vector2(viewport_size.x*0.50,viewport_size.y*0.64),Vector2(viewport_size.x*0.70,viewport_size.y*0.64)]
-	return seats[index%seats.size()]
-
-func _candidate_sprite_scale(class_id:String)->Vector2:
-	return Vector2(2.5,2.5) if class_id=="warrior" else Vector2(1.3,1.3)
-
-func _rebuild_candidate_targets(animate:bool)->void:
-	for child in candidate_stage.get_children():child.queue_free()
-	for button in candidate_buttons.values():if is_instance_valid(button):button.queue_free()
-	candidate_buttons.clear();candidate_sprites.clear();var records:=run_state.campaign.get_candidates();var index:=0
-	for candidate in records:
-		var sprite:=AnimatedSprite2D.new();sprite.name="%sArrivalSprite"%candidate.id;sprite.sprite_frames=SlasherSpriteLibrary.player_frames(candidate.adventurer.class_id);sprite.scale=_candidate_sprite_scale(candidate.adventurer.class_id);sprite.position=Vector2(-80,430) if animate else _candidate_seat(index);candidate_stage.add_child(sprite);candidate_sprites[candidate.id]=sprite
-		var idle:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle","down");if not idle.is_empty():sprite.play(idle)
-		var button:=Button.new();button.name="%sCandidateButton"%candidate.id;button.text="%s\n%s · Level %d"%[candidate.adventurer.display_name,candidate.adventurer.class_id.capitalize(),candidate.adventurer.level];button.position=_candidate_seat(index)+Vector2(-88,43);button.size=Vector2(176,48);button.tooltip_text="Speak with %s"%candidate.adventurer.display_name;button.pressed.connect(_open_candidate.bind(candidate.id));TAVERN_THEME.apply_nameplate(button,candidate.adventurer.class_id);_bind_character_highlight(button,sprite);button.visible=not animate;ui_root.add_child(button);candidate_buttons[candidate.id]=button;index+=1
-	if not animate:
-		for member in run_state.campaign.living_roster():
-			if index>=7:break
-			var sprite:=AnimatedSprite2D.new();sprite.name="%sRecruitedSprite"%member.id;sprite.sprite_frames=SlasherSpriteLibrary.player_frames(member.class_id);sprite.scale=_candidate_sprite_scale(member.class_id);sprite.position=_candidate_seat(index);candidate_stage.add_child(sprite);var idle:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle","down");if not idle.is_empty():sprite.play(idle)
-			var button:=Button.new();button.name="%sRecruitedButton"%member.id;button.text="%s  ✓\n%s · Level %d"%[member.display_name,member.class_id.capitalize(),member.level];button.position=_candidate_seat(index)+Vector2(-88,43);button.size=Vector2(176,48);button.tooltip_text="Recruited · Open %s's summary"%member.display_name;button.pressed.connect(_open_recruited_summary.bind(member.id));TAVERN_THEME.apply_nameplate(button,member.class_id,true);_bind_character_highlight(button,sprite);ui_root.add_child(button);candidate_buttons[member.id]=button;index+=1
-
-func _bind_character_highlight(button:Button,sprite:AnimatedSprite2D)->void:
-	var show_highlight:=func():
-		if is_instance_valid(sprite):sprite.modulate=Color("#fff0b8")
-	var clear_highlight:=func():
-		if is_instance_valid(sprite):sprite.modulate=Color.WHITE
-	button.mouse_entered.connect(show_highlight);button.focus_entered.connect(show_highlight);button.mouse_exited.connect(clear_highlight);button.focus_exited.connect(clear_highlight)
-
 func _open_recruited_summary(character_id:String)->void:
 	var member:=run_state.campaign.character(character_id)
 	if member!=null:_show_dialogue(member.display_name,"%s · Level %d · %s · %s · HP %d/%d"%[member.class_id.capitalize(),member.level,member.gear_id.replace("_"," ").capitalize(),member.trait_name,member.current_health,member.max_health])
@@ -305,12 +264,23 @@ func _open_recruited_summary(character_id:String)->void:
 func _open_candidate(candidate_id:String)->void:
 	if arrivals_running:return
 	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord
-	if candidate!=null:recruitment_dialogue.open(candidate)
+	if candidate!=null:
+		if activity_controller!=null:activity_controller.set_paused(true)
+		if keeper!=null:keeper.set_modal_paused(true)
+		recruitment_dialogue.open(candidate)
 
 func _recruit_candidate(candidate_id:String)->void:
+	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord
+	if candidate!=null and tavern_dialogue_service!=null:
+		var requirement_message:=tavern_dialogue_service.requirement_message(candidate_id,{"campaign":run_state.campaign,"run_state":run_state,"candidate":candidate})
+		if not requirement_message.is_empty():
+			recruitment_dialogue.show_capacity_error(requirement_message)
+			return
 	var result:=run_state.campaign.recruit_candidate(candidate_id)
 	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Recruitment failed.")));return
-	recruitment_dialogue.close();message=String(result.get("message","Recruitment complete."));_select_recruited_character();_rebuild_candidate_targets(false);_refresh_ui()
+	recruitment_dialogue.close();message=String(result.get("message","Recruitment complete."));_select_recruited_character()
+	if activity_controller!=null:activity_controller.populate(false)
+	_refresh_ui()
 
 func _select_recruited_character()->void:
 	if not run_state.active_character_id.is_empty():return
@@ -323,21 +293,16 @@ func _continue_arrival_queue()->void:
 
 func _start_arrivals()->void:
 	arrivals_running=true;run_state.campaign.tavern_phase=CampaignState.TAVERN_ARRIVALS;toolbar.visible=false
-	for target in npc_hit_targets.values():(target as Button).visible=false
-	_rebuild_candidate_targets(true);arrival_tween=create_tween();arrival_tween.set_parallel(true);var index:=0
-	for candidate in run_state.campaign.get_candidates():
-		var sprite:AnimatedSprite2D=candidate_sprites[candidate.id];var run_animation:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"run","right");if not run_animation.is_empty():sprite.play(run_animation)
-		arrival_tween.tween_property(sprite,"position",_candidate_seat(index),0.8).set_delay(index*0.28).set_trans(Tween.TRANS_SINE);index+=1
-	arrival_tween.chain().tween_callback(_finish_arrivals)
+	if activity_controller!=null:activity_controller.begin_arrivals()
+	get_tree().create_timer(1.8).timeout.connect(_finish_arrivals)
 
 func _finish_arrivals()->void:
 	if not arrivals_running:return
-	if arrival_tween!=null and arrival_tween.is_valid():arrival_tween.kill()
-	for candidate in run_state.campaign.get_candidates():
-		var sprite:AnimatedSprite2D=candidate_sprites.get(candidate.id);if sprite!=null:sprite.position=_candidate_seat(run_state.campaign.get_candidates().find(candidate));var idle:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle","down");if not idle.is_empty():sprite.play(idle)
-		var button:Button=candidate_buttons.get(candidate.id);if button!=null:button.visible=true
+	if activity_controller!=null:
+		for value in activity_controller.actors.values():
+			var actor:=value as TavernActor
+			if actor.state in [TavernActor.ActivityState.ENTERING,TavernActor.ActivityState.WALKING]:actor.finish_immediately()
 	arrivals_running=false;arrivals_need_sequence=false;toolbar.visible=true
-	for target in npc_hit_targets.values():(target as Button).visible=true
 	run_state.campaign.mark_arrivals_presented(run_state.campaign.candidate_wave_id);_refresh_ui();_restore_hub_focus()
 
 func _build_hud() -> void:
@@ -369,7 +334,7 @@ func _open_options()->void:
 
 func _build_dialogue_banner() -> void:
 	dialogue_panel = PanelContainer.new(); dialogue_panel.name = "ContextBanner"; dialogue_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	dialogue_panel.offset_left = 90; dialogue_panel.offset_top = -126; dialogue_panel.offset_right = -90; dialogue_panel.offset_bottom = -24
+	dialogue_panel.offset_left = 90; dialogue_panel.offset_top = -196; dialogue_panel.offset_right = -90; dialogue_panel.offset_bottom = -82
 	dialogue_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.06,0.04,0.025,0.96),Color(0.65,0.43,0.18),8)); ui_root.add_child(dialogue_panel)
 	var margin := MarginContainer.new()
 	for side in ["left","right","top","bottom"]:
@@ -379,7 +344,7 @@ func _build_dialogue_banner() -> void:
 	dialogue_speaker = Label.new(); dialogue_speaker.add_theme_font_size_override("font_size",17); dialogue_speaker.add_theme_color_override("font_color",Color(1.0,0.75,0.3)); body.add_child(dialogue_speaker)
 	dialogue_text = Label.new(); dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; dialogue_text.add_theme_font_size_override("font_size",14); body.add_child(dialogue_text)
 	prompt_panel = PanelContainer.new(); prompt_panel.name = "InteractionPrompt"; prompt_panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	prompt_panel.offset_left = 360; prompt_panel.offset_top = -60; prompt_panel.offset_right = -360; prompt_panel.offset_bottom = -18
+	prompt_panel.offset_left = 360; prompt_panel.offset_top = -120; prompt_panel.offset_right = -360; prompt_panel.offset_bottom = -78
 	prompt_panel.add_theme_stylebox_override("panel",_panel_style(Color(0.035,0.028,0.02,0.92),Color(0.82,0.58,0.22),10)); ui_root.add_child(prompt_panel)
 	prompt_label = Label.new(); prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; prompt_label.add_theme_font_size_override("font_size",15); prompt_label.add_theme_color_override("font_color",Color(1,0.88,0.58)); prompt_panel.add_child(prompt_label)
 
@@ -461,7 +426,7 @@ func _open_company_ledger()->void:
 	_show_modal(company_backdrop,company_tabs)
 
 func _purchase_tavern_upgrade(branch:String)->void:
-	var result:=run_state.campaign.purchase_upgrade(branch);message=" ".join(result);run_state.autosave_campaign();_refresh_ui();call_deferred("_refresh_company_ledger")
+	var result:=run_state.campaign.purchase_upgrade(branch);message=" ".join(result);_refresh_ui();call_deferred("_refresh_company_ledger")
 
 func _refresh_company_ledger()->void:
 	if company_pages.is_empty():return
@@ -562,7 +527,9 @@ func _request_dismissal(character_id:String)->void:
 	pending_dismissal_id=character_id;var member:=run_state.campaign.character(character_id);dismissal_confirmation.dialog_text="Dismiss %s? They will leave the Hearth without compensation."%member.display_name;dismissal_confirmation.popup_centered()
 
 func _confirm_dismissal()->void:
-	var result:=run_state.campaign.dismiss_character(pending_dismissal_id);message=String(result.get("message",result.get("error","Dismissal failed.")));selected_party_ids.erase(pending_dismissal_id);pending_dismissal_id="";_rebuild_candidate_targets(false);_refresh_company_ledger();_refresh_ui()
+	var result:=run_state.campaign.dismiss_character(pending_dismissal_id);message=String(result.get("message",result.get("error","Dismissal failed.")));selected_party_ids.erase(pending_dismissal_id);pending_dismissal_id=""
+	if activity_controller!=null:activity_controller.populate(false)
+	_refresh_company_ledger();_refresh_ui()
 
 func _add_ledger_heading(text_value:String,color:Color,target:VBoxContainer)->void:
 	var heading:=Label.new();heading.text=text_value;heading.add_theme_font_size_override("font_size",19);heading.add_theme_color_override("font_color",color);target.add_child(heading)
@@ -652,6 +619,11 @@ func _setup_merchant_shops() -> void:
 	merchant_shop_panel = MerchantShopPanel.new(); merchant_shop_panel.name = "MerchantShopPanel"; merchant_shop_panel.purchase_completed.connect(_on_shop_purchase); merchant_shop_panel.closed.connect(_restore_hub_focus); $UI.add_child(merchant_shop_panel)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if departure_running:
+		if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):
+			get_viewport().set_input_as_handled()
+			if activity_controller!=null:activity_controller.fast_forward()
+		return
 	if arrivals_running:
 		if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):get_viewport().set_input_as_handled();_finish_arrivals()
 		return
@@ -659,88 +631,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.is_action_pressed("ui_cancel"): _close_top_modal()
 		return
 	if event.is_action_pressed("interact") and toolbar!=null and toolbar.get_child_count()>0:(toolbar.get_child(0) as Button).grab_focus()
-
-func _try_move(delta: Vector2i) -> void:
-	var target := player_pos + delta
-	if not _is_walkable(target):
-		var station := _station_at(target)
-		if not station.is_empty(): _activate_station(station)
-		return
-	player_pos = target
-	_update_token_positions(); _refresh_ui()
-
-func _handle_tile_click(tile: Vector2i) -> void:
-	if click_navigation_active: return
-	var station := _station_at(tile)
-	if not station.is_empty():
-		if _distance(player_pos,tile) <= 1: _activate_station(station); return
-		var approach := _best_station_approach(tile)
-		if approach == Vector2i(-1,-1): _show_dialogue("The Hearth","No clear route reaches that station."); return
-		_walk_click_path(_find_navigation_path(player_pos,approach),station)
-		return
-	if not _is_walkable(tile): _show_dialogue("The Hearth","Tables, walls, and occupied stalls block that route."); return
-	_walk_click_path(_find_navigation_path(player_pos,tile),{})
-
-func _on_expedition_gate_clicked()->void:
-	if _modal_visible() or arrivals_running:return
-	_open_dungeon_selector()
-
-func _walk_click_path(path: Array[Vector2i], station: Dictionary) -> void:
-	if path.is_empty():
-		if not station.is_empty() and _distance(player_pos,_station_position(station)) <= 1: _activate_station(station)
-		return
-	click_navigation_active = true
-	for step in path:
-		player_pos = step
-		var tween := create_tween(); tween.set_trans(Tween.TRANS_SINE); tween.set_ease(Tween.EASE_IN_OUT); tween.tween_property(player_token,"position",_grid_center(step),0.08)
-		await tween.finished
-	click_navigation_active = false
-	_update_token_positions(); _refresh_ui()
-	if not station.is_empty() and _distance(player_pos,_station_position(station)) <= 1: _activate_station(station)
-
-func _best_station_approach(station_tile: Vector2i) -> Vector2i:
-	var best := Vector2i(-1,-1); var best_length := 999
-	for delta in [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]:
-		var candidate: Vector2i = station_tile + Vector2i(delta)
-		if not _is_walkable(candidate): continue
-		var path := _find_navigation_path(player_pos,candidate)
-		if candidate == player_pos: return candidate
-		if not path.is_empty() and path.size() < best_length: best=candidate; best_length=path.size()
-	return best
-
-func _find_navigation_path(from_tile: Vector2i, to_tile: Vector2i) -> Array[Vector2i]:
-	if from_tile == to_tile: return []
-	var frontier: Array[Vector2i] = [from_tile]
-	var came_from: Dictionary = {from_tile:from_tile}
-	while not frontier.is_empty():
-		var current: Vector2i = frontier.pop_front()
-		for delta in [Vector2i.UP,Vector2i.RIGHT,Vector2i.DOWN,Vector2i.LEFT]:
-			var next: Vector2i = current + Vector2i(delta)
-			if came_from.has(next) or not _is_walkable(next): continue
-			came_from[next] = current
-			if next == to_tile:
-				var result: Array[Vector2i] = [next]; var cursor: Vector2i = current
-				while cursor != from_tile: result.push_front(cursor); cursor = Vector2i(came_from[cursor])
-				return result
-			frontier.append(next)
-	return []
-
-func _interact() -> void:
-	var station := _nearest_station()
-	if station.is_empty(): _show_dialogue("The Hearth", "Warm floorboards, quiet contracts, and another road waiting beyond the gates.")
-	else: _activate_station(station)
-
-func _activate_station(station: Dictionary) -> void:
-	active_station = station
-	match String(station.get("type","")):
-		"merchant":
-			var merchant_id := String(station.get("merchant_id","tavern"))
-			if merchant_id != "tavern" and not run_state.is_merchant_recruited(merchant_id): _show_dialogue("Covered Stall", "Clear that merchant's dungeon to invite them to the Tavern.")
-			else: _open_merchant_shop(merchant_id)
-		"armory": _open_armory()
-		"dungeon_selector": _open_dungeon_selector()
-		"dungeon": _open_expedition(String(station.get("dungeon_id","forest")))
-		"vacant": _show_dialogue(String(station.get("name","Covered Stall")),String(station.get("prompt","A future merchant may settle here.")))
 
 func _open_armory() -> void:
 	for child in armory_list.get_children(): child.queue_free()
@@ -822,8 +712,18 @@ func _select_expedition_mode(mode: String) -> void:
 	_select_dungeon(expedition_id)
 
 func _launch_expedition() -> void:
+	if departure_running:return
 	_close_modal(expedition_backdrop)
 	if controller == null or selected_gear == null: return
+	departure_running=true
+	if toolbar!=null:toolbar.visible=false
+	if activity_controller!=null:
+		activity_controller.begin_departure(selected_party_ids,_complete_expedition_launch)
+	else:_complete_expedition_launch()
+
+func _complete_expedition_launch()->void:
+	if not departure_running:return
+	departure_running=false
 	if controller.has_method("start_dungeon"): controller.start_dungeon(expedition_id,selected_gear,expedition_mode,selected_party_ids)
 	elif expedition_id == "crypt": controller.start_crypt(selected_gear)
 	else: controller.start_forest(selected_gear)
@@ -862,6 +762,8 @@ func _show_arrival_results() -> void:
 	results_text.text = "\n".join(lines); _show_modal(results_backdrop,results_backdrop.find_child("ContinueButton",true,false) as Control)
 
 func _open_merchant_shop(merchant_id: String) -> void:
+	if activity_controller!=null:activity_controller.set_paused(true)
+	if keeper!=null:keeper.set_modal_paused(true)
 	merchant_shop_panel.setup(run_state,merchant_id,"tavern"); merchant_shop_panel.open()
 
 func _on_shop_purchase(purchase_message: String) -> void:
@@ -874,13 +776,17 @@ func _show_dialogue(speaker: String, text: String) -> void:
 		_refresh_ui())
 
 func _show_modal(modal: Control, focus: Control) -> void:
+	if activity_controller!=null and not departure_running:activity_controller.set_paused(true)
+	if keeper!=null:keeper.set_modal_paused(true)
 	modal.visible = true; modal.move_to_front()
 	if focus != null: focus.grab_focus()
 
 func _close_modal(modal: Control) -> void:
 	modal.visible = false
+	if activity_controller!=null and not departure_running:activity_controller.set_paused(false)
+	if keeper!=null and not departure_running:keeper.set_modal_paused(false)
 	if modal==results_backdrop:
-		if run_state!=null and run_state.campaign!=null:run_state.campaign.pending_settlement_summary.clear();run_state.campaign.save_atomic()
+		if run_state!=null and run_state.campaign!=null:run_state.campaign.pending_settlement_summary.clear()
 		if not pending_story_lines.is_empty():call_deferred("_play_pending_story")
 		else:call_deferred("_continue_arrival_queue")
 	elif modal==calendar_backdrop and arrivals_need_sequence:call_deferred("_start_arrivals")
@@ -900,6 +806,10 @@ func _modal_visible() -> bool:
 	return (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
 
 func _restore_hub_focus() -> void:
+	if activity_controller!=null and not _modal_visible() and not departure_running:
+		activity_controller.set_paused(false)
+		if keeper!=null:keeper.set_modal_paused(false)
+		if not active_living_actor_id.is_empty():activity_controller.resume_actor(active_living_actor_id);active_living_actor_id=""
 	var expedition_button:=toolbar_buttons.get("Expedition") as Button
 	if expedition_button!=null and expedition_button.visible and not expedition_button.disabled:expedition_button.grab_focus()
 	else:ui_root.grab_focus()
@@ -915,109 +825,25 @@ func _refresh_ui() -> void:
 	if settings_button!=null:settings_button.disabled=arrivals_running
 	if arrivals_running:prompt_label.text="Click, E, or Space to fast-forward arrivals"
 
-func _refresh_station_markers() -> void:
-	for child in station_markers.get_children(): child.queue_free()
-	for station in stations:
-		var highlight := Polygon2D.new()
-		highlight.name = "%sHighlight"%String(station.get("id","Station")).to_pascal_case()
-		highlight.polygon = PackedVector2Array([Vector2(0,-21),Vector2(32,0),Vector2(0,21),Vector2(-32,0)])
-		highlight.position = _grid_center(_station_position(station))
-		highlight.color = Color(1.0,0.68,0.18,0.18 if _distance(player_pos,_station_position(station))<=1 else 0.07)
-		station_markers.add_child(highlight)
-		var marker := Label.new(); marker.name = "%sMarker"%String(station.get("id","Station")).to_pascal_case(); marker.text = _station_marker_text(station)
-		marker.position = _grid_center(_station_position(station))+Vector2(-70,26); marker.size = Vector2(140,28); marker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		marker.add_theme_font_size_override("font_size",13); marker.add_theme_constant_override("outline_size",5); marker.add_theme_color_override("font_outline_color",Color(0.03,0.02,0.01,0.95)); marker.add_theme_color_override("font_color",Color(1,0.82,0.42) if _station_available(station) else Color(0.52,0.5,0.48)); station_markers.add_child(marker)
-
-func _station_marker_text(station: Dictionary) -> String:
-	if String(station.get("type","")) == "vacant": return "◇ Vacant Stall"
-	if String(station.get("type","")) == "dungeon_selector": return "◆ Expedition Gate"
-	if not _station_available(station): return "◆ %s · Locked"%String(station.get("name","Station"))
-	if String(station.get("type","")) == "merchant" and String(station.get("merchant_id","tavern")) != "tavern":
-		return "◆ %s · %s"%[String(station.get("name","Merchant")),GameBalance.get_merchant_rank_name(run_state.get_merchant_rank(String(station.get("merchant_id",""))))]
-	return "◆ %s"%String(station.get("name","Station"))
-
-func _station_prompt(station: Dictionary) -> String:
-	if not _station_available(station):
-		if String(station.get("unlock","")) == "crypt": return "Locked: clear Forest and reach level 5"
-		return "Locked: recruit this merchant"
-	return String(station.get("prompt","Interact"))
-
-func _station_available(station: Dictionary) -> bool:
-	var unlock := String(station.get("unlock",""))
-	if unlock == "crypt": return run_state != null and run_state.is_crypt_unlocked()
-	if unlock.begins_with("merchant:"): return run_state != null and run_state.is_merchant_recruited(unlock.trim_prefix("merchant:"))
-	return true
-
-func _nearest_station() -> Dictionary:
-	for station in stations:
-		if _distance(player_pos,_station_position(station)) <= 1: return station
-	return {}
-
-func _station_at(tile: Vector2i) -> Dictionary:
-	for station in stations:
-		if _station_position(station) == tile: return station
-	return {}
-
-func _station_by_id(station_id:String)->Dictionary:
-	for station in stations:
-		if String(station.get("id",""))==station_id:return station
-	return {}
-
-func _station_position(station: Dictionary) -> Vector2i:
-	var value: Array = station.get("position",[0,0]); return Vector2i(int(value[0]),int(value[1]))
-
-func _is_walkable(tile: Vector2i) -> bool:
-	return _is_inside_grid(tile) and tile.x > 0 and tile.y > 0 and tile.x < GRID_W-1 and tile.y < GRID_H-1 and not blocked_cells.has(tile) and _station_at(tile).is_empty()
-
-func _is_inside_grid(tile: Vector2i) -> bool: return tile.x>=0 and tile.y>=0 and tile.x<GRID_W and tile.y<GRID_H
-func _distance(a: Vector2i,b: Vector2i) -> int: return abs(a.x-b.x)+abs(a.y-b.y)
-
 func _layout_scene() -> void:
-	_update_token_positions();_refresh_station_markers()
+	if world!=null:
+		var viewport_size:=get_viewport_rect().size
+		var top_inset:=viewport_size.y*0.085
+		var bottom_inset:=viewport_size.y*0.095
+		var available_height:=viewport_size.y-top_inset-bottom_inset
+		var world_scale:=minf((viewport_size.x-32.0)/WORLD_SIZE.x,available_height/WORLD_SIZE.y)
+		var rendered_size:=WORLD_SIZE*world_scale
+		world.scale=Vector2.ONE*world_scale
+		world.position=Vector2((viewport_size.x-rendered_size.x)/2.0,top_inset+(available_height-rendered_size.y)/2.0)-WORLD_ORIGIN*world_scale
 	var available:=get_viewport_rect().size-Vector2(36,36)
 	for modal in [armory_backdrop,expedition_backdrop,results_backdrop,company_backdrop,calendar_backdrop,options_backdrop]:
 		if modal==null:continue
 		for child in modal.get_children():
 			if child is PanelContainer and child.has_meta("preferred_size"):
 				var preferred:Vector2=child.get_meta("preferred_size");child.size=Vector2(minf(preferred.x,available.x),minf(preferred.y,available.y));child.position=(get_viewport_rect().size-child.size)/2.0
-	if expedition_gate_hit_target!=null:
-		var gate:=_station_by_id("expedition_gate")
-		if not gate.is_empty():expedition_gate_hit_target.position=_grid_center(_station_position(gate))-Vector2(TILE_SIZE,TILE_SIZE)/2.0;expedition_gate_hit_target.size=Vector2(TILE_SIZE,TILE_SIZE)
-	if npc_hit_targets.has("mara"):(npc_hit_targets.mara as Button).position=_grid_center(Vector2i(9,1))+Vector2(-75,40)
-	if npc_hit_targets.has("forest"):(npc_hit_targets.forest as Button).position=_grid_center(Vector2i(2,3))+Vector2(-75,40)
-	if npc_hit_targets.has("crypt"):(npc_hit_targets.crypt as Button).position=_grid_center(Vector2i(15,3))+Vector2(-75,40)
-	var index:=0
-	for candidate in run_state.campaign.get_candidates() if run_state!=null and run_state.campaign!=null else []:
-		var sprite:=candidate_sprites.get(candidate.id) as AnimatedSprite2D;if sprite!=null and not arrivals_running:sprite.position=_candidate_seat(index)
-		var button:=candidate_buttons.get(candidate.id) as Button;if button!=null:button.position=_candidate_seat(index)+Vector2(-88,43)
-		index+=1
-	if run_state!=null and run_state.campaign!=null:
-		for member in run_state.campaign.living_roster():
-			var recruited_sprite:=candidate_stage.get_node_or_null("%sRecruitedSprite"%member.id) as AnimatedSprite2D;if recruited_sprite!=null:recruited_sprite.position=_candidate_seat(index)
-			var recruited_button:=candidate_buttons.get(member.id) as Button;if recruited_button!=null:recruited_button.position=_candidate_seat(index)+Vector2(-88,43)
-			index+=1
 	if toolbar!=null:
 		var width:=minf(900.0,get_viewport_rect().size.x-32.0);toolbar.offset_left=(get_viewport_rect().size.x-width)/2.0;toolbar.offset_right=toolbar.offset_left+width-get_viewport_rect().size.x
 	_refresh_ui()
-
-func _grid_origin() -> Vector2:
-	var viewport_size := get_viewport_rect().size
-	return Vector2((viewport_size.x-GRID_W*TILE_SIZE)/2.0,(viewport_size.y-GRID_H*TILE_SIZE)/2.0+18)
-
-func _grid_center(tile: Vector2i) -> Vector2: return _grid_origin()+Vector2(tile)*TILE_SIZE+Vector2(TILE_SIZE,TILE_SIZE)/2.0
-func _screen_to_grid(pos: Vector2) -> Vector2i: return Vector2i(floori((pos.x-_grid_origin().x)/TILE_SIZE),floori((pos.y-_grid_origin().y)/TILE_SIZE))
-
-func _update_token_positions() -> void:
-	if player_token == null: return
-	player_token.position = _grid_center(player_pos)
-	bartender_token.position = _grid_center(Vector2i(9,1))
-	forest_merchant_token.position = _grid_center(Vector2i(2,3)); crypt_merchant_token.position = _grid_center(Vector2i(15,3))
-
-func _configure_merchant_token(token: BoardPiece, merchant_id: String) -> void:
-	var recruited := run_state != null and run_state.is_merchant_recruited(merchant_id); token.visible = recruited
-	if not recruited: return
-	var path := String(GameBalance.get_merchant(merchant_id).get("portrait","")); token.sprite_texture = load(path) if ResourceLoader.exists(path) else TAVERN_KEEPER
-	token.sprite_region_enabled = false; token.sprite_scale = Vector2(0.075,0.075); token.show_label = false; token.show_panel = false
 
 func _gear_damage(gear: GearData) -> int:
 	if gear == null: return 0

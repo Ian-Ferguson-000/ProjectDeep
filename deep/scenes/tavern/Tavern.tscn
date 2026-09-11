@@ -1,603 +1,212 @@
-[gd_scene format=4 uid="uid://d3gnhcl0abl4k"]
+[gd_scene load_steps=13 format=3 uid="uid://d3gnhcl0abl4k"]
 
-[ext_resource type="Script" uid="uid://dks18kg2jj6ct" path="res://scripts/scenes/tavern.gd" id="1_tavern"]
-[ext_resource type="PackedScene" path="res://scenes/components/BoardPiece.tscn" id="2_piece_scene"]
-[ext_resource type="Texture2D" uid="uid://d0pjoqifoktv6" path="res://assets/pixel_art/TX Tileset Grass.png" id="2_rknsa"]
-[ext_resource type="Texture2D" uid="uid://5exu5nbjtrx" path="res://assets/generated_characters/tavern_keeper.png" id="3_keeper"]
-[ext_resource type="Texture2D" uid="uid://bk7ci38sx6jee" path="res://assets/pixel_art/TX Tileset Wall.png" id="3_ws4xl"]
-[ext_resource type="Texture2D" uid="uid://dyd1a5625wv0u" path="res://assets/Humble Gift - Paper UI System v1.1/Sprites/Book Desk/1.png" id="4_book_desk"]
+[ext_resource type="Script" path="res://scripts/scenes/tavern.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/tavern/tavern_social_table.png" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/tavern/taverntiles.tscn" id="4_floor"]
+[ext_resource type="PackedScene" path="res://scenes/tavern/TavernWalls.tscn" id="5_walls"]
+[ext_resource type="PackedScene" path="res://scenes/components/TavernKeeper.tscn" id="6_keeper"]
+[ext_resource type="PackedScene" path="res://scenes/components/TavernProp.tscn" id="7_prop"]
+[ext_resource type="PackedScene" path="res://scenes/tavern/TavernDecor.tscn" id="8_decor"]
+[ext_resource type="PackedScene" path="res://scenes/tavern/TavernLighting.tscn" id="9_lighting"]
+[ext_resource type="Texture2D" path="res://assets/tavern/tavern_social_table_cards.png" id="10_cards"]
+[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/bar_front.png" id="11_bar"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_wup5k"]
-texture = ExtResource("2_rknsa")
-0:0/0 = 0
-1:0/0 = 0
-2:0/0 = 0
-3:0/0 = 0
-4:0/0 = 0
-5:0/0 = 0
-6:0/0 = 0
-7:0/0 = 0
-8:0/0 = 0
-9:0/0 = 0
-10:0/0 = 0
-11:0/0 = 0
-12:0/0 = 0
-13:0/0 = 0
-14:0/0 = 0
-15:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-2:1/0 = 0
-3:1/0 = 0
-4:1/0 = 0
-5:1/0 = 0
-6:1/0 = 0
-7:1/0 = 0
-8:1/0 = 0
-9:1/0 = 0
-10:1/0 = 0
-11:1/0 = 0
-12:1/0 = 0
-13:1/0 = 0
-14:1/0 = 0
-15:1/0 = 0
-0:2/0 = 0
-1:2/0 = 0
-2:2/0 = 0
-3:2/0 = 0
-4:2/0 = 0
-5:2/0 = 0
-6:2/0 = 0
-7:2/0 = 0
-8:2/0 = 0
-9:2/0 = 0
-10:2/0 = 0
-11:2/0 = 0
-12:2/0 = 0
-13:2/0 = 0
-14:2/0 = 0
-15:2/0 = 0
-0:3/0 = 0
-1:3/0 = 0
-2:3/0 = 0
-3:3/0 = 0
-4:3/0 = 0
-5:3/0 = 0
-6:3/0 = 0
-7:3/0 = 0
-8:3/0 = 0
-9:3/0 = 0
-10:3/0 = 0
-11:3/0 = 0
-12:3/0 = 0
-13:3/0 = 0
-14:3/0 = 0
-15:3/0 = 0
-0:4/0 = 0
-1:4/0 = 0
-2:4/0 = 0
-3:4/0 = 0
-4:4/0 = 0
-5:4/0 = 0
-6:4/0 = 0
-7:4/0 = 0
-8:4/0 = 0
-9:4/0 = 0
-10:4/0 = 0
-11:4/0 = 0
-12:4/0 = 0
-13:4/0 = 0
-14:4/0 = 0
-15:4/0 = 0
-0:5/0 = 0
-1:5/0 = 0
-2:5/0 = 0
-3:5/0 = 0
-4:5/0 = 0
-5:5/0 = 0
-6:5/0 = 0
-7:5/0 = 0
-8:5/0 = 0
-9:5/0 = 0
-10:5/0 = 0
-11:5/0 = 0
-12:5/0 = 0
-13:5/0 = 0
-14:5/0 = 0
-15:5/0 = 0
-0:6/0 = 0
-1:6/0 = 0
-2:6/0 = 0
-3:6/0 = 0
-4:6/0 = 0
-5:6/0 = 0
-6:6/0 = 0
-7:6/0 = 0
-8:6/0 = 0
-9:6/0 = 0
-10:6/0 = 0
-11:6/0 = 0
-12:6/0 = 0
-13:6/0 = 0
-14:6/0 = 0
-15:6/0 = 0
-0:7/0 = 0
-1:7/0 = 0
-2:7/0 = 0
-3:7/0 = 0
-4:7/0 = 0
-5:7/0 = 0
-6:7/0 = 0
-7:7/0 = 0
-8:7/0 = 0
-9:7/0 = 0
-10:7/0 = 0
-11:7/0 = 0
-12:7/0 = 0
-13:7/0 = 0
-14:7/0 = 0
-15:7/0 = 0
-0:8/0 = 0
-1:8/0 = 0
-2:8/0 = 0
-3:8/0 = 0
-4:8/0 = 0
-5:8/0 = 0
-6:8/0 = 0
-7:8/0 = 0
-8:8/0 = 0
-9:8/0 = 0
-10:8/0 = 0
-11:8/0 = 0
-12:8/0 = 0
-13:8/0 = 0
-14:8/0 = 0
-15:8/0 = 0
-0:9/0 = 0
-1:9/0 = 0
-2:9/0 = 0
-3:9/0 = 0
-4:9/0 = 0
-5:9/0 = 0
-6:9/0 = 0
-7:9/0 = 0
-8:9/0 = 0
-9:9/0 = 0
-10:9/0 = 0
-11:9/0 = 0
-12:9/0 = 0
-13:9/0 = 0
-14:9/0 = 0
-15:9/0 = 0
-0:10/0 = 0
-1:10/0 = 0
-2:10/0 = 0
-3:10/0 = 0
-4:10/0 = 0
-5:10/0 = 0
-6:10/0 = 0
-7:10/0 = 0
-8:10/0 = 0
-9:10/0 = 0
-10:10/0 = 0
-11:10/0 = 0
-12:10/0 = 0
-13:10/0 = 0
-14:10/0 = 0
-15:10/0 = 0
-0:11/0 = 0
-1:11/0 = 0
-2:11/0 = 0
-3:11/0 = 0
-4:11/0 = 0
-5:11/0 = 0
-6:11/0 = 0
-7:11/0 = 0
-8:11/0 = 0
-9:11/0 = 0
-10:11/0 = 0
-11:11/0 = 0
-12:11/0 = 0
-13:11/0 = 0
-14:11/0 = 0
-15:11/0 = 0
-0:12/0 = 0
-1:12/0 = 0
-2:12/0 = 0
-3:12/0 = 0
-4:12/0 = 0
-5:12/0 = 0
-6:12/0 = 0
-7:12/0 = 0
-8:12/0 = 0
-9:12/0 = 0
-10:12/0 = 0
-11:12/0 = 0
-12:12/0 = 0
-13:12/0 = 0
-14:12/0 = 0
-15:12/0 = 0
-0:13/0 = 0
-1:13/0 = 0
-2:13/0 = 0
-3:13/0 = 0
-4:13/0 = 0
-5:13/0 = 0
-6:13/0 = 0
-7:13/0 = 0
-8:13/0 = 0
-9:13/0 = 0
-10:13/0 = 0
-11:13/0 = 0
-12:13/0 = 0
-13:13/0 = 0
-14:13/0 = 0
-15:13/0 = 0
-0:14/0 = 0
-1:14/0 = 0
-2:14/0 = 0
-3:14/0 = 0
-4:14/0 = 0
-5:14/0 = 0
-6:14/0 = 0
-7:14/0 = 0
-8:14/0 = 0
-9:14/0 = 0
-10:14/0 = 0
-11:14/0 = 0
-12:14/0 = 0
-13:14/0 = 0
-14:14/0 = 0
-15:14/0 = 0
-0:15/0 = 0
-1:15/0 = 0
-2:15/0 = 0
-3:15/0 = 0
-4:15/0 = 0
-5:15/0 = 0
-6:15/0 = 0
-7:15/0 = 0
-8:15/0 = 0
-9:15/0 = 0
-10:15/0 = 0
-11:15/0 = 0
-12:15/0 = 0
-13:15/0 = 0
-14:15/0 = 0
-15:15/0 = 0
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_tavern"]
+vertices = PackedVector2Array(256, 192, 1408, 192, 1408, 896, 960, 896, 930, 960, 734, 960, 704, 896, 256, 896)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3, 4, 5, 6, 7)])
 
-[sub_resource type="TileSet" id="TileSet_7ks14"]
-sources/0 = SubResource("TileSetAtlasSource_wup5k")
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_table"]
+size = Vector2(106, 58)
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jmamg"]
-texture = ExtResource("3_ws4xl")
-2:2/0 = 0
-3:2/0 = 0
-4:2/0 = 0
-5:2/0 = 0
-6:2/0 = 0
-7:2/0 = 0
-9:2/0 = 0
-10:2/0 = 0
-11:2/0 = 0
-12:2/0 = 0
-13:2/0 = 0
-14:2/0 = 0
-15:2/0 = 0
-16:2/0 = 0
-18:2/0 = 0
-21:2/0 = 0
-24:2/0 = 0
-25:2/0 = 0
-26:2/0 = 0
-27:2/0 = 0
-28:2/0 = 0
-29:2/0 = 0
-2:3/0 = 0
-7:3/0 = 0
-9:3/0 = 0
-10:3/0 = 0
-11:3/0 = 0
-12:3/0 = 0
-13:3/0 = 0
-14:3/0 = 0
-15:3/0 = 0
-16:3/0 = 0
-18:3/0 = 0
-21:3/0 = 0
-2:4/0 = 0
-7:4/0 = 0
-9:4/0 = 0
-10:4/0 = 0
-11:4/0 = 0
-12:4/0 = 0
-13:4/0 = 0
-14:4/0 = 0
-15:4/0 = 0
-16:4/0 = 0
-18:4/0 = 0
-21:4/0 = 0
-24:4/0 = 0
-25:4/0 = 0
-26:4/0 = 0
-27:4/0 = 0
-2:5/0 = 0
-7:5/0 = 0
-9:5/0 = 0
-10:5/0 = 0
-11:5/0 = 0
-12:5/0 = 0
-13:5/0 = 0
-14:5/0 = 0
-15:5/0 = 0
-16:5/0 = 0
-18:5/0 = 0
-21:5/0 = 0
-24:5/0 = 0
-27:5/0 = 0
-2:6/0 = 0
-3:6/0 = 0
-4:6/0 = 0
-5:6/0 = 0
-6:6/0 = 0
-7:6/0 = 0
-9:6/0 = 0
-16:6/0 = 0
-18:6/0 = 0
-21:6/0 = 0
-24:6/0 = 0
-25:6/0 = 0
-26:6/0 = 0
-27:6/0 = 0
-2:7/0 = 0
-3:7/0 = 0
-4:7/0 = 0
-5:7/0 = 0
-6:7/0 = 0
-7:7/0 = 0
-9:7/0 = 0
-16:7/0 = 0
-18:7/0 = 0
-21:7/0 = 0
-24:7/0 = 0
-25:7/0 = 0
-26:7/0 = 0
-27:7/0 = 0
-2:8/0 = 0
-3:8/0 = 0
-4:8/0 = 0
-5:8/0 = 0
-6:8/0 = 0
-7:8/0 = 0
-9:8/0 = 0
-10:8/0 = 0
-11:8/0 = 0
-12:8/0 = 0
-13:8/0 = 0
-14:8/0 = 0
-15:8/0 = 0
-16:8/0 = 0
-24:8/0 = 0
-25:8/0 = 0
-26:8/0 = 0
-27:8/0 = 0
-2:9/0 = 0
-3:9/0 = 0
-4:9/0 = 0
-5:9/0 = 0
-6:9/0 = 0
-7:9/0 = 0
-24:9/0 = 0
-25:9/0 = 0
-26:9/0 = 0
-27:9/0 = 0
-2:12/0 = 0
-3:12/0 = 0
-4:12/0 = 0
-5:12/0 = 0
-6:12/0 = 0
-7:12/0 = 0
-8:12/0 = 0
-9:12/0 = 0
-12:12/0 = 0
-13:12/0 = 0
-2:13/0 = 0
-3:13/0 = 0
-4:13/0 = 0
-5:13/0 = 0
-6:13/0 = 0
-7:13/0 = 0
-8:13/0 = 0
-9:13/0 = 0
-12:13/0 = 0
-13:13/0 = 0
-2:14/0 = 0
-3:14/0 = 0
-4:14/0 = 0
-5:14/0 = 0
-6:14/0 = 0
-7:14/0 = 0
-8:14/0 = 0
-9:14/0 = 0
-12:14/0 = 0
-13:14/0 = 0
-2:15/0 = 0
-3:15/0 = 0
-4:15/0 = 0
-5:15/0 = 0
-6:15/0 = 0
-7:15/0 = 0
-8:15/0 = 0
-9:15/0 = 0
-12:15/0 = 0
-13:15/0 = 0
-2:18/0 = 0
-3:18/0 = 0
-4:18/0 = 0
-5:18/0 = 0
-8:18/0 = 0
-9:18/0 = 0
-10:18/0 = 0
-11:18/0 = 0
-2:19/0 = 0
-3:19/0 = 0
-4:19/0 = 0
-5:19/0 = 0
-8:19/0 = 0
-9:19/0 = 0
-10:19/0 = 0
-11:19/0 = 0
-2:20/0 = 0
-3:20/0 = 0
-4:20/0 = 0
-5:20/0 = 0
-8:20/0 = 0
-9:20/0 = 0
-10:20/0 = 0
-11:20/0 = 0
-2:21/0 = 0
-3:21/0 = 0
-4:21/0 = 0
-5:21/0 = 0
-8:21/0 = 0
-9:21/0 = 0
-10:21/0 = 0
-11:21/0 = 0
+[node name="Tavern" type="Node2D"]
+script = ExtResource("1")
 
-[sub_resource type="TileSet" id="TileSet_t516j"]
-sources/0 = SubResource("TileSetAtlasSource_jmamg")
+[node name="TavernWorld" type="Node2D" parent="."]
+y_sort_enabled = true
+[node name="Floor" parent="TavernWorld" instance=ExtResource("4_floor")]
+editable_children = true
+[node name="Walls" parent="TavernWorld" instance=ExtResource("5_walls")]
+editable_children = true
+[node name="Decor" parent="TavernWorld" instance=ExtResource("8_decor")]
+editable_children = true
+[node name="Lighting" parent="TavernWorld" instance=ExtResource("9_lighting")]
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="TavernWorld"]
+navigation_polygon = SubResource("NavigationPolygon_tavern")
+[node name="Props" type="Node2D" parent="TavernWorld"]
+y_sort_enabled = true
 
-[node name="Tavern" type="Node2D" unique_id=1539585382]
-script = ExtResource("1_tavern")
+[node name="Fixtures" type="Node2D" parent="TavernWorld"]
+y_sort_enabled = true
 
-[node name="Board" type="Node2D" parent="." unique_id=1312856150]
+[node name="BarFixture" parent="TavernWorld/Fixtures" instance=ExtResource("7_prop")]
+position = Vector2(760, 300)
+prop_id = "bar"
+display_name = "The bar"
+interaction_text = "The bar is ready for another night's stories."
+obstacle_enabled = true
+prop_texture = ExtResource("11_bar")
+visual_scale = Vector2(0.95, 0.82)
+collision_size = Vector2(280, 54)
+collision_offset = Vector2(0, 72)
 
-[node name="GroundLayer" type="TileMapLayer" parent="Board" unique_id=1503562507]
-tile_map_data = PackedByteArray("AAANABAAAAAAAAgAAAANABEAAAAAAAkAAAANABIAAAAAAAoAAAANABMAAAAAAAsAAAANABQAAAAAAAwAAAANABUAAAAAAA0AAAAOABAAAAABAAgAAAAOABEAAAABAAkAAAAOABIAAAABAAoAAAAOABMAAAABAAsAAAAOABQAAAABAAwAAAAOABUAAAABAA0AAAAPABAAAAACAAgAAAAPABEAAAACAAkAAAAPABIAAAACAAoAAAAPABMAAAACAAsAAAAPABQAAAACAAwAAAAPABUAAAACAA0AAAAQABAAAAADAAgAAAAQABEAAAADAAkAAAAQABIAAAADAAoAAAAQABMAAAADAAsAAAAQABQAAAADAAwAAAAQABUAAAADAA0AAAARABAAAAAAAAgAAAARABEAAAAAAAkAAAARABIAAAAAAAoAAAARABMAAAAAAAsAAAARABQAAAAAAAwAAAARABUAAAAAAA0AAAASABAAAAABAAgAAAASABEAAAABAAkAAAASABIAAAABAAoAAAASABMAAAABAAsAAAASABQAAAABAAwAAAASABUAAAABAA0AAAATABAAAAACAAgAAAATABEAAAACAAkAAAATABIAAAACAAoAAAATABMAAAACAAsAAAATABQAAAACAAwAAAATABUAAAACAA0AAAAUABAAAAADAAgAAAAUABEAAAADAAkAAAAUABIAAAADAAoAAAAUABMAAAADAAsAAAAUABQAAAADAAwAAAAUABUAAAADAA0AAAARAAoAAAAAAAgAAAARAAsAAAAAAAkAAAARAAwAAAAAAAoAAAARAA0AAAAAAAsAAAARAA4AAAAAAAwAAAARAA8AAAAAAA0AAAASAAoAAAABAAgAAAASAAsAAAABAAkAAAASAAwAAAABAAoAAAASAA0AAAABAAsAAAASAA4AAAABAAwAAAASAA8AAAABAA0AAAATAAoAAAACAAgAAAATAAsAAAACAAkAAAATAAwAAAACAAoAAAATAA0AAAACAAsAAAATAA4AAAACAAwAAAATAA8AAAACAA0AAAAUAAoAAAADAAgAAAAUAAsAAAADAAkAAAAUAAwAAAADAAoAAAAUAA0AAAADAAsAAAAUAA4AAAADAAwAAAAUAA8AAAADAA0AAAAVAAoAAAAAAAgAAAAVAAsAAAAAAAkAAAAVAAwAAAAAAAoAAAAVAA0AAAAAAAsAAAAVAA4AAAAAAAwAAAAVAA8AAAAAAA0AAAAWAAoAAAABAAgAAAAWAAsAAAABAAkAAAAWAAwAAAABAAoAAAAWAA0AAAABAAsAAAAWAA4AAAABAAwAAAAWAA8AAAABAA0AAAAXAAoAAAACAAgAAAAXAAsAAAACAAkAAAAXAAwAAAACAAoAAAAXAA0AAAACAAsAAAAXAA4AAAACAAwAAAAXAA8AAAACAA0AAAAYAAoAAAADAAgAAAAYAAsAAAADAAkAAAAYAAwAAAADAAoAAAAYAA0AAAADAAsAAAAYAA4AAAADAAwAAAAYAA8AAAADAA0AAAAZAAoAAAAAAAgAAAAZAAsAAAAAAAkAAAAZAAwAAAAAAAoAAAAZAA0AAAAAAAsAAAAZAA4AAAAAAAwAAAAZAA8AAAAAAA0AAAAaAAoAAAABAAgAAAAaAAsAAAABAAkAAAAaAAwAAAABAAoAAAAaAA0AAAABAAsAAAAaAA4AAAABAAwAAAAaAA8AAAABAA0AAAAbAAoAAAACAAgAAAAbAAsAAAACAAkAAAAbAAwAAAACAAoAAAAbAA0AAAACAAsAAAAbAA4AAAACAAwAAAAbAA8AAAACAA0AAAAcAAoAAAADAAgAAAAcAAsAAAADAAkAAAAcAAwAAAADAAoAAAAcAA0AAAADAAsAAAAcAA4AAAADAAwAAAAcAA8AAAADAA0AAAAdAAoAAAAAAAgAAAAdAAsAAAAAAAkAAAAdAAwAAAAAAAoAAAAdAA0AAAAAAAsAAAAdAA4AAAAAAAwAAAAdAA8AAAAAAA0AAAAeAAoAAAABAAgAAAAeAAsAAAABAAkAAAAeAAwAAAABAAoAAAAeAA0AAAABAAsAAAAeAA4AAAABAAwAAAAeAA8AAAABAA0AAAAfAAoAAAACAAgAAAAfAAsAAAACAAkAAAAfAAwAAAACAAoAAAAfAA0AAAACAAsAAAAfAA4AAAACAAwAAAAfAA8AAAACAA0AAAAgAAoAAAADAAgAAAAgAAsAAAADAAkAAAAgAAwAAAADAAoAAAAgAA0AAAADAAsAAAAgAA4AAAADAAwAAAAgAA8AAAADAA0AAAAdABAAAAAAAAgAAAAdABEAAAAAAAkAAAAdABIAAAAAAAoAAAAdABMAAAAAAAsAAAAdABQAAAAAAAwAAAAdABUAAAAAAA0AAAAeABAAAAABAAgAAAAeABEAAAABAAkAAAAeABIAAAABAAoAAAAeABMAAAABAAsAAAAeABQAAAABAAwAAAAeABUAAAABAA0AAAAfABAAAAACAAgAAAAfABEAAAACAAkAAAAfABIAAAACAAoAAAAfABMAAAACAAsAAAAfABQAAAACAAwAAAAfABUAAAACAA0AAAAgABAAAAADAAgAAAAgABEAAAADAAkAAAAgABIAAAADAAoAAAAgABMAAAADAAsAAAAgABQAAAADAAwAAAAgABUAAAADAA0AAAAZABAAAAAAAAgAAAAZABEAAAAAAAkAAAAZABIAAAAAAAoAAAAZABMAAAAAAAsAAAAZABQAAAAAAAwAAAAZABUAAAAAAA0AAAAaABAAAAABAAgAAAAaABEAAAABAAkAAAAaABIAAAABAAoAAAAaABMAAAABAAsAAAAaABQAAAABAAwAAAAaABUAAAABAA0AAAAbABAAAAACAAgAAAAbABEAAAACAAkAAAAbABIAAAACAAoAAAAbABMAAAACAAsAAAAbABQAAAACAAwAAAAbABUAAAACAA0AAAAcABAAAAADAAgAAAAcABEAAAADAAkAAAAcABIAAAADAAoAAAAcABMAAAADAAsAAAAcABQAAAADAAwAAAAcABUAAAADAA0AAAAVABAAAAAAAAgAAAAVABEAAAAAAAkAAAAVABIAAAAAAAoAAAAVABMAAAAAAAsAAAAVABQAAAAAAAwAAAAVABUAAAAAAA0AAAAWABAAAAABAAgAAAAWABEAAAABAAkAAAAWABIAAAABAAoAAAAWABMAAAABAAsAAAAWABQAAAABAAwAAAAWABUAAAABAA0AAAAXABAAAAACAAgAAAAXABEAAAACAAkAAAAXABIAAAACAAoAAAAXABMAAAACAAsAAAAXABQAAAACAAwAAAAXABUAAAACAA0AAAAYABAAAAADAAgAAAAYABEAAAADAAkAAAAYABIAAAADAAoAAAAYABMAAAADAAsAAAAYABQAAAADAAwAAAAYABUAAAADAA0AAAA=")
-tile_set = SubResource("TileSet_7ks14")
+[node name="EntranceFixture" parent="TavernWorld/Fixtures" instance=ExtResource("7_prop")]
+position = Vector2(832, 945)
+prop_id = "entrance"
+display_name = "The tavern entrance"
+interaction_text = "The road outside waits below the Hearth."
 
-[node name="WallLayer" type="TileMapLayer" parent="Board" unique_id=1817154460]
-tile_map_data = PackedByteArray("AAAXAAAAAAAJAAwAAAAXAAEAAAAJAA0AAAAXAAIAAAAJAA4AAAAXAAMAAAAJAA8AAAAYAAAAAAADAAwAAAAYAAEAAAADAA0AAAAYAAIAAAADAA4AAAAYAAMAAAADAA8AAAAZAAAAAAAEAAwAAAAZAAEAAAAEAA0AAAAZAAIAAAAEAA4AAAAZAAMAAAAEAA8AAAAaAAAAAAAFAAwAAAAaAAEAAAAFAA0AAAAaAAIAAAAFAA4AAAAaAAMAAAAFAA8AAAAbAAAAAAAGAAwAAAAbAAEAAAAGAA0AAAAbAAIAAAAGAA4AAAAbAAMAAAAGAA8AAAAcAAAAAAAHAAwAAAAcAAEAAAAHAA0AAAAcAAIAAAAHAA4AAAAcAAMAAAAHAA8AAAAdAAAAAAAIAAwAAAAdAAEAAAAIAA0AAAAdAAIAAAAIAA4AAAAdAAMAAAAIAA8AAAAeAAAAAAAJAAwAAAAeAAEAAAAJAA0AAAAeAAIAAAAJAA4AAAAeAAMAAAAJAA8AAAAPAAAAAAACAAwAAAAPAAEAAAACAA0AAAAPAAIAAAACAA4AAAAPAAMAAAACAA8AAAAQAAAAAAACAAwAAAAQAAEAAAACAA0AAAAQAAIAAAACAA4AAAAQAAMAAAACAA8AAAARAAAAAAADAAwAAAARAAEAAAADAA0AAAARAAIAAAADAA4AAAARAAMAAAADAA8AAAASAAAAAAAEAAwAAAASAAEAAAAEAA0AAAASAAIAAAAEAA4AAAASAAMAAAAEAA8AAAATAAAAAAAFAAwAAAATAAEAAAAFAA0AAAATAAIAAAAFAA4AAAATAAMAAAAFAA8AAAAUAAAAAAAGAAwAAAAUAAEAAAAGAA0AAAAUAAIAAAAGAA4AAAAUAAMAAAAGAA8AAAAVAAAAAAAHAAwAAAAVAAEAAAAHAA0AAAAVAAIAAAAHAA4AAAAVAAMAAAAHAA8AAAAWAAAAAAAIAAwAAAAWAAEAAAAIAA0AAAAWAAIAAAAIAA4AAAAWAAMAAAAIAA8AAAAHAAAAAAACAAwAAAAHAAEAAAACAA0AAAAHAAIAAAACAA4AAAAHAAMAAAACAA8AAAAIAAAAAAADAAwAAAAIAAEAAAADAA0AAAAIAAIAAAADAA4AAAAIAAMAAAADAA8AAAAJAAAAAAAEAAwAAAAJAAEAAAAEAA0AAAAJAAIAAAAEAA4AAAAJAAMAAAAEAA8AAAAKAAAAAAAFAAwAAAAKAAEAAAAFAA0AAAAKAAIAAAAFAA4AAAAKAAMAAAAFAA8AAAALAAAAAAAGAAwAAAALAAEAAAAGAA0AAAALAAIAAAAGAA4AAAALAAMAAAAGAA8AAAAMAAAAAAAHAAwAAAAMAAEAAAAHAA0AAAAMAAIAAAAHAA4AAAAMAAMAAAAHAA8AAAANAAAAAAAIAAwAAAANAAEAAAAIAA0AAAANAAIAAAAIAA4AAAANAAMAAAAIAA8AAAAOAAAAAAAJAAwAAAAOAAEAAAAJAA0AAAAOAAIAAAAJAA4AAAAOAAMAAAAJAA8AAAAKAA4AAAACAAwAAAAKAA8AAAACAA0AAAAKABAAAAACAA4AAAAKABEAAAACAA8AAAALAA4AAAADAAwAAAALAA8AAAADAA0AAAALABAAAAADAA4AAAALABEAAAADAA8AAAAMAA4AAAAEAAwAAAAMAA8AAAAEAA0AAAAMABAAAAAEAA4AAAAMABEAAAAEAA8AAAANAA4AAAAFAAwAAAANAA8AAAAFAA0AAAANABAAAAAFAA4AAAANABEAAAAFAA8AAAAOAA4AAAAGAAwAAAAOAA8AAAAGAA0AAAAOABAAAAAGAA4AAAAOABEAAAAGAA8AAAAPAA4AAAAHAAwAAAAPAA8AAAAHAA0AAAAPABAAAAAHAA4AAAAPABEAAAAHAA8AAAAQAA4AAAAIAAwAAAAQAA8AAAAIAA0AAAAQABAAAAAIAA4AAAAQABEAAAAIAA8AAAARAA4AAAAJAAwAAAARAA8AAAAJAA0AAAARABAAAAAJAA4AAAARABEAAAAJAA8AAAASAA4AAAACAAwAAAASAA8AAAACAA0AAAASABAAAAACAA4AAAASABEAAAACAA8AAAATAA4AAAADAAwAAAATAA8AAAADAA0AAAATABAAAAADAA4AAAATABEAAAADAA8AAAAUAA4AAAAEAAwAAAAUAA8AAAAEAA0AAAAUABAAAAAEAA4AAAAUABEAAAAEAA8AAAAVAA4AAAAFAAwAAAAVAA8AAAAFAA0AAAAVABAAAAAFAA4AAAAVABEAAAAFAA8AAAAWAA4AAAAGAAwAAAAWAA8AAAAGAA0AAAAWABAAAAAGAA4AAAAWABEAAAAGAA8AAAAXAA4AAAAHAAwAAAAXAA8AAAAHAA0AAAAXABAAAAAHAA4AAAAXABEAAAAHAA8AAAAYAA4AAAAIAAwAAAAYAA8AAAAIAA0AAAAYABAAAAAIAA4AAAAYABEAAAAIAA8AAAAZAA4AAAAJAAwAAAAZAA8AAAAJAA0AAAAZABAAAAAJAA4AAAAZABEAAAAJAA8AAAA=")
-tile_set = SubResource("TileSet_t516j")
+[node name="TableWest" type="Node2D" parent="TavernWorld/Props"]
+position = Vector2(500, 470)
+[node name="Visual" type="Sprite2D" parent="TavernWorld/Props/TableWest"]
+texture = ExtResource("3")
+scale = Vector2(0.17, 0.135)
+[node name="Obstacle" type="NavigationObstacle2D" parent="TavernWorld/Props/TableWest"]
+vertices = PackedVector2Array(-53, -29, 53, -29, 53, 29, -53, 29)
+[node name="CollisionBody" type="StaticBody2D" parent="TavernWorld/Props/TableWest"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TavernWorld/Props/TableWest/CollisionBody"]
+shape = SubResource("RectangleShape2D_table")
+[node name="SeatNW" type="Marker2D" parent="TavernWorld/Props/TableWest"]
+position = Vector2(-24, -42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatNE" type="Marker2D" parent="TavernWorld/Props/TableWest"]
+position = Vector2(24, -42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatSW" type="Marker2D" parent="TavernWorld/Props/TableWest"]
+position = Vector2(-24, 42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatSE" type="Marker2D" parent="TavernWorld/Props/TableWest"]
+position = Vector2(24, 42.5)
+metadata/activity_kind = "Seat"
 
-[node name="FixtureLayer" type="TileMapLayer" parent="Board" unique_id=1597382611]
+[node name="TableEast" type="Node2D" parent="TavernWorld/Props"]
+position = Vector2(1164, 470)
+[node name="Visual" type="Sprite2D" parent="TavernWorld/Props/TableEast"]
+texture = ExtResource("10_cards")
+scale = Vector2(0.0975, 0.0775)
+[node name="Obstacle" type="NavigationObstacle2D" parent="TavernWorld/Props/TableEast"]
+vertices = PackedVector2Array(-53, -29, 53, -29, 53, 29, -53, 29)
+[node name="CollisionBody" type="StaticBody2D" parent="TavernWorld/Props/TableEast"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TavernWorld/Props/TableEast/CollisionBody"]
+shape = SubResource("RectangleShape2D_table")
+[node name="SeatNW" type="Marker2D" parent="TavernWorld/Props/TableEast"]
+position = Vector2(-24, -42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatNE" type="Marker2D" parent="TavernWorld/Props/TableEast"]
+position = Vector2(24, -42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatSW" type="Marker2D" parent="TavernWorld/Props/TableEast"]
+position = Vector2(-24, 42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatSE" type="Marker2D" parent="TavernWorld/Props/TableEast"]
+position = Vector2(24, 42.5)
+metadata/activity_kind = "Seat"
 
-[node name="PropSprites" type="Node2D" parent="Board" unique_id=270968301]
+[node name="TableSouthWest" type="Node2D" parent="TavernWorld/Props"]
+position = Vector2(560, 600)
+[node name="Visual" type="Sprite2D" parent="TavernWorld/Props/TableSouthWest"]
+texture = ExtResource("3")
+scale = Vector2(0.17, 0.135)
+[node name="Obstacle" type="NavigationObstacle2D" parent="TavernWorld/Props/TableSouthWest"]
+vertices = PackedVector2Array(-53, -29, 53, -29, 53, 29, -53, 29)
+[node name="CollisionBody" type="StaticBody2D" parent="TavernWorld/Props/TableSouthWest"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TavernWorld/Props/TableSouthWest/CollisionBody"]
+shape = SubResource("RectangleShape2D_table")
+[node name="SeatNW" type="Marker2D" parent="TavernWorld/Props/TableSouthWest"]
+position = Vector2(-24, -42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatNE" type="Marker2D" parent="TavernWorld/Props/TableSouthWest"]
+position = Vector2(24, -42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatSW" type="Marker2D" parent="TavernWorld/Props/TableSouthWest"]
+position = Vector2(-24, 42.5)
+metadata/activity_kind = "Seat"
+[node name="SeatSE" type="Marker2D" parent="TavernWorld/Props/TableSouthWest"]
+position = Vector2(24, 42.5)
+metadata/activity_kind = "Seat"
 
-[node name="GearDeskSprite" type="Sprite2D" parent="Board/PropSprites" unique_id=1075494246]
-texture = ExtResource("4_book_desk")
+[node name="Actors" type="Node2D" parent="TavernWorld"]
+y_sort_enabled = true
+[node name="Keeper" parent="TavernWorld" instance=ExtResource("6_keeper")]
+position = Vector2(832, 780)
+[node name="KeeperStart" type="Marker2D" parent="TavernWorld"]
+position = Vector2(832, 780)
+[node name="ActivityAnchors" type="Node2D" parent="TavernWorld"]
+[node name="ConversationAnchors" type="Node2D" parent="TavernWorld/ActivityAnchors"]
+[node name="MerchantAnchors" type="Node2D" parent="TavernWorld/ActivityAnchors"]
+[node name="Entrance" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(832, 945)
+metadata/activity_kind = "Entrance"
+[node name="Stairway" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(1140, 355)
+metadata/activity_kind = "Stairway"
+[node name="Merchant_tavern" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(760, 250)
+metadata/activity_kind = "Merchant"
+[node name="Merchant_forest" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(350, 335)
+metadata/activity_kind = "Merchant"
+[node name="Merchant_crypt" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(1315, 335)
+metadata/activity_kind = "Merchant"
+[node name="Merchant_farmstead" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(350, 655)
+metadata/activity_kind = "Merchant"
+[node name="Merchant_mine" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(1315, 655)
+metadata/activity_kind = "Merchant"
+[node name="Merchant_foundry" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(1240, 770)
+metadata/activity_kind = "Merchant"
+[node name="WaitA" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(700, 445)
+metadata/activity_kind = "Wait"
+[node name="WaitB" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(965, 445)
+metadata/activity_kind = "Wait"
+[node name="WaitC" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(800, 720)
+metadata/activity_kind = "Wait"
+[node name="WanderA" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(720, 585)
+metadata/activity_kind = "Wander"
+[node name="WanderB" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(1010, 665)
+metadata/activity_kind = "Wander"
+[node name="ConversationA" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(700, 355)
+metadata/activity_kind = "Conversation"
+[node name="ConversationB" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
+position = Vector2(970, 355)
+metadata/activity_kind = "Conversation"
 
-[node name="Tokens" type="Node2D" parent="Board" unique_id=1205591325]
+[node name="StairwayTarget" type="Button" parent="TavernWorld"]
+offset_left = 1000.0
+offset_top = 150.0
+offset_right = 1270.0
+offset_bottom = 365.0
+flat = true
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "The upstairs rooms"
 
-[node name="PlayerToken" parent="Board/Tokens" unique_id=210540262 instance=ExtResource("2_piece_scene")]
-label_text = "F"
-fill_color = Color(0.32, 0.55, 0.9, 1)
-radius = 21.0
-
-[node name="BartenderToken" parent="Board/Tokens" unique_id=1110902829 instance=ExtResource("2_piece_scene")]
-label_text = "B"
-fill_color = Color(0.76, 0.55, 0.25, 1)
-radius = 21.0
-
-[node name="GearRackToken" parent="Board/Tokens" unique_id=235628338 instance=ExtResource("2_piece_scene")]
-label_text = "G"
-fill_color = Color(0.55, 0.48, 0.42, 1)
-radius = 21.0
-
-[node name="ForestDoorToken" parent="Board/Tokens" unique_id=719297255 instance=ExtResource("2_piece_scene")]
-label_text = "D"
-fill_color = Color(0.23, 0.47, 0.28, 1)
-radius = 21.0
-
-[node name="UI" type="CanvasLayer" parent="." unique_id=253400898]
-
-[node name="Root" type="Control" parent="UI" unique_id=1295892647]
+[node name="UI" type="CanvasLayer" parent="."]
+[node name="Root" type="Control" parent="UI"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="TitleLabel" type="Label" parent="UI/Root" unique_id=76489303]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 16.0
-offset_right = 320.0
-offset_bottom = 48.0
-text = "Eros - Tavern"
-
-[node name="StatusLabel" type="Label" parent="UI/Root" unique_id=548199401]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 50.0
-offset_right = 400.0
-offset_bottom = 92.0
-autowrap_mode = 3
-
-[node name="DialoguePanel" type="Panel" parent="UI/Root" unique_id=32037498]
-layout_mode = 0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -236.0
-offset_right = -20.0
-offset_bottom = -18.0
-
-[node name="KeeperPortrait" type="TextureRect" parent="UI/Root/DialoguePanel" unique_id=257980207]
-layout_mode = 0
-offset_left = 18.0
-offset_top = 18.0
-offset_right = 150.0
-offset_bottom = 206.0
-texture = ExtResource("3_keeper")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="SpeakerLabel" type="Label" parent="UI/Root/DialoguePanel" unique_id=34842914]
-layout_mode = 0
-offset_left = 174.0
-offset_top = 22.0
-offset_right = 604.0
-offset_bottom = 50.0
-text = "The Tavern Keeper"
-
-[node name="DialogueLabel" type="Label" parent="UI/Root/DialoguePanel" unique_id=760745086]
-layout_mode = 0
-offset_left = 174.0
-offset_top = 62.0
-offset_right = 690.0
-offset_bottom = 190.0
-autowrap_mode = 3
-
-[node name="GearTitleLabel" type="Label" parent="UI/Root/DialoguePanel" unique_id=668589806]
-layout_mode = 0
-offset_left = 730.0
-offset_top = 22.0
-offset_right = 1120.0
-offset_bottom = 50.0
-text = "Choose Fighter Gear"
-
-[node name="GearButtons" type="VBoxContainer" parent="UI/Root/DialoguePanel" unique_id=611383439]
-layout_mode = 0
-offset_left = 730.0
-offset_top = 58.0
-offset_right = 1160.0
-offset_bottom = 178.0
-
-[node name="EnterForestButton" type="Button" parent="UI/Root/DialoguePanel" unique_id=1280494497]
-layout_mode = 0
-offset_left = 730.0
-offset_top = 184.0
-offset_right = 920.0
-offset_bottom = 218.0
-text = "Enter Forest"
-
-[node name="DetailLabel" type="Label" parent="UI/Root/DialoguePanel" unique_id=148627331]
-layout_mode = 0
-offset_left = 936.0
-offset_top = 184.0
-offset_right = 1328.0
-offset_bottom = 220.0
-autowrap_mode = 3
+[node name="TitleLabel" type="Label" parent="UI/Root"]
+visible = false
+[node name="StatusLabel" type="Label" parent="UI/Root"]
+visible = false
+[node name="DialoguePanel" type="Panel" parent="UI/Root"]
+visible = false
+[node name="KeeperPortrait" type="TextureRect" parent="UI/Root/DialoguePanel"]
+[node name="SpeakerLabel" type="Label" parent="UI/Root/DialoguePanel"]
+[node name="DialogueLabel" type="Label" parent="UI/Root/DialoguePanel"]
+[node name="GearTitleLabel" type="Label" parent="UI/Root/DialoguePanel"]
+[node name="GearButtons" type="VBoxContainer" parent="UI/Root/DialoguePanel"]
+[node name="EnterForestButton" type="Button" parent="UI/Root/DialoguePanel"]
+[node name="DetailLabel" type="Label" parent="UI/Root/DialoguePanel"]

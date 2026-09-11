@@ -1,0 +1,105 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/components/TavernProp.tscn" id="1_prop"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/hearth_rug.png" id="2_rug"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/ale_barrels.png" id="3_barrels"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/supply_crates.png" id="4_crates"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/notice_board.png" id="5_notice"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/firewood.png" id="6_firewood"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/serving_sideboard.png" id="7_sideboard"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/flame_banner.png" id="8_banner"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/weapon_rack.png" id="9_weapons"]
+
+[node name="TavernDecor" type="Node2D"]
+y_sort_enabled = true
+
+[node name="HearthRug" parent="." instance=ExtResource("1_prop")]
+position = Vector2(832, 620)
+z_index = -8
+prop_id = "hearth_rug"
+display_name = "The company rug"
+interaction_text = "Boot-worn paths cross the rug in every direction."
+interaction_enabled = false
+prop_texture = ExtResource("2_rug")
+visual_scale = Vector2(0.65, 0.65)
+
+[node name="Barrels" parent="." instance=ExtResource("1_prop")]
+position = Vector2(500, 315)
+prop_id = "ale_barrels"
+display_name = "Ale barrels"
+interaction_text = "Mara keeps the good cask tucked behind the others."
+interaction_enabled = true
+obstacle_enabled = true
+prop_texture = ExtResource("3_barrels")
+visual_scale = Vector2(0.28, 0.28)
+collision_size = Vector2(72, 34)
+collision_offset = Vector2(0, 29)
+
+[node name="SupplyCrates" parent="." instance=ExtResource("1_prop")]
+position = Vector2(1290, 700)
+prop_id = "supply_crates"
+display_name = "Expedition supplies"
+interaction_text = "Rope, lamp oil, and sealed provisions await the next departure."
+interaction_enabled = true
+obstacle_enabled = true
+prop_texture = ExtResource("4_crates")
+visual_scale = Vector2(0.22, 0.22)
+collision_size = Vector2(70, 30)
+collision_offset = Vector2(0, 25)
+prop_enabled = false
+
+[node name="NoticeBoard" parent="." instance=ExtResource("1_prop")]
+position = Vector2(355, 285)
+z_index = 2
+prop_id = "notice_board"
+display_name = "Company notice board"
+interaction_text = "Fresh contracts and old warnings share the same crowded board."
+interaction_enabled = true
+prop_texture = ExtResource("5_notice")
+visual_scale = Vector2(0.29, 0.29)
+
+[node name="Firewood" parent="." instance=ExtResource("1_prop")]
+position = Vector2(1310, 365)
+prop_id = "firewood"
+display_name = "Firewood"
+interaction_text = "Dry timber is stacked for cold nights and long stories."
+interaction_enabled = false
+obstacle_enabled = true
+prop_texture = ExtResource("6_firewood")
+visual_scale = Vector2(0.22, 0.22)
+collision_size = Vector2(66, 24)
+collision_offset = Vector2(0, 20)
+
+[node name="ServingSideboard" parent="." instance=ExtResource("1_prop")]
+position = Vector2(430, 385)
+prop_id = "serving_sideboard"
+display_name = "Serving sideboard"
+interaction_text = "Clean mugs and a fresh ledger wait for the evening rush."
+interaction_enabled = true
+obstacle_enabled = true
+prop_texture = ExtResource("7_sideboard")
+visual_scale = Vector2(0.32, 0.32)
+collision_size = Vector2(116, 28)
+collision_offset = Vector2(0, 27)
+
+[node name="FlameBanner" parent="." instance=ExtResource("1_prop")]
+position = Vector2(345, 155)
+z_index = 2
+prop_id = "hearth_banner"
+display_name = "The Hearth banner"
+interaction_text = "The company's flame has been mended more times than anyone remembers."
+interaction_enabled = false
+prop_texture = ExtResource("8_banner")
+visual_scale = Vector2(0.25, 0.25)
+
+[node name="WeaponRack" parent="." instance=ExtResource("1_prop")]
+position = Vector2(1260, 765)
+prop_id = "armory"
+display_name = "The armory rack"
+interaction_text = "Every blade is tagged, balanced, and ready to be issued."
+interaction_enabled = true
+obstacle_enabled = true
+prop_texture = ExtResource("9_weapons")
+visual_scale = Vector2(0.3, 0.3)
+collision_size = Vector2(98, 30)
+collision_offset = Vector2(0, 30)

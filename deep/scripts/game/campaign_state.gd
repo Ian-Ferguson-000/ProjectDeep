@@ -1,7 +1,7 @@
 extends RefCounted
 class_name CampaignState
 
-const SAVE_VERSION := 6
+const SAVE_VERSION := 7
 const TARGET_ROSTER_SIZE := 2
 const BASE_ROSTER_CAPACITY := 6
 const TUTORIAL_STARTING_HEALTH := 3
@@ -47,6 +47,7 @@ var lifetime_relic_essence: int = 0
 var banked_relics: Array[String] = []
 var successful_levels: int = 0
 var tavern_upgrades: Dictionary = {"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
+var tavern_dialogue_flags: Dictionary = {}
 var clues: Dictionary = {}
 var tutorial_outcome: String = ""
 var tutorial_history: Dictionary = {}
@@ -143,6 +144,7 @@ func apply_post_tutorial_state(outcome: String) -> void:
 	clues.clear()
 	unlocked_classes = ["warrior", "mage"]
 	tavern_upgrades = {"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
+	tavern_dialogue_flags.clear()
 	roster.clear()
 	next_character_number = 1
 	candidate_pool.clear()
@@ -189,19 +191,24 @@ func get_candidates() -> Array[CandidateRecord]:
 	result.sort_custom(func(a:CandidateRecord,b:CandidateRecord):return a.id<b.id)
 	return result
 
+func evaluate_tavern_condition(condition: Dictionary, candidate_id: String = "") -> bool:
+	var service := TavernDialogueService.new()
+	return service.evaluate_condition(condition, {"campaign": self, "candidate": candidate_pool.get(candidate_id)})
+
+func get_recruitment_requirement(candidate_id: String) -> Dictionary:
+	return TavernDialogueService.new().recruitment_requirement(candidate_id)
+
 func ensure_tavern_cycle() -> Dictionary:
 	if not is_tutorial_complete():return {"ok":false,"error":"The tutorial is not complete."}
 	if expedition.active:return {"ok":false,"error":"An expedition is active."}
-	var changed:=false
-	if candidate_pool.is_empty() and (candidate_wave_id==0 or living_roster().is_empty()):_generate_candidate_wave(false);changed=true
+	if candidate_pool.is_empty() and (candidate_wave_id==0 or living_roster().is_empty()):_generate_candidate_wave(false)
 	if tavern_phase==TAVERN_EXPEDITION:tavern_phase=TAVERN_OPEN
 	if last_presented_wave_id<candidate_wave_id:tavern_phase=TAVERN_ARRIVALS
-	if changed:save_atomic()
 	return {"ok":true,"wave_id":candidate_wave_id,"phase":tavern_phase}
 
 func mark_arrivals_presented(wave_id:int) -> Dictionary:
 	if wave_id!=candidate_wave_id:return {"ok":false,"error":"That candidate wave is no longer present."}
-	last_presented_wave_id=maxi(last_presented_wave_id,wave_id);tavern_phase=TAVERN_OPEN;save_atomic()
+	last_presented_wave_id=maxi(last_presented_wave_id,wave_id);tavern_phase=TAVERN_OPEN
 	return {"ok":true,"wave_id":wave_id}
 
 func recruit_candidate(candidate_id:String) -> Dictionary:
@@ -210,7 +217,7 @@ func recruit_candidate(candidate_id:String) -> Dictionary:
 	if living_roster().size()>=get_roster_capacity():return {"ok":false,"error":"The Hearth has no open rooms."}
 	var member:=candidate.adventurer;member.status=CharacterRecord.STATUS_AVAILABLE;roster[member.id]=member;candidate_pool.erase(candidate_id)
 	first_company_recruited=first_company_ids.all(func(id:String):return roster.has(id))
-	_add_calendar_event("recruitment","%s joins the company."%member.display_name);save_atomic()
+	_add_calendar_event("recruitment","%s joins the company."%member.display_name)
 	return {"ok":true,"character_id":member.id,"message":"%s joins the company."%member.display_name}
 
 func inspect_candidate(candidate_id:String,interaction_id:String)->Dictionary:
@@ -222,7 +229,7 @@ func inspect_candidate(candidate_id:String,interaction_id:String)->Dictionary:
 	elif interaction_id=="talk":candidate.knowledge.origin="exact";candidate.knowledge.preference="exact";candidate.knowledge.biography="exact";candidate.last_result=candidate.adventurer.biography
 	else:candidate.last_result="The review confirms class, equipment, trait, and %s aptitude."%_primary_stat(candidate.adventurer.class_id).to_upper()
 	if not candidate.completed_interactions.has(interaction_id):candidate.completed_interactions.append(interaction_id)
-	_add_calendar_event("assessment","%s is assessed at the Hearth."%candidate.adventurer.display_name);save_atomic();return {"ok":true,"duplicate":false,"result":candidate.last_result,"candidate":candidate}
+	_add_calendar_event("assessment","%s is assessed at the Hearth."%candidate.adventurer.display_name);return {"ok":true,"duplicate":false,"result":candidate.last_result,"candidate":candidate}
 
 func run_candidate_trial(candidate_id:String)->Dictionary:
 	var candidate:=candidate_pool.get(candidate_id) as CandidateRecord
@@ -230,7 +237,7 @@ func run_candidate_trial(candidate_id:String)->Dictionary:
 	if candidate.completed_interactions.has("trial"):return {"ok":true,"duplicate":true,"result":candidate.last_result,"candidate":candidate}
 	var stat:=_trial_stat(candidate.adventurer.class_id);var value:=int(candidate.adventurer.attributes.get(stat,10));var rng:=_rng(candidate.quality_seed^0x54a17);var benchmark:=10+rng.randi_range(-1,1);var delta:=rng.randi_range(3,6) if value>=benchmark else -rng.randi_range(2,5);var applied:=maxi(-banked_gold,delta);banked_gold+=applied
 	candidate.knowledge[stat]="exact" if value==benchmark else "band";candidate.completed_interactions.append("trial");candidate.last_result="%s: %s is %s the benchmark (%s%d gold)."%[_trial_name(candidate.adventurer.class_id),candidate.adventurer.display_name,"equal to" if value==benchmark else ("above" if value>benchmark else "below"),"+" if applied>=0 else "",applied]
-	_add_calendar_event("assessment",candidate.last_result);save_atomic();return {"ok":true,"duplicate":false,"stat":stat,"value":value if value==benchmark else null,"comparison":signi(value-benchmark),"gold_change":applied,"result":candidate.last_result,"candidate":candidate}
+	_add_calendar_event("assessment",candidate.last_result);return {"ok":true,"duplicate":false,"stat":stat,"value":value if value==benchmark else null,"comparison":signi(value-benchmark),"gold_change":applied,"result":candidate.last_result,"candidate":candidate}
 
 func appraise_candidate(candidate_id:String,stat_id:String)->Dictionary:
 	var candidate:=candidate_pool.get(candidate_id) as CandidateRecord
@@ -238,14 +245,14 @@ func appraise_candidate(candidate_id:String,stat_id:String)->Dictionary:
 	if stat_id not in ATTRIBUTE_IDS:return {"ok":false,"error":"That attribute cannot be appraised."}
 	if String(candidate.knowledge.get(stat_id,"unknown"))=="exact":return {"ok":false,"error":"That attribute is already known exactly."}
 	if banked_gold<12:return {"ok":false,"error":"Exact appraisal costs 12 banked gold."}
-	banked_gold-=12;candidate.knowledge[stat_id]="exact";candidate.appraisal_history.append(stat_id);candidate.completed_interactions.append("appraise:%s"%stat_id);candidate.last_result="The appraisal confirms %s %d."%[stat_id.to_upper(),int(candidate.adventurer.attributes.get(stat_id,10))];_add_calendar_event("assessment","%s receives a specialist appraisal."%candidate.adventurer.display_name);save_atomic();return {"ok":true,"stat":stat_id,"value":candidate.adventurer.attributes.get(stat_id,10),"cost":12,"result":candidate.last_result,"candidate":candidate}
+	banked_gold-=12;candidate.knowledge[stat_id]="exact";candidate.appraisal_history.append(stat_id);candidate.completed_interactions.append("appraise:%s"%stat_id);candidate.last_result="The appraisal confirms %s %d."%[stat_id.to_upper(),int(candidate.adventurer.attributes.get(stat_id,10))];_add_calendar_event("assessment","%s receives a specialist appraisal."%candidate.adventurer.display_name);return {"ok":true,"stat":stat_id,"value":candidate.adventurer.attributes.get(stat_id,10),"cost":12,"result":candidate.last_result,"candidate":candidate}
 
 func dismiss_character(character_id:String) -> Dictionary:
 	var member:=character(character_id)
 	if member==null or member.status!=CharacterRecord.STATUS_AVAILABLE:return {"ok":false,"error":"Only an available adventurer can be dismissed."}
 	if not first_normal_launch_completed and first_company_ids.has(character_id):return {"ok":false,"error":"The founding recruits must complete the first expedition briefing."}
-	roster.erase(character_id);_add_calendar_event("departure","%s leaves the Hearth."%member.display_name);save_atomic()
-	if living_roster().is_empty() and candidate_pool.is_empty():_generate_candidate_wave(false);save_atomic()
+	roster.erase(character_id);_add_calendar_event("departure","%s leaves the Hearth."%member.display_name)
+	if living_roster().is_empty() and candidate_pool.is_empty():_generate_candidate_wave(false)
 	return {"ok":true,"message":"%s leaves the Hearth."%member.display_name}
 
 func launch_expedition(ids:Array[String],dungeon_id:String,mode:String) -> Dictionary:
@@ -257,7 +264,7 @@ func launch_expedition(ids:Array[String],dungeon_id:String,mode:String) -> Dicti
 	if not first_company_recruited:return {"ok":false,"error":"Recruit both Brina and Eamon before the first expedition."}
 	if not _begin_expedition_validated(ids,dungeon_id,mode,false):return {"ok":false,"error":"The selected party cannot enter that dungeon."}
 	for candidate in get_candidates():_add_calendar_event("departure","%s leaves with the morning crowd."%candidate.adventurer.display_name)
-	candidate_pool.clear();first_normal_launch_completed=true;tavern_phase=TAVERN_EXPEDITION;save_atomic()
+	candidate_pool.clear();first_normal_launch_completed=true;tavern_phase=TAVERN_EXPEDITION
 	return {"ok":true,"expedition_id":expedition.expedition_id}
 
 func should_trigger_former_keeper_encounter(dungeon_id: String, outcome: String) -> bool:
@@ -448,7 +455,6 @@ func settle_expedition(run_id:int,outcome:String,result_data:Dictionary={}) -> D
 		_generate_candidate_wave(false)
 	else:tavern_phase=TAVERN_STORY
 	pending_settlement_summary={"outcome":outcome,"headline":String(result_data.get("headline","Expedition resolved.")),"dungeon":dungeon_id,"mode":resolved_mode,"depth":resolved_depth,"gold":banked_gold if outcome=="victory" else 0}
-	save_atomic()
 	return {"ok":true,"duplicate":false,"logs":logs,"wave_id":candidate_wave_id,"calendar":get_calendar_date()}
 
 func can_unlock_secret(secret_id: String) -> bool:
@@ -473,7 +479,7 @@ func to_dict() -> Dictionary:
 	for value in roster.values(): if value is CharacterRecord: encoded_roster.append(value.to_dict())
 	var encoded_candidates:Array[Dictionary]=[]
 	for value in candidate_pool.values():if value is CandidateRecord:encoded_candidates.append(value.to_dict())
-	return {"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeon_modes":completed_dungeon_modes.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true)}
+	return {"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeon_modes":completed_dungeon_modes.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true)}
 
 func save_atomic() -> bool:
 	last_save_error = "";save_slot=clampi(save_slot,1,SAVE_SLOT_COUNT);last_saved_unix=int(Time.get_unix_time_from_system());var temporary:=temp_save_path(save_slot);var destination:=save_path(save_slot);var backup:=backup_save_path(save_slot);var file := FileAccess.open(temporary, FileAccess.WRITE)
@@ -533,6 +539,7 @@ static func _migrate_dict(source:Dictionary)->Dictionary:
 		for record in old_roster:if record is Dictionary:names.append(String(record.get("display_name","")))
 		data["_convert_first_company_candidates"]=String(data.get("tutorial_phase",TUTORIAL_NEW))==TUTORIAL_COMPLETE and Dictionary(data.get("completed_dungeon_modes",{})).is_empty() and old_roster.size()==2 and names.has("Brina") and names.has("Eamon")
 	if version<=5:data["reputation"]=int(data.get("reputation",0));data["used_curated_ids"]=Array(data.get("used_curated_ids",[]));data["lineage_registry"]=Dictionary(data.get("lineage_registry",{})).duplicate(true)
+	if version<=6:data["tavern_dialogue_flags"]=Dictionary(data.get("tavern_dialogue_flags",{})).duplicate(true)
 	var classes:Array=[];classes.assign(data.get("unlocked_classes",["warrior","mage"]))
 	for i in range(classes.size()):if String(classes[i])=="phantom":classes[i]="rogue"
 	data["unlocked_classes"]=classes;data["version"]=SAVE_VERSION;return data
@@ -542,7 +549,7 @@ func _load_dict(data: Dictionary) -> void:
 	tutorial_phase = String(data.get("tutorial_phase", TUTORIAL_NEW)); tutorial_outcome = String(data.get("tutorial_outcome", "")); tutorial_history = Dictionary(data.get("tutorial_history", {})).duplicate(true); tutorial_keepsake_id = String(data.get("tutorial_keepsake_id", "")); tutorial_letter_unlocked = bool(data.get("tutorial_letter_unlocked", false)); post_tutorial_initialized = bool(data.get("post_tutorial_initialized", tutorial_phase == TUTORIAL_COMPLETE)); former_keeper_encounter_pending = bool(data.get("former_keeper_encounter_pending", false)); former_keeper_encounter_seen = bool(data.get("former_keeper_encounter_seen", false)); memorial.assign(data.get("memorial", [])); unlocked_classes.assign(data.get("unlocked_classes", ["warrior","mage"]))
 	completed_dungeon_modes = Dictionary(data.get("completed_dungeon_modes", {})).duplicate(true); banked_gold = maxi(0, int(data.get("banked_gold", 0))); supplies = maxi(0, int(data.get("supplies", 0))); relic_essence = maxi(0, int(data.get("relic_essence", 0))); lifetime_relic_essence = maxi(relic_essence, int(data.get("lifetime_relic_essence", relic_essence))); successful_levels = maxi(0, int(data.get("successful_levels", 0)))
 	banked_relics.assign(data.get("banked_relics", []))
-	tavern_upgrades.merge(Dictionary(data.get("tavern_upgrades", {})), true); clues = Dictionary(data.get("clues", {})).duplicate(true); next_character_number = maxi(1, int(data.get("next_character_number", 1)))
+	tavern_upgrades.merge(Dictionary(data.get("tavern_upgrades", {})), true); tavern_dialogue_flags = Dictionary(data.get("tavern_dialogue_flags", {})).duplicate(true); clues = Dictionary(data.get("clues", {})).duplicate(true); next_character_number = maxi(1, int(data.get("next_character_number", 1)))
 	roster.clear()
 	for value in data.get("roster", []):
 		if value is Dictionary:

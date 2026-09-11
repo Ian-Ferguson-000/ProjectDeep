@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "default": {"all": []},
+  "criteria": {
+    "brina_founder": {"all": [{"flag":"keeper_welcomed"}]},
+    "eamon_founder": {"all": [{"flag":"keeper_welcomed"}]}
+  },
+  "messages": {
+    "keeper_welcomed": "Speak with the keeper before making an offer."
+  }
+}

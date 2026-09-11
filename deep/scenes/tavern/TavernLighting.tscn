@@ -1,0 +1,42 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="Gradient" id="Gradient_warm"]
+offsets = PackedFloat32Array(0, 0.52, 1)
+colors = PackedColorArray(1, 0.72, 0.35, 0.72, 1, 0.47, 0.16, 0.28, 0.25, 0.08, 0.02, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_warm"]
+gradient = SubResource("Gradient_warm")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="TavernLighting" type="Node2D"]
+
+[node name="AmbientTone" type="CanvasModulate" parent="."]
+color = Color(0.86, 0.81, 0.74, 1)
+
+[node name="BackWallLantern" type="PointLight2D" parent="."]
+position = Vector2(688, 150)
+energy = 0.42
+texture = SubResource("GradientTexture2D_warm")
+texture_scale = 1.05
+
+[node name="BarLantern" type="PointLight2D" parent="."]
+position = Vector2(760, 315)
+energy = 0.38
+texture = SubResource("GradientTexture2D_warm")
+texture_scale = 0.78
+
+[node name="StairLantern" type="PointLight2D" parent="."]
+position = Vector2(1140, 285)
+energy = 0.36
+texture = SubResource("GradientTexture2D_warm")
+texture_scale = 0.72
+
+[node name="EntranceLantern" type="PointLight2D" parent="."]
+position = Vector2(832, 865)
+energy = 0.4
+texture = SubResource("GradientTexture2D_warm")
+texture_scale = 0.72

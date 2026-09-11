@@ -1,6 +1,11 @@
 extends CharacterBody2D
 class_name SlasherPlayer
 const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
+const REQUIRED_INPUT_ACTIONS:Array[StringName]=[
+	&"slasher_left",&"slasher_right",&"slasher_up",&"slasher_down",
+	&"slasher_aim_left",&"slasher_aim_right",&"slasher_aim_up",&"slasher_aim_down",
+	&"slasher_controller_basic",&"slasher_mobility",&"slasher_special",&"slasher_defend"
+]
 
 signal health_changed(current:int,maximum:int)
 signal resource_changed(current:int,maximum:int)
@@ -42,6 +47,14 @@ var screen_shake_time:=0.0
 var screen_shake_duration:=0.0
 var screen_shake_strength:=0.0
 var basic_mouse_held:=false
+var warrior_dash_active:=false
+var warrior_dash_destination:=Vector2.ZERO
+var warrior_dash_speed:=0.0
+var warrior_dash_attack:Dictionary={}
+var warrior_dash_hit_ids:Dictionary={}
+var warrior_dash_resource_gain:=0
+var warrior_dash_resource_awarded:=false
+var warrior_dash_landing_invulnerability:=0.0
 var item_runtime:SlasherItemRuntime
 var active_action_slot:="basic"
 var consumable_aegis:=0
@@ -69,7 +82,7 @@ func restore_party_state(state:Dictionary)->void:
 	var marked_id:=int(state.get("marked_enemy_instance_id",0));marked_enemy=instance_from_id(marked_id) as SlasherEnemy if marked_id>0 else null
 	if item_runtime!=null:
 		var item_state:Dictionary=Dictionary(state.get("item_runtime",{}));item_runtime.cooldowns=Dictionary(item_state.get("cooldowns",{})).duplicate(true);item_runtime.floor_uses=Dictionary(item_state.get("floor_uses",{})).duplicate(true);item_runtime.precision_count=int(item_state.get("precision_count",0))
-	velocity=Vector2.ZERO;basic_mouse_held=false;animation_lock=0.0
+	velocity=Vector2.ZERO;basic_mouse_held=false;animation_lock=0.0;warrior_dash_active=false;warrior_dash_hit_ids.clear()
 
 func setup(state:RunState)->void:
 	run_state=state;class_id=state.selected_class_id
@@ -83,9 +96,14 @@ func setup(state:RunState)->void:
 	if is_inside_tree():_refresh_presentation()
 
 func _ready()->void:
+	_ensure_input_actions_exist()
 	add_to_group("slasher_player")
 	item_runtime=ITEM_RUNTIME.new();item_runtime.name="SlasherItemRuntime";add_child(item_runtime);item_runtime.setup(run_state,self)
 	var shape:=CollisionShape2D.new();shape.name="PlayerHitbox";var circle:=CircleShape2D.new();circle.radius=float(GameBalance.get_slasher_class_tuning(class_id).get("collision_radius",18.0));shape.shape=circle;add_child(shape);_refresh_presentation()
+
+func _ensure_input_actions_exist()->void:
+	for action:StringName in REQUIRED_INPUT_ACTIONS:
+		if not InputMap.has_action(action):InputMap.add_action(action)
 
 func _refresh_presentation()->void:
 	if sprite==null:sprite=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";add_child(sprite)
@@ -107,6 +125,7 @@ func _physics_process(delta:float)->void:
 	_update_screen_shake(delta)
 	if defense_window<=0.0 and defense_kind!="retribution_ready":defense_kind=""
 	_update_aim()
+	if warrior_dash_active:_process_warrior_dash(delta);return
 	if input_locked:basic_mouse_held=false;velocity=Vector2.ZERO;return
 	var direction:=Input.get_vector("slasher_left","slasher_right","slasher_up","slasher_down")
 	if direction.length()>0.1:last_direction=direction.normalized()
@@ -119,7 +138,7 @@ func _physics_process(delta:float)->void:
 	if Input.is_action_just_pressed("slasher_defend"):use_action("defensive", "controller")
 	if basic_mouse_held and not Input.is_key_pressed(KEY_SHIFT) and float(cooldowns.get("basic",0.0))<=0.0:
 		var held_result:Dictionary=use_action("basic", "mouse")
-		if bool(held_result.get("started",false)):cooldowns.basic=float(_ability_tuning("basic").get("cooldown",0.4))*float(GameBalance.get_slasher_balance("input").get("held_basic_cooldown_multiplier",1.5))
+		if bool(held_result.get("started",false)):cooldowns.basic=float(_ability_tuning("basic").get("cooldown",0.4))*float(GameBalance.get_slasher_balance("input").get("held_basic_cooldown_multiplier",2.25))
 
 func _unhandled_input(event:InputEvent)->void:
 	if input_locked:return
@@ -135,7 +154,7 @@ func _notification(what:int)->void:
 	if what==NOTIFICATION_WM_WINDOW_FOCUS_OUT:basic_mouse_held=false
 
 func use_action(slot:String,input_source:String="system")->Dictionary:
-	var result:={"started":false,"slot":slot,"class_id":class_id,"input_source":input_source,"targets_hit":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
+	var result:={"started":false,"slot":slot,"class_id":class_id,"input_source":input_source,"targets_hit":0,"projectiles_deflected":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
 	if float(cooldowns.get(slot,0.0))>0.0:result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
 	var tuning:Dictionary=_ability_tuning(slot)
 	var resource_cost:=int(tuning.get("resource_cost",2 if slot=="special" else 0))
@@ -147,6 +166,9 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 		"movement":result=_movement(result)
 		"special":result=_special(result)
 		"defensive":result=_defensive(result)
+	if not bool(result.get("started",false)):
+		if resource_cost>0:run_state.gain_class_resource(resource_cost)
+		resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());ability_resolved.emit(result);return result
 	if int(result.get("targets_hit",0))>0 and int(tuning.get("resource_refund_on_hit",0))>0:_gain_resource(result,int(tuning.resource_refund_on_hit))
 	result.resource_spent=resource_cost
 	cooldowns[slot]=float(tuning.get("cooldown",0.4 if slot=="basic" else 3.0))*(item_runtime.cooldown_multiplier() if item_runtime else 1.0)
@@ -161,7 +183,10 @@ func _basic(result:Dictionary)->Dictionary:
 			if is_instance_valid(marked_enemy):companion.set_meta("marked",marked_enemy);result.targets_hit=1;_gain_resource(result,int(tuning.get("resource_gain",1)))
 			else:companion.set_meta("command_position",global_position+aim_direction*float(tuning.get("command_distance",180.0)))
 		_:
-			result.targets_hit=_melee_attack(_configured_attack(tuning,"physical"))
+			var attack:=_configured_attack(tuning,"physical")
+			if class_id=="rogue":result.targets_hit=_line_attack(global_position,global_position+aim_direction*float(attack.get("reach",72.0)),float(attack.get("line_radius",18.0)),attack);is_hidden=false;hidden_time=0.0
+			else:result.targets_hit=_melee_attack(attack)
+			result.projectiles_deflected=_deflect_projectiles(float(tuning.get("deflect_reach",tuning.get("reach",0.0))),float(tuning.get("deflect_arc_degrees",tuning.get("arc_degrees",0.0))))
 			if result.targets_hit>0:_gain_resource(result,int(tuning.get("resource_gain",1)))
 	return result
 
@@ -178,15 +203,27 @@ func _special(result:Dictionary)->Dictionary:
 				var isolated:=_nearby_enemy_count(target.global_position,float(tuning.get("isolation_radius",95.0)))<=1
 				var low_health:=float(target.health)/maxf(1.0,float(target.max_health))<float(tuning.get("low_health_fraction",0.5))
 				var coefficient:=float(tuning.get("bonus_damage_coefficient",3.0)) if is_hidden or isolated or low_health else float(tuning.get("damage_coefficient",2.0))
-				var attack:=_configured_attack(tuning,"physical");attack.damage=_scaled_damage(tuning,coefficient);target.receive_attack(attack,self);result.targets_hit=1;is_hidden=false
+				var attack:=_configured_attack(tuning,"physical");attack.damage=_scaled_damage(tuning,coefficient);target.receive_attack(attack,self);result.targets_hit=1;is_hidden=false;hidden_time=0.0
+			else:result.started=false;result.failure="No target in Assassinate range."
 		"summoner":
 			_ensure_companion()
 			if is_instance_valid(marked_enemy):companion.set_meta("marked",marked_enemy);companion.set_meta("pounce",true);result.targets_hit=1
 	return result
 
 func _movement(result:Dictionary)->Dictionary:
-	var tuning:=_ability_tuning("movement");var distance:=float(tuning.get("movement_distance",150.0));var start:=global_position
-	global_position=_safe_destination(global_position+aim_direction*distance,float(tuning.get("destination_clearance",22.0)))
+	var tuning:=_ability_tuning("movement");var distance:=float(tuning.get("movement_distance",150.0));var start:=global_position;var intended_destination:=global_position+aim_direction*distance
+	if class_id=="warrior":
+		warrior_dash_destination=_safe_destination(intended_destination,float(tuning.get("destination_clearance",22.0)))
+		warrior_dash_speed=maxf(1.0,float(tuning.get("dash_speed",1100.0)))
+		warrior_dash_attack=_configured_attack(tuning,"physical");warrior_dash_hit_ids.clear();warrior_dash_resource_gain=int(tuning.get("resource_gain",0));warrior_dash_resource_awarded=false
+		warrior_dash_landing_invulnerability=float(tuning.get("landing_invulnerability",0.08));warrior_dash_active=not warrior_dash_destination.is_equal_approx(global_position)
+		var dash_duration:=global_position.distance_to(warrior_dash_destination)/warrior_dash_speed
+		var dash_invulnerability:=maxf(float(tuning.get("invulnerability",0.0)),dash_duration+warrior_dash_landing_invulnerability)
+		invulnerable=maxf(invulnerable,dash_invulnerability);result["invulnerability_granted"]=dash_invulnerability;result["dash_duration"]=dash_duration;queue_redraw();return result
+	if class_id=="rogue":
+		var shadow_target:=_enemy_near_aim(distance,float(tuning.get("aim_dot_threshold",0.72)))
+		if is_instance_valid(shadow_target):intended_destination=shadow_target.global_position+aim_direction*float(tuning.get("pass_through_distance",36.0));result["passed_through_target"]=true
+	global_position=_safe_destination(intended_destination,float(tuning.get("destination_clearance",22.0)))
 	# Mobility protection begins after destination resolution, making Blink and every other movement
 	# ability safe on landing without extending the window by its travel calculation.
 	var landing_invulnerability:=maxf(0.05,float(tuning.get("invulnerability",0.05)))
@@ -194,14 +231,33 @@ func _movement(result:Dictionary)->Dictionary:
 	result["invulnerability_granted"]=landing_invulnerability
 	queue_redraw()
 	match class_id:
-		"warrior":result.targets_hit=_line_attack(start,global_position,float(tuning.get("path_radius",34.0)),_configured_attack(tuning,"physical"))
 		"healer":
 			if global_position.distance_to(start)>=float(tuning.get("heal_travel_threshold",80.0)):heal(_scaled_heal(tuning))
 		"tank":result.targets_hit=_area_attack(global_position,float(tuning.get("area_radius",72.0)),_configured_attack(tuning,"physical"))
-		"rogue":is_hidden=true;hidden_time=float(tuning.get("hidden_duration",0.5))
+		"rogue":
+			is_hidden=true;hidden_time=float(tuning.get("hidden_duration",0.5))
+			if Array(tuning.get("progression_flags",[])).has("shadowstep_damage"):result.targets_hit=_line_attack(start,global_position,float(tuning.get("path_radius",22.0)),_configured_attack(tuning,"physical"))
 		"summoner":_ensure_companion();companion.global_position=global_position-aim_direction*float(tuning.get("mount_offset",24.0))
 	if result.targets_hit>0 and int(tuning.get("resource_gain",0))>0:_gain_resource(result,int(tuning.get("resource_gain",0)))
 	return result
+
+func _process_warrior_dash(delta:float)->void:
+	var previous:=global_position
+	global_position=global_position.move_toward(warrior_dash_destination,warrior_dash_speed*delta);_enforce_field_bounds();velocity=Vector2.ZERO
+	_dash_slash_segment(previous,global_position,float(warrior_dash_attack.get("path_radius",36.0)))
+	if global_position.is_equal_approx(warrior_dash_destination):
+		warrior_dash_active=false;invulnerable=maxf(invulnerable,warrior_dash_landing_invulnerability);warrior_dash_hit_ids.clear()
+
+func _dash_slash_segment(start:Vector2,end:Vector2,radius:float)->void:
+	var segment:=end-start;var segment_length_squared:=segment.length_squared()
+	for node_value:Variant in get_tree().get_nodes_in_group("slasher_damageable"):
+		var damageable:Node2D=node_value as Node2D
+		if not is_instance_valid(damageable) or not damageable.has_method("receive_attack") or warrior_dash_hit_ids.has(damageable.get_instance_id()):continue
+		var progress:=0.0 if segment_length_squared<=0.001 else clampf((damageable.global_position-start).dot(segment)/segment_length_squared,0.0,1.0)
+		if (start+segment*progress).distance_to(damageable.global_position)>radius:continue
+		warrior_dash_hit_ids[damageable.get_instance_id()]=true;damageable.call("receive_attack",warrior_dash_attack,self);_apply_echo_hit(damageable,warrior_dash_attack)
+		if damageable.is_in_group("slasher_enemy") and not warrior_dash_resource_awarded:
+			warrior_dash_resource_awarded=true;_award_resource(warrior_dash_resource_gain);resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
 
 func _defensive(result:Dictionary)->Dictionary:
 	var tuning:=_ability_tuning("defensive");defense_window=float(tuning.get("effect_duration",1.0))
@@ -210,14 +266,18 @@ func _defensive(result:Dictionary)->Dictionary:
 		"mage":defense_kind="repel";_push_nearby(float(tuning.get("push_radius",100.0)),float(tuning.get("push_distance",70.0)))
 		"healer":defense_kind="recover"
 		"tank":defense_kind="guard"
-		"rogue":defense_kind="evade";invulnerable=float(tuning.get("invulnerability",defense_window));global_position=_safe_destination(global_position-aim_direction*float(tuning.get("movement_distance",70.0)),float(tuning.get("destination_clearance",22.0)))
+		"rogue":
+			defense_kind="evade";invulnerable=float(tuning.get("invulnerability",defense_window));global_position=_safe_destination(global_position-aim_direction*float(tuning.get("movement_distance",70.0)),float(tuning.get("destination_clearance",22.0)))
+			if Array(tuning.get("progression_flags",[])).has("evade_hidden"):is_hidden=true;hidden_time=maxf(hidden_time,float(tuning.get("hidden_duration",0.5)))
 		"summoner":_ensure_companion();defense_kind="cover"
 	return result
 
 func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->void:
 	var tuning:=_ability_tuning("special" if defense_kind=="retribution_ready" else "defensive")
 	if invulnerable>0.0:
-		if defense_kind=="evade":_award_resource(int(tuning.get("resource_gain",1)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
+		if defense_kind=="evade":
+			_award_resource(int(tuning.get("resource_gain",1)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());defense_kind="";defense_window=0.0
+			if is_instance_valid(attacker) and Array(tuning.get("progression_flags",[])).has("evade_counter"):attacker.receive_attack(_configured_attack(tuning,"physical"),self)
 		return
 	var prevented:=0
 	if defense_window>0.0:
@@ -297,6 +357,17 @@ func _area_attack(center:Vector2,radius:float,data:Dictionary)->int:
 			if node.is_in_group("slasher_enemy"):hits+=1
 	return hits
 
+func _deflect_projectiles(reach:float,arc_degrees:float)->int:
+	if reach<=0.0 or arc_degrees<=0.0:return 0
+	var count:=0;var threshold:=cos(deg_to_rad(arc_degrees)*0.5)
+	for node_value:Variant in get_tree().get_nodes_in_group("slasher_hostile_projectile"):
+		var projectile:SlasherHostileProjectile=node_value as SlasherHostileProjectile
+		if not is_instance_valid(projectile):continue
+		var offset:=projectile.global_position-global_position
+		if offset.length()<=reach and (offset.is_zero_approx() or aim_direction.dot(offset.normalized())>=threshold):
+			if projectile.deflect(self,aim_direction):count+=1
+	return count
+
 func _attack_data(damage:int,damage_type:String,extra:Dictionary={})->Dictionary:
 	var data:={"damage":damage,"damage_type":damage_type,"knockback":0.0,"status":"","status_duration":0.0}
 	for key in extra:data[key]=extra[key]
@@ -314,7 +385,7 @@ func _scaled_heal(tuning:Dictionary)->int:
 func _configured_attack(tuning:Dictionary,damage_type:String)->Dictionary:
 	var data:=_attack_data(_scaled_damage(tuning),damage_type)
 	if next_attack_multiplier>1.0:data.damage=maxi(1,int(round(float(data.damage)*next_attack_multiplier)));next_attack_multiplier=1.0
-	for key in ["reach","arc_degrees","area_radius","hit_radius","piercing","knockback","status","status_duration","status_strength","visual","visual_scale","tint","screen_shake_multiplier","echo_damage_multiplier","progression_flags"]:
+	for key in ["reach","arc_degrees","line_radius","path_radius","area_radius","hit_radius","piercing","knockback","status","status_duration","status_strength","visual","visual_scale","tint","screen_shake_multiplier","echo_damage_multiplier","progression_flags"]:
 		if tuning.has(key):data[key]=tuning[key]
 	if tuning.has("projectile_range"):data.range=tuning.projectile_range
 	if tuning.has("projectile_speed"):data.speed=tuning.projectile_speed
