@@ -1,45 +1,38 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://i5rgoikl0cx7"]
 
-[ext_resource type="Script" path="res://scripts/scenes/tavern_keeper_controller.gd" id="1_keeper"]
-[ext_resource type="SpriteFrames" path="res://assets/sprite_packs/Player/player_frames.tres" id="2_frames"]
-[ext_resource type="Texture2D" path="res://assets/generated_characters/tavern_keeper.png" id="3_portrait"]
+[ext_resource type="Script" uid="uid://5e4a4rddqc7o" path="res://scripts/scenes/tavern_keeper_controller.gd" id="1_keeper"]
+[ext_resource type="Texture2D" uid="uid://5exu5nbjtrx" path="res://assets/generated_characters/tavern_keeper.png" id="3_portrait"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_keeper"]
 radius = 14.0
 height = 34.0
 
-[node name="TavernKeeper" type="CharacterBody2D"]
-script = ExtResource("1_keeper")
+[node name="TavernKeeper" type="CharacterBody2D" unique_id=901509533]
 collision_layer = 2
-collision_mask = 1
+script = ExtResource("1_keeper")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1758333976]
 position = Vector2(0, -16)
 shape = SubResource("CapsuleShape2D_keeper")
 
-[node name="GroundShadow" type="Polygon2D" parent="."]
-position = Vector2(0, -4)
+[node name="GroundShadow" type="Polygon2D" parent="." unique_id=784267361]
 z_index = -2
+position = Vector2(0, -4)
 color = Color(0.055, 0.035, 0.025, 0.42)
 polygon = PackedVector2Array(-16, 0, -11, -5, 0, -7, 11, -5, 16, 0, 11, 5, 0, 7, -11, 5)
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=292758989]
 position = Vector2(0, -20)
-scale = Vector2(1.35, 1.35)
-sprite_frames = ExtResource("2_frames")
-animation = &"idle_down"
-autoplay = "idle_down"
 
-[node name="KeeperPortrait" type="Sprite2D" parent="."]
+[node name="KeeperPortrait" type="Sprite2D" parent="." unique_id=1456517688]
 visible = false
 texture = ExtResource("3_portrait")
 metadata/portrait_path = "res://assets/generated_characters/tavern_keeper.png"
 
-[node name="InteractionArea" type="Area2D" parent="."]
+[node name="InteractionArea" type="Area2D" parent="." unique_id=857823375]
 collision_layer = 0
-collision_mask = 1
 
-[node name="Nameplate" type="Label" parent="."]
+[node name="Nameplate" type="Label" parent="." unique_id=1223488011]
 z_index = 20
 z_as_relative = false
 offset_left = -70.0

@@ -55,7 +55,10 @@ func begin_arrivals()->void:
 
 func set_paused(value:bool)->void:
 	paused=value
-	for actor_value in actors.values():(actor_value as TavernActor).process_mode=Node.PROCESS_MODE_DISABLED if value else Node.PROCESS_MODE_INHERIT
+	for actor_value in actors.values():
+		var actor:=actor_value as TavernActor
+		actor.set_world_paused(value)
+		actor.process_mode=Node.PROCESS_MODE_DISABLED if value else Node.PROCESS_MODE_INHERIT
 
 func set_modal_paused(value:bool)->void:
 	set_paused(value)

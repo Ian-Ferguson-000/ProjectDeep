@@ -20,6 +20,20 @@ func _run()->void:
 	_expect(campaign.character(first_id)!=null and campaign.character(first_id).status==CharacterRecord.STATUS_AVAILABLE and campaign.retired_heroes.is_empty(),"Participating survivor did not return for their career",failures)
 	_expect(campaign.character(second_id)!=null,"Unselected roster member was removed",failures)
 	_expect(campaign.candidate_pool.size()==2,"Settlement did not create the next deterministic candidate wave",failures)
+	var rotation:=CampaignState.new();rotation.apply_post_tutorial_state("victory");rotation.unlock_class("rogue");rotation.unlock_class("summoner")
+	var seen_classes:Dictionary={}
+	for wave in 4:
+		rotation._generate_candidate_wave(false)
+		for candidate in rotation.get_candidates():seen_classes[candidate.adventurer.class_id]=true
+	_expect(seen_classes.has("rogue") and seen_classes.has("summoner"),"Weekly candidate rotation skipped unlocked classes",failures)
+	var stale:=CampaignState.new();stale.apply_post_tutorial_state("victory");stale.unlock_class("rogue");stale.unlock_class("summoner");stale.completed_dungeon_modes["forest"]=["slasher"]
+	stale.candidate_pool.clear();stale.candidate_wave_id=14;stale.calendar_day=92
+	for class_id in ["warrior","mage"]:
+		var member:=stale._generate_character(class_id)
+		stale.candidate_pool[member.id]=CandidateRecord.create(member,stale.calendar_day,stale.candidate_wave_id,"Original candidate",false)
+	var original_ids:=stale.candidate_pool.keys().duplicate()
+	stale.ensure_tavern_cycle()
+	_expect(original_ids.all(func(id:Variant):return stale.candidate_pool.has(id)) and stale.get_candidates().any(func(candidate:CandidateRecord):return candidate.adventurer.class_id=="rogue") and stale.get_candidates().any(func(candidate:CandidateRecord):return candidate.adventurer.class_id=="summoner"),"Tavern catch-up failed to retain old candidates and show unlocked classes",failures)
 	var snapshot:=campaign.to_dict();var restored:=CampaignState.new();restored._load_dict(snapshot)
 	_expect(JSON.stringify(restored.to_dict().candidate_pool)==JSON.stringify(snapshot.candidate_pool),"Candidate wave rerolled after serialization",failures)
 	var duplicate:=campaign.settle_expedition(run_id,"victory",{});_expect(bool(duplicate.get("duplicate",false)) and campaign.calendar_day==8,"Settlement double-applied",failures)

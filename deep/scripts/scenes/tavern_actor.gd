@@ -57,7 +57,7 @@ func seat_at(point:Vector2)->void:
 	global_position=point;state=ActivityState.SEATED;sprite.scale=Vector2(_standing_scale.x,_standing_scale.y*0.76);z_index=-1;_play("idle");show_emote("🍲")
 
 func stand_up()->void:
-	sprite.scale=_standing_scale;z_index=0;state=ActivityState.IDLE;bubble.visible=false
+	sprite.scale=_standing_scale;z_index=0;state=ActivityState.IDLE;bubble.visible=false;_play("idle")
 
 func show_emote(text_value:String,duration:=2.4)->void:
 	bubble.text=text_value;bubble.visible=true
@@ -67,6 +67,10 @@ func set_interaction_paused(value:bool)->void:
 	paused=value
 	if value:state=ActivityState.INTERACTING;agent.avoidance_enabled=false;_play("idle")
 
+func set_world_paused(value:bool)->void:
+	paused=value
+	_play("idle" if value or state not in [ActivityState.WALKING,ActivityState.DEPARTING] else "run")
+
 func finish_immediately()->void:
 	global_position=destination;agent.avoidance_enabled=false;_arrive()
 
@@ -74,10 +78,13 @@ func _physics_process(delta:float)->void:
 	if paused or state not in [ActivityState.WALKING,ActivityState.DEPARTING]:return
 	if agent.is_navigation_finished():_arrive();return
 	var next:=agent.get_next_path_position();var desired:=global_position.direction_to(next)*movement_speed
-	_last_direction=SlasherSpriteLibrary.direction_name(desired,_last_direction);_play("run");_movement_delta=delta;agent.velocity=desired
+	_last_direction=SlasherSpriteLibrary.direction_name(desired,_last_direction);_movement_delta=delta;agent.velocity=desired
 
 func _on_safe_velocity(safe_velocity:Vector2)->void:
 	if paused or state not in [ActivityState.WALKING,ActivityState.DEPARTING]:return
+	if safe_velocity.length_squared()>0.01:
+		_last_direction=SlasherSpriteLibrary.direction_name(safe_velocity,_last_direction);_play("run")
+	else:_play("idle")
 	global_position+=safe_velocity*_movement_delta
 	if global_position.distance_to(destination)<=agent.target_desired_distance:_arrive()
 

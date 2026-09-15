@@ -202,6 +202,7 @@ func ensure_tavern_cycle() -> Dictionary:
 	if not is_tutorial_complete():return {"ok":false,"error":"The tutorial is not complete."}
 	if expedition.active:return {"ok":false,"error":"An expedition is active."}
 	if candidate_pool.is_empty() and (candidate_wave_id==0 or living_roster().is_empty()):_generate_candidate_wave(false)
+	_ensure_unrepresented_class_candidates()
 	if tavern_phase==TAVERN_EXPEDITION:tavern_phase=TAVERN_OPEN
 	if last_presented_wave_id<candidate_wave_id:tavern_phase=TAVERN_ARRIVALS
 	return {"ok":true,"wave_id":candidate_wave_id,"phase":tavern_phase}
@@ -333,13 +334,29 @@ func _generate_candidate_wave(first_wave:bool=false) -> void:
 	var count:=2 if first_wave else clampi(2+int(tavern_upgrades.get("roster_services",0)),2,7)
 	for index in count:
 		var allowed:=unlocked_classes if not unlocked_classes.is_empty() else ["warrior","mage"]
-		var class_id:=String(allowed[(calendar_day+candidate_wave_id+index-2)%allowed.size()])
+		var class_id:=String(allowed[(candidate_wave_id+index-1)%allowed.size()])
 		var member:=_generate_character(class_id)
 		var motivation:=_candidate_motivation(member,index)
 		var candidate:=CandidateRecord.create(member,calendar_day,candidate_wave_id,motivation,false);candidate.quality_seed=member.id.hash()^candidate_wave_id;candidate.quality_score=_quality_from_attributes(member);candidate_pool[member.id]=candidate
 	_try_add_descendant()
 	_add_calendar_event("arrivals","%d new adventurers arrive at the Hearth."%count)
 	tavern_phase=TAVERN_ARRIVALS
+
+func _ensure_unrepresented_class_candidates() -> void:
+	if candidate_wave_id<=1 or not has_completed_dungeon("forest"):return
+	var represented:Dictionary={}
+	for member in living_roster():represented[member.class_id]=true
+	for candidate in get_candidates():represented[candidate.adventurer.class_id]=true
+	for class_id in unlocked_classes:
+		if represented.has(class_id):continue
+		var member:=_generate_character(class_id)
+		var candidate:=CandidateRecord.create(member,calendar_day,candidate_wave_id,_candidate_motivation(member,candidate_pool.size()),false)
+		candidate.quality_seed=member.id.hash()^candidate_wave_id
+		candidate.quality_score=_quality_from_attributes(member)
+		candidate_pool[member.id]=candidate
+		represented[class_id]=true
+		tavern_phase=TAVERN_ARRIVALS
+		_add_calendar_event("arrivals","%s arrives at the Hearth after the %s class becomes available."%[member.display_name,class_id.capitalize()])
 
 func _candidate_motivation(member:CharacterRecord,index:int) -> String:
 	return member.biography+" "+String(ADVENTURERS.pool("motives")[(calendar_day+candidate_wave_id+index)%ADVENTURERS.pool("motives").size()])

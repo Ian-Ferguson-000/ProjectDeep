@@ -201,6 +201,7 @@ func _select_first_available_character() -> void:
 	run_state.active_character_id = available[0].id; run_state.set_class(available[0].class_id)
 
 func show_tavern(message: String = "", arrival_summary: Dictionary = {}, story_lines: Array = [], story_context: String = "") -> void:
+	if campaign!=null and campaign.is_tutorial_complete() and not campaign.expedition.active:campaign.ensure_tavern_cycle()
 	_clear_scene()
 	var tavern := TavernScene.instantiate()
 	current_scene = tavern

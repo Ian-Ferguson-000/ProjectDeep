@@ -15,17 +15,22 @@ var facing := "down"
 
 func _ready() -> void:
 	add_to_group("tavern_keeper")
+	sprite.sprite_frames = SlasherSpriteLibrary.tavern_keeper_frames()
+	_play_motion_animation("idle")
 	possess_keeper()
 
 func possess_keeper() -> void:
 	possessed = true
 	input_enabled = true
+	velocity = Vector2.ZERO
+	_play_motion_animation("idle")
 	possessing_changed_signal()
 
 func release_keeper() -> void:
 	possessed = false
 	input_enabled = false
 	velocity = Vector2.ZERO
+	_play_motion_animation("idle")
 	possessing_changed_signal()
 
 func is_keeper_possessed() -> bool:
@@ -35,6 +40,7 @@ func set_modal_paused(value: bool) -> void:
 	input_enabled = not value and possessed
 	if value:
 		velocity = Vector2.ZERO
+		_play_motion_animation("idle")
 
 func move_input() -> Vector2:
 	if not input_enabled:
@@ -76,9 +82,7 @@ func _physics_process(_delta: float) -> void:
 			facing = "right" if input.x > 0.0 else "left"
 		else:
 			facing = "down" if input.y > 0.0 else "up"
-		sprite.play("run_" + facing)
-	else:
-		sprite.play("idle_" + facing)
+	_play_motion_animation("run" if velocity.length_squared() > 0.01 else "idle")
 	var target := nearest_interactable()
 	prompt_changed.emit(target.prompt() if target != null and target.has_method("prompt") else "")
 	if InputMap.has_action("interact") and Input.is_action_just_pressed("interact"):
@@ -86,3 +90,9 @@ func _physics_process(_delta: float) -> void:
 
 func possessing_changed_signal() -> void:
 	possession_changed.emit(possessed)
+
+func _play_motion_animation(state: String) -> void:
+	if sprite == null or sprite.sprite_frames == null: return
+	var animation := StringName("%s_%s" % [state, facing])
+	if sprite.sprite_frames.has_animation(animation) and sprite.animation != animation:
+		sprite.play(animation)

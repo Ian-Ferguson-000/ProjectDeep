@@ -7,6 +7,18 @@ func _initialize() -> void:
 	assert(floor_scene != null)
 	assert(tavern_scene != null)
 	assert(not service.conversations.is_empty())
+	var dialogue_member:=CharacterRecord.new();dialogue_member.display_name="Test Hero";dialogue_member.origin="the test road";dialogue_member.occupation="pathfinder";dialogue_member.personality="Patient and determined.";dialogue_member.preference="honest company";dialogue_member.biography="Test Hero came to prove that stories can change."
+	var dialogue_candidate:=CandidateRecord.create(dialogue_member,1,1,"I need to finish what I started.")
+	var greeting:=service.play("candidate_default",{"candidate":dialogue_candidate})
+	assert(greeting.node_id=="greeting" and greeting.lines.size()>=4)
+	assert(String(greeting.lines[0].speaker)=="Test Hero" and String(greeting.lines[1].text).contains("finish what I started"))
+	service.apply_effects(greeting.effects,{"campaign":CampaignState.new(),"candidate":dialogue_candidate})
+	assert(dialogue_candidate.knowledge.origin=="exact" and dialogue_candidate.knowledge.preference=="exact")
+	dialogue_candidate.knowledge.biography="exact"
+	var deeper:=service.play("candidate_default",{"candidate":dialogue_candidate})
+	assert(deeper.node_id=="known_history" and String(deeper.lines[1].text).contains("stories can change"))
+	var roster_dialogue:=service.play("roster_default",{"member":dialogue_member})
+	assert(roster_dialogue.lines.size()>=4 and String(roster_dialogue.lines[0].speaker)=="Test Hero")
 	var floor:Node=floor_scene.instantiate()
 	root.add_child(floor)
 	await process_frame

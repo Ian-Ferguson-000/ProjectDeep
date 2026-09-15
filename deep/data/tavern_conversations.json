@@ -1,27 +1,58 @@
 {
   "version": 1,
   "conversations": {
-    "keeper_intro": {
-      "start": "welcome",
-      "nodes": {
-        "welcome": {
-          "lines": [{"speaker":"The Hearth","text":"The room is yours now. Every road begins with a conversation."}],
-          "effects": {"add_flags":["keeper_welcomed"]}
-        }
-      }
-    },
-    "candidate_default": {
-      "start": "greeting",
-      "nodes": {
-        "greeting": {
-          "lines": [{"speaker":"Candidate","text":"I am looking for a company that keeps its word."}],
-          "effects": {"add_flags":["candidate_spoken"]}
-        }
-      }
-    },
-    "merchant_default": {
-      "start": "shop",
-      "nodes": {"shop": {"lines": [{"speaker":"Merchant","text":"The shelves are stocked. Ask what you need."}]}}
-    }
+	"keeper_intro": {
+	  "start": "welcome",
+	  "nodes": {
+		"welcome": {
+		  "lines": [{"speaker":"The Hearth","text":"The room is yours now. Every road begins with a conversation."}],
+		  "effects": {"add_flags":["keeper_welcomed"]}
+		}
+	  }
+	},
+	"candidate_default": {
+	  "start": "greeting",
+	  "routes": [
+		{"node":"known_history","condition":{"candidate_knowledge":"biography","equals":"exact"}}
+	  ],
+	  "nodes": {
+		"greeting": {
+		  "lines": [
+			{"speaker":"{name}","text":"Before I came here, I worked as {occupation} in {origin}."},
+			{"speaker":"{name}","text":"{motivation}"},
+			{"speaker":"The Hearth","text":"First impressions settle quickly. {personality}"},
+			{"speaker":"{name}","text":"What I ask from the people beside me is simple: {preference}. The rest can be learned on the road."}
+		  ],
+		  "effects": {"add_flags":["candidate_spoken"],"reveal_knowledge":["origin","preference"]}
+		},
+		"known_history": {
+		  "lines": [
+			{"speaker":"{name}","text":"You asked why I chose this life. The short answer is still true: {motivation}"},
+			{"speaker":"The Hearth","text":"{biography}"},
+			{"speaker":"{name}","text":"That history follows me, but it does not command me. I would rather decide what comes next among people who understand the cost."},
+			{"speaker":"{name}","text":"If we travel together, remember this much about me: {preference}. Small promises reveal what grand ones are worth."}
+		  ],
+		  "effects": {"add_flags":["candidate_spoken_deeply"],"reveal_knowledge":["origin","preference","biography"]}
+		}
+	  }
+	},
+	"roster_default": {
+	  "start": "reflection",
+	  "nodes": {
+		"reflection": {
+		  "lines": [
+			{"speaker":"{name}","text":"The Hearth feels different from {origin}. I spent enough years as {occupation} to notice what a safe room asks of the people inside it."},
+			{"speaker":"The Hearth","text":"{biography}"},
+			{"speaker":"The Hearth","text":"{name} has become a familiar presence. {personality}"},
+			{"speaker":"{name}","text":"I am still the person who first signed the ledger. The difference is that my choices belong to this company now, too."},
+			{"speaker":"{name}","text":"When the next expedition is over, I hope there is time for {preference}. That is the future I am trying to return to."}
+		  ]
+		}
+	  }
+	},
+	"merchant_default": {
+	  "start": "shop",
+	  "nodes": {"shop": {"lines": [{"speaker":"Merchant","text":"The shelves are stocked. Ask what you need."}]}}
+	}
   }
 }

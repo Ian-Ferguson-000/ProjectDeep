@@ -185,9 +185,7 @@ func _on_living_actor_interaction(kind:String,id:String)->void:
 	active_living_actor_id=id
 	match kind:
 		"candidate":_open_candidate_with_dialogue(id)
-		"roster":
-			_open_recruited_summary(id)
-			get_tree().create_timer(3.6).timeout.connect(func():if activity_controller!=null:activity_controller.resume_actor(id))
+		"roster":_open_recruited_summary(id)
 		"merchant":_open_merchant_shop(id)
 
 func _open_candidate_with_dialogue(candidate_id:String)->void:
@@ -259,7 +257,20 @@ func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
 
 func _open_recruited_summary(character_id:String)->void:
 	var member:=run_state.campaign.character(character_id)
-	if member!=null:_show_dialogue(member.display_name,"%s · Level %d · %s · %s · HP %d/%d"%[member.class_id.capitalize(),member.level,member.gear_id.replace("_"," ").capitalize(),member.trait_name,member.current_health,member.max_health])
+	if member==null:return
+	if tavern_dialogue_service==null or actor_dialogue==null:
+		_show_dialogue(member.display_name,"%s · Level %d · %s · %s · HP %d/%d"%[member.class_id.capitalize(),member.level,member.gear_id.replace("_"," ").capitalize(),member.trait_name,member.current_health,member.max_health])
+		return
+	var packet:=tavern_dialogue_service.play("roster_default",{"campaign":run_state.campaign,"run_state":run_state,"member":member})
+	var lines:Array=packet.get("lines",[])
+	if lines.is_empty():return
+	if keeper!=null:keeper.set_modal_paused(true)
+	pending_actor_dialogue_callback=Callable(self,"_finish_roster_conversation").bind(character_id)
+	actor_dialogue.play(lines)
+
+func _finish_roster_conversation(character_id:String)->void:
+	if activity_controller!=null:activity_controller.resume_actor(character_id)
+	if keeper!=null:keeper.set_modal_paused(false)
 
 func _open_candidate(candidate_id:String)->void:
 	if arrivals_running:return

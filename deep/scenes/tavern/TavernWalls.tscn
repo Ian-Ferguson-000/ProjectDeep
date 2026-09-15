@@ -1,39 +1,43 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3 uid="uid://b47ya4trqkova"]
 
 [ext_resource type="PackedScene" path="res://scenes/components/TavernWallSection.tscn" id="1_section"]
-[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/wall_straight.png" id="2_straight"]
-[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/wall_lantern.png" id="3_lantern"]
-[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/side_wall_left_v2.png" id="4_side_left"]
-[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/side_wall_right_v2.png" id="5_side_right"]
-[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/doorway.png" id="6_doorway"]
-[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/staircase.png" id="7_staircase"]
+[ext_resource type="Texture2D" uid="uid://dn8wucquwucr3" path="res://assets/tavern/wall_kit/wall_straight.png" id="2_straight"]
+[ext_resource type="Texture2D" uid="uid://b8kufibnncfo3" path="res://assets/tavern/wall_kit/wall_lantern.png" id="3_lantern"]
+[ext_resource type="Texture2D" uid="uid://dvlpy8y6t8lc" path="res://assets/tavern/wall_kit/side_wall_left_v2.png" id="4_side_left"]
+[ext_resource type="Texture2D" uid="uid://bax13mde3qjoa" path="res://assets/tavern/wall_kit/side_wall_right_v2.png" id="5_side_right"]
+[ext_resource type="Texture2D" uid="uid://bw75yakc6imb7" path="res://assets/tavern/wall_kit/doorway.png" id="6_doorway"]
+[ext_resource type="Texture2D" uid="uid://bi7dwypl0jg0n" path="res://assets/tavern/wall_kit/staircase.png" id="7_staircase"]
 
-[node name="TavernWalls" type="Node2D"]
+[node name="TavernWalls" type="Node2D" unique_id=1925269375]
 y_sort_enabled = true
 
-[node name="BackWall" type="Node2D" parent="."]
-[node name="WestEnd" parent="BackWall" instance=ExtResource("1_section")]
-position = Vector2(423.5, 73)
+[node name="BackWall" type="Node2D" parent="." unique_id=563790909]
+
+[node name="WestEnd" parent="BackWall" unique_id=1645927160 instance=ExtResource("1_section")]
+position = Vector2(303, 75)
 section_id = "back_west_end"
 section_texture = ExtResource("2_straight")
 connection_tags = PackedStringArray("back_wall", "west", "east", "section")
 collision_size = Vector2(334, 34)
 collision_offset = Vector2(0, 119)
-[node name="LanternBay" parent="BackWall" instance=ExtResource("1_section")]
-position = Vector2(686.5, 74)
+
+[node name="LanternBay" parent="BackWall" unique_id=2046895061 instance=ExtResource("1_section")]
+position = Vector2(567, 74)
 section_id = "back_lantern_bay"
 section_texture = ExtResource("3_lantern")
 connection_tags = PackedStringArray("back_wall", "west", "east", "lantern", "section")
 collision_size = Vector2(278, 34)
 collision_offset = Vector2(0, 118)
-[node name="CenterEast" parent="BackWall" instance=ExtResource("1_section")]
-position = Vector2(949.5, 73)
+
+[node name="CenterEast" parent="BackWall" unique_id=905935736 instance=ExtResource("1_section")]
+position = Vector2(919, 73)
 section_id = "back_center_east"
 section_texture = ExtResource("2_straight")
 connection_tags = PackedStringArray("back_wall", "west", "east", "section")
 collision_size = Vector2(334, 34)
 collision_offset = Vector2(0, 119)
-[node name="EastEnd" parent="BackWall" instance=ExtResource("1_section")]
+
+[node name="EastEnd" parent="BackWall" unique_id=856568977 instance=ExtResource("1_section")]
 position = Vector2(1240.5, 73)
 section_id = "back_east_end"
 section_texture = ExtResource("2_straight")
@@ -41,8 +45,9 @@ connection_tags = PackedStringArray("back_wall", "west", "east", "section")
 collision_size = Vector2(334, 34)
 collision_offset = Vector2(0, 119)
 
-[node name="SideWalls" type="Node2D" parent="."]
-[node name="WestRun" parent="SideWalls" instance=ExtResource("1_section")]
+[node name="SideWalls" type="Node2D" parent="." unique_id=1684269453]
+
+[node name="WestRun" parent="SideWalls" unique_id=778967811 instance=ExtResource("1_section")]
 position = Vector2(191.75, 544)
 section_id = "west_wall_run"
 section_texture = ExtResource("4_side_left")
@@ -50,7 +55,8 @@ visual_scale = Vector2(0.5, 0.51841)
 connection_tags = PackedStringArray("side_wall", "north", "south", "west", "section")
 collision_size = Vector2(38, 704)
 collision_offset = Vector2(64.25, 0)
-[node name="EastRun" parent="SideWalls" instance=ExtResource("1_section")]
+
+[node name="EastRun" parent="SideWalls" unique_id=980313901 instance=ExtResource("1_section")]
 position = Vector2(1472.25, 544)
 section_id = "east_wall_run"
 section_texture = ExtResource("5_side_right")
@@ -59,8 +65,9 @@ connection_tags = PackedStringArray("side_wall", "north", "south", "east", "sect
 collision_size = Vector2(38, 704)
 collision_offset = Vector2(-64.25, 0)
 
-[node name="FrontWall" type="Node2D" parent="."]
-[node name="WestOuter" parent="FrontWall" instance=ExtResource("1_section")]
+[node name="FrontWall" type="Node2D" parent="." unique_id=690485028]
+
+[node name="WestOuter" parent="FrontWall" unique_id=97460573 instance=ExtResource("1_section")]
 position = Vector2(375.75, 800.8)
 section_id = "front_west_outer"
 section_texture = ExtResource("2_straight")
@@ -68,24 +75,27 @@ visual_scale = Vector2(0.72, 0.8)
 connection_tags = PackedStringArray("front_wall", "west", "east", "section")
 collision_size = Vector2(241, 34)
 collision_offset = Vector2(0, 95.2)
-[node name="WestInner" parent="FrontWall" instance=ExtResource("1_section")]
-position = Vector2(583.75, 800.8)
+
+[node name="WestInner" parent="FrontWall" unique_id=591437224 instance=ExtResource("1_section")]
+position = Vector2(615, 800)
 section_id = "front_west_inner"
 section_texture = ExtResource("2_straight")
 visual_scale = Vector2(0.72, 0.8)
 connection_tags = PackedStringArray("front_wall", "west", "east", "entrance", "section")
 collision_size = Vector2(241, 34)
 collision_offset = Vector2(0, 95.2)
-[node name="EastInner" parent="FrontWall" instance=ExtResource("1_section")]
-position = Vector2(1080.25, 800.8)
+
+[node name="EastInner" parent="FrontWall" unique_id=1375866420 instance=ExtResource("1_section")]
+position = Vector2(1064, 803)
 section_id = "front_east_inner"
 section_texture = ExtResource("2_straight")
 visual_scale = Vector2(0.72, 0.8)
 connection_tags = PackedStringArray("front_wall", "west", "east", "entrance", "section")
 collision_size = Vector2(241, 34)
 collision_offset = Vector2(0, 95.2)
-[node name="EastOuter" parent="FrontWall" instance=ExtResource("1_section")]
-position = Vector2(1288.25, 800.8)
+
+[node name="EastOuter" parent="FrontWall" unique_id=1540339410 instance=ExtResource("1_section")]
+position = Vector2(1305, 802)
 section_id = "front_east_outer"
 section_texture = ExtResource("2_straight")
 visual_scale = Vector2(0.72, 0.8)
@@ -93,15 +103,17 @@ connection_tags = PackedStringArray("front_wall", "west", "east", "section")
 collision_size = Vector2(241, 34)
 collision_offset = Vector2(0, 95.2)
 
-[node name="Openings" type="Node2D" parent="."]
-[node name="EntranceFrame" parent="Openings" instance=ExtResource("1_section")]
+[node name="Openings" type="Node2D" parent="." unique_id=889410077]
+
+[node name="EntranceFrame" parent="Openings" unique_id=120032423 instance=ExtResource("1_section")]
 position = Vector2(832, 807)
 section_id = "entrance_frame"
 section_texture = ExtResource("6_doorway")
 visual_scale = Vector2(0.72, 0.72)
 connection_tags = PackedStringArray("doorway", "front_wall")
 obstacle_enabled = false
-[node name="StaircaseFrame" parent="Openings" instance=ExtResource("1_section")]
+
+[node name="StaircaseFrame" parent="Openings" unique_id=1481773825 instance=ExtResource("1_section")]
 position = Vector2(1140, 258)
 section_id = "staircase_frame"
 section_texture = ExtResource("7_staircase")

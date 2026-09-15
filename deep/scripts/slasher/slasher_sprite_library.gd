@@ -19,10 +19,77 @@ static func player_frames(class_id: String) -> SpriteFrames:
 	if class_id == "warrior":
 		return load("res://assets/sprite_packs/Player/player_frames.tres") as SpriteFrames
 	var asset_class_id := "phantom" if class_id == "rogue" else class_id
+	if asset_class_id in ["phantom", "tank", "healer"]:
+		return class_frames_with_normalized_locomotion(asset_class_id)
 	return animation_board_frames("res://assets/classes/%s/slasher_sheet.png" % asset_class_id)
+
+static func class_frames_with_normalized_locomotion(class_id: String) -> SpriteFrames:
+	var cache_key := "normalized_locomotion:%s" % class_id
+	if _generated_cache.has(cache_key): return _generated_cache[cache_key] as SpriteFrames
+	var frames := (animation_board_frames("res://assets/classes/%s/slasher_sheet.png" % class_id) as SpriteFrames).duplicate(true) as SpriteFrames
+	var locomotion := _locomotion_board_frames("res://assets/classes/%s/locomotion_frames.png" % class_id)
+	if locomotion == null: return frames
+	for direction in DIRECTIONS:
+		for state in ["idle", "run"]:
+			var animation := StringName("%s_%s" % [state, direction])
+			frames.remove_animation(animation)
+			frames.add_animation(animation)
+			frames.set_animation_loop(animation, true)
+			frames.set_animation_speed(animation, locomotion.get_animation_speed(animation))
+			for index in locomotion.get_frame_count(animation):
+				frames.add_frame(animation, locomotion.get_frame_texture(animation, index))
+	_generated_cache[cache_key] = frames
+	return frames
+
+static func _locomotion_board_frames(path: String) -> SpriteFrames:
+	var cache_key := "locomotion:%s" % path
+	if _generated_cache.has(cache_key): return _generated_cache[cache_key] as SpriteFrames
+	var texture := load(path) as Texture2D
+	if texture == null: return null
+	var source := texture.get_image()
+	var cell_size := Vector2i(roundi(float(source.get_width()) / 8.0), roundi(float(source.get_height()) / 8.0))
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	for state_index in 2:
+		var state := "idle" if state_index == 0 else "run"
+		for direction_index in DIRECTIONS.size():
+			var animation := StringName("%s_%s" % [state, DIRECTIONS[direction_index]])
+			frames.add_animation(animation)
+			frames.set_animation_loop(animation, true)
+			frames.set_animation_speed(animation, 6.0 if state == "idle" else 10.0)
+			var row := state_index * DIRECTIONS.size() + direction_index
+			for column in 8:
+				var bounds := Rect2i(column * cell_size.x, row * cell_size.y, cell_size.x, cell_size.y)
+				frames.add_frame(animation, _isolated_frame_texture(source, bounds, cell_size))
+	_generated_cache[cache_key] = frames
+	return frames
 
 static func companion_frames() -> SpriteFrames:
 	return normalized_sheet_frames("res://assets/classes/wolf_companion/sheet.png")
+
+static func tavern_keeper_frames() -> SpriteFrames:
+	const PATH := "res://assets/tavern/keeper/tavern_keeper_frames.png"
+	var cache_key := "tavern_keeper:%s" % PATH
+	if _generated_cache.has(cache_key): return _generated_cache[cache_key] as SpriteFrames
+	var texture := load(PATH) as Texture2D
+	if texture == null: return null
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	for state_index in 2:
+		var state := "idle" if state_index == 0 else "run"
+		for direction_index in DIRECTIONS.size():
+			var animation := StringName("%s_%s" % [state, DIRECTIONS[direction_index]])
+			frames.add_animation(animation)
+			frames.set_animation_loop(animation, true)
+			frames.set_animation_speed(animation, 6.0 if state == "idle" else 10.0)
+			var row := state_index * DIRECTIONS.size() + direction_index
+			for column in 8:
+				var atlas := AtlasTexture.new()
+				atlas.atlas = texture
+				atlas.region = Rect2(column * 96, row * 80, 96, 80)
+				frames.add_frame(animation, atlas)
+	_generated_cache[cache_key] = frames
+	return frames
 
 static func enemy_frames(enemy_id: String) -> SpriteFrames:
 	var generated_path:="res://assets/enemies/%s/generated_source.png"%enemy_id
@@ -171,6 +238,7 @@ static func animation_board_frames(path: String) -> SpriteFrames:
 				frames.add_frame(animation,_isolated_frame_texture(source_image,bounds,cell_size))
 	_generated_cache[path]=frames
 	return frames
+
 
 static func _isolated_frame_texture(source:Image,bounds:Rect2i,canvas_size:Vector2i)->Texture2D:
 	# Generated animation boards are visually gridded, but large VFX sometimes cross

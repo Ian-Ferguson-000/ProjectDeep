@@ -18,8 +18,39 @@ func _init() -> void:
 func play(conversation_id: String, context: Dictionary = {}) -> Dictionary:
 	var conversation: Dictionary = conversations.get(conversation_id, conversations.get("merchant_default", {}))
 	var node_id := String(conversation.get("start", ""))
+	for route_value in conversation.get("routes", []):
+		var route := Dictionary(route_value)
+		if evaluate_condition(Dictionary(route.get("condition", {})), context):
+			node_id = String(route.get("node", node_id))
+			break
 	var node: Dictionary = Dictionary(conversation.get("nodes", {})).get(node_id, {})
-	return {"conversation_id": conversation_id, "lines": Array(node.get("lines", [])).duplicate(true), "choices": Array(node.get("choices", [])).duplicate(true), "effects": Dictionary(node.get("effects", {})).duplicate(true), "context": context}
+	return {"conversation_id": conversation_id, "node_id": node_id, "lines": _render_lines(Array(node.get("lines", [])), context), "choices": Array(node.get("choices", [])).duplicate(true), "effects": Dictionary(node.get("effects", {})).duplicate(true), "context": context}
+
+func _render_lines(source_lines: Array, context: Dictionary) -> Array:
+	var values := _dialogue_values(context)
+	var rendered: Array = []
+	for line_value in source_lines:
+		var line := Dictionary(line_value).duplicate(true)
+		for key in values:
+			line["speaker"] = String(line.get("speaker", "")).replace("{%s}" % key, String(values[key]))
+			line["text"] = String(line.get("text", "")).replace("{%s}" % key, String(values[key]))
+		rendered.append(line)
+	return rendered
+
+func _dialogue_values(context: Dictionary) -> Dictionary:
+	var candidate := context.get("candidate") as CandidateRecord
+	var member: CharacterRecord = candidate.adventurer if candidate != null else context.get("member") as CharacterRecord
+	if member == null: return {}
+	return {
+		"name": member.display_name,
+		"class": member.class_id.capitalize(),
+		"origin": member.origin,
+		"occupation": member.occupation,
+		"personality": member.personality,
+		"preference": member.preference,
+		"biography": member.biography,
+		"motivation": candidate.motivation if candidate != null else "I want my next choice to mean something.",
+	}
 
 func evaluate_condition(condition: Dictionary, context: Dictionary) -> bool:
 	if condition.is_empty():
