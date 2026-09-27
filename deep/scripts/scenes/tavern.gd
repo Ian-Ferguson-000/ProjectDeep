@@ -7,6 +7,7 @@ const RECRUITMENT_DIALOGUE := preload("res://scripts/ui/recruitment_dialogue.gd"
 const TAVERN_THEME := preload("res://scripts/ui/tavern_ui_theme.gd")
 const OPTIONS_PANEL := preload("res://scripts/ui/game_options_panel.gd")
 
+var management: HearthManagement
 var controller: Node
 var run_state: RunState
 var gear_options: Array[GearData] = []
@@ -116,10 +117,17 @@ func _ready() -> void:
 	_build_story_dialogue()
 	actor_dialogue=DIALOGUE_CHAT.new();actor_dialogue.name="ActorDialogue";actor_dialogue.conversation_finished.connect(_on_actor_dialogue_finished);ui_root.add_child(actor_dialogue)
 	_setup_merchant_shops()
+	management = preload("res://scenes/ui/hearth/Company.tscn").instantiate()
+	ui_root.add_child(management)
+	management.manual_launch.connect(_hearth_manual_launch)
+	management.candidate_requested.connect(_open_candidate)
+	management.changed.connect(_hearth_changed)
+	management.closed.connect(_restore_hub_focus)
 	get_viewport().size_changed.connect(_layout_scene)
 	_layout_scene()
 	_refresh_ui()
 	_setup_activity()
+	_refresh_wings()
 	tavern_dialogue_service=TavernDialogueService.new()
 	if run_state!=null and run_state.campaign!=null:
 		var keeper_intro:=tavern_dialogue_service.play("keeper_intro",{"campaign":run_state.campaign,"run_state":run_state})
@@ -211,6 +219,8 @@ func _on_keeper_interaction(target:Node)->void:
 		_on_living_actor_interaction(actor.actor_kind,actor.actor_id)
 	elif target is TavernProp:
 		var prop:=target as TavernProp
+		var pages := {"weapon_rack":"Armory","notice_board":"Expeditions","supply_crates":"Merchants","bar":"Facilities"}
+		if pages.has(prop.prop_id) and _open_hearth(pages[prop.prop_id]): return
 		var text_value:=prop.interact(keeper)
 		if not text_value.is_empty():_show_dialogue("The Hearth",text_value)
 
@@ -221,13 +231,14 @@ func _on_keeper_prompt(text_value:String)->void:
 
 func _build_toolbar()->void:
 	toolbar=HBoxContainer.new();toolbar.name="TavernToolbar";toolbar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE);toolbar.offset_left=190;toolbar.offset_right=-190;toolbar.offset_top=-70;toolbar.offset_bottom=-10;toolbar.alignment=BoxContainer.ALIGNMENT_CENTER;toolbar.add_theme_constant_override("separation",8);ui_root.add_child(toolbar)
-	var entries := [["Calendar","calendar",Callable(self,"_open_calendar")],["Company Ledger","ledger",Callable(self,"_open_company_ledger")],["Armory","armory",Callable(self,"_open_armory")],["Merchants","merchants",Callable(self,"_open_tavern_merchant")],["Expedition","expedition",Callable(self,"_open_dungeon_selector")]]
+	var entries := [["Calendar","calendar",Callable(self,"_open_hearth").bind("Reports")],["Company Ledger","ledger",Callable(self,"_open_hearth").bind("Company")],["Armory","armory",Callable(self,"_open_hearth").bind("Armory")],["Merchants","merchants",Callable(self,"_open_hearth").bind("Merchants")],["Expedition","expedition",Callable(self,"_open_hearth").bind("Expeditions")]]
 	for entry in entries:
 		var title:=String(entry[0]);var button:=Button.new();button.name="%sToolbarButton"%title.replace(" ","");button.text=title;button.icon=TAVERN_THEME.icon(String(entry[1]));button.expand_icon=true;button.icon_alignment=HORIZONTAL_ALIGNMENT_LEFT;button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.pressed.connect(entry[2]);TAVERN_THEME.apply_button(button,title=="Expedition",14,Vector2(190 if title=="Expedition" else 150,56));toolbar.add_child(button);toolbar_buttons[title]=button
 	for index in toolbar.get_child_count():
 		var button:=toolbar.get_child(index) as Button;button.focus_neighbor_left=toolbar.get_child((index-1+toolbar.get_child_count())%toolbar.get_child_count()).get_path();button.focus_neighbor_right=toolbar.get_child((index+1)%toolbar.get_child_count()).get_path()
 
-func _open_tavern_merchant()->void:_open_merchant_shop("tavern")
+func _open_tavern_merchant()->void:
+	if not _open_hearth("Merchants"): _open_merchant_shop("tavern")
 
 func _build_calendar_modal()->void:
 	calendar_backdrop=_modal_backdrop("CalendarModal");var body:=_modal_panel(calendar_backdrop,"The Hearth Calendar",Vector2(820,610))
@@ -394,7 +405,7 @@ func _build_expedition_modal() -> void:
 	expedition_title = Label.new(); expedition_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; expedition_title.add_theme_font_size_override("font_size",22); expedition_title.add_theme_color_override("font_color",Color(1,0.8,0.4)); details.add_child(expedition_title)
 	var mode_heading:=Label.new();mode_heading.text="2  ·  CHOOSE A COMBAT MODE";mode_heading.add_theme_color_override("font_color",Color(0.95,0.69,0.3));details.add_child(mode_heading)
 	var mode_row := HBoxContainer.new(); mode_row.alignment = BoxContainer.ALIGNMENT_CENTER; mode_row.add_theme_constant_override("separation",10); details.add_child(mode_row)
-	for mode in [RunState.PLAY_MODE_STRATEGY, RunState.PLAY_MODE_SLASHER]:
+	for mode in ([RunState.PLAY_MODE_STRATEGY] if RunState.STRATEGY_MODE_ENABLED else []) + [RunState.PLAY_MODE_SLASHER]:
 		var mode_button := Button.new(); mode_button.text = mode.capitalize(); mode_button.toggle_mode = true; mode_button.name = "%sModeButton" % mode.capitalize();mode_button.size_flags_horizontal=Control.SIZE_EXPAND_FILL; mode_button.pressed.connect(_select_expedition_mode.bind(mode)); FantasyButton.apply_dark(mode_button,15,Vector2(0,54)); mode_row.add_child(mode_button); expedition_mode_buttons[mode] = mode_button
 	var decision_columns:=HBoxContainer.new();decision_columns.size_flags_vertical=Control.SIZE_EXPAND_FILL;decision_columns.add_theme_constant_override("separation",14);details.add_child(decision_columns)
 	var briefing:=VBoxContainer.new();briefing.size_flags_horizontal=Control.SIZE_EXPAND_FILL;briefing.add_theme_constant_override("separation",6);decision_columns.add_child(briefing)
@@ -678,7 +689,7 @@ func _open_dungeon_selector() -> void:
 			button.tooltip_text = String(dungeon.get("description","")) if unlocked else "%s\n\nUnlock: %s"%[String(dungeon.get("description","")),String(dungeon.get("unlock_text","Progress further to reveal this destination."))]; button.pressed.connect(_select_dungeon.bind(dungeon_id)); FantasyButton.apply_dark(button,14,Vector2(0,72)); expedition_list.add_child(button)
 			if first_button == null: first_button = button
 	var initial_id := expedition_id if GameBalance.get_dungeons().has(expedition_id) else String(GameBalance.get_dungeon_order()[0])
-	expedition_mode = run_state.last_play_mode
+	expedition_mode = RunState.PLAY_MODE_SLASHER if not RunState.is_play_mode_enabled(run_state.last_play_mode) else run_state.last_play_mode
 	_select_dungeon(initial_id)
 	_show_modal(expedition_backdrop,first_button)
 
@@ -804,6 +815,7 @@ func _close_modal(modal: Control) -> void:
 	else: _restore_hub_focus()
 
 func _close_top_modal() -> void:
+	if management != null and management.visible: management.hide(); _restore_hub_focus(); return
 	if merchant_shop_panel != null and merchant_shop_panel.visible: merchant_shop_panel.close()
 	elif recruitment_dialogue!=null and recruitment_dialogue.visible:recruitment_dialogue.close()
 	elif options_backdrop!=null and options_backdrop.visible:_close_modal(options_backdrop)
@@ -814,7 +826,7 @@ func _close_top_modal() -> void:
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
 
 func _modal_visible() -> bool:
-	return (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
+	return (management != null and management.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
 
 func _restore_hub_focus() -> void:
 	if activity_controller!=null and not _modal_visible() and not departure_running:
@@ -842,8 +854,9 @@ func _layout_scene() -> void:
 		var top_inset:=viewport_size.y*0.085
 		var bottom_inset:=viewport_size.y*0.095
 		var available_height:=viewport_size.y-top_inset-bottom_inset
-		var world_scale:=minf((viewport_size.x-32.0)/WORLD_SIZE.x,available_height/WORLD_SIZE.y)
-		var rendered_size:=WORLD_SIZE*world_scale
+		var layout_size := Vector2(2160,1160) if run_state != null and run_state.campaign.establishment_tier > 0 else WORLD_SIZE
+		var world_scale:=minf((viewport_size.x-32.0)/layout_size.x,available_height/layout_size.y)
+		var rendered_size:=layout_size*world_scale
 		world.scale=Vector2.ONE*world_scale
 		world.position=Vector2((viewport_size.x-rendered_size.x)/2.0,top_inset+(available_height-rendered_size.y)/2.0)-WORLD_ORIGIN*world_scale
 	var available:=get_viewport_rect().size-Vector2(36,36)
@@ -872,3 +885,43 @@ func _panel_style(fill: Color,border: Color,radius: int) -> StyleBoxFlat:
 
 func _style_button(button: Button) -> void:
 	TAVERN_THEME.apply_button(button,true,15,Vector2(220,42))
+
+func _open_hearth(page: String) -> bool:
+	if management == null or run_state == null or not run_state.campaign.is_tutorial_complete(): return false
+	management.open(run_state.campaign,run_state,page)
+	if keeper != null: keeper.set_modal_paused(true)
+	return true
+
+func _hearth_manual_launch(dungeon_id: String, mode: String, party: Array[String]) -> void:
+	if party.is_empty() or run_state == null or run_state.campaign == null: return
+	if not RunState.is_play_mode_enabled(mode):
+		message = "Strategy mode is temporarily disabled. Choose Slasher mode."; _refresh_ui()
+		return
+	var member := run_state.campaign.character(party[0])
+	if member == null or controller == null: return
+	var gear: GearData = HearthCatalog.gear(member.gear_id)
+	if gear == null:
+		message = "This adventurer has no usable weapon equipped. Visit the Armory first."; _refresh_ui()
+		return
+	if keeper != null: keeper.set_modal_paused(false)
+	controller.start_dungeon(dungeon_id,gear,mode,party)
+
+func _hearth_changed() -> void:
+	_refresh_ui()
+	_refresh_wings()
+	if activity_controller != null: activity_controller.refresh_from_campaign(run_state)
+
+func _refresh_wings() -> void:
+	if world == null or run_state == null: return
+	var previous := world.get_node_or_null("Expansions")
+	if previous != null: previous.free()
+	var wings := Node2D.new()
+	wings.name = "Expansions"
+	world.add_child(wings)
+	var paths := ["res://scenes/tavern/LodgingWing.tscn","res://scenes/tavern/ServicesWing.tscn","res://scenes/tavern/GreatHall.tscn"]
+	for i in run_state.campaign.establishment_tier:
+		var wing = load(paths[i]).instantiate()
+		wing.position = Vector2(1470,170+i*315)
+		wings.add_child(wing)
+		wing.station_requested.connect(_open_hearth)
+	_layout_scene()

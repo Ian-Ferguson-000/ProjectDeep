@@ -254,7 +254,8 @@ static func get_slasher_journal_entry(enemy_id:String)->Dictionary:
 
 static func get_slasher_item_effects(item_id:String)->Dictionary:
 	_load_all()
-	var authored:Variant=Dictionary(_slasher_item_effects.get("items",{})).get(item_id,{})
+	var effect_id: String = HearthCatalog.item(item_id).get("effect_id",item_id)
+	var authored:Variant=Dictionary(_slasher_item_effects.get("items",{})).get(effect_id,{})
 	var record:Dictionary=authored.duplicate(true) if authored is Dictionary else {}
 	var item:Dictionary=get_item(item_id)
 	if item.is_empty():return {}
@@ -328,6 +329,13 @@ static func get_items() -> Dictionary:
 	return {}
 
 static func get_item(item_id: String) -> Dictionary:
+	var owned := HearthCatalog.item(item_id)
+	if not owned.is_empty():
+		var result := owned.duplicate(true)
+		var source: Dictionary = get_items().get(String(owned.get("effect_id","")),{})
+		result["effects"] = source.get("effects",[])
+		result["duration_type"] = "equipped"
+		return result
 	var items: Dictionary = get_items()
 	var item_value: Variant = items.get(item_id, {})
 	if item_value is Dictionary:
@@ -389,7 +397,19 @@ static func get_base_class(class_id: String) -> Dictionary:
 	_load_all()
 	var overrides: Dictionary = Dictionary(_strategy_balance.get("characters", {}))
 	var class_override: Variant = overrides.get(normalize_class_id(class_id), {})
-	return _deep_merge(value, class_override) if class_override is Dictionary else value
+	var result: Dictionary = _deep_merge(value, class_override) if class_override is Dictionary else value.duplicate(true)
+	var resource_names := {"warrior":"Stamina", "mage":"Mana", "healer":"Grace", "tank":"Endurance", "rogue":"Momentum", "summoner":"Bond"}
+	if resource_names.has(normalize_class_id(class_id)):
+		result["resource"] = resource_names[normalize_class_id(class_id)]
+		var rules: Dictionary = Dictionary(result.get("resource_rules", {})).duplicate(true)
+		var gains: Array = []
+		for gain in rules.get("gain", []): gains.append(String(gain).replace("Focus", String(result.resource)))
+		if gains.is_empty(): gains = ["Successful basic attacks", "Blocked damage"]
+		if not gains.has("Slow regeneration over time"): gains.append("Slow regeneration over time")
+		rules["gain"] = gains
+		result["resource_rules"] = rules
+		result["description"] = String(result.get("description", "")).replace("Focus", String(result.resource))
+	return result
 
 static func get_class_action(class_id: String, slot: String) -> Dictionary:
 	var class_data := get_base_class(class_id)
@@ -404,7 +424,12 @@ static func get_class_resource_max() -> int:
 
 static func get_class_resource_rules(class_id: String) -> Dictionary:
 	var value: Variant = get_base_class(class_id).get("resource_rules", {})
-	return value.duplicate(true) if value is Dictionary else {"max": get_class_resource_max(), "special_cost": 2, "gain": []}
+	var rules: Dictionary = value.duplicate(true) if value is Dictionary else {"max": get_class_resource_max(), "special_cost": 2, "gain": []}
+	# Shared resource cadence: every class regenerates slowly, while its own
+	# successful attacks and defensive blocks remain the faster route.
+	rules["regen_per_second"] = float(rules.get("regen_per_second", 0.35))
+	rules["movement_cost"] = int(rules.get("movement_cost", 1))
+	return rules
 
 static func get_action_tooltip(class_id: String, slot: String) -> String:
 	var action := get_class_action(class_id, slot)

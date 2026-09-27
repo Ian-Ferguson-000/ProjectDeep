@@ -1,0 +1,14 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Victory settlement did not bank rewards and advance one week
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/tavern_cycle_test.gd:55)
+ERROR: Participating survivor did not return for their career
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/tavern_cycle_test.gd:55)
+ERROR: Dynamic room capacity formula is incorrect
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/tavern_cycle_test.gd:55)

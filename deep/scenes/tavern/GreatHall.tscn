@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/scenes/hearth_wing.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/flame_banner.png" id="2"]
+[node name="GreatHall" type="Node2D"]
+script = ExtResource("1")
+wing_title = "Great Hall & Veteran Quarters"
+station_page = "Reports"
+furnishing = ExtResource("2")

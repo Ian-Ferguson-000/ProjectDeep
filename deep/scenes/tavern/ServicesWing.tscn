@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/scenes/hearth_wing.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/tavern/decor/serving_sideboard.png" id="2"]
+[node name="ServicesWing" type="Node2D"]
+script = ExtResource("1")
+wing_title = "Infirmary & Training Hall"
+station_page = "Company"
+furnishing = ExtResource("2")

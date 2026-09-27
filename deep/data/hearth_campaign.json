@@ -1,0 +1,1470 @@
+{
+  "version": 1,
+  "tiers": [
+    {
+      "name": "Roadside Hearth",
+      "capacity": 6,
+      "expedition_slots": 1,
+      "gold": 0,
+      "essence": 0,
+      "reputation": 0,
+      "manual_clears": 0,
+      "days": 0,
+      "recruit_levels": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "Established Inn",
+      "capacity": 10,
+      "expedition_slots": 2,
+      "gold": 160,
+      "essence": 8,
+      "reputation": 8,
+      "manual_clears": 1,
+      "days": 3,
+      "recruit_levels": [
+        2,
+        5
+      ]
+    },
+    {
+      "name": "Adventurers’ Hall",
+      "capacity": 14,
+      "expedition_slots": 3,
+      "gold": 550,
+      "essence": 24,
+      "reputation": 25,
+      "manual_clears": 3,
+      "days": 5,
+      "recruit_levels": [
+        4,
+        9
+      ]
+    },
+    {
+      "name": "Renowned Hearth",
+      "capacity": 18,
+      "expedition_slots": 4,
+      "gold": 1500,
+      "essence": 60,
+      "reputation": 55,
+      "manual_clears": 5,
+      "days": 7,
+      "recruit_levels": [
+        7,
+        12
+      ]
+    }
+  ],
+  "facilities": {
+    "starting_supplies": {
+      "name": "Provisioning",
+      "description": "Adds expedition healing potions and reduces supply costs.",
+      "ranks": [
+        {
+          "gold": 35,
+          "essence": 2,
+          "tier": 0,
+          "days": 1
+        },
+        {
+          "gold": 100,
+          "essence": 6,
+          "tier": 1,
+          "days": 2
+        },
+        {
+          "gold": 260,
+          "essence": 15,
+          "tier": 2,
+          "days": 3
+        }
+      ]
+    },
+    "recovery": {
+      "name": "Infirmary",
+      "description": "Reduces recovery days.",
+      "ranks": [
+        {
+          "gold": 35,
+          "essence": 2,
+          "tier": 0,
+          "days": 1
+        },
+        {
+          "gold": 100,
+          "essence": 6,
+          "tier": 1,
+          "days": 2
+        },
+        {
+          "gold": 260,
+          "essence": 15,
+          "tier": 2,
+          "days": 3
+        }
+      ]
+    },
+    "replacement_quality": {
+      "name": "Training",
+      "description": "Raises recruit level range and unlocks veteran training.",
+      "ranks": [
+        {
+          "gold": 35,
+          "essence": 2,
+          "tier": 0,
+          "days": 1
+        },
+        {
+          "gold": 100,
+          "essence": 6,
+          "tier": 1,
+          "days": 2
+        },
+        {
+          "gold": 260,
+          "essence": 15,
+          "tier": 2,
+          "days": 3
+        }
+      ]
+    },
+    "merchant_stock": {
+      "name": "Merchant Hall",
+      "description": "Improves stock quantity and access.",
+      "ranks": [
+        {
+          "gold": 35,
+          "essence": 2,
+          "tier": 0,
+          "days": 1
+        },
+        {
+          "gold": 100,
+          "essence": 6,
+          "tier": 1,
+          "days": 2
+        },
+        {
+          "gold": 260,
+          "essence": 15,
+          "tier": 2,
+          "days": 3
+        }
+      ]
+    },
+    "secret_research": {
+      "name": "Research",
+      "description": "Unlocks secret-path research.",
+      "ranks": [
+        {
+          "gold": 35,
+          "essence": 2,
+          "tier": 0,
+          "days": 1
+        },
+        {
+          "gold": 100,
+          "essence": 6,
+          "tier": 1,
+          "days": 2
+        },
+        {
+          "gold": 260,
+          "essence": 15,
+          "tier": 2,
+          "days": 3
+        }
+      ]
+    },
+    "item_rarity": {
+      "name": "Appraisal",
+      "description": "Improves the tier of recovered equipment.",
+      "ranks": [
+        {
+          "gold": 35,
+          "essence": 2,
+          "tier": 0,
+          "days": 1
+        },
+        {
+          "gold": 100,
+          "essence": 6,
+          "tier": 1,
+          "days": 2
+        },
+        {
+          "gold": 260,
+          "essence": 15,
+          "tier": 2,
+          "days": 3
+        }
+      ]
+    },
+    "relic_capacity": {
+      "name": "Reliquary",
+      "description": "Increases essence earned at checkpoints.",
+      "ranks": [
+        {
+          "gold": 35,
+          "essence": 2,
+          "tier": 0,
+          "days": 1
+        },
+        {
+          "gold": 100,
+          "essence": 6,
+          "tier": 1,
+          "days": 2
+        },
+        {
+          "gold": 260,
+          "essence": 15,
+          "tier": 2,
+          "days": 3
+        }
+      ]
+    }
+  },
+  "items": {
+    "sword_shield": {
+      "name": "Sword and Shield",
+      "slot": "weapon",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "max health +0",
+      "modifiers": {
+        "max_health": 0
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "class_id": "warrior",
+      "damage": 2,
+      "block": true,
+      "block_limit": 2
+    },
+    "spear_shield": {
+      "name": "Spear and Shield",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "max health +2",
+      "modifiers": {
+        "max_health": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "class_id": "warrior",
+      "damage": 3,
+      "block": true,
+      "block_limit": 3
+    },
+    "greatsword": {
+      "name": "Greatsword",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "max health +4",
+      "modifiers": {
+        "max_health": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "class_id": "warrior",
+      "damage": 4,
+      "block": true,
+      "block_limit": 4
+    },
+    "dawn_bastion": {
+      "name": "Dawn Bastion",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "max health +6",
+      "modifiers": {
+        "max_health": 6
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "class_id": "warrior",
+      "damage": 5,
+      "block": true,
+      "block_limit": 5
+    },
+    "magic_missile_shield": {
+      "name": "Missile Focus",
+      "slot": "weapon",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "max health +0",
+      "modifiers": {
+        "max_health": 0
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "class_id": "mage",
+      "damage": 2,
+      "block": false,
+      "block_limit": 2
+    },
+    "fireball_fire_shield": {
+      "name": "Fireball and Fire Shield",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "max health +2",
+      "modifiers": {
+        "max_health": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "class_id": "mage",
+      "damage": 3,
+      "block": false,
+      "block_limit": 3
+    },
+    "lightning_flash_step": {
+      "name": "Lightning Bolt and Flash Step",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "max health +4",
+      "modifiers": {
+        "max_health": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "class_id": "mage",
+      "damage": 4,
+      "block": false,
+      "block_limit": 4
+    },
+    "astral_covenant": {
+      "name": "Astral Covenant",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "max health +6",
+      "modifiers": {
+        "max_health": 6
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "class_id": "mage",
+      "damage": 5,
+      "block": false,
+      "block_limit": 5
+    },
+    "sunwood_staff": {
+      "name": "Sunwood Staff",
+      "slot": "weapon",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "potion heal bonus +0",
+      "modifiers": {
+        "potion_heal_bonus": 0
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "class_id": "healer",
+      "damage": 2,
+      "block": false,
+      "block_limit": 2
+    },
+    "pilgrim_staff": {
+      "name": "Pilgrim Staff",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "potion heal bonus +1",
+      "modifiers": {
+        "potion_heal_bonus": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "class_id": "healer",
+      "damage": 3,
+      "block": false,
+      "block_limit": 3
+    },
+    "mercy_branch": {
+      "name": "Mercy Branch",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "potion heal bonus +2",
+      "modifiers": {
+        "potion_heal_bonus": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "class_id": "healer",
+      "damage": 4,
+      "block": false,
+      "block_limit": 4
+    },
+    "solstice_crook": {
+      "name": "Solstice Crook",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "potion heal bonus +3",
+      "modifiers": {
+        "potion_heal_bonus": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "class_id": "healer",
+      "damage": 5,
+      "block": false,
+      "block_limit": 5
+    },
+    "tower_shield": {
+      "name": "Tower Shield and Mace",
+      "slot": "weapon",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "defense +0",
+      "modifiers": {
+        "defense": 0
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "class_id": "tank",
+      "damage": 2,
+      "block": true,
+      "block_limit": 2
+    },
+    "iron_porter": {
+      "name": "Iron Porter",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "defense +1",
+      "modifiers": {
+        "defense": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "class_id": "tank",
+      "damage": 3,
+      "block": true,
+      "block_limit": 3
+    },
+    "oathwall": {
+      "name": "Oathwall",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "defense +2",
+      "modifiers": {
+        "defense": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "class_id": "tank",
+      "damage": 4,
+      "block": true,
+      "block_limit": 4
+    },
+    "citadel_heart": {
+      "name": "Citadel Heart",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "defense +3",
+      "modifiers": {
+        "defense": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "class_id": "tank",
+      "damage": 5,
+      "block": true,
+      "block_limit": 5
+    },
+    "spectral_dagger": {
+      "name": "Spectral Dagger",
+      "slot": "weapon",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "initiative modifier +0",
+      "modifiers": {
+        "initiative_modifier": 0
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "class_id": "rogue",
+      "damage": 3,
+      "block": false,
+      "block_limit": 2
+    },
+    "fox_teeth": {
+      "name": "Fox Teeth",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "initiative modifier +1",
+      "modifiers": {
+        "initiative_modifier": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "class_id": "rogue",
+      "damage": 4,
+      "block": false,
+      "block_limit": 3
+    },
+    "moon_stiletto": {
+      "name": "Moon Stiletto",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "initiative modifier +2",
+      "modifiers": {
+        "initiative_modifier": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "class_id": "rogue",
+      "damage": 5,
+      "block": false,
+      "block_limit": 4
+    },
+    "last_whisper": {
+      "name": "Last Whisper",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "initiative modifier +3",
+      "modifiers": {
+        "initiative_modifier": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "class_id": "rogue",
+      "damage": 6,
+      "block": false,
+      "block_limit": 5
+    },
+    "bond_staff": {
+      "name": "Bondkeeper Staff",
+      "slot": "weapon",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "max health +0",
+      "modifiers": {
+        "max_health": 0
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "class_id": "summoner",
+      "damage": 2,
+      "block": false,
+      "block_limit": 2
+    },
+    "pack_call": {
+      "name": "Pack Call",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "max health +2",
+      "modifiers": {
+        "max_health": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "class_id": "summoner",
+      "damage": 3,
+      "block": false,
+      "block_limit": 3
+    },
+    "wild_covenant": {
+      "name": "Wild Covenant",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "max health +4",
+      "modifiers": {
+        "max_health": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "class_id": "summoner",
+      "damage": 4,
+      "block": false,
+      "block_limit": 4
+    },
+    "ancient_bond": {
+      "name": "Ancient Bond",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "max health +6",
+      "modifiers": {
+        "max_health": 6
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "class_id": "summoner",
+      "damage": 5,
+      "block": false,
+      "block_limit": 5
+    },
+    "light_armor_0": {
+      "name": "Trail Vest",
+      "slot": "armor",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "initiative modifier +1",
+      "modifiers": {
+        "initiative_modifier": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ]
+    },
+    "light_armor_1": {
+      "name": "Trail Mail",
+      "slot": "armor",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "initiative modifier +2",
+      "modifiers": {
+        "initiative_modifier": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ]
+    },
+    "light_armor_2": {
+      "name": "Trail Harness",
+      "slot": "armor",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "initiative modifier +3",
+      "modifiers": {
+        "initiative_modifier": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ]
+    },
+    "light_armor_3": {
+      "name": "Trail Regalia",
+      "slot": "armor",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "initiative modifier +4",
+      "modifiers": {
+        "initiative_modifier": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ]
+    },
+    "medium_armor_0": {
+      "name": "Warden Vest",
+      "slot": "armor",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "max health +3",
+      "modifiers": {
+        "max_health": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ]
+    },
+    "medium_armor_1": {
+      "name": "Warden Mail",
+      "slot": "armor",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "max health +6",
+      "modifiers": {
+        "max_health": 6
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ]
+    },
+    "medium_armor_2": {
+      "name": "Warden Harness",
+      "slot": "armor",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "max health +9",
+      "modifiers": {
+        "max_health": 9
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ]
+    },
+    "medium_armor_3": {
+      "name": "Warden Regalia",
+      "slot": "armor",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "max health +12",
+      "modifiers": {
+        "max_health": 12
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ]
+    },
+    "heavy_armor_0": {
+      "name": "Bulwark Vest",
+      "slot": "armor",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "defense +1",
+      "modifiers": {
+        "defense": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ]
+    },
+    "heavy_armor_1": {
+      "name": "Bulwark Mail",
+      "slot": "armor",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "defense +2",
+      "modifiers": {
+        "defense": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ]
+    },
+    "heavy_armor_2": {
+      "name": "Bulwark Harness",
+      "slot": "armor",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "defense +3",
+      "modifiers": {
+        "defense": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ]
+    },
+    "heavy_armor_3": {
+      "name": "Bulwark Regalia",
+      "slot": "armor",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "defense +4",
+      "modifiers": {
+        "defense": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ]
+    },
+    "hearth_soldiers_buckle": {
+      "name": "Soldier's Buckle",
+      "slot": "accessory",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "defense +1",
+      "modifiers": {
+        "defense": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "effect_id": "soldiers_buckle"
+    },
+    "hearth_healers_brooch": {
+      "name": "Healer's Brooch",
+      "slot": "accessory",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "potion heal bonus +2",
+      "modifiers": {
+        "potion_heal_bonus": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "effect_id": "healers_brooch"
+    },
+    "hearth_quickstep_charm": {
+      "name": "Quickstep Charm",
+      "slot": "accessory",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "movement +1",
+      "modifiers": {
+        "movement": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "effect_id": "quickstep_charm"
+    },
+    "hearth_wand_of_cinders": {
+      "name": "Wand of Cinders",
+      "slot": "accessory",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "spell power +2",
+      "modifiers": {
+        "spell_power": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "effect_id": "wand_of_cinders"
+    },
+    "hearth_giant_bane_grip": {
+      "name": "Giant-Bane Grip",
+      "slot": "accessory",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "attack bonus +2, max health +3",
+      "modifiers": {
+        "attack_bonus": 2,
+        "max_health": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "effect_id": "giant_bane_grip"
+    },
+    "hearth_flameheart_talisman": {
+      "name": "Flameheart Talisman",
+      "slot": "accessory",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "spell power +4, defense +1",
+      "modifiers": {
+        "spell_power": 4,
+        "defense": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "effect_id": "flameheart_talisman"
+    },
+    "hearth_starfallen_sigil": {
+      "name": "Starfallen Sigil",
+      "slot": "accessory",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "attack bonus +4, spell power +4, initiative modifier +2",
+      "modifiers": {
+        "attack_bonus": 4,
+        "spell_power": 4,
+        "initiative_modifier": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "effect_id": "starfallen_sigil"
+    },
+    "hearth_heartwood_crown": {
+      "name": "Heartwood Crown",
+      "slot": "accessory",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "max health +12, defense +4, potion heal bonus +6",
+      "modifiers": {
+        "max_health": 12,
+        "defense": 4,
+        "potion_heal_bonus": 6
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "effect_id": "heartwood_crown"
+    },
+    "hearth_chronomancers_pin": {
+      "name": "Chronomancer's Pin",
+      "slot": "accessory",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "initiative modifier +4, spell power +2",
+      "modifiers": {
+        "initiative_modifier": 4,
+        "spell_power": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "effect_id": "chronomancers_pin"
+    },
+    "hearth_worldbreaker_gauntlet": {
+      "name": "Worldbreaker Gauntlet",
+      "slot": "accessory",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "attack bonus +6, defense +3, max health +6",
+      "modifiers": {
+        "attack_bonus": 6,
+        "defense": 3,
+        "max_health": 6
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "effect_id": "worldbreaker_gauntlet"
+    },
+    "hearth_amulet_of_vigor": {
+      "name": "Amulet of Vigor",
+      "slot": "accessory",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "max health +4",
+      "modifiers": {
+        "max_health": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "effect_id": "amulet_of_vigor"
+    },
+    "hearth_menders_sachet": {
+      "name": "Mender's Sachet",
+      "slot": "accessory",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "potion heal bonus +2",
+      "modifiers": {
+        "potion_heal_bonus": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "effect_id": "menders_sachet"
+    },
+    "hearth_keen_edge_oil": {
+      "name": "Keen Edge Oil",
+      "slot": "accessory",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "attack bonus +1",
+      "modifiers": {
+        "attack_bonus": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "effect_id": "keen_edge_oil"
+    },
+    "hearth_embershard_focus": {
+      "name": "Embershard Focus",
+      "slot": "accessory",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "spell power +1",
+      "modifiers": {
+        "spell_power": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "effect_id": "embershard_focus"
+    },
+    "hearth_phoenix_ash_reliquary": {
+      "name": "Phoenix-Ash Reliquary",
+      "slot": "accessory",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "spell power +4, potion heal bonus +3",
+      "modifiers": {
+        "spell_power": 4,
+        "potion_heal_bonus": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "effect_id": "phoenix_ash_reliquary"
+    },
+    "hearth_aegis_of_the_last_king": {
+      "name": "Aegis of the Last King",
+      "slot": "accessory",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "defense +6, max health +14, potion heal bonus +4",
+      "modifiers": {
+        "defense": 6,
+        "max_health": 14,
+        "potion_heal_bonus": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "effect_id": "aegis_of_the_last_king"
+    },
+    "briar_seed": {
+      "name": "Briar Seed",
+      "slot": "relic",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "max health +3",
+      "modifiers": {
+        "max_health": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "effect_id": "heartwood_crown"
+    },
+    "watchers_lantern": {
+      "name": "Watcher’s Lantern",
+      "slot": "relic",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "initiative modifier +1",
+      "modifiers": {
+        "initiative_modifier": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "effect_id": "starfallen_sigil"
+    },
+    "pilgrim_bell": {
+      "name": "Pilgrim Bell",
+      "slot": "relic",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "potion heal bonus +1",
+      "modifiers": {
+        "potion_heal_bonus": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "effect_id": "phoenix_ash_reliquary"
+    },
+    "cinder_heart": {
+      "name": "Cinder Heart",
+      "slot": "relic",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "attack bonus +2",
+      "modifiers": {
+        "attack_bonus": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "effect_id": "heartwood_crown"
+    },
+    "moon_dial": {
+      "name": "Moon Dial",
+      "slot": "relic",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "spell power +2",
+      "modifiers": {
+        "spell_power": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "effect_id": "starfallen_sigil"
+    },
+    "wardens_seal": {
+      "name": "Warden’s Seal",
+      "slot": "relic",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "defense +2",
+      "modifiers": {
+        "defense": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "effect_id": "phoenix_ash_reliquary"
+    },
+    "tide_pearl": {
+      "name": "Tide Pearl",
+      "slot": "relic",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "max health +9",
+      "modifiers": {
+        "max_health": 9
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "effect_id": "heartwood_crown"
+    },
+    "echo_prism": {
+      "name": "Echo Prism",
+      "slot": "relic",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "spell power +3",
+      "modifiers": {
+        "spell_power": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "effect_id": "starfallen_sigil"
+    },
+    "hunters_star": {
+      "name": "Hunter’s Star",
+      "slot": "relic",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "initiative modifier +3",
+      "modifiers": {
+        "initiative_modifier": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "effect_id": "phoenix_ash_reliquary"
+    },
+    "nature_relic": {
+      "name": "Root of Eternity",
+      "slot": "relic",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "potion heal bonus +4",
+      "modifiers": {
+        "potion_heal_bonus": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "moonlit_grove"
+      ],
+      "effect_id": "heartwood_crown"
+    },
+    "arcane_relic": {
+      "name": "Unwritten Equation",
+      "slot": "relic",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "spell power +4",
+      "modifiers": {
+        "spell_power": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "abyssal_archive"
+      ],
+      "effect_id": "starfallen_sigil"
+    },
+    "fate_relic": {
+      "name": "Thread of Tomorrow",
+      "slot": "relic",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 340,
+      "description": "defense +4",
+      "modifiers": {
+        "defense": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "moonlit_grove"
+      ],
+      "effect_id": "phoenix_ash_reliquary"
+    }
+  },
+  "consumables": [
+    "healing_potion",
+    "greater_healing_potion",
+    "focus_tonic",
+    "smoke_vial",
+    "warding_draught",
+    "fleet_draught",
+    "haste_potion",
+    "fury_potion"
+  ],
+  "legacy_item_audit": {
+    "soldiers_buckle": "persistent_equipment_source",
+    "embershard_focus": "persistent_equipment_source",
+    "keen_edge_oil": "persistent_equipment_source",
+    "healers_brooch": "persistent_equipment_source",
+    "quickstep_charm": "persistent_equipment_source",
+    "amulet_of_vigor": "persistent_equipment_source",
+    "duelist_gloves": "legacy_dungeon_reward",
+    "wand_of_cinders": "persistent_equipment_source",
+    "lucky_coin": "legacy_dungeon_reward",
+    "scholars_lens": "legacy_dungeon_reward",
+    "giant_bane_grip": "persistent_equipment_source",
+    "moonleaf_cloak": "legacy_dungeon_reward",
+    "aether_prism": "legacy_dungeon_reward",
+    "boots_of_the_hare": "legacy_dungeon_reward",
+    "sunward_periapt": "legacy_dungeon_reward",
+    "flameheart_talisman": "persistent_equipment_source",
+    "kingsroad_aegis": "legacy_dungeon_reward",
+    "starfallen_sigil": "persistent_equipment_source",
+    "heartwood_crown": "persistent_equipment_source",
+    "ironroot_ring": "legacy_dungeon_reward",
+    "sparkwire_wrap": "temporary_effect",
+    "menders_sachet": "persistent_equipment_source",
+    "windknotted_thread": "temporary_effect",
+    "chalk_rune_tablet": "temporary_effect",
+    "scavengers_token": "legacy_dungeon_reward",
+    "drillmasters_whistle": "legacy_dungeon_reward",
+    "brambleguard_clasp": "legacy_dungeon_reward",
+    "stormglass_bead": "legacy_dungeon_reward",
+    "cutpurses_favor": "legacy_dungeon_reward",
+    "redstep_spurs": "legacy_dungeon_reward",
+    "apothecarys_cup": "legacy_dungeon_reward",
+    "veterans_whetstone": "temporary_effect",
+    "wayfinders_compass": "legacy_dungeon_reward",
+    "runebound_bracer": "legacy_dungeon_reward",
+    "glass_magus_eye": "legacy_dungeon_reward",
+    "pilgrims_greaves": "legacy_dungeon_reward",
+    "gilded_beetle": "legacy_dungeon_reward",
+    "saints_phial": "legacy_dungeon_reward",
+    "war_scholars_codex": "legacy_dungeon_reward",
+    "blackoak_ward": "legacy_dungeon_reward",
+    "phoenix_ash_reliquary": "persistent_equipment_source",
+    "wyvernscale_mantle": "legacy_dungeon_reward",
+    "chronomancers_pin": "persistent_equipment_source",
+    "deepdelvers_lantern": "legacy_dungeon_reward",
+    "titanblood_torc": "legacy_dungeon_reward",
+    "crown_of_the_first_flame": "legacy_dungeon_reward",
+    "worldbreaker_gauntlet": "persistent_equipment_source",
+    "fortune_eaters_idol": "legacy_dungeon_reward",
+    "charred_horseshoe": "legacy_dungeon_reward",
+    "harvesters_gloves": "legacy_dungeon_reward",
+    "cinderheart_locket": "legacy_dungeon_reward",
+    "aegis_of_the_last_king": "persistent_equipment_source"
+  },
+  "economy": {
+    "share_percent": 20,
+    "expedition_days": 7,
+    "rest_days": 3,
+    "retirement_age": 60
+  },
+  "dungeon_levels": {
+    "forest": 2,
+    "ashen_farmstead": 4,
+    "crypt": 6,
+    "balors_hell": 10,
+    "sunken_mine": 8,
+    "ember_foundry": 12,
+    "moonlit_grove": 13,
+    "abyssal_archive": 15
+  }
+}

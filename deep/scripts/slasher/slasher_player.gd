@@ -11,6 +11,7 @@ signal health_changed(current:int,maximum:int)
 signal resource_changed(current:int,maximum:int)
 
 var resource_suppression_time:=0.0
+var resource_regen_accumulator:=0.0
 signal ability_resolved(result:Dictionary)
 signal defeated
 
@@ -112,6 +113,10 @@ func _refresh_presentation()->void:
 
 func _physics_process(delta:float)->void:
 	resource_suppression_time=maxf(0.0,resource_suppression_time-delta)
+	if run_state!=null and resource_suppression_time<=0.0 and run_state.class_resource<run_state.get_class_resource_max():
+		resource_regen_accumulator += delta*float(run_state.get_class_resource_rules(class_id).get("regen_per_second",0.35))
+		if resource_regen_accumulator>=1.0:
+			var restored:=floori(resource_regen_accumulator);resource_regen_accumulator-=restored;run_state.gain_class_resource(restored);resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
 	for key in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-delta)
 	var was_invulnerable:=invulnerable>0.0
 	invulnerable=maxf(0.0,invulnerable-delta);defense_window=maxf(0.0,defense_window-delta);animation_lock=maxf(0.0,animation_lock-delta);hidden_time=maxf(0.0,hidden_time-delta)
@@ -157,7 +162,9 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	var result:={"started":false,"slot":slot,"class_id":class_id,"input_source":input_source,"targets_hit":0,"projectiles_deflected":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
 	if float(cooldowns.get(slot,0.0))>0.0:result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
 	var tuning:Dictionary=_ability_tuning(slot)
-	var resource_cost:=int(tuning.get("resource_cost",2 if slot=="special" else 0))
+	var default_cost:=2 if slot=="special" else (int(run_state.get_class_resource_rules(class_id).get("movement_cost",1)) if slot=="movement" else 0)
+	var resource_cost:=int(tuning.get("resource_cost",default_cost))
+	if slot=="movement" and resource_cost<=0: resource_cost=default_cost
 	if resource_cost>0 and not run_state.spend_class_resource(resource_cost):result.failure="Not enough %s."%run_state.get_class_resource_name();ability_resolved.emit(result);return result
 	result.started=true
 	active_action_slot=slot
@@ -296,6 +303,7 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 				prevented=int(round(amount*float(wolf.get("cover_mitigation_near" if nearby else "cover_mitigation_far",0.6 if nearby else 0.3))))
 			"retribution_ready":prevented=int(round(amount*float(tuning.get("mitigation",0.5))));retribution_stored+=int(round(amount*float(tuning.get("storage_fraction",0.5))))
 		defense_window=0.0
+	if prevented>0 and defense_kind!="guard": _award_resource(1)
 	if consumable_aegis>0:
 		var aegis_prevented:int=mini(consumable_aegis,maxi(0,amount-prevented));consumable_aegis-=aegis_prevented;prevented+=aegis_prevented
 	var final:=maxi(0,amount-prevented)
@@ -321,8 +329,7 @@ func _spawn_projectile(data:Dictionary,gain_on_hit:bool)->void:
 		var echo:SlasherProjectile=PROJECTILE.new().setup(self,global_position+aim_direction.rotated(0.08)*24.0,aim_direction.rotated(0.08),echo_data);get_parent().add_child(echo)
 	if gain_on_hit:projectile.hit_landed.connect(func(hit_target:Node2D,distance:float):
 		if not hit_target.is_in_group("slasher_enemy"):return
-		var tuning:=_ability_tuning("basic");var minimum:=float(tuning.get("focus_min_distance",0.0))
-		if class_id!="mage" or distance>=minimum:_award_resource(int(tuning.get("resource_gain",1))+int(tuning.get("resource_refund_on_hit",0)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max()))
+		var tuning:=_ability_tuning("basic");_award_resource(int(tuning.get("resource_gain",1))+int(tuning.get("resource_refund_on_hit",0)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max()))
 
 func _melee_attack(data:Dictionary)->int:
 	var hits:=0;var reach:=float(data.get("reach",64.0));var threshold:=cos(deg_to_rad(float(data.get("arc_degrees",70.0))*0.5))

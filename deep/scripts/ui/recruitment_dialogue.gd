@@ -58,6 +58,8 @@ func open(candidate:CandidateRecord)->void:
 	var preference:=member.preference if String(known.get("preference","unknown"))=="exact" else "Preference unknown"
 	detail_label.text="Level %d     %s\n%s\nBasic weapon: %s\n%s\n\n%s\nPrefers: %s\n\n“%s”\n\n%s"%[member.level,member.trait_name,identity,weapon if String(known.get("equipment","hint"))=="exact" else "Visible %s"%weapon,aptitude,story,preference,candidate.motivation,candidate.last_result]
 	observe_button.disabled=candidate.completed_interactions.has("observe");talk_button.disabled=candidate.completed_interactions.has("talk");trial_button.disabled=candidate.completed_interactions.has("trial")
+	recruit_button.text="Sign · %dg" % member.signing_fee
+	detail_label.text += "\n\nContract: %dg signing fee; party shares 20%% of returned gold." % member.signing_fee
 	visible=true;move_to_front();recruit_button.grab_focus()
 
 func _action_button(text_value:String,parent:HBoxContainer,action:String)->Button:

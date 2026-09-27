@@ -40,7 +40,10 @@ func populate(enter_candidates:bool)->void:
 		for step in roster.size():
 			if count>=visible_adventurer_cap:break
 			var member:CharacterRecord=roster[(step+offset)%roster.size()]
-			if member.status==CharacterRecord.STATUS_AVAILABLE:_spawn_adventurer("roster",member.id,member,false);count+=1
+			if member.status in [CharacterRecord.STATUS_AVAILABLE,"recovering"]:
+				var actor := _spawn_adventurer("roster",member.id,member,false)
+				if member.status=="recovering": actor.modulate=Color(0.7,0.8,0.85); actor.set_interaction_paused(true)
+				count+=1
 
 func populate_from_campaign(state:RunState)->void:
 	run_state=state

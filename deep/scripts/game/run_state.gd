@@ -3,6 +3,9 @@ class_name RunState
 
 const PLAY_MODE_STRATEGY := "strategy"
 const PLAY_MODE_SLASHER := "slasher"
+# Strategy combat is temporarily hidden while its new expedition handoff is rebuilt.
+# Keep this as one switch so UI, campaign validation, and legacy launch paths agree.
+const STRATEGY_MODE_ENABLED := false
 const TUTORIAL_MAX_HEALTH := 3
 const MAX_HERO_LEVEL := 20
 const FALLBACK_XP_THRESHOLDS := [0, 0, 100, 220, 380, 580, 820, 1100, 1420, 1780, 2180, 2620, 3100, 3620, 4180, 4780, 5420, 6100, 6820, 7580, 8380]
@@ -82,6 +85,7 @@ func sync_campaign_runtime() -> void:
 	campaign.legacy_runtime = {"completed_dungeons":completed_dungeons.duplicate(true),"forest_cleared":forest_cleared,"completed_runs":completed_runs,"deaths":deaths,"merchant_progress":merchant_progress.duplicate(true),"merchant_offer_stock":merchant_offer_stock.duplicate(true),"purchased_favor_offers":purchased_favor_offers.duplicate(true),"enemy_defeat_counts":enemy_defeat_counts.duplicate(true)}
 
 func autosave_on_floor_entry() -> bool:
+	if campaign != null and campaign.expedition.active: _sync_active_profile_to_character()
 	sync_campaign_runtime()
 	return campaign.save_atomic() if campaign != null else false
 
@@ -131,6 +135,9 @@ func select_active_character(character_id: String) -> bool:
 	_sync_active_profile_to_character()
 	active_character_id = character_id; _load_character_profile(member);set_class(member.class_id)
 	current_health = member.current_health if member.current_health > 0 else max_health
+	consumable_items.assign(member.provisions)
+	if member.progression.has("runtime_inventory"): inventory_items.assign(member.progression.runtime_inventory)
+	recalculate_derived_stats()
 	return true
 
 func cycle_active_character(direction: int = 1) -> bool:
@@ -158,6 +165,9 @@ func record_floor_checkpoint(checkpoint_suffix:String="",reward_depth:int=-1)->v
 		var checkpoint_id := "%s:%s:%s" % [active_dungeon_id, active_play_mode, checkpoint_key]
 		var capacity_rank := int(campaign.tavern_upgrades.get("relic_capacity", 0))
 		campaign.expedition.reward_checkpoint(checkpoint_id, 1 + int(depth / 3.0) + capacity_rank)
+		campaign.expedition.extraction_available = not campaign.expedition.tutorial_run
+		campaign.expedition.secured_gold = gold
+		campaign.expedition.secured_essence = campaign.expedition.carried_relic_essence
 		for character_id in campaign.expedition.living_party_ids():
 			var member := campaign.character(character_id)
 			if member != null: member.deepest_floor = maxi(member.deepest_floor, depth)
@@ -172,9 +182,11 @@ func _sync_active_profile_to_character() -> void:
 	var member := get_active_character()
 	if member == null: return
 	member.current_health = current_health; member.max_health = max_health
-	member.level = get_level(); member.xp = int(hero_profiles.get(selected_class_id, {}).get("xp", member.xp))
-	member.progression = Dictionary(hero_profiles.get(selected_class_id, {})).duplicate(true)
+	member.level = get_level(); member.xp = int(hero_profiles.get(_profile_key(), {}).get("xp", member.xp))
+	member.progression = Dictionary(hero_profiles.get(_profile_key(), {})).duplicate(true)
 	member.attributes=Dictionary(member.progression.get("base_stats",member.attributes)).duplicate(true)
+	member.provisions.assign(consumable_items)
+	member.progression["runtime_inventory"] = inventory_items.duplicate(true)
 	member.inventory.clear()
 	for item in inventory_items: member.inventory.append(String(item.get("id", "")))
 
@@ -195,12 +207,16 @@ func _init() -> void:
 	_sync_health_from_profile(true)
 
 func set_class(class_id: String) -> void:
+	var owned := get_active_character()
+	if owned != null and owned.class_id == GameBalance.normalize_class_id(class_id) and not hero_profiles.has(owned.id): _load_character_profile(owned)
 	selected_class_id = GameBalance.normalize_class_id(class_id)
 	var class_data := GameBalance.get_base_class(selected_class_id)
 	selected_class_name = String(class_data.get("name", selected_class_id.capitalize()))
 	class_resource = 0
 	var stored_gear_value: Variant = selected_gear_by_class.get(selected_class_id, null)
 	selected_gear = stored_gear_value if stored_gear_value is GearData else null
+	var owner := get_active_character()
+	if owner != null and not owner.equipment.is_empty(): selected_gear = HearthCatalog.gear(owner.gear_id)
 	_ensure_profiles()
 	_restore_permanent_inventory_for_active_class()
 	recalculate_derived_stats()
@@ -235,6 +251,9 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest", play_mode: Str
 	potions = 0
 	keys += pending_shop_keys
 	consumable_items.clear()
+	var provisioned := get_active_character()
+	if provisioned != null:
+		for bottle in provisioned.provisions: add_consumable(bottle)
 	for consumable_id in pending_shop_consumables:
 		add_consumable(consumable_id)
 	for legacy_index in range(pending_shop_potions):
@@ -263,9 +282,14 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest", play_mode: Str
 func normalize_play_mode(play_mode: String) -> String:
 	return PLAY_MODE_SLASHER if play_mode.to_lower() == PLAY_MODE_SLASHER else PLAY_MODE_STRATEGY
 
+static func is_play_mode_enabled(play_mode: String) -> bool:
+	return play_mode.to_lower() == PLAY_MODE_SLASHER or (play_mode.to_lower() == PLAY_MODE_STRATEGY and STRATEGY_MODE_ENABLED)
+
 func dungeon_supports_mode(dungeon_id: String, play_mode: String) -> bool:
+	var normalized := normalize_play_mode(play_mode)
+	if not is_play_mode_enabled(normalized): return false
 	var modes: Array = GameBalance.get_dungeon(dungeon_id).get("supported_modes", [PLAY_MODE_STRATEGY])
-	return normalize_play_mode(play_mode) in modes
+	return normalized in modes
 
 func advance_floor() -> bool:
 	if current_floor >= max_floors:
@@ -340,7 +364,8 @@ func get_current_floor_seed() -> int:
 func finish_run(outcome: String, message: String) -> void:
 	_sync_active_profile_to_character()
 	if campaign != null and campaign.expedition.active:
-		campaign.expedition.carried_gold = gold
+		campaign.expedition.carried_gold = campaign.expedition.secured_gold if outcome == "retreat" else gold
+		if outcome == "retreat": campaign.expedition.carried_relic_essence = campaign.expedition.secured_essence
 	run_outcome = message
 	if outcome == "victory":
 		completed_runs += 1
@@ -457,16 +482,23 @@ func get_derived_stat(stat_id: String) -> int:
 	return int(derived.get(stat_id, 0))
 
 func get_class_resource_name() -> String:
-	return String(GameBalance.get_base_class(selected_class_id).get("resource", "Power"))
+	var names := {"warrior":"Stamina", "mage":"Mana", "healer":"Grace", "tank":"Endurance", "rogue":"Momentum", "summoner":"Bond"}
+	return String(names.get(selected_class_id, GameBalance.get_base_class(selected_class_id).get("resource", "Power")))
 
 func get_class_resource_max() -> int:
 	return int(GameBalance.get_class_resource_rules(selected_class_id).get("max", GameBalance.get_class_resource_max()))
+
+func get_class_resource_rules(class_id: String = "") -> Dictionary:
+	var lookup := selected_class_id if class_id.is_empty() else GameBalance.normalize_class_id(class_id)
+	return GameBalance.get_class_resource_rules(lookup)
 
 func get_class_resource_explanation() -> String:
 	var rules := GameBalance.get_class_resource_rules(selected_class_id)
 	var gains: Array[String] = []
 	for entry in rules.get("gain", []): gains.append(String(entry))
-	return "%s (max %d). Gain: %s. Specials cost %d." % [get_class_resource_name(), get_class_resource_max(), "; ".join(gains), int(rules.get("special_cost", 2))]
+	var special_cost := int(rules.get("special_cost", 2))
+	var movement_cost := int(rules.get("movement_cost", 1))
+	return "%s (max %d). Regenerates slowly over time. Gain: %s. Specials cost %d; dashes cost %d." % [get_class_resource_name(), get_class_resource_max(), "; ".join(gains), special_cost, movement_cost]
 
 func get_attribute_growth_explanation(stat_id: String) -> String:
 	for rule in GameBalance.get_class_data(selected_class_id).get("stat_growth", []):
@@ -568,7 +600,7 @@ func get_active_item_modifier_value(stat_id: String) -> int:
 
 func get_active_item_effects(trigger: String = "") -> Array[Dictionary]:
 	var effects: Array[Dictionary] = []
-	for entry in inventory_items:
+	for entry in get_inventory_items():
 		var item := GameBalance.get_item(String(entry.get("id", "")))
 		var effect_values: Variant = item.get("effects", [])
 		if not (effect_values is Array):
@@ -788,7 +820,7 @@ func gain_xp(amount: int, reason: String) -> Array[String]:
 		old_max_health = new_max_health
 		logs.append("%s reaches level %d. Max HP +%d." % [selected_class_name, int(profile["level"]), health_gain])
 		logs.append_array(_enqueue_progression_choices(profile, int(profile["level"])))
-	hero_profiles[selected_class_id] = profile
+	hero_profiles[_profile_key()] = profile
 	if active_play_mode==PLAY_MODE_SLASHER:logs.append_array(reconcile_slasher_progression())
 	_sync_health_from_profile(false)
 	_sync_crypt_unlock()
@@ -884,7 +916,7 @@ func add_inventory_item(item_id: String, source_floor: int) -> Array[String]:
 		var permanent_items: Array = permanent_items_value if permanent_items_value is Array else []
 		permanent_items.append(entry.duplicate(true))
 		profile["permanent_items"] = permanent_items
-		hero_profiles[selected_class_id] = profile
+		hero_profiles[_profile_key()] = profile
 	recalculate_derived_stats()
 	return ["Claimed %s." % String(item.get("name", item_id))]
 
@@ -892,11 +924,16 @@ func get_inventory_items() -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	for entry in inventory_items:
 		items.append(entry.duplicate(true))
+	var member := get_active_character()
+	if member != null:
+		for instance_id in member.equipment.values():
+			var instance: Dictionary = campaign.armory.get(instance_id,{})
+			if not instance.is_empty(): items.append({"id":instance.item_id,"duration_type":"equipped","instance_id":instance_id})
 	return items
 
 func get_active_item_modifiers() -> Dictionary:
 	var modifiers: Dictionary = {}
-	for entry in inventory_items:
+	for entry in get_inventory_items():
 		var item: Dictionary = GameBalance.get_item(String(entry.get("id", "")))
 		var item_modifiers_value: Variant = item.get("modifiers", {})
 		if not (item_modifiers_value is Dictionary):
@@ -961,7 +998,7 @@ func choose_progression_choice(choice_id: String) -> Array[String]:
 	pending.remove_at(0)
 	profile["pending_progression_choices"] = pending
 	logs.append_array(_enqueue_missing_progression_choices(profile))
-	hero_profiles[selected_class_id] = profile
+	hero_profiles[_profile_key()] = profile
 	recalculate_derived_stats()
 	var new_max_health: int = get_derived_stat("max_health")
 	var health_gain: int = maxi(0, new_max_health - old_max_health)
@@ -1011,7 +1048,7 @@ func reconcile_slasher_progression()->Array[String]:
 		var choices:Array[Dictionary]=GameBalance.get_slasher_choices_for_level(class_id,milestone,profile)
 		if choices.is_empty():continue
 		pending.append({"level":milestone,"type":String(choices[0].get("type","ability")),"choices":choices});profile.pending_slasher_progression_choices=pending;logs.append("Slasher progression choice unlocked at level %d."%milestone);break
-	hero_profiles[selected_class_id]=profile;return logs
+	hero_profiles[_profile_key()]=profile;return logs
 
 func has_pending_slasher_progression_choice()->bool:
 	return not _profile_array(_active_profile(),"pending_slasher_progression_choices").is_empty()
@@ -1031,7 +1068,7 @@ func choose_slasher_progression_choice(choice_id:String)->Array[String]:
 	if canonical.is_empty() or int(canonical.get("level",-1))!=int(pending_choice.get("level",-2)):return ["That Slasher progression choice is invalid."]
 	var destination_key:String="slasher_evolution_path" if String(canonical.get("type","ability"))=="evolution" else "slasher_ability_upgrades";var selected_ids:Array=_profile_array(profile,destination_key)
 	if selected_ids.has(choice_id):return ["That Slasher progression choice was already claimed."]
-	selected_ids.append(choice_id);profile[destination_key]=selected_ids;pending.remove_at(0);profile.pending_slasher_progression_choices=pending;hero_profiles[selected_class_id]=profile
+	selected_ids.append(choice_id);profile[destination_key]=selected_ids;pending.remove_at(0);profile.pending_slasher_progression_choices=pending;hero_profiles[_profile_key()]=profile
 	logs.append("Slasher upgrade selected: %s."%String(canonical.get("name",choice_id)));logs.append_array(reconcile_slasher_progression());pending_level_logs.append_array(logs);return logs
 
 func get_slasher_selected_choices()->Array:
@@ -1127,7 +1164,12 @@ func _load_character_profile(member:CharacterRecord)->void:
 	profile["total_xp"]=maxi(int(profile.get("total_xp",0)),member.xp)
 	if not member.attributes.is_empty():profile["base_stats"]=member.attributes.duplicate(true)
 	for key in ["permanent_items","evolution_path","ability_upgrades","pending_progression_choices","slasher_evolution_path","slasher_ability_upgrades","pending_slasher_progression_choices"]:if not (profile.get(key) is Array):profile[key]=[]
-	_recalculate_profile(profile);hero_profiles[member.class_id]=profile
+	profile["character_id"]=member.id
+	_recalculate_profile(profile);hero_profiles[member.id]=profile
+	# Keep the historical class-keyed view for legacy UI and tutorial saves. The
+	# active character key remains authoritative, so same-class recruits stay independent.
+	hero_profiles[member.class_id]=profile
+	_enqueue_missing_progression_choices(profile)
 
 func _base_stats_for_class(class_id: String) -> Dictionary:
 	var class_data: Dictionary = GameBalance.get_class_data(class_id)
@@ -1140,9 +1182,12 @@ func _base_stats_for_class(class_id: String) -> Dictionary:
 	var stats: Dictionary = stats_value if stats_value is Dictionary else fallback
 	return stats.duplicate(true)
 
+func _profile_key() -> String:
+	return active_character_id if not active_character_id.is_empty() and hero_profiles.has(active_character_id) else selected_class_id
+
 func _active_profile() -> Dictionary:
 	_ensure_profiles()
-	var profile_value: Variant = hero_profiles.get(selected_class_id, hero_profiles["warrior"])
+	var profile_value: Variant = hero_profiles.get(_profile_key(), hero_profiles["warrior"])
 	var fighter_profile_value: Variant = hero_profiles["warrior"]
 	var fighter_profile: Dictionary = fighter_profile_value if fighter_profile_value is Dictionary else {}
 	var profile: Dictionary = profile_value if profile_value is Dictionary else fighter_profile
@@ -1159,7 +1204,7 @@ func _recalculate_profile(profile: Dictionary) -> void:
 	profile["stats"] = stats
 	var derived_stats: Dictionary = _derive_stats(class_id, level, stats)
 	_apply_progression_modifiers_to_derived(profile, derived_stats)
-	if class_id == selected_class_id:
+	if String(profile.get("character_id", "")) == active_character_id and class_id == selected_class_id:
 		_apply_inventory_modifiers_to_derived(derived_stats)
 	profile["derived_stats"] = derived_stats
 
@@ -1433,7 +1478,7 @@ func _restore_permanent_inventory_for_active_class() -> void:
 func _clear_permanent_inventory_for_active_class() -> void:
 	var profile: Dictionary = _active_profile()
 	profile["permanent_items"] = []
-	hero_profiles[selected_class_id] = profile
+	hero_profiles[_profile_key()] = profile
 	for i in range(inventory_items.size() - 1, -1, -1):
 		if String(inventory_items[i].get("duration_type", "")) == "permanent":
 			inventory_items.remove_at(i)

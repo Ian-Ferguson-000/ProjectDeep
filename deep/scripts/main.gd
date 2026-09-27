@@ -220,6 +220,9 @@ func start_crypt(gear: GearData) -> void:
 	_load_crypt_floor()
 
 func start_dungeon(dungeon_id: String, gear: GearData, play_mode: String = RunState.PLAY_MODE_STRATEGY, requested_party: Array[String] = []) -> void:
+	if not RunState.is_play_mode_enabled(play_mode):
+		show_tavern("Strategy mode is temporarily disabled. Choose Slasher mode for expeditions.")
+		return
 	if not run_state.is_dungeon_unlocked(dungeon_id):
 		show_tavern(String(GameBalance.get_dungeon(dungeon_id).get("unlock_text", "That expedition is locked.")))
 		return
@@ -295,7 +298,7 @@ func complete_forest_floor() -> void:
 	var favor_logs := run_state.record_dungeon_floor_clear("forest", run_state.current_floor, run_state.current_floor >= run_state.max_floors)
 	run_state.record_floor_checkpoint()
 	if run_state.current_floor < run_state.max_floors:
-		run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_forest_floor()
+		_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_forest_floor())
 	else:
 		run_state.mark_forest_cleared()
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
@@ -310,7 +313,7 @@ func complete_strategy_dungeon_floor() -> void:
 	var favor_logs: Array[String] = []
 	if not merchant_id.is_empty(): favor_logs = run_state.record_dungeon_floor_clear(merchant_id, run_state.current_floor, run_state.current_floor >= run_state.max_floors)
 	run_state.record_floor_checkpoint()
-	if run_state.current_floor < run_state.max_floors:run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_active_dungeon()
+	if run_state.current_floor < run_state.max_floors:_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 	else:
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
 		if _continue_connected_expedition(favor_logs): return
@@ -319,7 +322,7 @@ func complete_strategy_dungeon_floor() -> void:
 func complete_slasher_forest_floor() -> void:
 	if campaign.expedition.tutorial_run:
 		if run_state.current_floor < run_state.max_floors:
-			run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon()
+			_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 		else:
 			return_to_tavern("victory", "Alden defeats the Briarway's guardian and carries its final haul home.")
 		return
@@ -336,7 +339,7 @@ func complete_slasher_dungeon_floor() -> void:
 	var dungeon := GameBalance.get_dungeon(run_state.active_dungeon_id)
 	var campaign_floors := int(Dictionary(dungeon.get("slasher", {})).get("campaign_floors", dungeon.get("floors", 1)))
 	run_state.record_floor_checkpoint()
-	if run_state.current_floor < campaign_floors:run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon()
+	if run_state.current_floor < campaign_floors:_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 	else:
 		var completion_logs := run_state.record_active_dungeon_completion()
 		if _continue_connected_expedition(completion_logs): return
@@ -348,31 +351,20 @@ func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])-
 		if _continue_connected_expedition(favor_logs): return
 		return_to_tavern("victory","You conquer the Forest after floor %d with %d gold.\n%s\n%s" % [run_state.current_floor, run_state.gold, " ".join(favor_logs), run_state.get_slasher_progression_summary()])
 		return
-	run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon()
+	_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 
 func complete_crypt_floor() -> void:
 	var favor_logs := run_state.record_dungeon_floor_clear("crypt", run_state.current_floor, run_state.current_floor >= run_state.max_floors)
 	run_state.record_floor_checkpoint()
 	if run_state.current_floor < run_state.max_floors:
-		run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_crypt_floor()
+		_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_crypt_floor())
 	else:
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
 		if _continue_connected_expedition(favor_logs): return
 		return_to_tavern("victory","You conquer the seven-floor Stone Crypt with %d gold.\n%s" % [run_state.gold, " ".join(favor_logs)])
 
-func _continue_connected_expedition(completion_logs:Array[String]=[]) -> bool:
-	if campaign==null or not campaign.expedition.active or campaign.expedition.tutorial_run:return false
-	var completed_id:=run_state.active_dungeon_id
-	var completed:=GameBalance.get_dungeon(completed_id)
-	var next_id:=String(completed.get("continuous_next",""))
-	if next_id.is_empty() or GameBalance.get_dungeon(next_id).is_empty():return false
-	if not run_state.is_dungeon_unlocked(next_id) or not run_state.dungeon_supports_mode(next_id,run_state.active_play_mode):return false
-	var completed_name:=String(completed.get("name",completed_id.capitalize()))
-	var next_name:=String(GameBalance.get_dungeon(next_id).get("name",next_id.capitalize()))
-	if not run_state.transition_to_dungeon(next_id):return false
-	var dialogue:=_connected_dungeon_dialogue(completed_name,next_name,completion_logs)
-	_show_connected_dungeon_dialogue(dialogue)
-	return true
+func _continue_connected_expedition(_completion_logs:Array[String]=[]) -> bool:
+	return false
 
 func _connected_dungeon_dialogue(completed_name:String,next_name:String,_completion_logs:Array[String]) -> Array[Dictionary]:
 	var member:=campaign.character(run_state.active_character_id) if campaign!=null else null
@@ -439,6 +431,7 @@ func return_to_tavern(outcome: String, message: String) -> void:
 	elif not was_tutorial and campaign.should_trigger_former_keeper_encounter(return_dungeon, outcome):
 		story_lines = _former_keeper_confrontation()
 		story_context = "former_keeper_confrontation"
+	if not was_tutorial and not campaign.pending_settlement_summary.is_empty(): summary.merge(campaign.pending_settlement_summary,true)
 	campaign.pending_settlement_summary=summary.duplicate(true);campaign.pending_story_context=story_context
 	show_tavern(message, summary, story_lines, story_context)
 
@@ -560,3 +553,10 @@ func _reset_action(action: StringName) -> void:
 func _add_joypad_axis_action(action: StringName, axis: JoyAxis, axis_value: float) -> void:
 	if not InputMap.has_action(action): InputMap.add_action(action)
 	var event:=InputEventJoypadMotion.new();event.axis=axis;event.axis_value=axis_value;InputMap.action_add_event(action,event)
+
+func _hearth_checkpoint(continuation: Callable) -> void:
+	# Floors are internal progress points. The expedition stays in the dungeon
+	# until the party defeats its boss or the party is defeated.
+	run_state.record_floor_checkpoint()
+	run_state._sync_active_profile_to_character()
+	continuation.call()

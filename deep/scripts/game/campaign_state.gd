@@ -1,7 +1,7 @@
 extends RefCounted
 class_name CampaignState
 
-const SAVE_VERSION := 7
+const SAVE_VERSION := 8
 const TARGET_ROSTER_SIZE := 2
 const BASE_ROSTER_CAPACITY := 6
 const TUTORIAL_STARTING_HEALTH := 3
@@ -46,7 +46,7 @@ var relic_essence: int = 0
 var lifetime_relic_essence: int = 0
 var banked_relics: Array[String] = []
 var successful_levels: int = 0
-var tavern_upgrades: Dictionary = {"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
+var tavern_upgrades: Dictionary = {"recovery":0,"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
 var tavern_dialogue_flags: Dictionary = {}
 var clues: Dictionary = {}
 var tutorial_outcome: String = ""
@@ -76,6 +76,15 @@ var legacy_runtime: Dictionary = {}
 var last_save_error: String = ""
 var save_slot: int = 1
 var last_saved_unix: int = 0
+var armory: Dictionary = {}
+var next_item_id = 1
+var establishment_tier = 0
+var construction: Dictionary = {}
+var dispatches: Dictionary = {}
+var settled_expeditions: Dictionary = {}
+var return_reports = []
+var market_stock: Dictionary = {}
+var consumable_stock: Dictionary = {}
 var reputation:=0
 var used_curated_ids:Array[String]=[]
 var lineage_registry:Dictionary={}
@@ -133,6 +142,7 @@ func apply_post_tutorial_state(outcome: String) -> void:
 	tutorial_letter_unlocked = true
 	former_keeper_encounter_pending = outcome == "victory"
 	former_keeper_encounter_seen = false
+	armory.clear();next_item_id=1;establishment_tier=0;construction.clear();dispatches.clear();settled_expeditions.clear();return_reports.clear();market_stock.clear();consumable_stock.clear()
 	banked_gold = 120
 	supplies = 8
 	relic_essence = 0
@@ -143,7 +153,7 @@ func apply_post_tutorial_state(outcome: String) -> void:
 	reputation=0;used_curated_ids.clear();lineage_registry.clear()
 	clues.clear()
 	unlocked_classes = ["warrior", "mage"]
-	tavern_upgrades = {"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
+	tavern_upgrades = {"recovery":0,"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
 	tavern_dialogue_flags.clear()
 	roster.clear()
 	next_character_number = 1
@@ -182,7 +192,7 @@ func get_active_season_modifiers()->Array[Dictionary]:
 	return []
 
 func get_roster_capacity() -> int:
-	return BASE_ROSTER_CAPACITY + 2 * maxi(0, int(tavern_upgrades.get("roster_services", 0)))
+	return int(HearthCatalog.tier(establishment_tier).capacity)
 
 func get_candidates() -> Array[CandidateRecord]:
 	var result:Array[CandidateRecord]=[]
@@ -216,7 +226,12 @@ func recruit_candidate(candidate_id:String) -> Dictionary:
 	var candidate:=candidate_pool.get(candidate_id) as CandidateRecord
 	if candidate==null:return {"ok":false,"error":"That adventurer is no longer at the Hearth."}
 	if living_roster().size()>=get_roster_capacity():return {"ok":false,"error":"The Hearth has no open rooms."}
+	var fee := candidate.adventurer.signing_fee
+	if not candidate.first_company and living_roster().size() < 2 and banked_gold < fee and candidate.adventurer.level <= 2: fee = 0
+	if banked_gold < fee: return {"ok":false,"error":"Signing this recruit costs %d gold." % fee}
+	banked_gold -= fee
 	var member:=candidate.adventurer;member.status=CharacterRecord.STATUS_AVAILABLE;roster[member.id]=member;candidate_pool.erase(candidate_id)
+	HearthArmory.ensure_starter(self,member)
 	first_company_recruited=first_company_ids.all(func(id:String):return roster.has(id))
 	_add_calendar_event("recruitment","%s joins the company."%member.display_name)
 	return {"ok":true,"character_id":member.id,"message":"%s joins the company."%member.display_name}
@@ -252,6 +267,8 @@ func dismiss_character(character_id:String) -> Dictionary:
 	var member:=character(character_id)
 	if member==null or member.status!=CharacterRecord.STATUS_AVAILABLE:return {"ok":false,"error":"Only an available adventurer can be dismissed."}
 	if not first_normal_launch_completed and first_company_ids.has(character_id):return {"ok":false,"error":"The founding recruits must complete the first expedition briefing."}
+	HearthArmory.release(self,member)
+	for id in member.provisions: consumable_stock[id] = int(consumable_stock.get(id,0))+1
 	roster.erase(character_id);_add_calendar_event("departure","%s leaves the Hearth."%member.display_name)
 	if living_roster().is_empty() and candidate_pool.is_empty():_generate_candidate_wave(false)
 	return {"ok":true,"message":"%s leaves the Hearth."%member.display_name}
@@ -259,6 +276,7 @@ func dismiss_character(character_id:String) -> Dictionary:
 func launch_expedition(ids:Array[String],dungeon_id:String,mode:String) -> Dictionary:
 	if expedition.active:return {"ok":false,"error":"An expedition is already active."}
 	if GameBalance.get_dungeon(dungeon_id).is_empty():return {"ok":false,"error":"That dungeon does not exist."}
+	if not RunState.is_play_mode_enabled(mode):return {"ok":false,"error":"Strategy mode is temporarily disabled while it is being rebuilt. Choose Slasher mode."}
 	if mode not in ["strategy","slasher"] or not Array(GameBalance.get_dungeon(dungeon_id).get("supported_modes",[])).has(mode):return {"ok":false,"error":"That combat mode is unavailable for this dungeon."}
 	var unique_ids:Dictionary={};for id in ids:unique_ids[id]=true
 	if unique_ids.size()!=ids.size():return {"ok":false,"error":"A party cannot contain the same adventurer twice."}
@@ -304,7 +322,7 @@ func unlock_class(class_id: String) -> Array[String]:
 	unlocked_classes.append(class_id); return ["%s recruits may now arrive at the tavern." % class_id.capitalize()]
 
 func create_character(class_id: String = "") -> CharacterRecord:
-	var character:=_generate_character(class_id);roster[character.id]=character;return character
+	var character:=_generate_character(class_id);roster[character.id]=character;HearthArmory.ensure_starter(self,character);return character
 
 func _generate_character(class_id:String="") -> CharacterRecord:
 	var allowed := unlocked_classes if not unlocked_classes.is_empty() else ["warrior", "mage"]
@@ -316,7 +334,14 @@ func _generate_character(class_id:String="") -> CharacterRecord:
 	else:character=_generic_character(class_id,seed)
 	var hidden_rng:=_rng(seed^0x4f1);var trait_pool:Array=ADVENTURERS.pool("traits");if hidden_rng.randf()<0.6 and trait_pool.size()>1:
 		var hidden_id:=String(Dictionary(trait_pool[hidden_rng.randi_range(0,trait_pool.size()-1)]).get("id",""));if not hidden_id.is_empty() and hidden_id!=character.trait_id:character.hidden_traits.append(hidden_id)
-	var quality_rank:=int(tavern_upgrades.get("replacement_quality",0));character.level=mini(20,1+quality_rank);character.progression["level"]=character.level
+	var band: Array = HearthCatalog.tier(establishment_tier).recruit_levels
+	character.level = mini(20, int(band[0])+int(tavern_upgrades.replacement_quality) if establishment_tier == 0 else identity_rng.randi_range(int(band[0]),int(band[1]))+int(tavern_upgrades.replacement_quality))
+	character.progression["level"] = character.level
+	character.xp = int(GameBalance.get_progression().xp_thresholds[character.level])
+	character.progression["xp"] = character.xp
+	character.progression["total_xp"] = character.xp
+	character.birth_day = calendar_day - identity_rng.randi_range(20,55)*112
+	character.signing_fee = 8 + character.level*character.level*3
 	var quality_rng:=_rng(seed^0x719);var quality:=clampi(roundi(quality_rng.randfn(35.0+6.0*int(tavern_upgrades.get("roster_services",0))+0.25*reputation,maxf(4.0,15.0-int(tavern_upgrades.get("roster_services",0))))),5,95);_apply_attributes(character,quality,seed)
 	var class_data := GameBalance.get_base_class(class_id)
 	var stats: Dictionary = character.attributes
@@ -395,6 +420,7 @@ func _add_calendar_event(kind:String,text:String) -> void:
 	while calendar_history.size()>40:calendar_history.pop_front()
 
 func ensure_roster() -> void:
+	if supplies <= 0: supplies = 8
 	while living_roster().size() < TARGET_ROSTER_SIZE: create_character()
 
 func living_roster() -> Array[CharacterRecord]:
@@ -418,6 +444,10 @@ func begin_expedition(ids: Array[String], dungeon_id: String, mode: String, is_t
 	return _begin_expedition_validated(ids,dungeon_id,mode,is_tutorial)
 
 func _begin_expedition_validated(ids:Array[String],dungeon_id:String,mode:String,is_tutorial:bool=false) -> bool:
+	if not is_tutorial:
+		var check := HearthExpeditions.readiness(self,ids,dungeon_id)
+		if not check.ok: return false
+		supplies -= int(check.supplies)
 	if ids.is_empty() or ids.size() > get_party_cap(dungeon_id): return false
 	for character_id in ids:
 		var member := character(character_id)
@@ -426,20 +456,29 @@ func _begin_expedition_validated(ids:Array[String],dungeon_id:String,mode:String
 		var member := character(character_id); member.status = CharacterRecord.STATUS_EXPEDITION; member.expeditions += 1
 	var run_id:=0
 	if not is_tutorial:run_id=next_expedition_id;next_expedition_id+=1
-	expedition.begin(ids,dungeon_id,mode,is_tutorial,run_id);return true
+	expedition.begin(ids,dungeon_id,mode,is_tutorial,run_id)
+	expedition.departure_day = calendar_day
+	expedition.due_day = calendar_day+7
+	for id in ids: expedition.locked_loadouts[id] = character(id).equipment.duplicate(true)
+	return true
 
 func record_casualty(character_id: String, cause: String = "Fell in the dungeon") -> void:
 	var member := character(character_id)
 	if member == null or member.status == CharacterRecord.STATUS_DEAD: return
 	member.status = CharacterRecord.STATUS_DEAD; expedition.record_casualty(character_id)
+	HearthArmory.release(self,member,true)
 	var record:=member.to_dict();record.merge({"name":member.display_name,"cause":cause,"death_day":calendar_day,"epitaph":"%s of %s, remembered after %d expedition%s."%[member.display_name,member.origin,member.expeditions,"" if member.expeditions==1 else "s"]},true);memorial.append(record)
 	if not expedition.tutorial_run:_add_calendar_event("death","%s dies during the expedition."%member.display_name)
 
 func resolve_expedition(outcome: String) -> Array[String]:
-	var result:=settle_expedition(expedition.expedition_id,outcome,{})
+	var result:=settle_expedition(expedition.expedition_id,outcome,{"legacy_resolve":true})
 	var logs:Array[String]=[];logs.assign(result.get("logs",[]));return logs
 
 func settle_expedition(run_id:int,outcome:String,result_data:Dictionary={}) -> Dictionary:
+	if settled_expeditions.has(str(run_id)): return {"ok":true,"duplicate":true,"logs":[]}
+	if not expedition.tutorial_run:
+		if expedition.expedition_id != run_id: return {"ok":false,"error":"Expedition ID does not match.","logs":[]}
+		return HearthExpeditions.settle(self,expedition,outcome,result_data)
 	if outcome not in ["victory","death"]:return {"ok":false,"error":"Expeditions resolve only through boss victory or total defeat.","logs":[]}
 	if run_id>0 and run_id==last_settled_expedition_id:return {"ok":true,"duplicate":true,"logs":[]}
 	if not expedition.active:return {"ok":false,"error":"No expedition is active.","logs":[]}
@@ -481,22 +520,23 @@ func can_unlock_secret(secret_id: String) -> bool:
 	return false
 
 func upgrade_cost(branch: String) -> Dictionary:
-	var next_rank := int(tavern_upgrades.get(branch, 0)) + 1
-	return {"gold":20 * next_rank, "essence":5 * next_rank, "levels":next_rank * 2}
+	return HearthFacilities.quote(self,branch)
 
 func purchase_upgrade(branch: String) -> Array[String]:
 	if not tavern_upgrades.has(branch): return ["Unknown tavern upgrade."]
-	var cost := upgrade_cost(branch)
-	if banked_gold < int(cost.gold) or relic_essence < int(cost.essence) or successful_levels < int(cost.levels): return ["The company lacks the gold, relic essence, or successful levels for that upgrade."]
-	banked_gold -= int(cost.gold); relic_essence -= int(cost.essence); tavern_upgrades[branch] = int(tavern_upgrades[branch]) + 1
-	return ["%s reaches rank %d." % [branch.replace("_", " ").capitalize(), int(tavern_upgrades[branch])]]
+	var rank := int(tavern_upgrades.get(branch,0))+1
+	var gold_cost := 20*rank
+	var essence_cost := 5*rank
+	if banked_gold < gold_cost or relic_essence < essence_cost: return ["The company lacks the gold or relic essence for that upgrade."]
+	banked_gold -= gold_cost; relic_essence -= essence_cost; tavern_upgrades[branch]=rank
+	return ["%s reaches rank %d." % [branch.replace("_"," ").capitalize(),rank]]
 
 func to_dict() -> Dictionary:
 	var encoded_roster: Array[Dictionary] = []
 	for value in roster.values(): if value is CharacterRecord: encoded_roster.append(value.to_dict())
 	var encoded_candidates:Array[Dictionary]=[]
 	for value in candidate_pool.values():if value is CandidateRecord:encoded_candidates.append(value.to_dict())
-	return {"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeon_modes":completed_dungeon_modes.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true)}
+	return {"armory":armory.duplicate(true),"next_item_id":next_item_id,"establishment_tier":establishment_tier,"construction":construction.duplicate(true),"dispatches":dispatches.duplicate(true),"settled_expeditions":settled_expeditions.duplicate(true),"return_reports":return_reports.duplicate(true),"market_stock":market_stock.duplicate(true),"consumable_stock":consumable_stock.duplicate(true),"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeon_modes":completed_dungeon_modes.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true)}
 
 func save_atomic() -> bool:
 	last_save_error = "";save_slot=clampi(save_slot,1,SAVE_SLOT_COUNT);last_saved_unix=int(Time.get_unix_time_from_system());var temporary:=temp_save_path(save_slot);var destination:=save_path(save_slot);var backup:=backup_save_path(save_slot);var file := FileAccess.open(temporary, FileAccess.WRITE)
@@ -562,6 +602,15 @@ static func _migrate_dict(source:Dictionary)->Dictionary:
 	data["unlocked_classes"]=classes;data["version"]=SAVE_VERSION;return data
 
 func _load_dict(data: Dictionary) -> void:
+	armory = Dictionary(data.get("armory",{})).duplicate(true)
+	next_item_id = data.get("next_item_id",1)
+	establishment_tier = data.get("establishment_tier",0)
+	construction = Dictionary(data.get("construction",{})).duplicate(true)
+	dispatches = Dictionary(data.get("dispatches",{})).duplicate(true)
+	settled_expeditions = Dictionary(data.get("settled_expeditions",{})).duplicate(true)
+	return_reports = Array(data.get("return_reports",[])).duplicate(true)
+	market_stock = Dictionary(data.get("market_stock",{})).duplicate(true)
+	consumable_stock = Dictionary(data.get("consumable_stock",{})).duplicate(true)
 	save_slot=clampi(int(data.get("save_slot",save_slot)),1,SAVE_SLOT_COUNT);last_saved_unix=maxi(0,int(data.get("last_saved_unix",0)))
 	tutorial_phase = String(data.get("tutorial_phase", TUTORIAL_NEW)); tutorial_outcome = String(data.get("tutorial_outcome", "")); tutorial_history = Dictionary(data.get("tutorial_history", {})).duplicate(true); tutorial_keepsake_id = String(data.get("tutorial_keepsake_id", "")); tutorial_letter_unlocked = bool(data.get("tutorial_letter_unlocked", false)); post_tutorial_initialized = bool(data.get("post_tutorial_initialized", tutorial_phase == TUTORIAL_COMPLETE)); former_keeper_encounter_pending = bool(data.get("former_keeper_encounter_pending", false)); former_keeper_encounter_seen = bool(data.get("former_keeper_encounter_seen", false)); memorial.assign(data.get("memorial", [])); unlocked_classes.assign(data.get("unlocked_classes", ["warrior","mage"]))
 	completed_dungeon_modes = Dictionary(data.get("completed_dungeon_modes", {})).duplicate(true); banked_gold = maxi(0, int(data.get("banked_gold", 0))); supplies = maxi(0, int(data.get("supplies", 0))); relic_essence = maxi(0, int(data.get("relic_essence", 0))); lifetime_relic_essence = maxi(relic_essence, int(data.get("lifetime_relic_essence", relic_essence))); successful_levels = maxi(0, int(data.get("successful_levels", 0)))
@@ -587,6 +636,14 @@ func _load_dict(data: Dictionary) -> void:
 	for index in retired_heroes.size():
 		var retired:Dictionary=retired_heroes[index];retired["generation"]=maxi(1,int(retired.get("generation",1)));retired["family_name"]=String(retired.get("family_name",""));retired["descendant_checks"]=maxi(0,int(retired.get("descendant_checks",0)));retired["descendant_created"]=bool(retired.get("descendant_created",false));retired_heroes[index]=retired
 	if bool(data.get("_convert_first_company_candidates",false)):_convert_legacy_first_company()
+	if not data.has("establishment_tier"): establishment_tier = clampi(int(tavern_upgrades.roster_services),0,3)
+	for key in tavern_upgrades: tavern_upgrades[key] = clampi(int(tavern_upgrades[key]),0,3)
+	if not data.has("armory"):
+		for member in living_roster(): HearthArmory.ensure_starter(self,member)
+	if expedition.active and not data.has("dispatches"):
+		expedition.departure_day = calendar_day
+		expedition.due_day = calendar_day+7
+	HearthMigration.upgrade(self,data)
 
 func _convert_legacy_first_company() -> void:
 	if roster.size()!=2:return

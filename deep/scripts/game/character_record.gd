@@ -47,6 +47,14 @@ var loyalty:=0
 var scars:Array[String]=[]
 var accomplishments:Array[String]=[]
 var personal_history:Array[Dictionary]=[]
+var equipment: Dictionary = {}
+var provisions: Array[String] = []
+var birth_day: int = -2687
+var recovery_until: int = 0
+var signing_fee: int = 0
+
+func age_on(day: int) -> int:
+	return maxi(18, int((day-birth_day)/112))
 
 static func create(character_id: String, name: String, character_class: String, trait_data: Dictionary, portrait: int = 0) -> CharacterRecord:
 	var record := CharacterRecord.new()
@@ -62,6 +70,7 @@ static func create(character_id: String, name: String, character_class: String, 
 
 func to_dict() -> Dictionary:
 	return {
+		"equipment":equipment.duplicate(true),"provisions":provisions.duplicate(),"birth_day":birth_day,"recovery_until":recovery_until,"signing_fee":signing_fee,
 		"id":id, "display_name":display_name, "portrait_variant":portrait_variant, "class_id":class_id,
 		"level":level, "xp":xp, "current_health":current_health, "max_health":max_health,
 		"gear_id":gear_id, "inventory":inventory.duplicate(), "trait_id":trait_id, "trait_name":trait_name,
@@ -72,6 +81,11 @@ func to_dict() -> Dictionary:
 
 static func from_dict(data: Dictionary) -> CharacterRecord:
 	var record := CharacterRecord.new()
+	record.equipment = Dictionary(data.get("equipment",{})).duplicate(true)
+	record.provisions.assign(data.get("provisions",[]))
+	record.birth_day = int(data.get("birth_day",-2687))
+	record.recovery_until = int(data.get("recovery_until",0))
+	record.signing_fee = int(data.get("signing_fee",0))
 	record.id = String(data.get("id", "")); record.display_name = String(data.get("display_name", "Adventurer"))
 	record.portrait_variant = int(data.get("portrait_variant", 0)); record.class_id = GameBalance.normalize_class_id(String(data.get("class_id", "warrior")))
 	record.level = maxi(1, int(data.get("level", 1))); record.xp = maxi(0, int(data.get("xp", 0)))
