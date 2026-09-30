@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_80wyw"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/wolf_lurker/frames.tres" id="2_k53ps"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2vsua"]
+radius = 14.0
+
+[node name="WolfLurker" type="CharacterBody2D" unique_id=1351430736]
+script = ExtResource("1_80wyw")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=890427300]
+shape = SubResource("CircleShape2D_2vsua")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=957580168]
+sprite_frames = ExtResource("2_k53ps")
+animation = &"attack_down"

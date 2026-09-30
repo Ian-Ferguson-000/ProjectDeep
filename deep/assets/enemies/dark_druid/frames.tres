@@ -1,7 +1,7 @@
-[gd_resource type="SpriteFrames" format=3 uid="uid://dc3l7j4bx6ulr"]
+[gd_resource type="SpriteFrames" format=3]
 
-[ext_resource type="Texture2D" uid="uid://bne0gdbbyaj3w" path="res://assets/pixel_art/voodoo-guy-behaviour.png" id="1_38mri"]
-[ext_resource type="Texture2D" uid="uid://dm1rhhj8cxn1x" path="res://assets/pixel_art/voodoo-guy-walk anim.png" id="2_5pxb3"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/voodoo-guy-behaviour.png" id="1_38mri"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/voodoo-guy-walk anim.png" id="2_5pxb3"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_5dg0u"]
 atlas = ExtResource("1_38mri")

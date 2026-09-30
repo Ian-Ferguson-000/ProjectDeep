@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_3kv3s"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/unwritten_curator/frames.tres" id="2_87vob"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_naw5m"]
+radius = 14.0
+
+[node name="UnwrittenCurator" type="CharacterBody2D" unique_id=1268184300]
+script = ExtResource("1_3kv3s")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1882088613]
+shape = SubResource("CircleShape2D_naw5m")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1108341849]
+sprite_frames = ExtResource("2_87vob")
+animation = &"attack_down"

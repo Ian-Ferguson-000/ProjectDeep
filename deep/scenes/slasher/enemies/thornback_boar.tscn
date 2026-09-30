@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_whcva"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/thornback_boar/frames.tres" id="2_ymy3x"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1alg1"]
+radius = 14.0
+
+[node name="ThornbackBoar" type="CharacterBody2D" unique_id=868256404]
+script = ExtResource("1_whcva")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1086096848]
+shape = SubResource("CircleShape2D_1alg1")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=2004236386]
+sprite_frames = ExtResource("2_ymy3x")
+animation = &"attack_down"

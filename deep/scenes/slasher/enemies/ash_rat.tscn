@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_xmsp6"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/ash_rat/frames.tres" id="2_u281g"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_67hfl"]
+radius = 14.0
+
+[node name="AshRat" type="CharacterBody2D" unique_id=1347930960]
+script = ExtResource("1_xmsp6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=824584742]
+shape = SubResource("CircleShape2D_67hfl")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1311977304]
+sprite_frames = ExtResource("2_u281g")
+animation = &"attack_down"

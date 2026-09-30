@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_hell_enemy.gd" id="1_ywuqt"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/cinder_bomber/frames.tres" id="2_gexbp"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_lolue"]
+radius = 14.0
+
+[node name="CinderBomber" type="CharacterBody2D" unique_id=1343322267]
+script = ExtResource("1_ywuqt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=998920922]
+shape = SubResource("CircleShape2D_lolue")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1311107575]
+sprite_frames = ExtResource("2_gexbp")
+animation = &"attack_down"

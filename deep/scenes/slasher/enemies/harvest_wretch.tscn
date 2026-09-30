@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_brdbe"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/harvest_wretch/frames.tres" id="2_53frj"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_r250j"]
+radius = 14.0
+
+[node name="HarvestWretch" type="CharacterBody2D" unique_id=1805611171]
+script = ExtResource("1_brdbe")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1541831438]
+shape = SubResource("CircleShape2D_r250j")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1427021636]
+sprite_frames = ExtResource("2_53frj")
+animation = &"attack_down"

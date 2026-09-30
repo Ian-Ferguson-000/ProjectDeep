@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_bfbtl"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/feral_wolf/frames.tres" id="2_8p51l"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_iscny"]
+radius = 14.0
+
+[node name="FeralWolf" type="CharacterBody2D" unique_id=1448564220]
+script = ExtResource("1_bfbtl")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1352921013]
+shape = SubResource("CircleShape2D_iscny")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1216782413]
+sprite_frames = ExtResource("2_8p51l")
+animation = &"attack_down"

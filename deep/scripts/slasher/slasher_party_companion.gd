@@ -34,7 +34,7 @@ func _physics_process(delta:float)->void:
 	else:velocity=Vector2.ZERO;_play_animation("idle")
 
 func _move_ai(destination:Vector2)->void:
-	var safe_destination:Vector2=Vector2(position_sanitizer.call(destination)) if position_sanitizer.is_valid() else destination;var waypoint:Vector2=pathfinder.next_waypoint(global_position,safe_destination) if pathfinder!=null else safe_destination;var direction:=global_position.direction_to(waypoint);velocity=direction*speed*0.82;move_and_slide();_enforce_field_bounds();last_direction=direction;_play_animation("run")
+	var safe_destination:Vector2=Vector2(position_sanitizer.call(destination)) if position_sanitizer.is_valid() else destination;var waypoint:=grid_navigator.next_waypoint(pathfinder,global_position,safe_destination);var direction:=global_position.direction_to(waypoint);velocity=direction*speed*0.82;move_and_slide();_enforce_field_bounds();last_direction=direction;_play_animation("run")
 
 func _attack_target(enemy:SlasherEnemy)->void:
 	var damage:=maxi(2,attack_power if class_id not in ["mage","healer","summoner"] else spell_power);var multiplier:=0.75 if class_id=="healer" else (1.15 if class_id=="rogue" else 0.9)

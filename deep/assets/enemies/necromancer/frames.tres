@@ -1,0 +1,138 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/enemies/necromancer/normalized_sheet.png" id="1_lmwsr"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 0,
+"name": &"attack_down",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 0,
+"name": &"attack_left",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 0,
+"name": &"attack_right",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 0,
+"name": &"attack_up",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 1,
+"name": &"idle_down",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 1,
+"name": &"idle_left",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 1,
+"name": &"idle_right",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 1,
+"name": &"idle_up",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 1,
+"name": &"run_down",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 1,
+"name": &"run_left",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 1,
+"name": &"run_right",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1_lmwsr")
+}],
+"loop": 1,
+"name": &"run_up",
+"speed": 6.0
+}]

@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_1r6fy"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/ice_mage/frames.tres" id="2_p7eks"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gy0d6"]
+radius = 14.0
+
+[node name="IceMage" type="CharacterBody2D" unique_id=433074322]
+script = ExtResource("1_1r6fy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=808785759]
+shape = SubResource("CircleShape2D_gy0d6")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=25017409]
+sprite_frames = ExtResource("2_p7eks")
+animation = &"attack_down"

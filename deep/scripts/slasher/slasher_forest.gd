@@ -4,15 +4,14 @@ const TILE:=48
 const ORIGIN:=Vector2(64,64)
 const CAMERA_DRAG_MARGIN:=0.25
 const PLAYER_SCRIPT:=preload("res://scripts/slasher/slasher_player.gd")
-const ENEMY_SCRIPT:=preload("res://scripts/slasher/slasher_enemy.gd")
 const MERCHANT_PANEL:=preload("res://scripts/ui/merchant_shop_panel.gd")
 const CODEX:=preload("res://scripts/slasher/slasher_codex_menu.gd")
 const BREAKABLE_PROP:=preload("res://scripts/slasher/slasher_breakable_prop.gd")
 const RELIC_MODAL:=preload("res://scripts/slasher/slasher_relic_choice_modal.gd")
 const RESOURCE_HUD_FRAME:=preload("res://assets/slasher/ui/slasher_resource_hud_frame.png")
-const GOLD_UI_ICON:=preload("res://assets/pixel_art/Gold.png")
-const KEY_UI_ICON:=preload("res://assets/pixel_art/key.png")
-const POTION_UI_ICON:=preload("res://assets/pixel_art/potion.png")
+const GOLD_UI_ICON:=preload("res://assets/slasher/ui/resource_gold.svg")
+const KEY_UI_ICON:=preload("res://assets/slasher/ui/resource_key.svg")
+const POTION_UI_ICON:=preload("res://assets/slasher/ui/resource_potion.svg")
 const GRID_PATHFINDER:=preload("res://scripts/slasher/slasher_grid_pathfinder.gd")
 const PARTY_HEALTH_PORTRAIT:=preload("res://scripts/ui/party_health_portrait.gd")
 const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
@@ -303,7 +302,21 @@ func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 	return {"visual_id":other_enemies[(spawn_index+run_state.current_floor-1)%other_enemies.size()],"behavior_id":""}
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
-	var enemy:SlasherEnemy=ENEMY_SCRIPT.new();enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1;return enemy
+	var enemy:=_instantiate_enemy(visual_id);enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1
+	if is_boss:call_deferred("_warm_reinforcement_visuals",_reinforcement_visual_ids())
+	return enemy
+
+func _instantiate_enemy(visual_id:String)->SlasherEnemy:
+	return SlasherEnemySceneLibrary.create(visual_id)
+
+func _reinforcement_visual_ids()->Array[String]:
+	return ["wolf_vanguard","wolf_lurker","wolf_charger","wolf_hunter","wolf_howler"]
+
+func _warm_reinforcement_visuals(visual_ids:Array[String])->void:
+	for visual_id:String in visual_ids:
+		await get_tree().process_frame
+		if not is_inside_tree():return
+		SlasherEnemySceneLibrary.warm(visual_id)
 
 func _on_reinforcement_requested(archetypes:Array,origin:Vector2)->void:
 	var cap:int=int(GameBalance.get_slasher_wolfmaster_tuning().get("reinforcement_cap",5));var active_wolves:int=get_tree().get_nodes_in_group("slasher_wolf").size();var available:int=maxi(0,cap-active_wolves)
@@ -551,8 +564,8 @@ func _build_resource_hud(canvas:CanvasLayer)->void:
 	health_value_label=_bar_value_label(hud,Vector2(66,266),Vector2(198,32));resource_value_label=_bar_value_label(hud,Vector2(66,317),Vector2(198,32))
 
 func _add_resource_counter(parent:Control,texture:Texture2D,position_value:Vector2,tooltip:String)->Label:
-	var icon:=TextureRect.new();icon.texture=texture;icon.position=position_value;icon.size=Vector2(48,48);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.tooltip_text=tooltip;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;parent.add_child(icon)
-	var value:=_label(position_value+Vector2(-70,8),Vector2(66,32),18);value.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;value.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;value.add_theme_color_override("font_outline_color",Color("#080b10"));value.add_theme_constant_override("outline_size",5);parent.add_child(value);return value
+	var icon:=TextureRect.new();icon.texture=texture;icon.position=position_value;icon.size=Vector2(48,48);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.tooltip_text=tooltip;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.z_index=5;parent.add_child(icon)
+	var value:=_label(position_value+Vector2(-70,8),Vector2(66,32),18);value.size=Vector2(66,32);value.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;value.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;value.add_theme_color_override("font_outline_color",Color("#080b10"));value.add_theme_constant_override("outline_size",5);parent.add_child(value);return value
 
 func _add_hud_bar(parent:Control,position_value:Vector2,size_value:Vector2,fill_color:Color,highlight:Color)->ProgressBar:
 	var bar:=ProgressBar.new();bar.position=position_value;bar.size=size_value;bar.show_percentage=false;bar.mouse_filter=Control.MOUSE_FILTER_IGNORE

@@ -7,6 +7,7 @@ var facing_name := "right"
 var animation_lock := 0.0
 var tuning:Dictionary={}
 var pathfinder:SlasherGridPathfinder
+var grid_navigator:=SlasherGridNavigator.new()
 var owner_character_id:=""
 var owner_attack_power:=1
 var owner_spell_power:=1
@@ -27,13 +28,13 @@ func _physics_process(delta: float) -> void:
 		var follow:Array=tuning.get("follow_offset",[-24,18]);var follow_position:=owner_player.global_position+Vector2(float(follow[0]),float(follow[1]))
 		var command_position:Vector2=get_meta("command_position",follow_position)
 		var commanded:=global_position.distance_to(command_position)>float(tuning.get("command_distance",24.0));var destination:=command_position if commanded else follow_position
-		var follow_waypoint:=pathfinder.next_waypoint(global_position,destination) if pathfinder!=null else destination
+		var follow_waypoint:=grid_navigator.next_waypoint(pathfinder,global_position,destination)
 		velocity=global_position.direction_to(follow_waypoint)*float(tuning.get("command_speed" if commanded else "follow_speed",120.0)) if global_position.distance_to(destination)>float(tuning.get("follow_distance",40.0)) else Vector2.ZERO
 		if not commanded and has_meta("command_position") and attack_cooldown<=0.0:
 			var prop:SlasherBreakableProp=_breakable_near(command_position,float(tuning.get("pounce_range",30.0)))
 			if is_instance_valid(prop):_attack_damageable(prop)
 	else:
-		var combat_waypoint:=pathfinder.next_waypoint(global_position,target.global_position) if pathfinder!=null else target.global_position
+		var combat_waypoint:=grid_navigator.next_waypoint(pathfinder,global_position,target.global_position)
 		velocity=global_position.direction_to(combat_waypoint)*float(tuning.get("pounce_speed",260.0) if get_meta("pounce",false) else tuning.get("combat_speed",145.0))
 		if global_position.distance_to(target.global_position)<float(tuning.get("pounce_range",30.0)) and attack_cooldown<=0:
 			_attack_damageable(target);_grant_owner_resource(int(tuning.get("resource_gain",1)));set_meta("pounce",false)

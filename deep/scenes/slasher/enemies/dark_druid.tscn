@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_6np4c"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/dark_druid/frames.tres" id="2_2bcl6"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2srvg"]
+radius = 14.0
+
+[node name="DarkDruid" type="CharacterBody2D" unique_id=1011091731]
+script = ExtResource("1_6np4c")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1970842821]
+shape = SubResource("CircleShape2D_2srvg")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1270093823]
+sprite_frames = ExtResource("2_2bcl6")
+animation = &"attack"

@@ -1,7 +1,7 @@
-[gd_resource type="SpriteFrames" format=3 uid="uid://ddk3x847fm1tv"]
+[gd_resource type="SpriteFrames" format=3]
 
-[ext_resource type="Texture2D" uid="uid://dtjn5gpxcttat" path="res://assets/pixel_art/shroomie - wakeup.png" id="1_8yb13"]
-[ext_resource type="Texture2D" uid="uid://7hcdt5ainxj0" path="res://assets/pixel_art/shroomie.png" id="2_0oiss"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/shroomie - wakeup.png" id="1_8yb13"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/shroomie.png" id="2_0oiss"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_x8oy8"]
 atlas = ExtResource("1_8yb13")

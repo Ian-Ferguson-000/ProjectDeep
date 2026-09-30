@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_crypt_enemy.gd" id="1_6bydr"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/crypt_boss/frames.tres" id="2_ycart"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_madrx"]
+radius = 14.0
+
+[node name="CryptBoss" type="CharacterBody2D" unique_id=530388424]
+script = ExtResource("1_6bydr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1763794698]
+shape = SubResource("CircleShape2D_madrx")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1486963178]
+sprite_frames = ExtResource("2_ycart")
+animation = &"attack_down"

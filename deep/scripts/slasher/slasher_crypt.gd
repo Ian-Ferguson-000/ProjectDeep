@@ -1,11 +1,13 @@
 extends "res://scripts/slasher/slasher_forest.gd"
 
-const CRYPT_ENEMY:=preload("res://scripts/slasher/slasher_crypt_enemy.gd")
 const CRYPT_HAZARD:=preload("res://scripts/slasher/slasher_crypt_hazard.gd")
 const CRYPT_ART:=preload("res://scripts/slasher/slasher_crypt_art.gd")
 const HOSTILE_PROJECTILE:=preload("res://scripts/slasher/slasher_hostile_projectile.gd")
 
 var crypt_hazards:Array[SlasherCryptHazard]=[]
+
+func _reinforcement_visual_ids()->Array[String]:
+	return ["skeletal_archer","necromancer","soul_wisp"]
 
 func _build_world()->void:
 	super._build_world()
@@ -71,10 +73,10 @@ func _crypt_enemy_spec(index:int,is_boss:bool,is_elite:bool)->Dictionary:
 	return roster[(index+floor)%roster.size()]
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
-	var enemy:SlasherEnemy
-	if behavior_id in ["skeletal_archer","grave_acolyte","soul_wisp","crypt_lord"] or is_boss:enemy=CRYPT_ENEMY.new()
-	else:enemy=ENEMY_SCRIPT.new()
-	enemy.name="CryptLord" if is_boss else visual_id.to_pascal_case();enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1;return enemy
+	var enemy:SlasherEnemy=_instantiate_enemy(visual_id)
+	enemy.name="CryptLord" if is_boss else visual_id.to_pascal_case();enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1
+	if is_boss:call_deferred("_warm_reinforcement_visuals",_reinforcement_visual_ids())
+	return enemy
 
 func _on_reinforcement_requested(archetypes:Array,origin:Vector2)->void:
 	var active:=get_tree().get_nodes_in_group("slasher_enemy").size();var available:=maxi(0,6-active)

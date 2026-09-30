@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_wb10q"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/wolf_hunter/frames.tres" id="2_yjdlj"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_wmn8m"]
+radius = 14.0
+
+[node name="WolfHunter" type="CharacterBody2D" unique_id=263148056]
+script = ExtResource("1_wb10q")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2146386407]
+shape = SubResource("CircleShape2D_wmn8m")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1688633958]
+sprite_frames = ExtResource("2_yjdlj")
+animation = &"attack_down"

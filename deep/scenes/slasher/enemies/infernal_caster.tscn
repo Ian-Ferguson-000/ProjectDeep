@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_hell_enemy.gd" id="1_3kyry"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/infernal_caster/frames.tres" id="2_lecli"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_b4eor"]
+radius = 14.0
+
+[node name="InfernalCaster" type="CharacterBody2D" unique_id=684380587]
+script = ExtResource("1_3kyry")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1118871266]
+shape = SubResource("CircleShape2D_b4eor")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=863388698]
+sprite_frames = ExtResource("2_lecli")
+animation = &"attack_down"

@@ -10,6 +10,7 @@ const HOSTILE_PROJECTILE:=preload("res://scripts/slasher/slasher_hostile_project
 
 var target:SlasherPlayer
 var pathfinder:SlasherGridPathfinder
+var _navigator:=SlasherGridNavigator.new()
 var max_health:=20
 var health:=20
 var damage:=3
@@ -83,8 +84,15 @@ func _apply_farmstead_tuning()->void:
 func _ready()->void:
 	add_to_group("slasher_enemy");add_to_group("slasher_damageable")
 	if is_wolf():add_to_group("slasher_wolf")
-	var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=float(tuning.get("collision_radius",24.0 if boss else 14.0));shape.shape=circle;add_child(shape)
-	sprite=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";sprite.sprite_frames=SlasherSpriteLibrary.enemy_frames(visual_id);sprite.position=Vector2(float(visual_tuning.get("sprite_offset_x",0.0)),float(visual_tuning.get("sprite_offset_y",-18.0)));sprite.scale=Vector2.ONE*float(visual_tuning.get("sprite_scale",1.05 if boss else 0.7));add_child(sprite)
+	var shape:=get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape==null:shape=CollisionShape2D.new();shape.name="CollisionShape2D";add_child(shape)
+	var circle:=shape.shape as CircleShape2D
+	if circle==null:circle=CircleShape2D.new();shape.shape=circle
+	circle.radius=float(tuning.get("collision_radius",24.0 if boss else 14.0))
+	sprite=get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if sprite==null:sprite=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";add_child(sprite)
+	if sprite.sprite_frames==null:sprite.sprite_frames=SlasherSpriteLibrary.enemy_frames(visual_id)
+	sprite.position=Vector2(float(visual_tuning.get("sprite_offset_x",0.0)),float(visual_tuning.get("sprite_offset_y",-18.0)));sprite.scale=Vector2.ONE*float(visual_tuning.get("sprite_scale",1.05 if boss else 0.7))
 	if is_wolf():
 		sprite.modulate=Color.WHITE
 		role_label=Label.new();role_label.text=String(behavior_tuning.get("name",behavior_id.capitalize())).to_upper();role_label.position=Vector2(-48,-53);role_label.size=Vector2(96,18);role_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;role_label.add_theme_font_size_override("font_size",10);role_label.add_theme_color_override("font_color",Color(String(behavior_tuning.get("color","#ffffff"))));role_label.add_theme_color_override("font_outline_color",Color.BLACK);role_label.add_theme_constant_override("outline_size",3);add_child(role_label)
@@ -268,7 +276,7 @@ func _release_guardian_burst(rotation_offset:float)->void:
 		var direction:=Vector2.RIGHT.rotated(rotation_offset+TAU*float(index)/float(count));var projectile:SlasherHostileProjectile=HOSTILE_PROJECTILE.new().setup(self,target,global_position+direction*22.0,direction,projectile_damage,behavior_tuning);get_parent().add_child(projectile)
 
 func _move_toward(point:Vector2)->void:
-	var waypoint:=pathfinder.next_waypoint(global_position,point) if pathfinder!=null else point;var direction:=global_position.direction_to(waypoint);velocity=direction*speed*movement_slow*speed_boost_multiplier;facing_name=SlasherSpriteLibrary.direction_name(direction,facing_name)
+	var waypoint:=_navigator.next_waypoint(pathfinder,global_position,point);var direction:=global_position.direction_to(waypoint);velocity=direction*speed*movement_slow*speed_boost_multiplier;facing_name=SlasherSpriteLibrary.direction_name(direction,facing_name)
 	if not is_inside_tree() or not PhysicsServer2D.body_get_space(get_rid()).is_valid():velocity=Vector2.ZERO;return
 	move_and_slide()
 	if animation_lock<=0.0:_play_animation("run")

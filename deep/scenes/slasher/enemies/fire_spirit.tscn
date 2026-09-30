@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_hell_enemy.gd" id="1_24qxo"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/fire_spirit/frames.tres" id="2_upenc"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bbhkh"]
+radius = 14.0
+
+[node name="FireSpirit" type="CharacterBody2D" unique_id=632085766]
+script = ExtResource("1_24qxo")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=692553741]
+shape = SubResource("CircleShape2D_bbhkh")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1815405090]
+sprite_frames = ExtResource("2_upenc")
+animation = &"attack_down"

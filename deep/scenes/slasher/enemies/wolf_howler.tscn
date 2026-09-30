@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_qefc8"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/wolf_howler/frames.tres" id="2_twd88"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_awp5v"]
+radius = 14.0
+
+[node name="WolfHowler" type="CharacterBody2D" unique_id=238388889]
+script = ExtResource("1_qefc8")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1022035320]
+shape = SubResource("CircleShape2D_awp5v")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1131723439]
+sprite_frames = ExtResource("2_twd88")
+animation = &"attack_down"

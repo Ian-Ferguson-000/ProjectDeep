@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 GameSettings="*res://scripts/game/game_settings.gd"
 GameState="*res://scripts/codes/game_state.gd"
+DevPerformanceOverlay="*res://scripts/ui/dev_performance_overlay.gd"
 
 [display]
 

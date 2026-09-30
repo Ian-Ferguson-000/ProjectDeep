@@ -6,6 +6,9 @@ const HELL_ART:=preload("res://scripts/slasher/slasher_hell_art.gd")
 
 var hell_hazards:Array[SlasherHellHazard]=[]
 
+func _reinforcement_visual_ids()->Array[String]:
+	return ["fire_spirit"]
+
 func _build_world()->void:
 	super._build_world()
 	if show_generated_ground or not authored_visuals_active:
@@ -53,7 +56,11 @@ func _hell_enemy_spec(index:int,is_boss:bool,is_elite:bool)->Dictionary:
 	var id:=String(roster[(index+run_state.current_floor)%roster.size()]);return {"visual_id":id,"behavior_id":id}
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
-	var enemy:SlasherHellEnemy=HELL_ENEMY.new();enemy.name="Balor" if is_boss else visual_id.to_pascal_case();enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.hell_effect_requested.connect(_on_hell_effect_requested);enemies_remaining+=1;return enemy
+	var enemy:=_instantiate_enemy(visual_id) as SlasherHellEnemy
+	if enemy==null:enemy=HELL_ENEMY.new()
+	enemy.name="Balor" if is_boss else visual_id.to_pascal_case();enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.hell_effect_requested.connect(_on_hell_effect_requested);enemies_remaining+=1
+	if is_boss:call_deferred("_warm_reinforcement_visuals",_reinforcement_visual_ids())
+	return enemy
 
 func _on_hell_effect_requested(kind:String,origin:Vector2,payload:Dictionary)->void:
 	match kind:

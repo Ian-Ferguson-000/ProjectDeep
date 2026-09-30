@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_g6nhq"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/wolf_charger/frames.tres" id="2_k6gi6"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ql1wg"]
+radius = 14.0
+
+[node name="WolfCharger" type="CharacterBody2D" unique_id=33508592]
+script = ExtResource("1_g6nhq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=738476268]
+shape = SubResource("CircleShape2D_ql1wg")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1732432551]
+sprite_frames = ExtResource("2_k6gi6")
+animation = &"attack_down"

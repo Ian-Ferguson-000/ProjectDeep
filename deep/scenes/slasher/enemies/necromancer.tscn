@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_crypt_enemy.gd" id="1_q4sta"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/necromancer/frames.tres" id="2_46eck"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_j2x7w"]
+radius = 14.0
+
+[node name="Necromancer" type="CharacterBody2D" unique_id=1438020012]
+script = ExtResource("1_q4sta")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=234468467]
+shape = SubResource("CircleShape2D_j2x7w")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=953763858]
+sprite_frames = ExtResource("2_46eck")
+animation = &"attack_down"

@@ -4,8 +4,6 @@ Remove all indicators of strategy mode. We ball slasher.
 
 Changing combat for fighter to a simple combo sequence
 
-Update UI with pots and consumables
-
 Impact frame timing
 
 ----------------------

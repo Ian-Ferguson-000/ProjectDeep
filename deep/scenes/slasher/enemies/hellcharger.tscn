@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_hell_enemy.gd" id="1_ljjng"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/hellcharger/frames.tres" id="2_cpf8w"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_vgqox"]
+radius = 14.0
+
+[node name="Hellcharger" type="CharacterBody2D" unique_id=2108304489]
+script = ExtResource("1_ljjng")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=80289700]
+shape = SubResource("CircleShape2D_vgqox")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=142023714]
+sprite_frames = ExtResource("2_cpf8w")
+animation = &"attack_down"

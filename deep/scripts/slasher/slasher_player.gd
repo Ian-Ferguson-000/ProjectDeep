@@ -19,6 +19,7 @@ const PROJECTILE:=preload("res://scripts/slasher/slasher_projectile.gd")
 const ITEM_RUNTIME:=preload("res://scripts/slasher/slasher_item_runtime.gd")
 var run_state:RunState
 var pathfinder:SlasherGridPathfinder
+var grid_navigator:=SlasherGridNavigator.new()
 var class_id:="warrior"
 var max_health:=20
 var health:=20
@@ -311,6 +312,7 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 		var mitigation:Dictionary=item_runtime.mitigate_damage(final);prevented+=int(mitigation.prevented);final=int(mitigation.damage)
 		if item_runtime.try_prevent_lethal(final,health):final=maxi(0,health-1)
 	health=maxi(0,health-final);run_state.current_health=health
+	if final>0:add_impact_shake(minf(9.0+float(final)*0.75,12.0),0.24)
 	move_and_collide(knockback*(0.25 if prevented>0 else 1.0));_enforce_field_bounds()
 	if defense_kind=="recover" and final>0:heal(int(ceil(final*float(tuning.get("recover_fraction",0.5)))))
 	if defense_kind=="retribution_ready" and retribution_stored>0:_area_attack(global_position,float(tuning.get("release_radius",80.0)),_attack_data(retribution_stored,"physical",{"knockback":float(tuning.get("release_knockback",30.0))}));retribution_stored=0

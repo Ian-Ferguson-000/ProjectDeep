@@ -16,6 +16,9 @@ var transition_cooldown := 0.0
 var room_reward_claimed := false
 var active_hazards:Array[Area2D]=[]
 
+func _reinforcement_visual_ids()->Array[String]:
+	return ["ash_rat"]
+
 func _build_floor()->void:
 	get_tree().paused=false
 	var player_snapshot:=_snapshot_player()

@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_hell_enemy.gd" id="1_ue8gc"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/balor/frames.tres" id="2_3kee5"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_8pdjb"]
+radius = 14.0
+
+[node name="Balor" type="CharacterBody2D" unique_id=1191773825]
+script = ExtResource("1_ue8gc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=523274247]
+shape = SubResource("CircleShape2D_8pdjb")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1601357788]
+sprite_frames = ExtResource("2_3kee5")
+animation = &"attack_down"

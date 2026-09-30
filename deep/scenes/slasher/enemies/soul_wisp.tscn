@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_crypt_enemy.gd" id="1_yolye"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/soul_wisp/frames.tres" id="2_sdutk"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_6c1vd"]
+radius = 14.0
+
+[node name="SoulWisp" type="CharacterBody2D" unique_id=269364422]
+script = ExtResource("1_yolye")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1610708765]
+shape = SubResource("CircleShape2D_6c1vd")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=943654411]
+sprite_frames = ExtResource("2_sdutk")
+animation = &"attack_down"

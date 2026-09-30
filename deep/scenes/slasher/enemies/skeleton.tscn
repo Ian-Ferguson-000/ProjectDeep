@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_3wbfy"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/skeleton/frames.tres" id="2_lkc47"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3ueq6"]
+radius = 14.0
+
+[node name="Skeleton" type="CharacterBody2D" unique_id=148595075]
+script = ExtResource("1_3wbfy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=374691414]
+shape = SubResource("CircleShape2D_3ueq6")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1103812395]
+sprite_frames = ExtResource("2_lkc47")
+animation = &"attack_down"

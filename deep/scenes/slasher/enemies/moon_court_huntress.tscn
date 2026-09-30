@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/slasher/slasher_enemy.gd" id="1_e3aey"]
+[ext_resource type="SpriteFrames" path="res://assets/enemies/moon_court_huntress/frames.tres" id="2_2hco0"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_sxccp"]
+radius = 14.0
+
+[node name="MoonCourtHuntress" type="CharacterBody2D" unique_id=718447705]
+script = ExtResource("1_e3aey")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1450575630]
+shape = SubResource("CircleShape2D_sxccp")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=435285188]
+sprite_frames = ExtResource("2_2hco0")
+animation = &"attack_down"
