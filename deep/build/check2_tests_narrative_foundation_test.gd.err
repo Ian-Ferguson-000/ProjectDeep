@@ -1,0 +1,18 @@
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:8)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:15)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "opening" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:15)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:17)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:18)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:19)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:20)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "threshold" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:20)
+ERROR: Failed to load script "res://tests/narrative_foundation_test.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

@@ -1,8 +1,6 @@
 extends SceneTree
 
 const TAVERN := preload("res://scenes/tavern/Tavern.tscn")
-const FOREST := preload("res://scenes/forest/Forest.tscn")
-const CRYPT := preload("res://scenes/crypt/Crypt.tscn")
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -69,15 +67,6 @@ func _run() -> void:
 	tavern._open_merchant_shop("forest")
 	_expect(tavern.merchant_shop_panel.visible, "Tavern merchant shop did not open", failures)
 	tavern.free()
-
-	for scene_resource in [FOREST, CRYPT]:
-		var dungeon = scene_resource.instantiate()
-		dungeon.setup(null, state)
-		root.add_child(dungeon)
-		await process_frame
-		_expect(not dungeon.dungeon_merchant.is_empty(), "dungeon merchant was not placed", failures)
-		_expect(dungeon.merchant_shop_panel != null, "dungeon shop modal did not initialize", failures)
-		dungeon.free()
 
 	if failures.is_empty():
 		print("Merchant economy, recruitment, shop transfer, and scene validation passed.")

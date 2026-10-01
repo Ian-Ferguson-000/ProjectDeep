@@ -11,14 +11,14 @@ func _run() -> void:
 	for wall_error in WallTilesetProfile.validate():failures.append(String(wall_error))
 	for dungeon_id in GameBalance.get_dungeon_order():
 		var dungeon:Dictionary=GameBalance.get_dungeon(dungeon_id)
-		if dungeon.has("slasher_runtime"):_expect(not String(DungeonRuntimeProfile.get_profile(dungeon_id).get("wall_profile","")).is_empty(),"Generated Slasher dungeon %s has no wall profile"%dungeon_id,failures)
+		if dungeon.has("runtime"):_expect(not String(DungeonRuntimeProfile.get_profile(dungeon_id).get("wall_profile","")).is_empty(),"Generated Slasher dungeon %s has no wall profile"%dungeon_id,failures)
 	var main:Node=MAIN_SCRIPT.new()
 	main._ensure_input_actions()
 	for action in ["move_up","move_down","move_left","move_right","interact","character_menu","cycle_party","slasher_controller_basic","slasher_mobility","slasher_special","slasher_defend","slasher_potion"]:
 		_expect(InputMap.has_action(action),"Missing required input action: %s"%action,failures)
 	_expect(_has_button("character_menu",JOY_BUTTON_START),"Controller menu must use Start",failures)
 	_expect(_has_button("cycle_party",JOY_BUTTON_LEFT_SHOULDER),"Controller party cycling must use LB",failures)
-	_expect(_has_key("character_menu",KEY_M),"Strategy/Slasher menu must use M",failures)
+	_expect(_has_key("character_menu",KEY_M),"Character menu must use M",failures)
 	_expect(_has_key("cycle_party",KEY_TAB),"Party cycling must use Tab",failures)
 	_expect(_has_button("slasher_potion",JOY_BUTTON_LEFT_STICK),"Controller potion use must use L3",failures)
 	_expect(not InputMap.has_action("extract_expedition") and not InputMap.has_action("slasher_abandon"),"Expedition exit actions must not be exposed",failures)

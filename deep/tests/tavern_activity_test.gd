@@ -6,7 +6,7 @@ class ControllerStub:
 	extends Node
 	var starts:=0
 	var party:Array[String]=[]
-	func start_dungeon(_dungeon_id:String,_gear:GearData,_mode:String,ids:Array[String])->void:starts+=1;party=ids.duplicate()
+	func start_dungeon(_dungeon_id:String,_gear:GearData,ids:Array[String],_patron_deity_id:String="",_objective_id:String="")->void:starts+=1;party=ids.duplicate()
 
 func _initialize()->void:call_deferred("_run")
 

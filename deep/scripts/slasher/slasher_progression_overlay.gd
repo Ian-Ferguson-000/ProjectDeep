@@ -37,7 +37,7 @@ func _refresh()->void:
 	for value:Variant in pending.get("choices",[]):
 		if not (value is Dictionary):continue
 		var choice:Dictionary=value;var button:=Button.new();button.text="%s\n\n%s"%[String(choice.get("name","Upgrade")),String(choice.get("description",""))];button.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;button.custom_minimum_size=Vector2(280,260);button.toggle_mode=true;button.pressed.connect(_select.bind(String(choice.get("id","")),button));cards.add_child(button)
-	detail.text="Choose a permanent Slasher upgrade. Strategy abilities and progression are unaffected."
+	detail.text="Choose a permanent Slasher upgrade."
 
 func _select(choice_id:String,pressed_button:Button)->void:
 	selected_choice_id=choice_id

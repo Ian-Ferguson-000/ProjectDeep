@@ -8,11 +8,11 @@ func _initialize() -> void:
 	campaign.tutorial_phase = CampaignState.TUTORIAL_COMPLETE
 	campaign.ensure_roster()
 	var party := campaign.default_party("forest")
-	_expect(campaign.begin_expedition(party, "forest", "strategy"), "Forest expedition could not begin", failures)
+	_expect(campaign.begin_expedition(party, "forest"), "Forest expedition could not begin", failures)
 	var state := RunState.new()
 	state.attach_campaign(campaign)
 	state.active_character_id = party[0]
-	state.start_new_run(null, "forest", "strategy")
+	state.start_new_run(null, "forest")
 	state.gold = 73
 	state.keys = 2
 	state.current_health = maxi(1, state.max_health - 4)

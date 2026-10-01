@@ -330,7 +330,7 @@ func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 		"slow":movement_slow=float(attack.get("status_strength",tuning.get("slow_multiplier",0.55)));status_time=float(attack.get("status_duration",tuning.get("slow_duration",1.5)))
 		"stagger":movement_slow=float(attack.get("status_strength",tuning.get("stagger_multiplier",0.0)));status_time=float(attack.get("status_duration",tuning.get("stagger_duration",0.45)))
 	if sprite:
-		var flash:=Color(String(GameBalance.get_slasher_balance("boss_durability").get("shield_color","#8fd8ff"))) if (boss or mini_boss) else Color.WHITE*2.0;var tween:=create_tween();tween.tween_property(sprite,"modulate",flash,0.05);tween.tween_property(sprite,"modulate",Color.WHITE,0.12)
+		var flash:=Color("#ffd35a")*1.7 if bool(attack.get("critical",false)) else (Color(String(GameBalance.get_slasher_balance("boss_durability").get("shield_color","#8fd8ff"))) if (boss or mini_boss) else Color.WHITE*2.0);var tween:=create_tween();tween.tween_property(sprite,"modulate",flash,0.05);tween.tween_property(sprite,"modulate",Color.WHITE,0.12)
 	return dealt
 
 func is_wolf()->bool:return behavior_id.begins_with("wolf_")

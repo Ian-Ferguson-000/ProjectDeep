@@ -54,7 +54,7 @@ func _test_rogue_kit(failures:Array[String])->void:
 	player.free();await process_frame
 
 func _state_for(class_id:String)->RunState:
-	var state:=RunState.new();state.set_class(class_id);state.start_new_run(GearData.create("test_"+class_id,"Test",2,false,0,"","",class_id),"forest","slasher");return state
+	var state:=RunState.new();state.set_class(class_id);state.start_new_run(GearData.create("test_"+class_id,"Test",2,false,0,"","",class_id), "forest");return state
 
 func _enemy_at(position_value:Vector2)->SlasherEnemy:
 	var enemy:=SlasherEnemy.new();enemy.configure(1,false,"feral_wolf");root.add_child(enemy);enemy.set_physics_process(false);enemy.global_position=position_value;return enemy

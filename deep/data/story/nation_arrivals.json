@@ -1,0 +1,9 @@
+{
+  "schema_version":1,
+  "arrivals":[
+    {"id":"helvetica_duty","definition_id":"tank_ulric","nation_id":"helvetica","requires_dungeon":"forest","motivation":"Helvetica calls the seals public law. I came to see whether the Hearth protects people or merely celebrates victories.","calendar_text":"Ulric Crowe arrives as a Heltic civic observer—and asks to sign the same dangerous contract as everyone else."},
+    {"id":"concord_wound","definition_id":"healer_rhea","nation_id":"verdant_concord","requires_dungeon":"ashen_farmstead","motivation":"The Concord says the prison is poisoning land that never consented to contain it. I will heal people, but I also intend to heal the wound beneath them.","calendar_text":"Rhea Hart follows refugees from the Cinder Fields and brings the Verdant Concord's accusation against the prison itself."},
+    {"id":"isles_misnamed","definition_id":"rogue_tamsin","nation_id":"veiled_isles","requires_dungeon":"crypt","motivation":"The Veiled Isles keep records of spirits the empires renamed as monsters. I want to know whose name the Crypt Lord was guarding.","calendar_text":"Tamsin Kestrel arrives with an Isles funerary token and a forbidden version of the Crypt's history."},
+    {"id":"dominion_sentence","definition_id":"mage_nessa","nation_id":"sun_crowned_dominion","requires_dungeon":"balors_hell","motivation":"The Dominion accepts that Balor is dangerous. It does not accept that an ancient sentence is beyond lawful amendment.","calendar_text":"Nessa Morrow carries a Sun-Crowned writ challenging every nation that claims permanent ownership of Balor's sentence."}
+  ]
+}

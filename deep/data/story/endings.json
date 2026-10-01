@@ -1,0 +1,9 @@
+{
+  "schema_version":1,
+  "endings":{
+    "keeper_covenant":{"name":"The Keeper's Covenant","summary":"Use remembered evidence to amend the prison covenant, making the Hearth a mortal guarantor between gods, prisoners, and nations.","requirements":[{"type":"loop","minimum":1},{"type":"contribution","minimum":500},{"type":"discoveries","all":["suppressed_balors_hell"]},{"type":"clues","all":["abyssal_crypt","abyssal_foundry"]}]},
+    "mortal_compact":{"name":"The Mortal Compact","summary":"Unite rival nations around shared stewardship and deny every pantheon sole ownership of the prisons.","requirements":[{"type":"loop","minimum":1},{"type":"contribution","minimum":700},{"type":"faction_count","minimum":4,"standing":5}]},
+    "divine_concord":{"name":"The Divine Concord","summary":"Broker enforceable limits among rival gods, paid for through promises the Keeper has proven can be kept.","requirements":[{"type":"loop","minimum":1},{"type":"deity_count","minimum":4,"favor":10},{"type":"fulfilled_obligations","minimum":4}]},
+    "broken_thrones":{"name":"The Broken Thrones","summary":"Expose the incomplete divine history and sever the old prison system before gods or nations can rebuild it unchanged.","requirements":[{"type":"loop","minimum":2},{"type":"contribution","minimum":900},{"type":"discoveries","all":["suppressed_balors_hell"]},{"type":"clues","all":["moonlit_forest","moonlit_farmstead","abyssal_crypt","abyssal_foundry"]}]}
+  }
+}

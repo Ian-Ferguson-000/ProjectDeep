@@ -42,7 +42,7 @@ func _run()->void:
 				if String(Dictionary(prop_value).get("kind",""))=="_authored_static":found_authored_blocker=true
 			_expect(found_authored_blocker,"%s did not add its placed navigation blocker to pathfinding"%path,failures)
 		var play_state:=RunState.new();play_state.set_class("warrior")
-		play_state.start_new_run(GearData.create("authored_test","Authored Test Gear",3,false,0,"","","warrior"),map.designer_dungeon_id,"slasher")
+		play_state.start_new_run(GearData.create("authored_test","Authored Test Gear",3,false,0,"","","warrior"), map.designer_dungeon_id)
 		play_state.current_floor=map.designer_floor;map.setup(null,play_state)
 		_expect(map.player!=null,"%s did not spawn a playable character"%path,failures)
 		_expect(map.enemies_remaining==layout.enemy_spawns.size(),"%s did not spawn its authored encounter"%path,failures)

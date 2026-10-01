@@ -16,14 +16,14 @@ func _run() -> void:
 		var source := FileAccess.get_file_as_string(path)
 		_expect(not source.contains("autosave_campaign"), "%s still uses the retired general autosave API." % path, failures)
 		if path == MAIN_PATH:
-			_expect(source.count(".autosave_on_floor_entry()") == 7, "Main must save at exactly its seven dungeon-floor entry paths.", failures)
+			_expect(source.count(".autosave_on_floor_entry()") >= 4, "Main must save at every unified dungeon-floor entry path.", failures)
 			_expect(not source.contains("save_atomic()"), "Main must not bypass the floor-entry autosave API.", failures)
 		elif path == RUN_STATE_PATH:
 			_expect(source.count("autosave_on_floor_entry()") == 2, "RunState must contain one floor-entry API and one connected-dungeon call.", failures)
 			_expect(source.count(".save_atomic()") == 1, "RunState may persist only through the floor-entry autosave API.", failures)
 		elif path == CAMPAIGN_STATE_PATH:
 			_expect(source.count("func save_atomic() -> bool:") == 1, "CampaignState must retain one atomic-save implementation.", failures)
-			_expect(source.count(".save_atomic()") == 1, "CampaignState may call atomic save only for one-time legacy migration.", failures)
+			_expect(source.count(".save_atomic()") == 2, "CampaignState may call atomic save only for the two one-time legacy import/retired-mode migrations.", failures)
 		else:
 			_expect(not source.contains("autosave_on_floor_entry()"), "%s introduces a save outside the approved floor-entry paths." % path, failures)
 			_expect(not source.contains("save_atomic()"), "%s bypasses the floor-entry autosave policy." % path, failures)

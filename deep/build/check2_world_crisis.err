@@ -1,0 +1,6 @@
+SCRIPT ERROR: Parse Error: Cannot infer the type of "memory" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/world_crisis.gd:33)
+SCRIPT ERROR: Parse Error: Identifier "DungeonEcology" not declared in the current scope.
+   at: GDScript::reload (res://scripts/game/world_crisis.gd:52)
+ERROR: Failed to load script "res://scripts/game/world_crisis.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

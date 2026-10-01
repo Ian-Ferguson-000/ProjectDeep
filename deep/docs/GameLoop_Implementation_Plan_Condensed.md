@@ -19,7 +19,7 @@ Each cycle: Pick your adventurer from your roster -  Go on an adventure - Hope t
 4. Characters create history — traits, items, memories and future families
 5. Tavern is the progression spine — expeditions fund the tavern; the tavern expands strategic options, not just numbers.
 
-**Player roles:** Tavern keeper (strategy layer) + direct control of the active adventurer during expeditions. Adventurers are persistent roster characters, not autonomous timers.
+**Player roles:** Tavern keeper + direct control of the active adventurer during expeditions. Adventurers are persistent roster characters, not autonomous timers.
 
 
 ---
@@ -287,7 +287,7 @@ This ties in familiarity and watching a family grow through the generations
 - Finite-state machine — campaign/tavern phase/expedition/encounter/action resolution.
 - Command pattern — player actions & economy transactions (validation, logging, replay, undo).
 - Event bus/signals — outcome notifications (`hero_down`, `room_cleared`, `reputation_changed`); not for direct queries.
-- Strategy pattern — damage formulas, targeting/AI behaviors, dungeon generators.
+- Behavior pattern — damage formulas, targeting/AI behaviors, dungeon generators.
 - Composition over inheritance — actions apply reusable effects (Damage, Push, Status, Summon, Heal, Shield).
 - Weighted tables with conditions — traits, rooms, events, items, encounters.
 - Transaction object — recruitment/purchases/expedition launch/settlement validate affordability and commit atomically.

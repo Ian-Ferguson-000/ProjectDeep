@@ -11,13 +11,13 @@ func _run()->void:
 	var first_id:=candidates[0].id;var second_id:=candidates[1].id
 	_expect(bool(campaign.recruit_candidate(first_id).ok),"First recruit failed",failures)
 	_expect(not bool(campaign.recruit_candidate(first_id).ok),"Recruitment double-applied",failures)
-	_expect(not bool(campaign.launch_expedition([first_id],"forest","strategy").ok),"First expedition launched before both conversations",failures)
+	_expect(not bool(campaign.launch_expedition([first_id], "forest").ok),"First expedition launched before both conversations",failures)
 	_expect(bool(campaign.recruit_candidate(second_id).ok),"Second recruit failed",failures)
-	var launch:=campaign.launch_expedition([first_id],"forest","strategy");_expect(bool(launch.ok) and campaign.expedition.party_ids==[first_id],"One-person first launch was not accepted",failures)
+	var launch:=campaign.launch_expedition([first_id], "forest");_expect(bool(launch.ok) and campaign.expedition.party_ids==[first_id],"One-person first launch was not accepted",failures)
 	var run_id:=int(launch.expedition_id);campaign.expedition.carried_gold=25
 	var settlement:=campaign.settle_expedition(run_id,"victory",{"headline":"Forest victory"})
-	_expect(bool(settlement.ok) and campaign.calendar_day==8 and campaign.banked_gold==145,"Victory settlement did not bank rewards and advance one week",failures)
-	_expect(campaign.character(first_id)!=null and campaign.character(first_id).status==CharacterRecord.STATUS_AVAILABLE and campaign.retired_heroes.is_empty(),"Participating survivor did not return for their career",failures)
+	_expect(bool(settlement.ok) and campaign.calendar_day==8 and campaign.banked_gold==140 and int(settlement.report.share)==5,"Victory settlement did not distribute the company share and advance one week",failures)
+	_expect(campaign.character(first_id)!=null and campaign.character(first_id).status=="recovering" and campaign.retired_heroes.is_empty(),"Participating survivor did not return into recovery",failures)
 	_expect(campaign.character(second_id)!=null,"Unselected roster member was removed",failures)
 	_expect(campaign.candidate_pool.size()==2,"Settlement did not create the next deterministic candidate wave",failures)
 	var rotation:=CampaignState.new();rotation.apply_post_tutorial_state("victory");rotation.unlock_class("rogue");rotation.unlock_class("summoner")
@@ -26,7 +26,7 @@ func _run()->void:
 		rotation._generate_candidate_wave(false)
 		for candidate in rotation.get_candidates():seen_classes[candidate.adventurer.class_id]=true
 	_expect(seen_classes.has("rogue") and seen_classes.has("summoner"),"Weekly candidate rotation skipped unlocked classes",failures)
-	var stale:=CampaignState.new();stale.apply_post_tutorial_state("victory");stale.unlock_class("rogue");stale.unlock_class("summoner");stale.completed_dungeon_modes["forest"]=["slasher"]
+	var stale:=CampaignState.new();stale.apply_post_tutorial_state("victory");stale.unlock_class("rogue");stale.unlock_class("summoner");stale.completed_dungeons["forest"]=true
 	stale.candidate_pool.clear();stale.candidate_wave_id=14;stale.calendar_day=92
 	for class_id in ["warrior","mage"]:
 		var member:=stale._generate_character(class_id)
@@ -40,10 +40,10 @@ func _run()->void:
 	campaign.calendar_day=28;_expect(campaign.get_calendar_date().season=="Spring" and campaign.get_calendar_date().season_day==28,"Spring boundary is incorrect",failures)
 	campaign.calendar_day=29;_expect(campaign.get_calendar_date().season=="Summer" and campaign.get_calendar_date().season_day==1,"Summer boundary is incorrect",failures)
 	campaign.calendar_day=113;_expect(campaign.get_calendar_date().year==2 and campaign.get_calendar_date().season=="Spring","Year boundary is incorrect",failures)
-	campaign.tavern_upgrades.roster_services=3;_expect(campaign.get_roster_capacity()==12,"Dynamic room capacity formula is incorrect",failures)
+	campaign.tavern_upgrades.roster_services=3;campaign.establishment_tier=3;_expect(campaign.get_roster_capacity()==18,"Establishment-tier room capacity formula is incorrect",failures)
 	campaign.candidate_pool.clear();campaign._generate_candidate_wave();_expect(campaign.candidate_pool.size()==5,"Room rank candidate-count formula is incorrect",failures)
 	var defeat:=CampaignState.new();defeat.apply_post_tutorial_state("death");for candidate in defeat.get_candidates():defeat.recruit_candidate(candidate.id)
-	var defeat_party:=defeat.default_party("forest");var defeat_launch:=defeat.launch_expedition(defeat_party,"forest","slasher");defeat.expedition.carried_gold=99;defeat.settle_expedition(int(defeat_launch.expedition_id),"death",{"headline":"The company is lost."})
+	var defeat_party:=defeat.default_party("forest");var defeat_launch:=defeat.launch_expedition(defeat_party, "forest");defeat.expedition.carried_gold=99;defeat.settle_expedition(int(defeat_launch.expedition_id),"death",{"headline":"The company is lost."})
 	_expect(defeat.banked_gold==120 and defeat.memorial.size()==2 and defeat.calendar_day==8 and defeat.candidate_pool.size()>=2,"Defeat did not discard loot, memorialize the party, advance one week, and recover candidates",failures)
 	var legacy_brina:=CharacterRecord.create("old_brina","Brina","warrior",{},0);var legacy_eamon:=CharacterRecord.create("old_eamon","Eamon","mage",{},0)
 	var legacy_data:=CampaignState._migrate_dict({"version":4,"tutorial_phase":CampaignState.TUTORIAL_COMPLETE,"post_tutorial_initialized":true,"completed_dungeon_modes":{},"roster":[legacy_brina.to_dict(),legacy_eamon.to_dict()]});var converted:=CampaignState.new();converted._load_dict(legacy_data)

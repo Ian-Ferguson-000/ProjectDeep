@@ -2,16 +2,7 @@ extends Node
 
 const StartScreenScene := preload("res://scenes/start/StartScreen.tscn")
 const ClassSelectionScene := preload("res://scenes/class_selection/ClassSelection.tscn")
-const ModeSelectionScene := preload("res://scenes/mode_selection/ModeSelection.tscn")
 const TavernScene := preload("res://scenes/tavern/Tavern.tscn")
-const ForestScene := preload("res://scenes/forest/Forest.tscn")
-const CryptScene := preload("res://scenes/crypt/Crypt.tscn")
-const AshenFarmsteadScene := preload("res://scenes/field/AshenFarmstead.tscn")
-const SunkenMineScene := preload("res://scenes/mine/SunkenMine.tscn")
-const EmberFoundryScene := preload("res://scenes/foundry/EmberFoundry.tscn")
-const MoonlitGroveScene := preload("res://scenes/secret/MoonlitGrove.tscn")
-const AbyssalArchiveScene := preload("res://scenes/secret/AbyssalArchive.tscn")
-const HellScene := preload("res://scenes/hell/Hell.tscn")
 const SlasherForestScene := preload("res://scenes/slasher/SlasherForest.tscn")
 const SlasherFarmsteadScene := preload("res://scenes/slasher/SlasherFarmstead.tscn")
 const SlasherMineScene := preload("res://scenes/slasher/SlasherMine.tscn")
@@ -22,6 +13,7 @@ const SlasherCryptScene := preload("res://scenes/slasher/SlasherCrypt.tscn")
 const SlasherHellScene := preload("res://scenes/slasher/SlasherHell.tscn")
 const SlasherProgressionOverlay := preload("res://scripts/slasher/slasher_progression_overlay.gd")
 const DialogueChatScene := preload("res://scripts/ui/dialogue_chat.gd")
+const STORY_EVENTS := preload("res://scripts/game/story_event_service.gd")
 
 var run_state := RunState.new()
 var all_gear_options: Array[GearData] = []
@@ -29,7 +21,7 @@ var current_scene: Node
 var campaign: CampaignState
 var tutorial_class_id := ""
 
-const MARA_PORTRAIT := "res://assets/merchants/tavern_mara.png"
+const KEEPER_PORTRAIT := "res://assets/merchants/tavern_mara.png"
 const ALDEN_PORTRAIT := "res://assets/roster_portraits/warrior_0.png"
 const MAYOR_PORTRAIT := "res://assets/generated_characters/town_mayor.png"
 
@@ -122,7 +114,7 @@ func show_start_screen() -> void:
 func begin_game() -> void:
 	if campaign==null:return
 	if campaign.is_tutorial_complete():
-		campaign.ensure_tavern_cycle(); _select_first_available_character(); show_tavern("The company gathers around the expedition ledger.")
+		campaign.ensure_tavern_cycle(); _select_first_available_character();var pending:=_pending_campaign_story();show_tavern("The company gathers around the expedition ledger.",{},pending.lines,pending.context)
 	else:
 		campaign.tutorial_phase = CampaignState.TUTORIAL_DIALOGUE
 		show_tavern("", {}, _opening_tutorial_dialogue(), "tutorial_opening")
@@ -136,7 +128,8 @@ func continue_from_slot(slot:int)->void:
 		campaign.ensure_tavern_cycle();_select_first_available_character()
 		var restored_context:=campaign.pending_story_context;var restored_story:Array=[]
 		if restored_context=="tutorial_epilogue":restored_story=_tutorial_epilogue(campaign.tutorial_outcome)
-		elif restored_context=="former_keeper_confrontation":restored_story=_former_keeper_confrontation()
+		elif restored_context.begins_with("story_event:"):restored_story=STORY_EVENTS.lines(restored_context.trim_prefix("story_event:"),campaign)
+		elif not campaign.pending_story_event_id.is_empty():var pending:=_pending_campaign_story();restored_context=pending.context;restored_story=pending.lines
 		show_tavern("" if not campaign.pending_settlement_summary.is_empty() else "Save Slot %d · The company gathers around the expedition ledger."%slot,campaign.pending_settlement_summary,restored_story,restored_context)
 	else:campaign.tutorial_phase=CampaignState.TUTORIAL_DIALOGUE;show_tavern("",{},_opening_tutorial_dialogue(),"tutorial_opening")
 
@@ -146,20 +139,20 @@ func new_game_in_slot(slot:int)->void:
 func _resume_saved_expedition()->void:
 	var living:=campaign.expedition.living_party_ids()
 	if living.is_empty():campaign.resolve_expedition("death");_select_first_available_character();show_tavern("The saved expedition had no survivors. The memorial has been updated.");return
-	run_state.active_dungeon_id=campaign.expedition.dungeon_id;run_state.active_play_mode=campaign.expedition.play_mode;run_state.last_play_mode=run_state.active_play_mode;run_state.current_floor=campaign.expedition.floor;run_state.gold=campaign.expedition.carried_gold
-	var dungeon:=GameBalance.get_dungeon(run_state.active_dungeon_id);var slasher_config:Dictionary=Dictionary(dungeon.get("slasher",{}));run_state.max_floors=int(slasher_config.get("campaign_floors",dungeon.get("floors",1))) if run_state.active_play_mode==RunState.PLAY_MODE_SLASHER else int(dungeon.get("floors",1))
+	run_state.active_dungeon_id=campaign.expedition.dungeon_id;run_state.current_floor=campaign.expedition.floor;run_state.gold=campaign.expedition.carried_gold
+	var dungeon:=GameBalance.get_dungeon(run_state.active_dungeon_id);run_state.max_floors=int(dungeon.get("floors",1))
 	run_state.select_active_character(living[0]);run_state.apply_tutorial_health_cap();_load_active_dungeon()
 
 func advance_tutorial_from_tavern() -> void:
 	var starter := campaign.create_tutorial_adventurer()
 	starter.status = CharacterRecord.STATUS_AVAILABLE
 	campaign.tutorial_phase = CampaignState.TUTORIAL_EXPEDITION
-	if not campaign.begin_expedition([starter.id], "forest", RunState.PLAY_MODE_SLASHER, true): return
+	if not campaign.begin_expedition([starter.id], "forest", true): return
 	run_state.active_character_id = starter.id
 	run_state.set_class("warrior")
 	var gear_options := _gear_options_for_class("warrior")
 	var gear: GearData = gear_options[0] if not gear_options.is_empty() else null
-	_begin_dungeon("forest", gear, RunState.PLAY_MODE_SLASHER)
+	_begin_dungeon("forest", gear)
 
 func restart_tutorial_onboarding() -> void:
 	if campaign == null or not campaign.expedition.tutorial_run: return
@@ -169,7 +162,7 @@ func restart_tutorial_onboarding() -> void:
 	run_state.set_class("warrior")
 	var gear_options := _gear_options_for_class("warrior")
 	var gear: GearData = gear_options[0] if not gear_options.is_empty() else null
-	_begin_dungeon("forest", gear, RunState.PLAY_MODE_SLASHER)
+	_begin_dungeon("forest", gear)
 
 func get_selectable_class_ids() -> Array[String]:
 	return ["warrior", "mage"] if not campaign.is_tutorial_complete() else campaign.unlocked_classes.duplicate()
@@ -184,16 +177,13 @@ func show_class_selection() -> void:
 func choose_class(class_id: String) -> void:
 	run_state.set_class(class_id)
 	if not campaign.is_tutorial_complete():
-		tutorial_class_id = class_id; _clear_scene(); var mode_screen := ModeSelectionScene.instantiate(); current_scene = mode_screen; mode_screen.setup(self); add_child(mode_screen); return
+		var starter := campaign.create_character(class_id)
+		campaign.tutorial_phase = CampaignState.TUTORIAL_EXPEDITION
+		if not campaign.begin_expedition([starter.id], "forest", true): return
+		run_state.active_character_id = starter.id; run_state.set_class(starter.class_id)
+		var gear_options := _gear_options_for_class(starter.class_id); var gear: GearData = gear_options[0] if not gear_options.is_empty() else null
+		_begin_dungeon("forest", gear); return
 	var class_type := run_state.selected_class_name; show_tavern("The hearth is warm. The bartender lays out %s choices for the road ahead." % class_type)
-
-func choose_tutorial_mode(mode: String) -> void:
-	var starter := campaign.create_character(tutorial_class_id)
-	campaign.tutorial_phase = CampaignState.TUTORIAL_EXPEDITION
-	campaign.begin_expedition([starter.id], "forest", mode, true)
-	run_state.active_character_id = starter.id; run_state.set_class(starter.class_id)
-	var gear_options := _gear_options_for_class(starter.class_id); var gear: GearData = gear_options[0] if not gear_options.is_empty() else null
-	_begin_dungeon("forest", gear, mode)
 
 func _select_first_available_character() -> void:
 	var available := campaign.living_roster()
@@ -208,40 +198,25 @@ func show_tavern(message: String = "", arrival_summary: Dictionary = {}, story_l
 	tavern.setup(self, run_state, _gear_options_for_class(run_state.selected_class_id), message, arrival_summary, story_lines, story_context)
 	add_child(tavern)
 
-func start_forest(gear: GearData) -> void:
-	run_state.start_new_run(gear, "forest")
-	_load_forest_floor()
-
-func start_crypt(gear: GearData) -> void:
-	if not run_state.is_crypt_unlocked():
-		show_tavern("The crypt door is sealed. Clear the Forest Dungeon and reach level 5.")
-		return
-	run_state.start_new_run(gear, "crypt")
-	_load_crypt_floor()
-
-func start_dungeon(dungeon_id: String, gear: GearData, play_mode: String = RunState.PLAY_MODE_STRATEGY, requested_party: Array[String] = []) -> void:
-	if not RunState.is_play_mode_enabled(play_mode):
-		show_tavern("Strategy mode is temporarily disabled. Choose Slasher mode for expeditions.")
-		return
+func start_dungeon(dungeon_id: String, gear: GearData, requested_party: Array[String] = [], patron_deity_id: String = "", objective_id: String = "") -> void:
 	if not run_state.is_dungeon_unlocked(dungeon_id):
 		show_tavern(String(GameBalance.get_dungeon(dungeon_id).get("unlock_text", "That expedition is locked.")))
 		return
-	if not run_state.dungeon_supports_mode(dungeon_id, play_mode):
-		show_tavern("That dungeon does not support %s mode yet." % play_mode.capitalize())
+	if not run_state.dungeon_available(dungeon_id):
+		show_tavern("That expedition is not available.")
 		return
 	if not campaign.expedition.active:
 		var party := requested_party if not requested_party.is_empty() else campaign.default_party(dungeon_id)
-		var launch_result:=campaign.launch_expedition(party,dungeon_id,play_mode)
+		var launch_result:=campaign.launch_expedition(party,dungeon_id,patron_deity_id,objective_id)
 		if not bool(launch_result.get("ok",false)):show_tavern(String(launch_result.get("error","No eligible party can enter that dungeon.")));return
 		run_state.active_character_id = party[0]
-	if run_state.normalize_play_mode(play_mode)==RunState.PLAY_MODE_SLASHER:
-		run_state.reconcile_slasher_progression()
-		if run_state.has_pending_slasher_progression_choice():
-			_show_slasher_progression(func():_begin_dungeon(dungeon_id,gear,play_mode));return
-	_begin_dungeon(dungeon_id,gear,play_mode)
+	run_state.reconcile_slasher_progression()
+	if run_state.has_pending_slasher_progression_choice():
+		_show_slasher_progression(func():_begin_dungeon(dungeon_id,gear));return
+	_begin_dungeon(dungeon_id,gear)
 
-func _begin_dungeon(dungeon_id:String,gear:GearData,play_mode:String)->void:
-	run_state.start_new_run(gear,dungeon_id,play_mode)
+func _begin_dungeon(dungeon_id:String,gear:GearData)->void:
+	run_state.start_new_run(gear,dungeon_id)
 	run_state.apply_tutorial_health_cap()
 	run_state.autosave_on_floor_entry();_load_active_dungeon()
 
@@ -256,68 +231,17 @@ func _on_slasher_progression_closed(screen_layer:CanvasLayer,on_complete:Callabl
 func _load_active_dungeon() -> void:
 	_clear_scene()
 	var scene: PackedScene
-	if run_state.active_play_mode == RunState.PLAY_MODE_SLASHER:
-		match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher_runtime", run_state.active_dungeon_id)):
-			"forest": scene = SlasherForestScene
-			"crypt": scene = SlasherCryptScene
-			"balors_hell": scene = SlasherHellScene
-			"ashen_farmstead": scene = SlasherFarmsteadScene
-			"sunken_mine": scene = SlasherMineScene
-			"ember_foundry": scene = SlasherFoundryScene
-			"moonlit_grove": scene = SlasherGroveScene
-			"abyssal_archive": scene = SlasherArchiveScene
-			_: show_tavern("Slasher mode is not available for that expedition yet."); return
-	else:
-		match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)):
-			"forest": scene = ForestScene
-			"crypt": scene = CryptScene
-			"balors_hell": scene = HellScene
-			"ashen_farmstead": scene = AshenFarmsteadScene
-			"sunken_mine": scene = SunkenMineScene
-			"ember_foundry": scene = EmberFoundryScene
-			"moonlit_grove": scene = MoonlitGroveScene
-			"abyssal_archive": scene = AbyssalArchiveScene
-			_: show_tavern("That expedition runtime is not available."); return
+	match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)):
+		"forest": scene = SlasherForestScene
+		"crypt": scene = SlasherCryptScene
+		"balors_hell": scene = SlasherHellScene
+		"ashen_farmstead": scene = SlasherFarmsteadScene
+		"sunken_mine": scene = SlasherMineScene
+		"ember_foundry": scene = SlasherFoundryScene
+		"moonlit_grove": scene = SlasherGroveScene
+		"abyssal_archive": scene = SlasherArchiveScene
+		_: show_tavern("That expedition is not available."); return
 	var dungeon := scene.instantiate(); current_scene = dungeon; dungeon.setup(self, run_state); add_child(dungeon)
-
-func _load_forest_floor() -> void:
-	_clear_scene()
-	var forest := ForestScene.instantiate()
-	current_scene = forest
-	forest.setup(self, run_state)
-	add_child(forest)
-
-func _load_crypt_floor() -> void:
-	_clear_scene()
-	var crypt := CryptScene.instantiate()
-	current_scene = crypt
-	crypt.setup(self, run_state)
-	add_child(crypt)
-
-func complete_forest_floor() -> void:
-	var favor_logs := run_state.record_dungeon_floor_clear("forest", run_state.current_floor, run_state.current_floor >= run_state.max_floors)
-	run_state.record_floor_checkpoint()
-	if run_state.current_floor < run_state.max_floors:
-		_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_forest_floor())
-	else:
-		run_state.mark_forest_cleared()
-		favor_logs.append_array(run_state.record_active_dungeon_completion())
-		if _continue_connected_expedition(favor_logs): return
-		return_to_tavern("victory","You conquer the forest dungeon with %d gold.\n%s" % [run_state.gold, " ".join(favor_logs)])
-
-func complete_strategy_dungeon_floor() -> void:
-	if run_state.active_dungeon_id == "forest": complete_forest_floor(); return
-	if run_state.active_dungeon_id == "crypt": complete_crypt_floor(); return
-	var dungeon := GameBalance.get_dungeon(run_state.active_dungeon_id)
-	var merchant_id := String(dungeon.get("merchant_id", run_state.active_dungeon_id))
-	var favor_logs: Array[String] = []
-	if not merchant_id.is_empty(): favor_logs = run_state.record_dungeon_floor_clear(merchant_id, run_state.current_floor, run_state.current_floor >= run_state.max_floors)
-	run_state.record_floor_checkpoint()
-	if run_state.current_floor < run_state.max_floors:_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
-	else:
-		favor_logs.append_array(run_state.record_active_dungeon_completion())
-		if _continue_connected_expedition(favor_logs): return
-		return_to_tavern("victory","The party clears %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(favor_logs)])
 
 func complete_slasher_forest_floor() -> void:
 	if campaign.expedition.tutorial_run:
@@ -337,13 +261,13 @@ func complete_slasher_forest_floor() -> void:
 func complete_slasher_dungeon_floor() -> void:
 	if run_state.active_dungeon_id == "forest": complete_slasher_forest_floor(); return
 	var dungeon := GameBalance.get_dungeon(run_state.active_dungeon_id)
-	var campaign_floors := int(Dictionary(dungeon.get("slasher", {})).get("campaign_floors", dungeon.get("floors", 1)))
+	var campaign_floors := int(dungeon.get("floors", 1))
 	run_state.record_floor_checkpoint()
 	if run_state.current_floor < campaign_floors:_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 	else:
 		var completion_logs := run_state.record_active_dungeon_completion()
 		if _continue_connected_expedition(completion_logs): return
-		return_to_tavern("victory","The party clears %s in Slasher mode and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(completion_logs)])
+		return_to_tavern("victory","The party clears %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(completion_logs)])
 
 func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])->void:
 	if cycle_boss:
@@ -353,27 +277,26 @@ func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])-
 		return
 	_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 
-func complete_crypt_floor() -> void:
-	var favor_logs := run_state.record_dungeon_floor_clear("crypt", run_state.current_floor, run_state.current_floor >= run_state.max_floors)
-	run_state.record_floor_checkpoint()
-	if run_state.current_floor < run_state.max_floors:
-		_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_floor();run_state.autosave_on_floor_entry();_load_crypt_floor())
-	else:
-		favor_logs.append_array(run_state.record_active_dungeon_completion())
-		if _continue_connected_expedition(favor_logs): return
-		return_to_tavern("victory","You conquer the seven-floor Stone Crypt with %d gold.\n%s" % [run_state.gold, " ".join(favor_logs)])
-
-func _continue_connected_expedition(_completion_logs:Array[String]=[]) -> bool:
-	return false
+func _continue_connected_expedition(completion_logs:Array[String]=[]) -> bool:
+	var completed_id:=run_state.active_dungeon_id
+	var next_id:=NarrativeContent.next_route_stage(completed_id)
+	if next_id.is_empty() or not run_state.is_dungeon_unlocked(next_id) or not run_state.dungeon_available(next_id):return false
+	var completed_name:=String(GameBalance.get_dungeon(completed_id).get("name",completed_id.capitalize()))
+	var next_name:=String(GameBalance.get_dungeon(next_id).get("name",next_id.capitalize()))
+	if not run_state.transition_to_dungeon(next_id):return false
+	_show_connected_dungeon_dialogue(_connected_dungeon_dialogue(completed_name,next_name,completion_logs))
+	return true
 
 func _connected_dungeon_dialogue(completed_name:String,next_name:String,_completion_logs:Array[String]) -> Array[Dictionary]:
 	var member:=campaign.character(run_state.active_character_id) if campaign!=null else null
 	var hero_name:=member.display_name if member!=null else "Adventurer"
 	var hero_portrait:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant] if member!=null else ALDEN_PORTRAIT
+	if run_state.active_dungeon_id=="balors_hell":
+		return STORY_EVENTS.lines("balor_threshold",campaign,"default",{"hero_name":hero_name,"hero_portrait":hero_portrait})
 	return [
-		{"speaker":"Mara Vell","text":"The %s is broken, but this road does not turn back toward the Hearth. The passage ahead descends into the %s."%[completed_name,next_name],"portrait":MARA_PORTRAIT,"side":"left"},
+		{"speaker":"The Keeper","text":"The %s is broken, but this road does not turn back toward the Hearth. The passage ahead descends into the %s."%[completed_name,next_name],"portrait":KEEPER_PORTRAIT,"side":"left"},
 		{"speaker":hero_name,"text":"Then we keep what we have carried, tend our wounds as we walk, and finish the road before we call it a victory.","portrait":hero_portrait,"side":"right"},
-		{"speaker":"Mara Vell","text":"No fresh recruits. No resupply. No warm beds between connected depths. Go on—the company settles its account only when the whole descent ends.","portrait":MARA_PORTRAIT,"side":"left"},
+		{"speaker":"The Keeper","text":"No fresh recruits. No resupply. No warm beds between connected depths. Go on—the company settles its account only when the whole descent ends.","portrait":KEEPER_PORTRAIT,"side":"left"},
 	]
 
 func _show_connected_dungeon_dialogue(lines:Array[Dictionary])->void:
@@ -386,10 +309,6 @@ func _on_connected_dungeon_dialogue_finished(layer:CanvasLayer)->void:
 	if is_instance_valid(layer):layer.queue_free()
 	_load_active_dungeon()
 
-func complete_ashen_farmstead() -> void:
-	var favor_logs := run_state.record_dungeon_floor_clear("farmstead", int(run_state.field_run.get("room_count", 1)), true)
-	return_to_tavern("victory", "The Harvest Wretch falls. You return from the Ashen Farmstead with %d gold. Orin Cinder has joined the tavern.\n%s" % [run_state.gold, " ".join(favor_logs)])
-
 func complete_slasher_farmstead() -> void:
 	if bool(run_state.field_run.get("completion_awarded", false)): return
 	run_state.field_run["completion_awarded"] = true
@@ -397,6 +316,8 @@ func complete_slasher_farmstead() -> void:
 	var depth := int(run_state.field_run.get("room_count", 1))
 	var favor_logs := run_state.record_dungeon_floor_clear("farmstead", depth, true)
 	run_state.gain_xp(int(Dictionary(GameBalance.get_dungeon("ashen_farmstead").get("slasher", {})).get("boss_xp", 150)), "Ashen Farmstead Slasher clear")
+	favor_logs.append_array(run_state.record_active_dungeon_completion())
+	if _continue_connected_expedition(favor_logs):return
 	return_to_tavern("victory", "The Harvest Wretch falls. You clear %d rooms and return with %d gold. Orin Cinder has joined the tavern.\n%s" % [depth, run_state.gold, " ".join(favor_logs)])
 
 func return_to_tavern(outcome: String, message: String) -> void:
@@ -411,10 +332,9 @@ func return_to_tavern(outcome: String, message: String) -> void:
 		"outcome": outcome,
 		"headline": String(message_lines[0]) if not message_lines.is_empty() else message,
 		"dungeon": run_state.active_dungeon_id,
-		"mode": run_state.active_play_mode,
-		"depth": run_state.current_floor,
+				"depth": run_state.current_floor,
 		"gold": run_state.gold,
-		"slasher_progression":run_state.get_slasher_progression_summary() if run_state.active_play_mode==RunState.PLAY_MODE_SLASHER else "",
+		"slasher_progression":run_state.get_slasher_progression_summary(),
 		"changes": changes,
 	}
 	run_state.finish_run(outcome, message)
@@ -425,42 +345,25 @@ func return_to_tavern(outcome: String, message: String) -> void:
 		campaign.legacy_runtime.clear()
 		run_state = RunState.new();run_state.attach_campaign(campaign);_select_first_available_character()
 		summary["gold"] = campaign.banked_gold
-		summary["headline"] = "Alden is remembered. The Hearth passes to a new company." if outcome == "death" else "Alden conquers the Briarway. The Hearth changes hands."
+		summary["headline"] = "Alden is remembered. His contribution keeps the Hearth alive." if outcome == "death" else "Alden returns. His victory gives the Hearth another chance."
 		story_lines = _tutorial_epilogue(outcome)
 		story_context = "tutorial_epilogue"
-	elif not was_tutorial and campaign.should_trigger_former_keeper_encounter(return_dungeon, outcome):
-		story_lines = _former_keeper_confrontation()
-		story_context = "former_keeper_confrontation"
+	elif not campaign.pending_story_event_id.is_empty():
+		var pending:=_pending_campaign_story();story_lines=pending.lines;story_context=pending.context
 	if not was_tutorial and not campaign.pending_settlement_summary.is_empty(): summary.merge(campaign.pending_settlement_summary,true)
 	campaign.pending_settlement_summary=summary.duplicate(true);campaign.pending_story_context=story_context
 	show_tavern(message, summary, story_lines, story_context)
 
 func _opening_tutorial_dialogue() -> Array[Dictionary]:
-	return [
-		{"speaker":"Mara Vell", "text":"The Briarway has swallowed another road, Alden. Bring down what nests at its heart and whatever you carry home is yours—but the forest keeps every careless name.", "portrait":MARA_PORTRAIT, "side":"left"},
-		{"speaker":"Alden", "text":"Three heartbeats of strength and a borrowed sword? I have worked with less.", "portrait":ALDEN_PORTRAIT, "side":"right"},
-		{"speaker":"Mara Vell", "text":"Then learn quickly. Move with purpose, spend your Resolve carefully, and come home before courage becomes pride.", "portrait":MARA_PORTRAIT, "side":"left"},
-	]
+	return STORY_EVENTS.lines("remembered_last_customer" if int(campaign.keeper_memory.get("loop_number",0))>0 else "last_customer_opening",campaign)
 
 func _tutorial_epilogue(outcome: String) -> Array[Dictionary]:
-	if outcome == "death":
-		return [
-			{"speaker":"Mara Vell", "text":"Alden will not return. Put his name in the memorial; a death hidden is a lesson wasted.", "portrait":MARA_PORTRAIT, "side":"left"},
-			{"speaker":"Mayor Corvin Rook", "text":"Then the Hearth closes? The roads will not grow safer because we lower the shutters.", "portrait":MAYOR_PORTRAIT, "side":"right"},
-			{"speaker":"Mara Vell", "text":"No. Brina and Eamon are waiting. Give them better counsel than Alden had, keep eight measures of supplies, and make this company worthy of the names it carries.", "portrait":MARA_PORTRAIT, "side":"left"},
-		]
-	return [
-		{"speaker":"Alden", "text":"The guardian is dead. Take the haul, Mayor. I have had enough of borrowed swords and borrowed luck.", "portrait":ALDEN_PORTRAIT, "side":"right"},
-		{"speaker":"Mayor Corvin Rook", "text":"Mara vanished before dawn and left more debt than ale. The Briarway's haul settles the deed; the Hearth belongs to your new company now.", "portrait":MAYOR_PORTRAIT, "side":"left"},
-		{"speaker":"Alden", "text":"Then keep its fire lit for Brina and Eamon. I won my road. They still need theirs.", "portrait":ALDEN_PORTRAIT, "side":"right"},
-	]
+	return STORY_EVENTS.lines("last_customer_resolution",campaign,outcome)
 
-func _former_keeper_confrontation() -> Array[Dictionary]:
-	return [
-		{"speaker":"Mara Vell", "text":"I see you taught the Briarway to pay its debts. Do not mistake my absence for surrender.", "portrait":MARA_PORTRAIT, "side":"left"},
-		{"speaker":"Mayor Corvin Rook", "text":"You abandoned the deed, Mara. The company earned its place here.", "portrait":MAYOR_PORTRAIT, "side":"right"},
-		{"speaker":"Mara Vell", "text":"I surrendered a debt, not my hearth. Keep the fire bright. One day I will return for something worth taking.", "portrait":MARA_PORTRAIT, "side":"left"},
-	]
+func _pending_campaign_story()->Dictionary:
+	if campaign==null or campaign.pending_story_event_id.is_empty():return {"lines":[],"context":""}
+	var event_id:=campaign.pending_story_event_id
+	return {"lines":STORY_EVENTS.lines(event_id,campaign),"context":"story_event:%s"%event_id}
 
 func _gear_options_for_class(class_id: String) -> Array[GearData]:
 	var options: Array[GearData] = []

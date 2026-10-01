@@ -6,7 +6,7 @@ const CRYPT_HAZARD:=preload("res://scripts/slasher/slasher_crypt_hazard.gd")
 
 func _initialize()->void:call_deferred("_run")
 func _run()->void:
-	var failures:Array[String]=[];var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("crypt_test","Crypt Test",3,true,1,"","","warrior"),"crypt","slasher")
+	var failures:Array[String]=[];var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("crypt_test","Crypt Test",3,true,1,"","","warrior"), "crypt")
 	var floor_seven:=SlasherForestGenerator.generate(7717,7,"crypt");var floor_seven_copy:=SlasherForestGenerator.generate(7717,7,"crypt");_expect(bool(floor_seven.is_boss_floor) and not bool(floor_seven.is_elite_floor) and floor_seven==floor_seven_copy,"Crypt floor seven is not a deterministic boss floor",failures)
 	var floor_four:=SlasherForestGenerator.generate(4404,4,"crypt");_expect(bool(floor_four.is_elite_floor) and not bool(floor_four.is_boss_floor),"Crypt floor four is not the elite gauntlet",failures)
 	var scene:=CRYPT.instantiate();scene.setup(null,state);root.add_child(scene);await process_frame;await process_frame

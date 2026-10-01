@@ -1,0 +1,226 @@
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/game/run_state.gd:67)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/game/run_state.gd:67)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/game/run_state.gd:70)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/game/run_state.gd:71)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "data" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/run_state.gd:87)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/run_state.gd:126)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "living" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/run_state.gd:145)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/run_state.gd:165)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "living" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/run_state.gd:225)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/run_state.gd:228)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/game/hearth_catalog.gd:24)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/game/game_balance.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/slasher/slasher_item_runtime.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/slasher/slasher_player.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/slasher/slasher_hostile_projectile.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/slasher/slasher_enemy.gd:0)
+ERROR: Failed to load script "res://scripts/slasher/slasher_enemy.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:12)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:70)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "advance".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:64)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "train".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:153)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:158)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "retire".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:165)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "members" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:171)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "unequip".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:206)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "owner" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:216)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "equip".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:232)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "sell".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:233)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "provision".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:237)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "risk".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:263)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "readiness".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:268)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "dispatch".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:273)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "quote".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:284)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "purchase".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:290)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "buy_consumable".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:296)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "buy".
+   at: GDScript::reload (res://scripts/ui/hearth_management.gd:301)
+ERROR: Failed to load script "res://scripts/ui/hearth_management.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:457)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:483)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:514)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:520)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:530)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "campaign".
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:93)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:169)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "campaign" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:247)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "date" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:247)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:267)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "result" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:298)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "living" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:306)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:310)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:314)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "result" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:444)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "campaign" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:450)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cap" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:498)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "current" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:540)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "date" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:540)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:543)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "result" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:546)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "campaign" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:560)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cost" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:560)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "affordable" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:560)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cap" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:589)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cap" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:600)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "campaign" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:610)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "campaign" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:628)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cap" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:740)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "date" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:826)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "open".
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:875)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:881)
+ERROR: Failed to load script "res://scripts/scenes/tavern.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "campaign".
+   at: GDScript::reload (res://scripts/slasher/slasher_forest.gd:127)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/slasher/slasher_forest.gd:420)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/slasher/slasher_forest.gd:541)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/slasher/slasher_forest.gd:548)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "step" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/slasher/slasher_forest.gd:593)
+ERROR: Failed to load script "res://scripts/slasher/slasher_forest.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not resolve class "res://scripts/slasher/slasher_forest.gd".
+   at: GDScript::reload (res://scripts/slasher/slasher_farmstead.gd:1)
+ERROR: Failed to load script "res://scripts/slasher/slasher_farmstead.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not resolve class "res://scripts/slasher/slasher_forest.gd".
+   at: GDScript::reload (res://scripts/slasher/slasher_mine.gd:1)
+ERROR: Failed to load script "res://scripts/slasher/slasher_mine.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not resolve class "res://scripts/slasher/slasher_mine.gd".
+   at: GDScript::reload (res://scripts/slasher/slasher_foundry.gd:1)
+ERROR: Failed to load script "res://scripts/slasher/slasher_foundry.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not resolve class "res://scripts/slasher/slasher_mine.gd".
+   at: GDScript::reload (res://scripts/slasher/slasher_grove.gd:1)
+ERROR: Failed to load script "res://scripts/slasher/slasher_grove.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not resolve class "res://scripts/slasher/slasher_foundry.gd".
+   at: GDScript::reload (res://scripts/slasher/slasher_archive.gd:1)
+ERROR: Failed to load script "res://scripts/slasher/slasher_archive.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not resolve class "res://scripts/slasher/slasher_forest.gd".
+   at: GDScript::reload (res://scripts/slasher/slasher_crypt.gd:1)
+ERROR: Failed to load script "res://scripts/slasher/slasher_crypt.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not resolve class "res://scripts/slasher/slasher_forest.gd".
+   at: GDScript::reload (res://scripts/slasher/slasher_hell.gd:1)
+ERROR: Failed to load script "res://scripts/slasher/slasher_hell.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Could not parse global class "CampaignState" from "res://scripts/game/campaign_state.gd".
+   at: GDScript::reload (res://scripts/main.gd:20)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:118)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:121)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:124)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "attach_campaign".
+   at: GDScript::reload (res://scripts/main.gd:124)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "restored_context" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:128)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:131)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:134)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:134)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "living" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:137)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "starter" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:144)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:146)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "starter" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:156)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "starter" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:177)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:178)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "available" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:186)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "party" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:206)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "launch_result" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:207)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "member" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:281)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "hero_name" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:282)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:310)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "was_tutorial" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:310)
+ERROR: Failed to load script "res://scripts/main.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

@@ -3,6 +3,7 @@ class_name TavernDialogueService
 
 const CONVERSATIONS_PATH := "res://data/tavern_conversations.json"
 const CRITERIA_PATH := "res://data/tavern_recruitment_criteria.json"
+const COMPATIBILITY := preload("res://scripts/game/party_compatibility.gd")
 
 var conversations: Dictionary = {}
 var criteria: Dictionary = {}
@@ -45,6 +46,8 @@ func _dialogue_values(context: Dictionary) -> Dictionary:
 		"name": member.display_name,
 		"class": member.class_id.capitalize(),
 		"origin": member.origin,
+		"nation": NarrativeContent.nation_name(member.nation_id),
+		"doctrine": COMPATIBILITY.doctrine_name(member.doctrine_id),
 		"occupation": member.occupation,
 		"personality": member.personality,
 		"preference": member.preference,
@@ -76,6 +79,17 @@ func evaluate_condition(condition: Dictionary, context: Dictionary) -> bool:
 		if condition.has("equals"): return value != null and value == condition.equals
 	if condition.has("completed_dungeon") and campaign != null:
 		return campaign.has_completed_dungeon(String(condition.get("completed_dungeon")))
+	var candidate:CandidateRecord=context.get("candidate") as CandidateRecord
+	var member:CharacterRecord=candidate.adventurer if candidate!=null else context.get("member") as CharacterRecord
+	if condition.has("definition_id"):return member!=null and member.definition_id==String(condition.get("definition_id"))
+	if condition.has("nation_id"):return member!=null and member.nation_id==String(condition.get("nation_id"))
+	if condition.has("doctrine_id"):return member!=null and member.doctrine_id==String(condition.get("doctrine_id"))
+	if condition.has("faith_id"):return member!=null and member.faith_id==String(condition.get("faith_id"))
+	if condition.has("loop_gte"):return campaign!=null and int(campaign.keeper_memory.get("loop_number",0))>=int(condition.get("loop_gte",0))
+	if condition.has("world_stage"):return campaign!=null and String(campaign.world_crisis.get("war_stage",""))==String(condition.get("world_stage"))
+	if condition.has("relationship_with"):
+		return member!=null and int(member.relationships.get(String(condition.get("relationship_with")),0))>=int(condition.get("gte",1))
+	if condition.has("evidence") and campaign!=null:return bool(campaign.clues.get(String(condition.get("evidence")),false)) or Array(campaign.keeper_memory.get("discoveries",[])).has(String(condition.get("evidence")))
 	if condition.has("upgrade_rank") and campaign != null:
 		var upgrade_id:=String(condition.get("upgrade_rank"));var rank:=int(campaign.tavern_upgrades.get(upgrade_id,0))
 		return rank >= int(condition.get("gte",1))
@@ -83,7 +97,6 @@ func evaluate_condition(condition: Dictionary, context: Dictionary) -> bool:
 		var run_state:RunState=context.get("run_state") as RunState
 		return run_state != null and run_state.is_merchant_recruited(String(condition.get("merchant_recruited")))
 	if condition.has("candidate_knowledge"):
-		var candidate: CandidateRecord = context.get("candidate") as CandidateRecord
 		return candidate != null and String(candidate.knowledge.get(String(condition.candidate_knowledge), "unknown")) == String(condition.get("equals", "exact"))
 	return false
 

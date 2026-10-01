@@ -4,6 +4,29 @@
   "family_names": ["Ashdown","Briar","Crowe","Dawnmere","Fen","Grey","Hart","Kestrel","Morrow","Reed","Thorne","Vale"],
   "pronouns": ["she/her","he/him","they/them"],
   "age_bands": ["Prime","Prime","Prime","Veteran"],
+  "nation_ids": ["nordia","zarabia","helvetica","verdant_concord","veiled_isles","sun_crowned_dominion","crossroads"],
+  "nation_by_definition": {
+	"brina_founder":"nordia", "eamon_founder":"zarabia",
+	"warrior_garrick":"nordia", "warrior_veya":"crossroads", "warrior_soren":"helvetica",
+	"mage_nessa":"sun_crowned_dominion", "mage_quill":"crossroads", "mage_ilyra":"zarabia",
+	"healer_rhea":"verdant_concord", "healer_hale":"helvetica", "healer_petra":"verdant_concord", "healer_fara":"helvetica",
+	"tank_ulric":"helvetica", "tank_dessa":"nordia", "tank_merek":"helvetica", "tank_orin":"sun_crowned_dominion",
+	"rogue_tamsin":"veiled_isles", "rogue_corin":"verdant_concord", "rogue_wren":"veiled_isles", "rogue_lysa":"nordia",
+	"summoner_jorgen":"verdant_concord", "summoner_rhea":"sun_crowned_dominion", "summoner_kael":"zarabia", "summoner_petrel":"veiled_isles"
+  },
+  "faith_by_definition": {
+	"warrior_garrick":"yrsa_hearth_wolf", "warrior_soren":"vespera_lantern",
+	"mage_nessa":"akhet_dawn_scribe", "mage_ilyra":"osem_namekeeper",
+	"healer_rhea":"torren_rain", "healer_hale":"vespera_lantern", "healer_fara":"amari_open_hands",
+	"tank_ulric":"caldris_measure", "tank_dessa":"vespera_lantern", "tank_orin":"meraset_dusk",
+	"rogue_tamsin":"sai_half_mask", "rogue_corin":"brynna_boughs", "rogue_lysa":"inori_threshold",
+	"summoner_jorgen":"brynna_boughs", "summoner_rhea":"amari_open_hands", "summoner_kael":"osem_namekeeper", "summoner_petrel":"inori_threshold"
+  },
+  "doctrine_by_definition": {
+	"warrior_soren":"concord_heal", "mage_ilyra":"dominion_amend", "healer_fara":"zarabia_rebind",
+	"tank_dessa":"helvetica_restore", "rogue_corin":"dominion_amend", "rogue_lysa":"isles_reexamine",
+	"summoner_rhea":"concord_heal", "summoner_petrel":"zarabia_rebind"
+  },
   "origins": ["the Briarway border","a river-market caravan","the old hill keeps","a burned-out forest hamlet","the southern free companies","a winterbound monastery"],
   "occupations": ["caravan guard","ruin guide","village watchkeeper","sell-sword","apprentice scholar","monster tracker"],
   "preferences": ["strong tea and direct answers","quiet corners near the fire","spiced stew after a hard road","old maps and older stories","fair contracts written plainly","company that keeps its promises"],
@@ -18,8 +41,8 @@
 	{"id":"scholarly","name":"Scholarly","description":"Excels at lore tests; physical trials are less reliable.","career":0}
   ],
   "curated": [
-	{"id":"brina_founder","name":"Brina","family":"Ashdown","class":"warrior","portrait":0,"pronouns":"she/her","origin":"the Briarway border","age":"Prime","occupation":"village watchkeeper","personality":"Patient, dry-witted, and stubbornly protective.","preference":"strong tea and direct answers","motivation":"I want to prove that steady hands can outlast the Briarway.","biography":"Brina held a palisade gate while her neighbors escaped a forest surge. She came to the Hearth because Alden's story convinced her that courage deserves witnesses.","trait":"keen","career":8},
-	{"id":"eamon_founder","name":"Eamon","family":"Vale","class":"mage","portrait":0,"pronouns":"he/him","origin":"a winterbound monastery","age":"Prime","occupation":"apprentice scholar","personality":"Curious, formal, and incapable of leaving a mystery alone.","preference":"old maps and older stories","motivation":"There are truths in those ruins that no safe library can teach.","biography":"Eamon copied forbidden marginalia until his tutors barred him from the archive. He believes the Forest remembers civilizations that every written history forgot.","trait":"scholarly","career":8},
+	{"id":"brina_founder","name":"Brina","family":"Ashdown","class":"warrior","portrait":0,"pronouns":"she/her","origin":"Nordia's Briarway border","nation_id":"nordia","faith_id":"unaffiliated","age":"Prime","occupation":"village watchkeeper","personality":"Patient, dry-witted, and stubbornly protective.","preference":"strong tea and direct answers","motivation":"I want to prove that steady hands can outlast the Briarway.","biography":"Brina held a palisade gate while her neighbors escaped a forest surge. An old friend of Alden, she came to the Hearth because his first expedition proved that courage deserves witnesses—and better preparation.","trait":"keen","career":8},
+	{"id":"eamon_founder","name":"Eamon","family":"Vale","class":"mage","portrait":0,"pronouns":"he/him","origin":"a Zarabian covenant academy","nation_id":"zarabia","faith_id":"unaffiliated","age":"Prime","occupation":"apprentice seal-scholar","personality":"Curious, formal, and incapable of leaving a mystery alone.","preference":"old maps and older stories","motivation":"A prison is not repaired by striking whatever moves inside it.","biography":"Eamon copied forbidden marginalia until his tutors barred him from the covenant archive. He believes the Briarway is an approach grown around a failing seal, and that Nordia's call to destroy every prisoner mistakes certainty for knowledge.","trait":"scholarly","career":8},
 	{"id":"warrior_garrick","name":"Garrick","family":"Thorne","class":"warrior","portrait":1,"pronouns":"he/him","origin":"the old hill keeps","age":"Veteran","occupation":"caravan guard","personality":"Gruff, dependable, and embarrassed by praise.","preference":"fair contracts written plainly","motivation":"One good company is worth ten loud captains.","biography":"Garrick survived three collapsed companies by knowing when bravado had outrun sense. He seeks a final honest career under a roof that records its dead.","trait":"stalwart","career":7},
 	{"id":"warrior_veya","name":"Veya","family":"Reed","class":"warrior","portrait":2,"pronouns":"she/her","origin":"a river-market caravan","age":"Prime","occupation":"caravan guard","personality":"Warm, competitive, and impossible to discourage.","preference":"spiced stew after a hard road","motivation":"I intend to return with a story worth exaggerating.","biography":"Veya learned swordwork defending barges from marsh raiders. Her cheerful boasting masks meticulous preparation and an old fear of deep water.","trait":"quick","career":9},
 	{"id":"warrior_soren","name":"Soren","family":"Grey","class":"warrior","portrait":3,"pronouns":"they/them","origin":"the southern free companies","age":"Prime","occupation":"sell-sword","personality":"Reserved, exacting, and fiercely fair.","preference":"quiet corners near the fire","motivation":"A clean contract and a dangerous road are enough.","biography":"Soren left a celebrated mercenary band when its victories became excuses for cruelty. They now judge employers by how they treat the least famous recruit.","trait":"hardy","career":8},

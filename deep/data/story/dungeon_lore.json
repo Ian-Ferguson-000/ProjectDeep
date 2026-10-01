@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "routes": {
+    "balor_route": {
+      "name": "The Briarway Descent",
+      "stages": ["forest", "crypt", "balors_hell"],
+      "prisoner_id": "balor",
+      "territory": "nordia_contested_border"
+    },
+    "cinderway_route": {
+      "name": "The Cinderway",
+      "stages": ["ashen_farmstead", "sunken_mine", "ember_foundry"],
+      "prisoner_id": "adragor",
+      "territory": "three_nation_claim_zone",
+      "premise": "Adragor's toxic heat leaks through farmland, drowned extraction tunnels, and an ancient furnace built to weaponize the prison's power."
+    }
+  },
+  "dungeons": {
+    "forest": {"route_id":"balor_route","ecology_id":"balor_prison","stage":"approach","lore_role":"A living wound around the buried threshold. Beasts and wards spill into the Briarway as the seal weakens.","initial_doctrine":"nordia_destroy"},
+    "crypt": {"route_id":"balor_route","ecology_id":"balor_prison","stage":"threshold","lore_role":"A mortal ossuary raised around the prison gate. Its Necromancer is a gatekeeper, not the prisoner.","initial_doctrine":"nordia_destroy"},
+    "balors_hell": {"route_id":"balor_route","ecology_id":"balor_prison","stage":"prison","prisoner_id":"balor","lore_role":"An extradimensional divine prison whose infernal circles contain Balor and the armies gathered around him.","initial_doctrine":"nordia_destroy"},
+    "ashen_farmstead": {"route_id":"cinderway_route","ecology_id":"adragor_breach","stage":"leak_zone","prisoner_id":"adragor","claims":["verdant_concord","helvetica"],"lore_role":"Adragor's first leak zone: civilian land ruined by toxic cinders, supernatural harvests, and the logistics of the dungeon war."},
+    "sunken_mine": {"route_id":"cinderway_route","ecology_id":"adragor_breach","stage":"contested_resource","prisoner_id":"adragor","claims":["zarabia","sun_crowned_dominion"],"lore_role":"The buried conduit beneath the Cinder Fields. Rival companies mine prison material while flooded machinery wakes Adragor's deeper influence."},
+    "ember_foundry": {"route_id":"cinderway_route","ecology_id":"adragor_breach","stage":"keystone","prisoner_id":"adragor","claims":["nordia","helvetica","sun_crowned_dominion"],"lore_role":"The route's keystone: an ancient furnace where seal power was weaponized. The Last War-Machine guards the controls that can suppress, rebind, expose, or amend Adragor's sentence."},
+    "moonlit_grove": {"route_id":"","ecology_id":"moonlit_grove","stage":"counterexample","lore_role":"A conditionally hostile otherworldly power that complicates the official gods-versus-prisoners history."},
+    "abyssal_archive": {"route_id":"","ecology_id":"abyssal_archive","stage":"hidden_record","lore_role":"Records that contradict official creation histories and expose limits on divine intervention."}
+  }
+}

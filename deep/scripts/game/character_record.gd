@@ -29,6 +29,10 @@ var definition_id:=""
 var family_name:=""
 var pronouns:="they/them"
 var origin:="Unknown"
+var nation_id:="crossroads"
+var faith_id:="unaffiliated"
+var doctrine_id:="unaligned"
+var relationships:Dictionary={}
 var age_band:="Prime"
 var occupation:="Adventurer"
 var personality:="Reserved"
@@ -76,7 +80,7 @@ func to_dict() -> Dictionary:
 		"gear_id":gear_id, "inventory":inventory.duplicate(), "trait_id":trait_id, "trait_name":trait_name,
 		"trait_description":trait_description, "progression":progression.duplicate(true), "status":status,
 		"expeditions":expeditions, "victories":victories, "deepest_floor":deepest_floor, "kills":kills,
-		"definition_id":definition_id,"family_name":family_name,"pronouns":pronouns,"origin":origin,"age_band":age_band,"occupation":occupation,"personality":personality,"preference":preference,"biography":biography,"lineage_id":lineage_id,"parent_id":parent_id,"generation":generation,"arrival_year":arrival_year,"attributes":attributes.duplicate(true),"hidden_traits":hidden_traits.duplicate(),"career_limit":career_limit,"fatigue":fatigue,"morale":morale,"loyalty":loyalty,"scars":scars.duplicate(),"accomplishments":accomplishments.duplicate(),"personal_history":personal_history.duplicate(true),
+		"definition_id":definition_id,"family_name":family_name,"pronouns":pronouns,"origin":origin,"nation_id":nation_id,"faith_id":faith_id,"doctrine_id":doctrine_id,"relationships":relationships.duplicate(true),"age_band":age_band,"occupation":occupation,"personality":personality,"preference":preference,"biography":biography,"lineage_id":lineage_id,"parent_id":parent_id,"generation":generation,"arrival_year":arrival_year,"attributes":attributes.duplicate(true),"hidden_traits":hidden_traits.duplicate(),"career_limit":career_limit,"fatigue":fatigue,"morale":morale,"loyalty":loyalty,"scars":scars.duplicate(),"accomplishments":accomplishments.duplicate(),"personal_history":personal_history.duplicate(true),
 	}
 
 static func from_dict(data: Dictionary) -> CharacterRecord:
@@ -96,6 +100,7 @@ static func from_dict(data: Dictionary) -> CharacterRecord:
 	record.progression = Dictionary(data.get("progression", {})).duplicate(true); record.status = String(data.get("status", STATUS_AVAILABLE))
 	record.expeditions = maxi(0, int(data.get("expeditions", 0))); record.victories = maxi(0, int(data.get("victories", 0)))
 	record.deepest_floor = maxi(0, int(data.get("deepest_floor", 0))); record.kills = maxi(0, int(data.get("kills", 0)))
-	record.definition_id=String(data.get("definition_id",""));record.family_name=String(data.get("family_name",""));record.pronouns=String(data.get("pronouns","they/them"));record.origin=String(data.get("origin","Unknown"));record.age_band=String(data.get("age_band","Prime"));record.occupation=String(data.get("occupation","Adventurer"));record.personality=String(data.get("personality","Reserved"));record.preference=String(data.get("preference","A fair contract"));record.biography=String(data.get("biography","A traveler seeking work at the Hearth."));record.lineage_id=String(data.get("lineage_id",record.id));record.parent_id=String(data.get("parent_id",""));record.generation=maxi(1,int(data.get("generation",1)));record.arrival_year=maxi(1,int(data.get("arrival_year",1)));record.attributes=Dictionary(data.get("attributes",record.progression.get("attributes",{}))).duplicate(true);if record.attributes.is_empty():record.attributes={"str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10}
+	record.definition_id=String(data.get("definition_id",""));record.family_name=String(data.get("family_name",""));record.pronouns=String(data.get("pronouns","they/them"));record.origin=String(data.get("origin","Unknown"));record.nation_id=String(data.get("nation_id","crossroads"));record.faith_id=String(data.get("faith_id","unaffiliated"));record.age_band=String(data.get("age_band","Prime"));record.occupation=String(data.get("occupation","Adventurer"));record.personality=String(data.get("personality","Reserved"));record.preference=String(data.get("preference","A fair contract"));record.biography=String(data.get("biography","A traveler seeking work at the Hearth."));record.lineage_id=String(data.get("lineage_id",record.id));record.parent_id=String(data.get("parent_id",""));record.generation=maxi(1,int(data.get("generation",1)));record.arrival_year=maxi(1,int(data.get("arrival_year",1)));record.attributes=Dictionary(data.get("attributes",record.progression.get("attributes",{}))).duplicate(true);if record.attributes.is_empty():record.attributes={"str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10}
+	record.doctrine_id=String(data.get("doctrine_id",NarrativeContent.nation(record.nation_id).get("default_doctrine","unaligned")));record.relationships=Dictionary(data.get("relationships",{})).duplicate(true)
 	record.hidden_traits.assign(data.get("hidden_traits",[]));record.career_limit=clampi(int(data.get("career_limit",8)),6,10);record.fatigue=maxi(0,int(data.get("fatigue",0)));record.morale=clampi(int(data.get("morale",50)),0,100);record.loyalty=int(data.get("loyalty",0));record.scars.assign(data.get("scars",[]));record.accomplishments.assign(data.get("accomplishments",[]));record.personal_history.assign(data.get("personal_history",[]))
 	return record

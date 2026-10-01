@@ -1,0 +1,19 @@
+TIMEOUT
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Could not find type "SlasherComboRuntime" in the current scope.
+   at: GDScript::reload (res://scripts/slasher/slasher_player.gd:76)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "outcome" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/slasher/slasher_player.gd:410)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/slasher/slasher_hostile_projectile.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/slasher/slasher_enemy.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://tests/warrior_slashing_dash_test.gd:0)
+ERROR: Failed to load script "res://tests/warrior_slashing_dash_test.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+   at: _run (res://tests/warrior_slashing_dash_test.gd:12)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/warrior_slashing_dash_test.gd:12)

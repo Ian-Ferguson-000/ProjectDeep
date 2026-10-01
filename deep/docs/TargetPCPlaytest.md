@@ -28,12 +28,12 @@ Current build evidence: `build/ErosDemo.pck` exports and boots successfully with
 - Complete a recruit's 6–10 expedition career and confirm automatic Hall retirement. Advance four seasons and confirm an eligible descendant can arrive with family history but without inherited power.
 - Verify 28-day season boundaries, seven weekdays, the recent 40-event history, dynamic room capacity, free dismissal confirmation, and zero-roster recovery candidates.
 - Purchase one tavern upgrade and one merchant item, restart, and confirm both persist.
-- Clear Forest in Strategy and Slasher, Farmstead, and Crypt; verify Tank, Rogue, Healer, Summoner, the four-person cap, Mine, and Foundry unlock at the expected points.
+- Clear Forest and verify that it unlocks both Tank and Rogue. Clear Farmstead and Crypt, then verify Healer, Summoner, the four-person cap, Mine, and Foundry unlock at the expected points.
 - Complete both clue chains and Secret Research I; reveal and clear Moonlit Grove and Abyssal Archive and confirm all four unique relics appear in the Company Ledger.
 
 ## Controls, audio, and comfort
 
-- Strategy: command every member, cycle with Tab/LB, and verify every non-final floor autosaves and immediately advances.
+- Slasher: cycle party members with Tab/LB and verify every non-final floor autosaves and immediately advances.
 - Slasher: verify companion role behavior, Tab/LB cycling, automatic handoff after controlled-character death, L3 potion, and automatic non-final floor advancement.
 - Exercise all six class kits in both modes and confirm cooldowns/resources never transfer between recruits.
 - Test Master/Music/SFX volume and mute controls. Record missing or incorrectly routed sounds; silence must remain silent with no audible clicks.

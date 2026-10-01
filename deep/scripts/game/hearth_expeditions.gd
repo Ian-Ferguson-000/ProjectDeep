@@ -1,6 +1,10 @@
 extends RefCounted
 class_name HearthExpeditions
 
+const COMPATIBILITY := preload("res://scripts/game/party_compatibility.gd")
+const ECOLOGY := preload("res://scripts/game/dungeon_ecology.gd")
+const DIVINE := preload("res://scripts/game/divine_favor_service.gd")
+
 static func readiness(c: CampaignState, ids: Array[String], dungeon_id: String) -> Dictionary:
 	if not HearthCatalog.data().dungeon_levels.has(dungeon_id): return HearthArmory.fail("Unknown dungeon.")
 	if ids.is_empty() or ids.size() > c.get_party_cap(dungeon_id): return HearthArmory.fail("Choose a party within this dungeon's capacity.")
@@ -29,12 +33,16 @@ static func risk(c: CampaignState, ids: Array[String], dungeon_id: String) -> Di
 		var gear_rating := 0.0
 		for value in mods.values(): gear_rating += float(value)*0.12
 		rating += (float(member.level)+1.0+gear_rating+member.provisions.size()*0.3)*(float(member.current_health)/maxi(1,member.max_health))
-	var target := float(HearthCatalog.data().dungeon_levels.get(dungeon_id,2))*float(c.get_party_cap(dungeon_id))
+	var target := float(HearthCatalog.data().dungeon_levels.get(dungeon_id,2))*float(c.get_party_cap(dungeon_id))*ECOLOGY.threat_multiplier(c,dungeon_id)
 	rating *= 1.0 + maxi(0,classes.size()-1)*0.12
+	var compatibility:=COMPATIBILITY.evaluate(c,ids)
+	rating*=float(compatibility.multiplier)
 	var ratio := rating/maxf(1.0,target)
 	reasons.append("Party strength %.1f / dungeon demand %.1f" % [rating,target])
 	reasons.append("%d distinct class roles; health, equipment and provisions included." % classes.size())
-	return {"ratio":ratio,"band":"Low" if ratio>=1.4 else ("Moderate" if ratio>=0.95 else "High"),"reasons":reasons}
+	reasons.append("Social cohesion: %s (%+d)."%[String(compatibility.band),int(compatibility.score)])
+	reasons.append_array(compatibility.reasons)
+	return {"ratio":ratio,"band":"Low" if ratio>=1.4 else ("Moderate" if ratio>=0.95 else "High"),"compatibility":compatibility,"reasons":reasons}
 
 static func dispatch(c: CampaignState, ids: Array[String], dungeon_id: String, policy: String) -> Dictionary:
 	if policy not in ["cautious","balanced","bold"]: return HearthArmory.fail("Choose a valid retreat policy.")
@@ -42,7 +50,7 @@ static func dispatch(c: CampaignState, ids: Array[String], dungeon_id: String, p
 	var check := readiness(c,ids,dungeon_id)
 	if not check.ok: return check
 	var e := ExpeditionState.new()
-	e.begin(ids,dungeon_id,RunState.PLAY_MODE_SLASHER,false,c.next_expedition_id)
+	e.begin(ids, dungeon_id, false, c.next_expedition_id)
 	c.next_expedition_id += 1
 	e.deployment_type = "automated"
 	e.departure_day = c.calendar_day
@@ -70,6 +78,7 @@ static func resolve_auto(c: CampaignState, e: ExpeditionState) -> Dictionary:
 	var floors := int(GameBalance.get_dungeon(e.dungeon_id).get("floors",5))
 	var outcome := "victory"
 	var threshold: float = {"cautious":0.65,"balanced":0.4,"bold":0.2}[e.retreat_policy]
+	var reward_multiplier:=ECOLOGY.reward_multiplier(c,e.dungeon_id)
 	for floor_index in range(1,floors+1):
 		e.floor = floor_index
 		for id in e.living_party_ids():
@@ -90,8 +99,9 @@ static func resolve_auto(c: CampaignState, e: ExpeditionState) -> Dictionary:
 				e.record_casualty(id)
 				logs.append("%s falls on floor %d." % [member.display_name,floor_index])
 		if e.living_party_ids().is_empty(): outcome = "death"; break
-		e.carried_gold += 10+floor_index*3
+		e.carried_gold += roundi((10+floor_index*3)*reward_multiplier)
 		e.carried_relic_essence += 1
+		e.carried_contribution += 4
 		var health_fraction := 1.0
 		for id in e.living_party_ids():
 			var member := c.character(id)
@@ -107,14 +117,19 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 	var key := str(e.expedition_id)
 	if c.settled_expeditions.has(key): return {"ok":true,"duplicate":true,"logs":[]}
 	if not e.active: return HearthArmory.fail("No expedition is active.")
-	var gross := e.carried_gold if outcome != "death" else 0
+	var divine_modifiers := DIVINE.settlement_modifiers(c,e)
+	var gross := roundi(e.carried_gold*float(divine_modifiers.gold_multiplier)) if outcome != "death" else 0
 	var share := 0 if bool(extra.get("legacy_resolve",false)) else int(gross*0.2)
 	c.banked_gold += gross-share
 	var essence := e.carried_relic_essence if outcome != "death" else 0
 	c.relic_essence += essence
 	c.lifetime_relic_essence += essence
+	# Witnessed progress, mapped danger, and sacrifice remain useful even when no loot returns.
+	var contribution := roundi(e.carried_contribution*float(divine_modifiers.contribution_multiplier))
+	c.contribution += contribution
 	var lost: Array[String] = []
 	var returned: Array[String] = []
+	var retire_after_settlement:Array[String]=[]
 	for id in e.party_ids:
 		var member := c.character(id)
 		if member == null: continue
@@ -139,8 +154,21 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 				while member.level < 20 and thresholds.size() > member.level+1 and member.xp >= int(thresholds[member.level+1]): member.level += 1
 				member.progression.level = member.level
 				member.progression.xp = member.xp
+			if member.expeditions>=member.career_limit:retire_after_settlement.append(id)
 		member.personal_history.append({"day":c.calendar_day,"kind":outcome,"dungeon":e.dungeon_id})
 		returned.append(member.display_name)
+	COMPATIBILITY.record_shared_outcome(c,e.living_party_ids(),outcome)
+	if outcome in ["victory","retreat"]:
+		var represented_nations:Dictionary={}
+		for id in e.living_party_ids():
+			var survivor:=c.character(id)
+			if survivor!=null:represented_nations[survivor.nation_id]=true
+		for nation_id in represented_nations:c.faction_standing[nation_id]=int(c.faction_standing.get(nation_id,0))+1
+	var retired:Array[String]=[]
+	for id in retire_after_settlement:
+		var veteran:=c.character(id)
+		if veteran==null:continue
+		veteran.status=CharacterRecord.STATUS_RETIRED;var retirement:=veteran.to_dict();retirement.merge({"name":veteran.display_name,"retired_day":maxi(c.calendar_day,e.due_day),"dungeon_id":e.dungeon_id,"descendant_checks":0,"descendant_created":false},true);c.retired_heroes.append(retirement);c.lineage_registry[veteran.id]={"retired_day":maxi(c.calendar_day,e.due_day),"checks":0,"descendant_created":false};HearthArmory.release(c,veteran);c.roster.erase(id);returned.erase(veteran.display_name);retired.append(veteran.display_name)
 	var rewards: Array[String] = []
 	if outcome == "victory":
 		if e.deployment_type == "manual": c.reputation = mini(100,c.reputation+4+e.party_ids.size())
@@ -162,7 +190,8 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 	if outcome != "death":
 		for id in e.carried_relics:
 			if not c.banked_relics.has(id): c.banked_relics.append(id)
-	var report := {"expedition_id":e.expedition_id,"outcome":outcome,"headline":"%s: %s" % [e.dungeon_id.capitalize(),outcome.capitalize()],"dungeon":e.dungeon_id,"mode":e.deployment_type,"depth":e.floor,"gold":gross,"share":share,"net":gross-share,"essence":essence,"returned":returned,"lost":lost,"items":rewards,"events":extra.get("events",[])}
+	var divine_result := DIVINE.record_expedition_outcome(c,e,outcome)
+	var report := {"expedition_id":e.expedition_id,"outcome":outcome,"headline":"%s: %s" % [e.dungeon_id.capitalize(),outcome.capitalize()],"dungeon":e.dungeon_id,"deployment_type":e.deployment_type,"depth":e.floor,"gold":gross,"share":share,"net":gross-share,"essence":essence,"contribution":contribution,"returned":returned,"retired":retired,"lost":lost,"items":rewards,"events":extra.get("events",[]),"divine":divine_result}
 	c.return_reports.append(report)
 	c.pending_settlement_summary = report.duplicate(true)
 	c.settled_expeditions[key] = true
@@ -176,4 +205,4 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 		c._generate_candidate_wave(false)
 	c._add_calendar_event(outcome,report.headline)
 	c.tavern_phase = CampaignState.TAVERN_OPEN
-	return {"ok":true,"duplicate":false,"logs":["Recovered %d gold; company share %d; net %d." % [gross,share,gross-share]],"report":report}
+	return {"ok":true,"duplicate":false,"logs":["Recovered %d gold; company share %d; net %d. Contribution recorded: %d." % [gross,share,gross-share,contribution]],"report":report}

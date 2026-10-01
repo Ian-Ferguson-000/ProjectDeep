@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "defaults": {"pressure":60,"resources":70,"stability":45,"pressure_per_day":1.25,"resources_per_day":0.65,"stability_per_day":-0.45},
+  "ecologies": {
+    "balor_prison":{"name":"Balor Seal","pressure":78,"resources":85,"stability":30,"pressure_per_day":1.5,"resources_per_day":0.7,"stability_per_day":-0.55},
+    "adragor_breach":{"name":"Adragor Cinderway","pressure":70,"resources":88,"stability":28,"pressure_per_day":1.35,"resources_per_day":0.8,"stability_per_day":-0.6},
+    "ashen_farmstead":{"name":"Cinder Blight","pressure":58,"resources":65,"stability":48},
+    "sunken_mine":{"name":"Drowned Veins","pressure":52,"resources":82,"stability":42},
+    "ember_foundry":{"name":"Furnace Seal","pressure":68,"resources":75,"stability":34},
+    "moonlit_grove":{"name":"Moonlit Accord","pressure":40,"resources":55,"stability":64,"pressure_per_day":0.45},
+    "abyssal_archive":{"name":"Archive Breach","pressure":66,"resources":72,"stability":38,"pressure_per_day":0.9}
+  }
+}

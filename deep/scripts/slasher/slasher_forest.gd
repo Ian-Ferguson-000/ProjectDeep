@@ -44,6 +44,7 @@ var exit_position:=Vector2.ZERO
 var merchant_position:=Vector2.ZERO
 var has_dungeon_merchant:=true
 var message_label:Label
+var combo_label:Label
 var objective_label:Label
 var health_bar:ProgressBar
 var resource_bar:ProgressBar
@@ -88,7 +89,7 @@ func _ready()->void:
 	if run_state==null and use_authored_layout and designer_playtest:
 		_ensure_designer_controls()
 		var preview_state:=RunState.new();preview_state.set_class(designer_class)
-		preview_state.start_new_run(GearData.create("designer_test","Designer Test Gear",3,false,0,"","",designer_class),designer_dungeon_id,"slasher")
+		preview_state.start_new_run(GearData.create("designer_test","Designer Test Gear",3,false,0,"","",designer_class), designer_dungeon_id)
 		preview_state.current_floor=designer_floor;run_state=preview_state
 	if run_state!=null:_build_floor()
 
@@ -122,7 +123,7 @@ func _build_floor()->void:
 	for child in get_children():child.free()
 	layout=authored_layout if not authored_layout.is_empty() else SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor,run_state.active_dungeon_id)
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
-	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
+	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();player.reset_combo_progress();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
 	if player.item_runtime:player.item_runtime.floor_entered()
 	if run_state.current_floor==1 and not run_state.starter_reward_claimed and (not _is_tutorial_expedition() or run_state.campaign.expedition.tutorial_controls_complete):call_deferred("_offer_starter_relic")
 
@@ -267,7 +268,7 @@ func _build_vignette()->void:
 	var material:=ShaderMaterial.new();var shader:=Shader.new();shader.code="shader_type canvas_item; void fragment(){vec2 p=UV-vec2(0.5);float edge=smoothstep(0.28,0.72,length(p));COLOR=vec4(0.01,0.035,0.02,edge*0.48);}";material.shader=shader;vignette.material=material;layer.add_child(vignette)
 
 func _spawn_player()->void:
-	player=PLAYER_SCRIPT.new();player.name="SlasherPlayer";player.position_sanitizer=sanitize_player_position;player.pathfinder=pathfinder;player.setup(run_state);actor_layer.add_child(player);player.global_position=_world(layout.start);player.health_changed.connect(_on_health_changed);player.resource_changed.connect(_on_resource_changed);player.ability_resolved.connect(_on_ability_resolved);player.defeated.connect(_on_player_defeated)
+	player=PLAYER_SCRIPT.new();player.name="SlasherPlayer";player.position_sanitizer=sanitize_player_position;player.pathfinder=pathfinder;player.setup(run_state);actor_layer.add_child(player);player.global_position=_world(layout.start);player.health_changed.connect(_on_health_changed);player.resource_changed.connect(_on_resource_changed);player.ability_resolved.connect(_on_ability_resolved);player.combo_updated.connect(_on_combo_updated);player.defeated.connect(_on_player_defeated)
 	_restore_active_slasher_state()
 	player.add_to_group("slasher_party_target")
 	if player.item_runtime:player.item_runtime.effect_activated.connect(_show_message)
@@ -426,6 +427,7 @@ func _restore_active_slasher_state()->void:
 	if int(runtime.get("health",-1))>=0:player.health=clampi(int(runtime.health),0,player.max_health);run_state.current_health=player.health
 	if runtime.has("resource"):run_state.class_resource=clampi(int(runtime.resource),0,run_state.get_class_resource_max())
 	player.restore_party_state(Dictionary(runtime.get("slasher",{})))
+	player.combo_updated.emit({"type":"progress","progress":player.combo_runtime.feedback() if player.combo_runtime!=null else {}})
 
 func _tick_benched_party(delta:float)->void:
 	if run_state==null or run_state.campaign==null or not run_state.campaign.expedition.active:return
@@ -437,6 +439,12 @@ func _tick_benched_party(delta:float)->void:
 		for key in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-delta)
 		state["cooldowns"]=cooldowns
 		for timer_name in ["invulnerable","defense_window","hidden_time","consumable_speed_time","movement_debuff_time"]:state[timer_name]=maxf(0.0,float(state.get(timer_name,0.0))-delta)
+		var combo:Dictionary=Dictionary(state.get("combo",{}));var combo_states:Dictionary=Dictionary(combo.get("states",{}))
+		for combo_id in combo_states:
+			var combo_state:Dictionary=Dictionary(combo_states[combo_id]);combo_state.remaining=maxf(0.0,float(combo_state.get("remaining",0.0))-delta)
+			if combo_state.remaining<=0.0:combo_state.index=0
+			combo_states[combo_id]=combo_state
+		combo.states=combo_states;state.combo=combo
 		if float(state.get("hidden_time",0.0))<=0.0:state["is_hidden"]=false
 		if float(state.get("consumable_speed_time",0.0))<=0.0:state["consumable_speed_multiplier"]=1.0
 		if float(state.get("movement_debuff_time",0.0))<=0.0:state["movement_debuff_multiplier"]=1.0
@@ -508,9 +516,10 @@ func _nearby_chest()->SlasherBreakableProp:
 func _build_hud()->void:
 	var canvas:=CanvasLayer.new();canvas.name="HUD";canvas.layer=10;add_child(canvas)
 	_build_party_strip(canvas)
-	var panel:=PanelContainer.new();panel.set_anchors_preset(Control.PRESET_TOP_WIDE);panel.offset_left=340;panel.offset_top=18;panel.offset_right=-340;panel.offset_bottom=72;panel.add_theme_stylebox_override("panel",_panel_style(Color("#101c18e8"),Color("#557c54")));canvas.add_child(panel)
+	var panel:=PanelContainer.new();panel.set_anchors_preset(Control.PRESET_TOP_WIDE);panel.offset_left=340;panel.offset_top=18;panel.offset_right=-340;panel.offset_bottom=98;panel.add_theme_stylebox_override("panel",_panel_style(Color("#101c18e8"),Color("#557c54")));canvas.add_child(panel)
 	var status:=VBoxContainer.new();status.add_theme_constant_override("separation",2);panel.add_child(status)
 	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;status.add_child(objective_label)
+	combo_label=_label(Vector2.ZERO,Vector2(360,22),14);combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_color_override("font_color",Color("#e5bf68"));status.add_child(combo_label)
 	_build_resource_hud(canvas)
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
@@ -651,6 +660,16 @@ func _on_ability_resolved(result:Dictionary)->void:
 	if tutorial_sequence!=null:tutorial_sequence.observe_ability(result)
 	var failure:=String(result.get("failure",""))
 	if not failure.is_empty():_show_message(failure)
+func _on_combo_updated(state:Dictionary)->void:
+	if combo_label==null:return
+	if String(state.get("type",""))=="triggered":
+		var combo:Dictionary=Dictionary(state.get("combo",{}));combo_label.text="✦  %s!  ✦"%String(combo.get("name","COMBO")).to_upper();combo_label.add_theme_color_override("font_color",Color("#ffd65a"))
+		var triggered_text:=combo_label.text;var tween:=create_tween();tween.tween_interval(1.5);tween.tween_callback(func():
+			if is_instance_valid(combo_label) and combo_label.text==triggered_text:combo_label.text="")
+		return
+	var progress:Dictionary=Dictionary(state.get("progress",{}))
+	if progress.is_empty():combo_label.text="";return
+	combo_label.add_theme_color_override("font_color",Color("#e5bf68"));combo_label.text="%s  %d/%d  ·  %s"%[String(progress.get("name","Combo")).to_upper(),int(progress.get("index",0)),int(progress.get("total",0)),String(progress.get("next","")).to_upper()]
 func _show_message(text:String,duration:float=2.5)->void:
 	if message_label==null:return
 	message_label.text=text

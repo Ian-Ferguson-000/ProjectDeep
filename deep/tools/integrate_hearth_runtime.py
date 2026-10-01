@@ -27,7 +27,7 @@ func _active_profile() -> Dictionary:''')
 	if provisioned != null:
 		for bottle in provisioned.provisions: add_consumable(bottle)
 	for consumable_id in pending_shop_consumables:''')
- # Equipped copies participate in existing Strategy and Slasher effect systems without becoming loose run loot.
+ # Equipped copies participate in existing Slasher effect system without becoming loose run loot.
  s=s.replace('items.append(entry.duplicate(true))\n\treturn items','''items.append(entry.duplicate(true))
 	var member := get_active_character()
 	if member != null:

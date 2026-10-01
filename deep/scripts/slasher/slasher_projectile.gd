@@ -2,6 +2,7 @@ extends Node2D
 class_name SlasherProjectile
 
 signal hit_landed(target:Node2D,travel_distance:float)
+signal impact_resolved(position:Vector2,attack:Dictionary)
 
 const FIREBALL_START:=preload("res://assets/effect_packs/fireball/fireball_start.png")
 const FIREBALL_FLIGHT:=preload("res://assets/effect_packs/fireball/fireball_flight.png")
@@ -78,7 +79,7 @@ func _spawn_splash_visual(radius:float)->void:
 func _impact(apply_splash:bool)->void:
 	if impacted:return
 	if apply_splash:_damage_impact()
-	impacted=true;sprite.play("impact")
+	impacted=true;impact_resolved.emit(global_position,attack.duplicate(true));sprite.play("impact")
 
 func _on_animation_finished()->void:
 	if sprite.animation=="start":sprite.play("flight")

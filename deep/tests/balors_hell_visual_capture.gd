@@ -5,7 +5,7 @@ const HELL:=preload("res://scenes/slasher/SlasherHell.tscn")
 func _initialize()->void:call_deferred("_run")
 
 func _run()->void:
-	var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("hell_visual","Hell Visual",3,true,1,"","","warrior"),"balors_hell","slasher");state.current_floor=6
+	var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("hell_visual","Hell Visual",3,true,1,"","","warrior"), "balors_hell");state.current_floor=6
 	var scene:=HELL.instantiate();scene._ensure_designer_controls();scene.setup(null,state);root.add_child(scene);await process_frame;await process_frame
 	if scene.relic_modal!=null and scene.relic_modal.visible:scene.relic_modal.finish()
 	var boss:SlasherHellEnemy

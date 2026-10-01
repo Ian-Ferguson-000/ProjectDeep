@@ -3,11 +3,24 @@
   "rewards": {"floor_xp_base":45,"floor_xp_per_depth":5,"elite_floor_bonus":55,"campaign_boss_bonus":70,"endless_xp_multiplier":0.35,"loot_gold_base":5},
   "boss_durability": {"max_damage_fraction":0.05,"shield_reduction":0.75,"shield_duration":0.5,"shield_color":"#8fd8ff"},
   "input": {"held_basic_cooldown_multiplier": 2.25},
+  "combos": {
+	"mage": [
+	  {"id":"spellstorm_volley","name":"Spellstorm Volley","description":"Weave two missiles through a Blink, then release a three-fireball fan.","steps":["action:basic","action:basic","action:movement","action:special"],"step_labels":["Missile","Missile","Blink","Fireball"],"window":2.5,"priority":30,"effect":{"projectiles":3,"spread_degrees":12,"damage_multiplier":0.45}},
+	  {"id":"riftburst","name":"Riftburst","description":"Blink after Fireball to detonate its echo at the departure point.","steps":["action:special","action:movement"],"step_labels":["Fireball","Blink"],"window":2.5,"priority":10,"effect":{"damage_multiplier":0.75,"area_radius":105,"knockback":35}},
+	  {"id":"force_prism","name":"Force Prism","description":"Repel an enemy, cast a missile, then fracture Fireball into six arcane bolts.","steps":["confirm:repel_hit","action:basic","action:special"],"step_labels":["Repel an enemy","Missile","Fireball"],"window":2.5,"priority":20,"effect":{"projectiles":6,"damage_multiplier":0.20,"projectile_range":220,"projectile_speed":620}}
+	],
+	"warrior": [
+	  {"id":"crosscut","name":"Crosscut","description":"Slash, Charge, then finish with a critical Slash.","steps":["action:basic","action:movement","action:basic"],"step_labels":["Slash","Charge","Slash"],"window":2.5,"priority":20,"effect":{"damage_multiplier":2.0,"knockback_multiplier":2.0,"screen_shake_multiplier":1.6,"critical":true}},
+	  {"id":"flowing_assault","name":"Flowing Assault","description":"Complete the three-Slash chain, then Charge for free and flow immediately into a new chain.","steps":["action:basic","action:basic","action:basic","action:movement"],"step_labels":["Slash","Slash","Slash","Charge"],"window":0.75,"priority":30,"effect":{"resource_cost_override":0,"reset_cooldown":"basic"}},
+	  {"id":"break_the_line","name":"Break the Line","description":"Charge through an enemy and answer with a staggering full-circle Cleave.","steps":["confirm:movement_hit","action:special"],"step_labels":["Charge through an enemy","Cleave"],"window":2.5,"priority":10,"effect":{"damage_multiplier":1.25,"arc_degrees":360,"knockback":40,"status":"stagger","status_duration":0.5}},
+	  {"id":"vengeful_spiral","name":"Vengeful Spiral","description":"Parry, Charge, and Cleave twice in a vengeful spiral.","steps":["confirm:parry_success","action:movement","action:special"],"step_labels":["Successful Parry","Charge","Cleave"],"window":2.5,"priority":40,"effect":{"damage_multiplier":1.25,"arc_degrees":360,"echo_damage_multiplier":0.60,"echo_delay":0.18,"resource_refund":1}}
+	]
+  },
   "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
   "classes": {
 	"warrior": {
 	  "speed": 285, "collision_radius": 18, "sprite_scale": 1.58, "sprite_offset_y": -30,
-	  "basic": {"cooldown": 0.18, "resource_cost": 0, "resource_gain": 2, "power_stat": "attack_power", "damage_coefficient": 3.0, "flat_damage": 0, "reach": 118, "arc_degrees": 92, "knockback": 10, "deflect_reach": 128, "deflect_arc_degrees": 110, "animation_lock": 0.32},
+	  "basic": {"cooldown": 0.18, "combo_finisher_cooldown": 0.90, "combo_reset_window": 0.70, "resource_cost": 0, "resource_gain": 2, "power_stat": "attack_power", "damage_coefficient": 3.0, "flat_damage": 0, "reach": 118, "arc_degrees": 92, "knockback": 10, "deflect_reach": 82, "deflect_arc_degrees": 56, "animation_lock": 0.32},
 	  "movement": {"cooldown": 0.2, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 2.0, "flat_damage": 0, "movement_distance": 355, "dash_speed": 1120, "landing_invulnerability": 0.08, "destination_clearance": 22, "path_radius": 36, "invulnerability": 0.38, "reach": 58, "arc_degrees": 75, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 4.0, "flat_damage": 0, "reach": 208, "arc_degrees": 140, "knockback": 30, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 3.5, "resource_cost": 0, "resource_gain": 0, "effect_duration": 0.65, "mitigation": 1.0, "counter_coefficient": 1.0, "counter_flat_damage": 0, "counter_knockback": 35, "animation_lock": 0.32}

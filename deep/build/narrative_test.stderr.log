@@ -1,0 +1,32 @@
+SCRIPT ERROR: Parse Error: Identifier "NarrativeContent" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:5)
+SCRIPT ERROR: Parse Error: Identifier "NarrativeContent" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:6)
+SCRIPT ERROR: Parse Error: Identifier "NarrativeContent" not declared in the current scope.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:6)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:8)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "campaign" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:8)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "alden" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:9)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:14)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "death_campaign" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:14)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:16)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "victory_campaign" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:16)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "candidates" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:22)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:34)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:34)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "migrated" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:34)
+SCRIPT ERROR: Parse Error: Could not resolve class "CampaignState", because of a parser error.
+   at: GDScript::reload (res://tests/narrative_foundation_test.gd:35)
+ERROR: Failed to load script "res://tests/narrative_foundation_test.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

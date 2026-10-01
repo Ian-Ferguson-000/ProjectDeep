@@ -80,7 +80,7 @@ func sync(run_state: RunState, portrait: Texture2D, gear_name: String, derived_s
 	body.add_child(_make_header(run_state, portrait, gear_name))
 
 	var tabs := TabContainer.new()
-	tabs.name = "StrategyCodexTabs"
+	tabs.name = "CharacterCodexTabs"
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	tabs.add_theme_font_size_override("font_size", 16)
 	body.add_child(tabs)
@@ -141,7 +141,7 @@ func _make_progression_section(run_state: RunState) -> PanelContainer:
 	var body := VBoxContainer.new()
 	body.add_theme_constant_override("separation", 12)
 	panel.add_child(body)
-	body.add_child(_make_section_title("STRATEGY PROGRESSION"))
+	body.add_child(_make_section_title("CLASS PROGRESSION"))
 	body.add_child(_make_wrapped_label("%s · Level %d\n%s" % [run_state.selected_class_name, run_state.get_level(), run_state.get_profile_summary()], 18, Color(1.0, 0.86, 0.58)))
 	body.add_child(_make_wrapped_label(run_state.get_progression_summary(), 16, Color(0.58, 0.87, 0.95)))
 	var class_data := GameBalance.get_base_class(run_state.selected_class_id)

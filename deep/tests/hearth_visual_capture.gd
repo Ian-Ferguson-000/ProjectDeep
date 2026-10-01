@@ -12,7 +12,7 @@ func capture() -> void:
 	c.banked_gold=1800
 	c.reputation=65
 	c.relic_essence=70
-	c.record_dungeon_clear("forest","strategy")
+	c.record_dungeon_clear("forest")
 	c.last_presented_wave_id=c.candidate_wave_id
 	c.first_normal_launch_completed=true
 	HearthArmory.grant(c,"light_armor_1")

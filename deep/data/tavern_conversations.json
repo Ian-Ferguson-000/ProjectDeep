@@ -13,12 +13,21 @@
 	"candidate_default": {
 	  "start": "greeting",
 	  "routes": [
+		{"node":"remembered_arrival","condition":{"all":[{"loop_gte":1},{"any":[{"definition_id":"tank_ulric"},{"definition_id":"healer_rhea"},{"definition_id":"rogue_tamsin"},{"definition_id":"mage_nessa"}]}]}},
+		{"node":"helvetica_arrival","condition":{"definition_id":"tank_ulric"}},
+		{"node":"concord_arrival","condition":{"definition_id":"healer_rhea"}},
+		{"node":"isles_arrival","condition":{"definition_id":"rogue_tamsin"}},
+		{"node":"dominion_arrival","condition":{"definition_id":"mage_nessa"}},
 		{"node":"known_history","condition":{"candidate_knowledge":"biography","equals":"exact"}}
 	  ],
 	  "nodes": {
+		"remembered_arrival": {
+		  "lines": [{"speaker":"The Keeper","text":"{name}. You came from {nation} before, carrying the same argument and pretending not to watch every exit."},{"speaker":"{name}","text":"We have never met. Yet you know the road that brought me here—and the question I meant to ask."},{"speaker":"The Keeper","text":"I remember what the last world taught us. You are free to become someone different in this one."},{"speaker":"{name}","text":"Then tell me what I failed to see, Keeper. I will decide what to do with the warning."}],
+		  "effects":{"add_flags":["met_remembered_arrival"],"reveal_knowledge":["origin","preference","biography"]}
+		},
 		"greeting": {
 		  "lines": [
-			{"speaker":"{name}","text":"Before I came here, I worked as {occupation} in {origin}."},
+			{"speaker":"{name}","text":"I came to this crossroads from {nation}. Before that, I worked as {occupation} in {origin}."},
 			{"speaker":"{name}","text":"{motivation}"},
 			{"speaker":"The Hearth","text":"First impressions settle quickly. {personality}"},
 			{"speaker":"{name}","text":"What I ask from the people beside me is simple: {preference}. The rest can be learned on the road."}
@@ -33,6 +42,22 @@
 			{"speaker":"{name}","text":"If we travel together, remember this much about me: {preference}. Small promises reveal what grand ones are worth."}
 		  ],
 		  "effects": {"add_flags":["candidate_spoken_deeply"],"reveal_knowledge":["origin","preference","biography"]}
+		},
+		"helvetica_arrival": {
+		  "lines": [{"speaker":"Ulric","text":"Helvetica teaches that a seal is public law, not a trophy. I expected a Nordian war camp. Instead I found a Keeper recording failures as carefully as victories."},{"speaker":"The Keeper","text":"The Hearth serves people from every road. Its ledger does not grant any nation ownership of the prisons."},{"speaker":"Ulric","text":"Good. Then let me sign it. Civic duty performed from a safe gallery is only commentary."}],
+		  "effects":{"add_flags":["met_helvetica"],"reveal_knowledge":["origin","preference","biography"]}
+		},
+		"concord_arrival": {
+		  "lines": [{"speaker":"Rhea","text":"The refugees call the Farmstead cursed. The Verdant Concord calls it wounded. Your victories will mean little if the soil keeps burning afterward."},{"speaker":"The Keeper","text":"Then show us how suppression differs from healing."},{"speaker":"Rhea","text":"I will. But I will not pretend every prison deserves repair merely because a god designed it."}],
+		  "effects":{"add_flags":["met_verdant_concord"],"reveal_knowledge":["origin","preference","biography"]}
+		},
+		"isles_arrival": {
+		  "lines": [{"speaker":"Tamsin","text":"In the Veiled Isles, a wrong name can bind a spirit more cruelly than iron. Your Crypt records use three names for the same guardian and call all three monsters."},{"speaker":"The Keeper","text":"You think the official account was altered."},{"speaker":"Tamsin","text":"I think official accounts are tools. Bring me below, and I will show you whose hand used this one."}],
+		  "effects":{"add_flags":["met_veiled_isles"],"reveal_knowledge":["origin","preference","biography"]}
+		},
+		"dominion_arrival": {
+		  "lines": [{"speaker":"Nessa","text":"The Sun-Crowned Dominion agrees Balor is dangerous. It does not agree that an ancient sentence is eternally lawful simply because the judges were gods."},{"speaker":"The Keeper","text":"Every nation arrives with a claim."},{"speaker":"Nessa","text":"I arrived with an amendment—and the suspicion that the Foundry contains the machinery that made such amendments possible."}],
+		  "effects":{"add_flags":["met_sun_crowned_dominion"],"reveal_knowledge":["origin","preference","biography"]}
 		}
 	  }
 	},

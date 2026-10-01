@@ -5,7 +5,7 @@ const CRYPT:=preload("res://scenes/slasher/SlasherCrypt.tscn")
 func _initialize()->void:call_deferred("_run")
 func _run()->void:
 	for floor_number:int in [1,4,7]:
-		var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("crypt_visual","Crypt Visual",3,true,1,"","","warrior"),"crypt","slasher");state.current_floor=floor_number
+		var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("crypt_visual","Crypt Visual",3,true,1,"","","warrior"), "crypt");state.current_floor=floor_number
 		var scene:=CRYPT.instantiate();scene._ensure_designer_controls();scene.setup(null,state);root.add_child(scene);await process_frame;await process_frame
 		if scene.relic_modal!=null and scene.relic_modal.visible:scene.relic_modal.finish()
 		if floor_number==7:

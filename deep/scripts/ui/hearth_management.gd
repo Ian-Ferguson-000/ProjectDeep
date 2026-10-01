@@ -1,7 +1,7 @@
 extends ColorRect
 class_name HearthManagement
 
-signal manual_launch(dungeon_id: String, mode: String, party: Array[String])
+signal manual_launch(dungeon_id: String, party: Array[String])
 signal candidate_requested(candidate_id: String)
 signal changed
 signal closed
@@ -15,7 +15,6 @@ var section: String = "Company"
 var member_id: String = ""
 var selected_party: Array[String] = []
 var dungeon_id: String = "forest"
-var mode: String = RunState.PLAY_MODE_SLASHER
 var policy: String = "balanced"
 var slot_filter: String = "all"
 var title_label: Label
@@ -80,7 +79,12 @@ func show_section(page: String) -> void:
 
 func refresh() -> void:
 	if campaign == null or body == null: return
-	for child in body.get_children(): child.free()
+	# A number of controls refresh this page from their own pressed/toggled signal.
+	# Destroying the emitting control synchronously is a native use-after-free in
+	# Godot 4.7, so detach it now and defer destruction until the frame is safe.
+	for child in body.get_children():
+		body.remove_child(child)
+		child.queue_free()
 	title_label.text = section.to_upper()
 	bank_label.text = "%s   •   Day %d   •   %dg   •   %d supplies   •   %d essence   •   Reputation %d   •   Rooms %d/%d" % [HearthCatalog.tier(campaign.establishment_tier).name,campaign.calendar_day,campaign.banked_gold,campaign.supplies,campaign.relic_essence,campaign.reputation,campaign.living_roster().size(),campaign.get_roster_capacity()]
 	for child in tabs.get_children(): child.modulate = THEME.GOLD if child.text == section else Color.WHITE
@@ -265,17 +269,12 @@ func expedition_page() -> void:
 	card("%s risk · %d/%d adventurers" % [risk.band,selected_party.size(),campaign.get_party_cap(dungeon_id)],"\n".join(risk.reasons)+"\nKeeper retains 80%% of recovered gold. Expected return: Day %d." % (campaign.calendar_day+7))
 	var controls := HBoxContainer.new()
 	body.add_child(controls)
-	if RunState.STRATEGY_MODE_ENABLED:
-		button(controls,("✓ " if mode==RunState.PLAY_MODE_STRATEGY else "")+"Strategy",func(): mode=RunState.PLAY_MODE_STRATEGY; refresh())
-	else:
-		controls.add_child(label("Strategy mode temporarily unavailable",14,THEME.MUTED))
-	button(controls,("✓ " if mode==RunState.PLAY_MODE_SLASHER else "")+"Slasher",func(): mode=RunState.PLAY_MODE_SLASHER; refresh())
 	for value in ["cautious","balanced","bold"]: button(controls,("✓ " if value==policy else "")+value.capitalize(),func(): policy=value; refresh())
 	var readiness := HearthExpeditions.readiness(campaign,selected_party,dungeon_id)
 	if not readiness.ok: body.add_child(label(readiness.error,16,THEME.MUTED))
 	var launch := HBoxContainer.new()
 	body.add_child(launch)
-	button(launch,"Lead Expedition",func(): hide(); manual_launch.emit(dungeon_id,mode,selected_party.duplicate()),readiness.ok)
+	button(launch,"Lead Expedition",func(): hide(); manual_launch.emit(dungeon_id,selected_party.duplicate()),readiness.ok)
 	button(launch,"Dispatch Party",func(): act(HearthExpeditions.dispatch(campaign,selected_party,dungeon_id,policy)),readiness.ok and campaign.has_completed_dungeon(dungeon_id))
 	if not campaign.has_completed_dungeon(dungeon_id): body.add_child(label("Manually clear this dungeon to unlock automated dispatch.",15,THEME.MUTED))
 	for value in campaign.dispatches.values(): card("Party away · "+String(value.dungeon_id).capitalize(),"Return Day %d · %s retreat policy" % [value.due_day,value.retreat_policy])

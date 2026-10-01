@@ -40,7 +40,7 @@ func run() -> void:
 	check(HearthArmory.unequip(c,first.id,"armor").ok and HearthArmory.sell(c,item_id).ok,"Unassign/sell failed")
 	var before := c.banked_gold
 	check(not HearthArmory.sell(c,item_id).ok and c.banked_gold==before,"Sale applied twice")
-	var launch := c.launch_expedition([first.id,second.id],"forest","strategy")
+	var launch := c.launch_expedition([first.id,second.id], "forest")
 	check(launch.ok,"Manual party failed to launch")
 	check(not HearthArmory.unequip(c,first.id,"weapon").ok,"Away loadout was mutable")
 	c.expedition.carried_gold=100
@@ -58,7 +58,7 @@ func run() -> void:
 	expansion.banked_gold=2000
 	expansion.relic_essence=100
 	expansion.reputation=70
-	expansion.record_dungeon_clear("forest","strategy")
+	expansion.record_dungeon_clear("forest")
 	check(HearthFacilities.purchase(expansion,"roster_services").ok,"Expansion refused valid requirements")
 	var paid_gold:=expansion.banked_gold
 	check(not HearthFacilities.purchase(expansion,"roster_services").ok and expansion.banked_gold==paid_gold,"Duplicate construction charged")
@@ -85,10 +85,10 @@ func run() -> void:
 	a.level=3; a.progression.level=3
 	b.level=8; b.progression.level=8
 	same.supplies=20
-	check(same.launch_expedition([a.id,b.id],"forest","strategy").ok,"Same-class party failed")
+	check(same.launch_expedition([a.id,b.id], "forest").ok,"Same-class party failed")
 	var state:=RunState.new()
 	state.attach_campaign(same)
-	state.start_new_run(HearthCatalog.gear(a.gear_id),"forest","strategy")
+	state.start_new_run(HearthCatalog.gear(a.gear_id), "forest")
 	check(state.get_level()==3,"First same-class member loaded wrong level")
 	state.select_active_character(b.id)
 	check(state.get_level()==8,"Second same-class member loaded wrong level")
@@ -96,7 +96,7 @@ func run() -> void:
 	check(state.get_level()==3,"Same-class swap overwrote progression")
 	var defeated:=company()
 	var ids:=defeated.default_party("forest")
-	defeated.launch_expedition(ids,"forest","strategy")
+	defeated.launch_expedition(ids, "forest")
 	defeated.settle_expedition(defeated.expedition.expedition_id,"death")
 	check(defeated.memorial.size()==2 and defeated.armory.is_empty(),"Defeat did not lose equipped items")
 	var ui:=preload("res://scenes/ui/hearth/Company.tscn").instantiate()
@@ -106,6 +106,29 @@ func run() -> void:
 	for page in HearthManagement.SECTIONS:
 		ui.open(expansion,ui_state,page)
 		check(ui.body.get_child_count()>0,"Empty UI page: "+page)
+	# Regression: party and policy controls rebuild the management page from
+	# inside their own signals. The old synchronous free crashed Godot after a
+	# return/recruit/select sequence instead of producing a recoverable script error.
+	var selection_campaign:=company()
+	var selection_state:=RunState.new()
+	selection_state.attach_campaign(selection_campaign)
+	ui.open(selection_campaign,selection_state,"Expeditions")
+	var party_checks: Array[Node]=ui.body.find_children("*","CheckBox",true,false)
+	check(not party_checks.is_empty(),"Expedition page did not create party selectors")
+	if not party_checks.is_empty():
+		var party_check:=party_checks[0] as CheckBox
+		party_check.button_pressed=true
+		await process_frame
+		check(ui.selected_party.size()==1,"Party selection was lost during safe page refresh")
+	var policy_button:Button=null
+	var policy_buttons: Array[Node]=ui.body.find_children("*","Button",true,false)
+	for candidate in policy_buttons:
+		if (candidate as Button).text.ends_with("Bold"): policy_button=candidate as Button;break
+	check(policy_button!=null,"Expedition page did not create policy controls")
+	if policy_button!=null:
+		policy_button.pressed.emit()
+		await process_frame
+		check(ui.policy=="bold","Policy selection was lost during safe page refresh")
 	ui.queue_free()
 	await process_frame
 	if failures.is_empty(): print("HEARTH_CAMPAIGN_TESTS_PASSED")

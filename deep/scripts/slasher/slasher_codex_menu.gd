@@ -70,9 +70,14 @@ func _build_stats()->void:
 	for slot in ["basic","movement","special","defensive"]:
 		var tuning:=run_state.get_effective_slasher_ability_tuning(slot);var action:Dictionary=actions.get(slot,{})
 		content.add_child(_text_panel("[font_size=19][b]%s · %s[/b][/font_size]\n%s\n%s"%[slot.capitalize(),String(action.get("name",slot.capitalize())),String(action.get("description","")), _tuning_summary(tuning)]))
+	var combos:=GameBalance.get_slasher_combos(run_state.selected_class_id)
+	if not combos.is_empty():
+		content.add_child(_text_panel("[font_size=23][b]Combat Combos[/b][/font_size]\nComplete each step within 2.5 seconds. Confirmed hits and parries are marked explicitly."))
+		for combo in combos:
+			content.add_child(_text_panel("[font_size=19][b]%s[/b][/font_size]\n[color=#f4d178]%s[/color]\n%s"%[String(combo.get("name","Combo")),"  →  ".join(combo.get("step_labels",[])),String(combo.get("description",""))]))
 
 func _build_progression()->void:
-	content.add_child(_text_panel("[font_size=25][b]%s[/b][/font_size]\n%s\nShared level %d · Slasher choices are independent from Strategy."%[run_state.get_slasher_specialization_name(),run_state.get_slasher_progression_summary(),run_state.get_level()]))
+	content.add_child(_text_panel("[font_size=25][b]%s[/b][/font_size]\n%s\nShared level %d · Choose a permanent Slasher specialization."%[run_state.get_slasher_specialization_name(),run_state.get_slasher_progression_summary(),run_state.get_level()]))
 	var selected:Array=run_state.get_slasher_selected_choices()
 	for level:int in [3,5,7,9,10,11,13,15,17,19,20]:
 		var line:String="[color=#77828a]Locked[/color]"

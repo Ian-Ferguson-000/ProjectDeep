@@ -22,7 +22,7 @@ static func purchase(c: CampaignState, branch: String) -> Dictionary:
 	if not cost.available: return HearthArmory.fail(cost.error)
 	if c.establishment_tier < int(cost.tier): return HearthArmory.fail("Expand the tavern first.")
 	if c.reputation < int(cost.get("reputation",0)): return HearthArmory.fail("Earn more reputation before expanding.")
-	if c.completed_dungeon_modes.size() < int(cost.get("manual_clears",0)): return HearthArmory.fail("Explore and manually clear more distinct dungeons.")
+	if c.completed_dungeons.size() < int(cost.get("manual_clears",0)): return HearthArmory.fail("Explore and manually clear more distinct dungeons.")
 	if c.banked_gold < int(cost.gold) or c.relic_essence < int(cost.essence): return HearthArmory.fail("Not enough gold or relic essence.")
 	c.banked_gold -= int(cost.gold)
 	c.relic_essence -= int(cost.essence)

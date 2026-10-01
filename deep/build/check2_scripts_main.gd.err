@@ -1,0 +1,14 @@
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:161)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://scripts/scenes/tavern.gd:162)
+ERROR: Failed to load script "res://scripts/scenes/tavern.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://scripts/main.gd:285)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://scripts/main.gd:344)
+SCRIPT ERROR: Parse Error: Identifier "StoryEventService" not declared in the current scope.
+   at: GDScript::reload (res://scripts/main.gd:347)
+ERROR: Failed to load script "res://scripts/main.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

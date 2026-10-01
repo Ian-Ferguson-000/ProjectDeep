@@ -6,12 +6,12 @@ This audit tracks source files under `assets/`. Godot `.import` sidecars and hou
 
 ## How to read this
 
-- **Runtime: direct** — named literally by game code, a scene, configuration, or game data.
-- **Runtime: dependency** — referenced by another runtime-used asset resource.
-- **Runtime: pattern** — matched by a formatted runtime path such as `enemies/%s/generated_source.png`.
-- **Review: runtime directory** — sits below a directory loaded dynamically. It may or may not be selected at runtime, so inspect the loader before deleting it.
-- **Support: test/tool only** — used for tests or asset-generation tooling, but not directly by the shipped game.
-- **Unreferenced** — no reference was found. This is the cleanup shortlist, not proof that deletion is safe; editor-only source art and paths assembled from multiple strings can evade static analysis.
+- **Runtime: direct** â€” named literally by game code, a scene, configuration, or game data.
+- **Runtime: dependency** â€” referenced by another runtime-used asset resource.
+- **Runtime: pattern** â€” matched by a formatted runtime path such as `enemies/%s/generated_source.png`.
+- **Review: runtime directory** â€” sits below a directory loaded dynamically. It may or may not be selected at runtime, so inspect the loader before deleting it.
+- **Support: test/tool only** â€” used for tests or asset-generation tooling, but not directly by the shipped game.
+- **Unreferenced** â€” no reference was found. This is the cleanup shortlist, not proof that deletion is safe; editor-only source art and paths assembled from multiple strings can evade static analysis.
 
 ## Summary
 
@@ -56,53 +56,53 @@ This audit tracks source files under `assets/`. Godot `.import` sidecars and hou
 | `assets/classes/rogue/sheet.png` | data/classes.json |
 | `assets/classes/summoner/sheet.png` | data/classes.json |
 | `assets/classes/tank/sheet.png` | data/classes.json |
-| `assets/classes/wolf_companion/sheet.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_sprite_library.gd |
+| `assets/classes/wolf_companion/sheet.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_sprite_library.gd |
 | `assets/crypt/hazards/bone_spikes_source.png` | scripts/slasher/slasher_crypt_hazard.gd |
 | `assets/crypt/hazards/curse_sigil_source.png` | scripts/slasher/slasher_crypt_hazard.gd |
 | `assets/crypt/hazards/soulflame_source.png` | scripts/slasher/slasher_crypt_hazard.gd |
-| `assets/effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 Hit.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_impact.gd<br>scripts/scenes/forest.gd<br>scripts/slasher/slasher_projectile.gd |
+| `assets/effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 Hit.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_impact.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_projectile.gd |
 | `assets/effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 Start.png` | scripts/codes/projectile.gd<br>scripts/slasher/slasher_projectile.gd |
 | `assets/effect_packs/Aether Effect 01/Aether VFX 1/IceVFX 1 Repeatable.png` | scripts/codes/projectile.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/effect_packs/fireball/fireball_flight.png` | scripts/codes/projectile.gd<br>scripts/scenes/forest.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/effect_packs/fireball/fireball_impact.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_impact.gd<br>scripts/scenes/forest.gd<br>scripts/slasher/slasher_projectile.gd |
+| `assets/effect_packs/fireball/fireball_flight.png` | scripts/codes/projectile.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_projectile.gd |
+| `assets/effect_packs/fireball/fireball_impact.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_impact.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_projectile.gd |
 | `assets/effect_packs/fireball/fireball_start.png` | scripts/codes/projectile.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/enemies/crypt/crypt_boss.png` | scripts/scenes/forest.gd |
-| `assets/enemies/crypt/ghoul.png` | scripts/scenes/forest.gd |
-| `assets/enemies/crypt/necromancer.png` | scripts/scenes/forest.gd |
-| `assets/enemies/crypt/skeleton.png` | scripts/scenes/forest.gd |
+| `assets/enemies/crypt/crypt_boss.png` | scripts/slasher/slasher_forest.gd |
+| `assets/enemies/crypt/ghoul.png` | scripts/slasher/slasher_forest.gd |
+| `assets/enemies/crypt/necromancer.png` | scripts/slasher/slasher_forest.gd |
+| `assets/enemies/crypt/skeleton.png` | scripts/slasher/slasher_forest.gd |
 | `assets/enemies/dark_druid/frames.tres` | data/enemies/dark_druid/definition.tres |
 | `assets/enemies/feral_wolf/frames.tres` | data/enemies/feral_wolf/definition.tres |
-| `assets/enemies/feral_wolf/normalized_sheet.png` | data/enemies/feral_wolf/journal.tres<br>scripts/scenes/forest.gd |
+| `assets/enemies/feral_wolf/normalized_sheet.png` | data/enemies/feral_wolf/journal.tres<br>scripts/slasher/slasher_forest.gd |
 | `assets/enemies/fire_mage/frames.tres` | data/enemies/fire_mage/definition.tres |
-| `assets/enemies/fire_mage/normalized_sheet.png` | data/enemies/fire_mage/journal.tres<br>scripts/scenes/forest.gd |
+| `assets/enemies/fire_mage/normalized_sheet.png` | data/enemies/fire_mage/journal.tres<br>scripts/slasher/slasher_forest.gd |
 | `assets/enemies/ice_mage/frames.tres` | data/enemies/ice_mage/definition.tres |
 | `assets/enemies/ice_mage/normalized_sheet.png` | data/enemies/ice_mage/journal.tres |
 | `assets/enemies/poison_ranger/frames.tres` | data/enemies/poison_ranger/definition.tres |
 | `assets/enemies/poison_ranger/normalized_sheet.png` | data/enemies/poison_ranger/journal.tres |
 | `assets/enemies/spore_beast/frames.tres` | data/enemies/spore_beast/definition.tres |
-| `assets/field/farmstead/fire_patch.png` | scripts/scenes/ashen_farmstead.gd |
+| `assets/field/farmstead/fire_patch.png` | scripts/slasher/slasher_farmstead.gd |
 | `assets/field/farmstead/merchant_orin.png` | data/merchants.json<br>scripts/slasher/slasher_farmstead.gd |
 | `assets/field/farmstead/return_gate.png` | scripts/slasher/slasher_farmstead.gd |
 | `assets/generated_characters/tavern_keeper.png` | scenes/tavern/Tavern.tscn<br>scripts/scenes/tavern.gd |
 | `assets/generated_characters/town_mayor.png` | scripts/main.gd |
-| `assets/generated_ui/wooden_exit_door.png` | scripts/scenes/forest.gd |
+| `assets/generated_ui/wooden_exit_door.png` | scripts/slasher/slasher_forest.gd |
 | `assets/generated_vfx/flamethrower/flamethrower_active.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_effect.gd |
 | `assets/generated_vfx/flamethrower/flamethrower_end.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_effect.gd |
 | `assets/generated_vfx/flamethrower/flamethrower_start.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_effect.gd |
 | `assets/Humble Gift - Paper UI System v1.1/Sprites/Book Desk/1.png` | scenes/tavern/Tavern.tscn |
 | `assets/Humble Gift - Paper UI System v1.1/Sprites/Book Desk/4.png` | scenes/scenes/StartMenu.tscn |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/1.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/10.png` | scripts/scenes/forest.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/15.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/1.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/10.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/12.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/15.png` | scripts/scenes/forest.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/2.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/20.png` | scripts/scenes/forest.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/22.png` | scripts/scenes/forest.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/26.png` | scripts/scenes/forest.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/7.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/1.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/10.png` | scripts/slasher/slasher_forest.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/15.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/1.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/10.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/12.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/15.png` | scripts/slasher/slasher_forest.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/2.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/20.png` | scripts/slasher/slasher_forest.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/22.png` | scripts/slasher/slasher_forest.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/26.png` | scripts/slasher/slasher_forest.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/7.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
 | `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/1.png` | scenes/scenes/StartMenu.tscn<br>scenes/scenes/ui/PlayerMenu.tscn<br>scenes/scenes/ui/SoulSpace.tscn |
 | `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/3 Item Holder/1.png` | scripts/codes/player_menu.gd<br>scripts/codes/soul_space.gd |
 | `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/7 Dialogue Box/1.png` | scenes/scenes/StartMenu.tscn<br>scenes/scenes/ui/SoulSpace.tscn |
@@ -112,32 +112,32 @@ This audit tracks source files under `assets/`. Godot `.import` sidecars and hou
 | `assets/merchants/forest_thistle.png` | data/merchants.json<br>scripts/slasher/slasher_forest_art.gd |
 | `assets/merchants/tavern_mara.png` | data/merchants.json<br>scripts/main.gd |
 | `assets/pixel_art/atlas_transparency.gdshader` | scenes/scenes/maps/StarterMap.tscn |
-| `assets/pixel_art/Campfire.png` | scenes/slasher/templates/MineLoopTemplate.tscn<br>scripts/scenes/forest.gd<br>scripts/slasher/slasher_forest_art.gd |
-| `assets/pixel_art/chests/chest2.png` | scripts/scenes/forest.gd |
-| `assets/pixel_art/forest_art/grass1.jpeg` | scripts/scenes/forest.gd |
-| `assets/pixel_art/forest_art/grass2.jpg` | scripts/scenes/forest.gd |
-| `assets/pixel_art/forest_art/grass3.jpg` | scripts/scenes/forest.gd |
-| `assets/pixel_art/forest_art/interactables/barrel_generated.png` | scripts/scenes/forest.gd |
-| `assets/pixel_art/FreePack.png` | scenes/scenes/maps/StarterMap.tscn<br>scripts/scenes/forest.gd |
-| `assets/pixel_art/Gold.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/Campfire.png` | scenes/slasher/templates/MineLoopTemplate.tscn<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd |
+| `assets/pixel_art/chests/chest2.png` | scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/forest_art/grass1.jpeg` | scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/forest_art/grass2.jpg` | scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/forest_art/grass3.jpg` | scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/forest_art/interactables/barrel_generated.png` | scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/FreePack.png` | scenes/scenes/maps/StarterMap.tscn<br>scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/Gold.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd |
 | `assets/pixel_art/houses.png` | scenes/scenes/maps/StarterMap.tscn |
-| `assets/pixel_art/key.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/potion.png` | data/consumables.json<br>scripts/scenes/forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/pixel_art/key.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/potion.png` | data/consumables.json<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/player_character_menu.gd |
 | `assets/pixel_art/rocks/rock1.png` | scenes/slasher/templates/MineLoopTemplate.tscn |
-| `assets/pixel_art/rocks/rock2.png` | scripts/scenes/forest.gd |
+| `assets/pixel_art/rocks/rock2.png` | scripts/slasher/slasher_forest.gd |
 | `assets/pixel_art/shroomie.png` | data/enemies/spore_beast/journal.tres |
-| `assets/pixel_art/spellnode.png` | data/consumables.json<br>scripts/codes/soul_space.gd<br>scripts/scenes/forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
+| `assets/pixel_art/spellnode.png` | data/consumables.json<br>scripts/codes/soul_space.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
 | `assets/pixel_art/starter_atlas.png` | data/journal/corrupted_heart.tres<br>scenes/scenes/maps/StarterMap.tscn<br>scripts/codes/player_menu.gd |
 | `assets/pixel_art/translucent shrooms.png` | scenes/scenes/maps/StarterMap.tscn |
-| `assets/pixel_art/trap.png` | scripts/scenes/forest.gd |
-| `assets/pixel_art/TX Plant.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_forest_art.gd |
-| `assets/pixel_art/TX Props.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_forest_art.gd |
-| `assets/pixel_art/TX Struct.png` | scripts/scenes/forest.gd |
-| `assets/pixel_art/TX Tileset Grass.png` | scenes/crypt/Crypt.tscn<br>scenes/forest/Forest.tscn<br>scenes/scenes/maps/StarterMap.tscn<br>scenes/slasher/templates/ForestBranchingTemplate.tscn<br>scenes/slasher/tools/WallGenerationLab.tscn<br>scenes/tavern/Tavern.tscn<br>scripts/slasher/slasher_forest_art.gd |
+| `assets/pixel_art/trap.png` | scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/TX Plant.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd |
+| `assets/pixel_art/TX Props.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd |
+| `assets/pixel_art/TX Struct.png` | scripts/slasher/slasher_forest.gd |
+| `assets/pixel_art/TX Tileset Grass.png` | scenes/slasher/SlasherCrypt.tscn<br>scenes/slasher/SlasherForest.tscn<br>scenes/scenes/maps/StarterMap.tscn<br>scenes/slasher/templates/ForestBranchingTemplate.tscn<br>scenes/slasher/tools/WallGenerationLab.tscn<br>scenes/tavern/Tavern.tscn<br>scripts/slasher/slasher_forest_art.gd |
 | `assets/pixel_art/TX tileset Hellfloor.png` | scripts/slasher/slasher_hell_art.gd |
 | `assets/pixel_art/TX tileset Hellfloor2.png` | scripts/slasher/slasher_hell_art.gd |
 | `assets/pixel_art/TX tileset Hellwall.png` | data/slasher_wall_tilesets.json<br>scripts/slasher/slasher_hell_art.gd |
-| `assets/pixel_art/TX Tileset Stone Ground.png` | scripts/scenes/forest.gd<br>scripts/slasher/slasher_crypt_art.gd |
+| `assets/pixel_art/TX Tileset Stone Ground.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_crypt_art.gd |
 | `assets/pixel_art/TX Tileset Wall.png` | data/slasher_wall_tilesets.json<br>scenes/slasher/templates/ForestBranchingTemplate.tscn<br>scenes/slasher/tools/WallGenerationLab.tscn<br>scenes/tavern/Tavern.tscn |
 | `assets/pixel_art/voodoo-guy-walk anim.png` | data/enemies/dark_druid/journal.tres<br>scenes/scenes/maps/StarterMap.tscn |
 | `assets/projectiles/hostile/balor_flaming_disk.png` | scripts/slasher/slasher_sprite_library.gd |
@@ -150,12 +150,12 @@ This audit tracks source files under `assets/`. Godot `.import` sidecars and hou
 | `assets/slasher/ui/slasher_resource_hud_frame.png` | scripts/slasher/slasher_forest.gd |
 | `assets/sprite_packs/Kobold/kobold_frames.tres` | data/enemies/kobold_guard/definition.tres<br>scenes/scenes/actors/Kobold.tscn |
 | `assets/sprite_packs/Kobold/kobold_profile.tres` | data/enemies/kobold_guard/definition.tres<br>scenes/scenes/actors/Kobold.tscn |
-| `assets/sprite_packs/Kobold/Sprites/with_outline/IDLE.png` | data/journal/kobold_guard.tres<br>scripts/scenes/forest.gd |
-| `assets/sprite_packs/Player/IDLE/idle_down.png` | data/classes.json<br>scripts/scenes/forest.gd<br>scripts/scenes/tavern.gd |
+| `assets/sprite_packs/Kobold/Sprites/with_outline/IDLE.png` | data/journal/kobold_guard.tres<br>scripts/slasher/slasher_forest.gd |
+| `assets/sprite_packs/Player/IDLE/idle_down.png` | data/classes.json<br>scripts/slasher/slasher_forest.gd<br>scripts/scenes/tavern.gd |
 | `assets/sprite_packs/Player/player_frames.tres` | scenes/scenes/actors/Player.tscn<br>scripts/slasher/slasher_sprite_library.gd |
 | `assets/tavern/tavern_hub_backdrop.png` | scripts/scenes/tavern.gd |
-| `assets/tile_sets/Free_pixel_tiles_pack/grass_1.png` | scripts/scenes/ashen_farmstead.gd |
-| `assets/tile_sets/Free_pixel_tiles_pack/grass_3.png` | scripts/scenes/ashen_farmstead.gd |
+| `assets/tile_sets/Free_pixel_tiles_pack/grass_1.png` | scripts/slasher/slasher_farmstead.gd |
+| `assets/tile_sets/Free_pixel_tiles_pack/grass_3.png` | scripts/slasher/slasher_farmstead.gd |
 | `assets/ui/buttons/fantasy_button_compact_dark_clean.png` | scripts/ui/fantasy_button.gd |
 | `assets/ui/buttons/fantasy_button_dark_clean.png` | scripts/ui/fantasy_button.gd |
 | `assets/ui/buttons/fantasy_button_light_clean.png` | scripts/ui/fantasy_button.gd |
@@ -238,15 +238,15 @@ This audit tracks source files under `assets/`. Godot `.import` sidecars and hou
 | `assets/enemies/wolf_hunter/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
 | `assets/enemies/wolf_lurker/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
 | `assets/enemies/wolf_vanguard/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/field/farmstead/ash_rat.png` | scripts/scenes/forest.gd |
-| `assets/field/farmstead/barrel.png` | scripts/scenes/forest.gd |
-| `assets/field/farmstead/blighted_farmhand.png` | scripts/scenes/forest.gd |
-| `assets/field/farmstead/ember_crow.png` | scripts/scenes/forest.gd |
-| `assets/field/farmstead/fence.png` | scripts/scenes/forest.gd |
-| `assets/field/farmstead/harvest_wretch.png` | scripts/scenes/forest.gd |
-| `assets/field/farmstead/hay_bale.png` | scripts/scenes/forest.gd |
-| `assets/field/farmstead/merchant_orin_portrait.png` | scripts/scenes/forest.gd |
-| `assets/field/farmstead/possessed_scarecrow.png` | scripts/scenes/forest.gd |
+| `assets/field/farmstead/ash_rat.png` | scripts/slasher/slasher_forest.gd |
+| `assets/field/farmstead/barrel.png` | scripts/slasher/slasher_forest.gd |
+| `assets/field/farmstead/blighted_farmhand.png` | scripts/slasher/slasher_forest.gd |
+| `assets/field/farmstead/ember_crow.png` | scripts/slasher/slasher_forest.gd |
+| `assets/field/farmstead/fence.png` | scripts/slasher/slasher_forest.gd |
+| `assets/field/farmstead/harvest_wretch.png` | scripts/slasher/slasher_forest.gd |
+| `assets/field/farmstead/hay_bale.png` | scripts/slasher/slasher_forest.gd |
+| `assets/field/farmstead/merchant_orin_portrait.png` | scripts/slasher/slasher_forest.gd |
+| `assets/field/farmstead/possessed_scarecrow.png` | scripts/slasher/slasher_forest.gd |
 | `assets/roster_portraits/healer_0.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
 | `assets/roster_portraits/healer_1.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
 | `assets/roster_portraits/healer_2.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
@@ -282,18 +282,18 @@ This audit tracks source files under `assets/`. Godot `.import` sidecars and hou
 
 | Asset | Reference or loader |
 | --- | --- |
-| `assets/field/farmstead/backgrounds/barn.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/cellar.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/crossroads.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/farmyard.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/harvest_field.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/barn_source.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/cellar_source.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/crossroads_source.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/farmyard_source.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/harvest_field_source.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/storehouse_source.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/storehouse.png` | scripts/scenes/ashen_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/barn.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/cellar.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/crossroads.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/farmyard.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/harvest_field.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/barn_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/cellar_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/crossroads_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/farmyard_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/harvest_field_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/storehouse_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/storehouse.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
 | `assets/ui/tavern/chrome/button_primary.svg` | scripts/ui/tavern_ui_theme.gd |
 | `assets/ui/tavern/chrome/button.svg` | scripts/ui/tavern_ui_theme.gd |
 | `assets/ui/tavern/chrome/nameplate.svg` | scripts/ui/tavern_ui_theme.gd |

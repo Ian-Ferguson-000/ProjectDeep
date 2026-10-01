@@ -8,7 +8,7 @@ func _run()->void:
 	var input_tuning:Dictionary=GameBalance.get_slasher_balance("input")
 	_expect(float(input_tuning.get("held_basic_cooldown_multiplier",0.0))>=2.0,"Held basic attacks are not meaningfully slower than clicked attacks.",failures)
 
-	var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("dash_test","Dash Test",2,false,0,"","","warrior"),"forest","slasher")
+	var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("dash_test","Dash Test",2,false,0,"","","warrior"), "forest")
 	var player:=SlasherPlayer.new();player.setup(state);root.add_child(player);player.set_physics_process(false);player.global_position=Vector2.ZERO;player.aim_direction=Vector2.RIGHT
 	var first:=_enemy_at(Vector2(105.0,0.0));var second:=_enemy_at(Vector2(245.0,0.0));await process_frame
 	var first_health:=first.health;var second_health:=second.health;var player_health:=player.health

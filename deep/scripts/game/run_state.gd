@@ -1,11 +1,6 @@
 extends RefCounted
 class_name RunState
 
-const PLAY_MODE_STRATEGY := "strategy"
-const PLAY_MODE_SLASHER := "slasher"
-# Strategy combat is temporarily hidden while its new expedition handoff is rebuilt.
-# Keep this as one switch so UI, campaign validation, and legacy launch paths agree.
-const STRATEGY_MODE_ENABLED := false
 const TUTORIAL_MAX_HEALTH := 3
 const MAX_HERO_LEVEL := 20
 const FALLBACK_XP_THRESHOLDS := [0, 0, 100, 220, 380, 580, 820, 1100, 1420, 1780, 2180, 2620, 3100, 3620, 4180, 4780, 5420, 6100, 6820, 7580, 8380]
@@ -46,8 +41,6 @@ var floor_seed: int = 1001
 var current_floor: int = 1
 var max_floors: int = 5
 var active_dungeon_id: String = "forest"
-var active_play_mode: String = PLAY_MODE_STRATEGY
-var last_play_mode: String = PLAY_MODE_STRATEGY
 var forest_cleared: bool = false
 var crypt_unlocked: bool = false
 var completed_dungeons: Dictionary = {}
@@ -162,7 +155,7 @@ func record_floor_checkpoint(checkpoint_suffix:String="",reward_depth:int=-1)->v
 	if campaign != null and campaign.expedition.active:
 		var depth := current_floor if reward_depth < 0 else maxi(1, reward_depth)
 		var checkpoint_key := str(current_floor) if checkpoint_suffix.is_empty() else checkpoint_suffix
-		var checkpoint_id := "%s:%s:%s" % [active_dungeon_id, active_play_mode, checkpoint_key]
+		var checkpoint_id := "%s:%s" % [active_dungeon_id, checkpoint_key]
 		var capacity_rank := int(campaign.tavern_upgrades.get("relic_capacity", 0))
 		campaign.expedition.reward_checkpoint(checkpoint_id, 1 + int(depth / 3.0) + capacity_rank)
 		campaign.expedition.extraction_available = not campaign.expedition.tutorial_run
@@ -223,23 +216,20 @@ func set_class(class_id: String) -> void:
 	_sync_health_from_profile(true)
 	_sync_crypt_unlock()
 
-func start_new_run(gear: GearData, dungeon_id: String = "forest", play_mode: String = PLAY_MODE_STRATEGY) -> void:
+func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	selected_gear = gear
 	if selected_gear != null:
 		selected_gear_by_class[selected_class_id] = selected_gear
 	active_dungeon_id = dungeon_id
-	active_play_mode = normalize_play_mode(play_mode)
-	last_play_mode = active_play_mode
 	if campaign != null and campaign.expedition.active:
 		var living := campaign.expedition.living_party_ids()
 		if not living.is_empty():
 			active_character_id = living[0]
 			var member := campaign.character(active_character_id)
 			if member != null:_load_character_profile(member);set_class(member.class_id)
-	if active_play_mode==PLAY_MODE_SLASHER:reconcile_slasher_progression()
+	reconcile_slasher_progression()
 	var dungeon := GameBalance.get_dungeon(active_dungeon_id)
-	# TUNING: Slasher Forest campaign depth is set in dungeons.json under forest.slasher.campaign_floors; Strategy keeps its original floor count.
-	var slasher_config:Dictionary=Dictionary(dungeon.get("slasher",{}));max_floors=int(slasher_config.get("campaign_floors",dungeon.get("floors",1))) if active_play_mode==PLAY_MODE_SLASHER else int(dungeon.get("floors",1))
+	max_floors=int(dungeon.get("floors",1))
 	_ensure_profiles()
 	_restore_permanent_inventory_for_active_class()
 	pending_chest_choices.clear()
@@ -276,20 +266,11 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest", play_mode: Str
 	if String(dungeon.get("dungeon_type", "mystery")) == "field":
 		var room_count: Dictionary = dungeon.get("room_count", {"min":10,"max":12})
 		field_run = FieldDungeonGenerator.generate(get_current_floor_seed(), int(room_count.get("min", 10)), int(room_count.get("max", 12)))
-	run_outcome = "%s opens in %s mode. The tavern falls quiet behind you." % [String(dungeon.get("name", active_dungeon_id.capitalize())), active_play_mode.capitalize()]
+	run_outcome = "%s opens before you. The tavern falls quiet behind you." % String(dungeon.get("name", active_dungeon_id.capitalize()))
 	_sync_crypt_unlock()
 
-func normalize_play_mode(play_mode: String) -> String:
-	return PLAY_MODE_SLASHER if play_mode.to_lower() == PLAY_MODE_SLASHER else PLAY_MODE_STRATEGY
-
-static func is_play_mode_enabled(play_mode: String) -> bool:
-	return play_mode.to_lower() == PLAY_MODE_SLASHER or (play_mode.to_lower() == PLAY_MODE_STRATEGY and STRATEGY_MODE_ENABLED)
-
-func dungeon_supports_mode(dungeon_id: String, play_mode: String) -> bool:
-	var normalized := normalize_play_mode(play_mode)
-	if not is_play_mode_enabled(normalized): return false
-	var modes: Array = GameBalance.get_dungeon(dungeon_id).get("supported_modes", [PLAY_MODE_STRATEGY])
-	return normalized in modes
+static func dungeon_available(dungeon_id: String) -> bool:
+	return not GameBalance.get_dungeon(dungeon_id).is_empty() and not String(GameBalance.get_dungeon(dungeon_id).get("runtime", "")).is_empty()
 
 func advance_floor() -> bool:
 	if current_floor >= max_floors:
@@ -306,18 +287,18 @@ func record_active_dungeon_completion() -> Array[String]:
 	if active_dungeon_id == "forest": mark_forest_cleared()
 	if campaign != null and campaign.expedition.active:
 		campaign.expedition.carried_gold = gold
-		logs = campaign.record_dungeon_clear(active_dungeon_id, active_play_mode)
+		logs = campaign.record_dungeon_clear(active_dungeon_id)
 	return logs
 
 func transition_to_dungeon(dungeon_id: String) -> bool:
 	var dungeon := GameBalance.get_dungeon(dungeon_id)
-	if dungeon.is_empty() or not dungeon_supports_mode(dungeon_id, active_play_mode): return false
+	if dungeon.is_empty() or not dungeon_available(dungeon_id): return false
 	if campaign == null or not campaign.expedition.active: return false
 	_sync_active_profile_to_character()
 	active_dungeon_id = dungeon_id
 	current_floor = 1
 	var slasher_config: Dictionary = Dictionary(dungeon.get("slasher", {}))
-	max_floors = int(slasher_config.get("campaign_floors", dungeon.get("floors", 1))) if active_play_mode == PLAY_MODE_SLASHER else int(dungeon.get("floors", 1))
+	max_floors = int(dungeon.get("floors", 1))
 	class_resource = 0
 	floor_seed += 37
 	pending_chest_choices.clear()
@@ -335,7 +316,6 @@ func transition_to_dungeon(dungeon_id: String) -> bool:
 	for character_id in campaign.expedition.member_runtime.keys():
 		var runtime: Dictionary = campaign.expedition.member_runtime[character_id]
 		runtime["position"] = []
-		runtime["strategy_turn"] = {}
 		campaign.expedition.member_runtime[character_id] = runtime
 	_tick_inventory_floor_durations()
 	run_outcome = "The expedition descends into %s without returning to the Hearth." % String(dungeon.get("name", dungeon_id.capitalize()))
@@ -374,7 +354,7 @@ func finish_run(outcome: String, message: String) -> void:
 		deaths += 1
 		_clear_permanent_inventory_for_active_class()
 	if campaign != null and campaign.expedition.active:
-		if outcome == "victory": campaign.record_dungeon_clear(active_dungeon_id, active_play_mode)
+		if outcome == "victory": campaign.record_dungeon_clear(active_dungeon_id)
 		campaign.settle_expedition(campaign.expedition.expedition_id, outcome, {"headline":message.split("\n", false)[0] if not message.is_empty() else message})
 		if campaign.is_tutorial_complete(): restore_completed_tutorial_health()
 	_sync_crypt_unlock()
@@ -821,7 +801,7 @@ func gain_xp(amount: int, reason: String) -> Array[String]:
 		logs.append("%s reaches level %d. Max HP +%d." % [selected_class_name, int(profile["level"]), health_gain])
 		logs.append_array(_enqueue_progression_choices(profile, int(profile["level"])))
 	hero_profiles[_profile_key()] = profile
-	if active_play_mode==PLAY_MODE_SLASHER:logs.append_array(reconcile_slasher_progression())
+	logs.append_array(reconcile_slasher_progression())
 	_sync_health_from_profile(false)
 	_sync_crypt_unlock()
 	pending_level_logs.append_array(logs)
@@ -858,7 +838,7 @@ func generate_chest_choices(floor: int, source_rng: RandomNumberGenerator) -> Ar
 	return choices
 
 func generate_slasher_chest_choices(floor_number:int,chest_identity:Variant,endless_cycle:int=0)->Array[String]:
-	# Chest offerings deliberately use their own RNG so opening one never perturbs encounter or Strategy loot rolls.
+	# Chest offerings deliberately use their own RNG so opening one never perturbs encounter or chest loot rolls.
 	var identity_hash:int=String(chest_identity).hash();var source_rng:=RandomNumberGenerator.new()
 	source_rng.seed=get_current_floor_seed()*1103515245+floor_number*961748927+identity_hash
 	var choices:Array[String]=[];var items:Dictionary=GameBalance.get_items();var weights:Dictionary=GameBalance.get_slasher_chest_rarity_weights(floor_number,endless_cycle)

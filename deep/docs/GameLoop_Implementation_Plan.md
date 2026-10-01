@@ -655,7 +655,7 @@ Runtime instances contain IDs plus mutable state. Never duplicate full definitio
 - **Finite-state machine:** Campaign, tavern phase, expedition, encounter, and unit turns.
 - **Command pattern:** Player actions and economy transactions; enables validation, logging, replay, and undo where appropriate.
 - **Event bus/signals:** Loose communication for outcomes such as `hero_down`, `room_cleared`, and `reputation_changed`. Do not use it for direct queries.
-- **Strategy pattern:** Damage formulas, targeting behaviors, AI behaviors, and dungeon generators.
+- **Behavior pattern:** Damage formulas, targeting behaviors, AI behaviors, and dungeon generators.
 - **Composition over inheritance:** Actions apply reusable effects such as Damage, Push, Status, Summon, Heal, and Shield.
 - **Weighted tables with conditions:** Candidate traits, rooms, events, items, and encounters.
 - **Transaction object:** Recruitment, purchases, expedition launch, and settlement must validate affordability and commit atomically.

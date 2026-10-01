@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "doctrines": {
+    "unaligned": {"name":"Undeclared","summary":"Judge each prison by the evidence available.","conflicts":[]},
+    "nordia_destroy": {"name":"Doctrine of Defiance","summary":"The prisoners are enemies of the gods and must be destroyed before they escape.","conflicts":["zarabia_rebind","isles_reexamine"]},
+    "zarabia_rebind": {"name":"Covenant of Rebinding","summary":"Ancient powers cannot simply be killed; their bonds must be understood and renewed.","conflicts":["nordia_destroy","concord_heal"]},
+    "helvetica_restore": {"name":"Law of Restoration","summary":"The seals are divine law and must be restored through correct rite and public authority.","conflicts":["isles_reexamine"]},
+    "concord_heal": {"name":"Living Accord","summary":"The prisons poison the living world and must be transformed rather than merely repaired.","conflicts":["zarabia_rebind","dominion_amend"]},
+    "isles_reexamine": {"name":"Witness Doctrine","summary":"Every sentence must be examined because some prisoners were misnamed or unjustly confined.","conflicts":["nordia_destroy","helvetica_restore"]},
+    "dominion_amend": {"name":"Ordered Amendment","summary":"Cosmic order must hold, but an ancient sentence may be amended through lawful knowledge.","conflicts":["concord_heal"]}
+  }
+}

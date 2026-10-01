@@ -14,7 +14,6 @@ const CONSUMABLES_PATH := "res://data/consumables.json"
 const DUNGEONS_PATH := "res://data/dungeons.json"
 const FIELD_ROOMS_PATH := "res://data/field_rooms.json"
 const SLASHER_BALANCE_PATH := "res://data/slasher_balance.json"
-const STRATEGY_BALANCE_PATH := "res://data/strategy_balance.json"
 const SLASHER_JOURNAL_PATH := "res://data/slasher_journal.json"
 const SLASHER_PROGRESSION_PATH := "res://data/slasher_progression.json"
 const SLASHER_ITEM_EFFECTS_PATH := "res://data/slasher_item_effects.json"
@@ -32,7 +31,6 @@ static var _consumables: Dictionary = {}
 static var _dungeons: Dictionary = {}
 static var _field_rooms: Dictionary = {}
 static var _slasher_balance: Dictionary = {}
-static var _strategy_balance: Dictionary = {}
 static var _slasher_journal: Dictionary = {}
 static var _slasher_progression: Dictionary = {}
 static var _debug_unlock_all_dungeons := false
@@ -49,21 +47,6 @@ static func get_slasher_balance(section: String = "") -> Dictionary:
 	var value: Variant = _slasher_balance.get(section, {})
 	return value.duplicate(true) if value is Dictionary else {}
 
-static func get_strategy_balance(section: String = "") -> Dictionary:
-	_load_all()
-	if section.is_empty(): return _strategy_balance.duplicate(true)
-	var value: Variant = _strategy_balance.get(section, {})
-	return value.duplicate(true) if value is Dictionary else {}
-
-static func get_strategy_value(path: Array, fallback: Variant) -> Variant:
-	_load_all()
-	return _get_nested(_strategy_balance, path, fallback)
-
-static func get_strategy_class_tuning(class_id: String) -> Dictionary:
-	_load_all()
-	var classes: Dictionary = Dictionary(_strategy_balance.get("runtime", {})).get("classes", {})
-	var value: Variant = classes.get(normalize_class_id(class_id), {})
-	return value.duplicate(true) if value is Dictionary else {}
 
 static func get_slasher_class_tuning(class_id: String) -> Dictionary:
 	_load_all()
@@ -88,6 +71,15 @@ static func get_slasher_ability_tuning(class_id: String, slot: String) -> Dictio
 	for key:String in defaults:
 		var candidate:Variant=result.get(key)
 		if typeof(candidate) not in [TYPE_INT,TYPE_FLOAT]:push_warning("Invalid Slasher numeric tuning '%s.%s.%s'; using %s."%[class_id,slot,key,defaults[key]]);result[key]=defaults[key]
+	return result
+
+static func get_slasher_combos(class_id: String) -> Array[Dictionary]:
+	_load_all()
+	var combos: Dictionary = Dictionary(_slasher_balance.get("combos", {}))
+	var values: Array = combos.get(normalize_class_id(class_id), [])
+	var result: Array[Dictionary] = []
+	for value in values:
+		if value is Dictionary: result.append(Dictionary(value).duplicate(true))
 	return result
 
 static func get_slasher_progression(class_id:String)->Dictionary:
@@ -394,10 +386,7 @@ static func get_base_class(class_id: String) -> Dictionary:
 	var classes := get_base_classes()
 	var value: Variant = classes.get(normalize_class_id(class_id), {})
 	if not (value is Dictionary): return {}
-	_load_all()
-	var overrides: Dictionary = Dictionary(_strategy_balance.get("characters", {}))
-	var class_override: Variant = overrides.get(normalize_class_id(class_id), {})
-	var result: Dictionary = _deep_merge(value, class_override) if class_override is Dictionary else value.duplicate(true)
+	var result: Dictionary = value.duplicate(true)
 	var resource_names := {"warrior":"Stamina", "mage":"Mana", "healer":"Grace", "tank":"Endurance", "rogue":"Momentum", "summoner":"Bond"}
 	if resource_names.has(normalize_class_id(class_id)):
 		result["resource"] = resource_names[normalize_class_id(class_id)]
@@ -593,7 +582,6 @@ static func _load_all() -> void:
 	_dungeons = _load_json(DUNGEONS_PATH)
 	_field_rooms = _load_json(FIELD_ROOMS_PATH)
 	_slasher_balance = _load_json(SLASHER_BALANCE_PATH)
-	_strategy_balance = _load_json(STRATEGY_BALANCE_PATH)
 	_slasher_journal = _load_json(SLASHER_JOURNAL_PATH)
 	_slasher_progression = _load_json(SLASHER_PROGRESSION_PATH)
 	_slasher_item_effects = _load_json(SLASHER_ITEM_EFFECTS_PATH)

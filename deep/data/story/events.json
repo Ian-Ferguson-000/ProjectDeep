@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "events": {
+    "last_customer_opening": {
+      "repeat": "once_ever",
+      "variants": {
+        "default": [
+          {"speaker":"The Keeper","text":"The Hearth used to feed every road at this crossroads. Now the kingdoms quarrel over the prisons, the roads are empty, and I cannot afford another silent week.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
+          {"speaker":"Alden","text":"Nordia calls what waits beyond the Briarway an enemy of the gods. Give me a blade, a meal, and one healing draught. I will bring back enough to settle my tab.","portrait":"res://assets/roster_portraits/warrior_0.png","side":"right"},
+          {"speaker":"The Keeper","text":"Then this is a sponsorship, not a farewell. I risk what remains of the Hearth; you return with loot, a mapped road, or knowledge the next soul can use. Come home before courage becomes pride.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+        ]
+      }
+    },
+    "remembered_last_customer": {
+      "repeat": "once_per_loop",
+      "variants": {
+        "default": [
+          {"speaker":"The Keeper","text":"The shutters rattle exactly as they did before the Hearth fell. I remember the empty roads, the siege, and the moment this door opens.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
+          {"speaker":"Alden","text":"Keeper? You look as though you already know me. Nordia calls what waits beyond the Briarway an enemy of the gods. I need a blade, a meal, and one healing draught.","portrait":"res://assets/roster_portraits/warrior_0.png","side":"right"},
+          {"speaker":"The Keeper","text":"Your name is Alden. This time I know the crypt is a threshold, Balor is not the only prison failing, and victory on one road will not save the Hearth. Sit down. We begin differently.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+        ]
+      }
+    },
+    "crisis_open_war": {
+      "repeat":"once_per_loop",
+      "variants":{"default":[
+        {"speaker":"Mayor Corvin Rook","text":"Nordian and Heltic banners have crossed the western road. Both call it a protective occupation. Neither asked the villages being protected.","portrait":"res://assets/generated_characters/town_mayor.png","side":"right"},
+        {"speaker":"The Keeper","text":"The Hearth recognizes no military claim over its guests or expedition records. Move the refugees upstairs and copy every route map before an army decides it owns the ink.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+      ]}
+    },
+    "crisis_fracture": {
+      "repeat":"once_per_loop",
+      "variants":{"default":[
+        {"speaker":"Eamon","text":"Three prisons surged within the same hour. That is not coincidence. The seals are one system, and every kingdom has been fighting over pieces of a machine already failing beneath them.","portrait":"res://assets/roster_portraits/mage_0.png","side":"right"},
+        {"speaker":"Brina","text":"Then winning one road was never enough. We need every company home, every nation warned, and choices better than the ones that brought us here.","portrait":"res://assets/roster_portraits/warrior_0.png","side":"right"},
+        {"speaker":"The Keeper","text":"Open the archive. Favor, claims, and old orders matter less than what the evidence proves. From now on, every expedition prepares for the whole world—not a single victory.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+      ]}
+    },
+    "crisis_last_siege": {
+      "repeat":"once_per_loop",
+      "variants":{"default":[
+        {"speaker":"Mayor Corvin Rook","text":"The crossroads are gone. The remaining civilians are inside, and the outer palisade will not survive another synchronized breach.","portrait":"res://assets/generated_characters/town_mayor.png","side":"right"},
+        {"speaker":"The Keeper","text":"Then this roof becomes the last road. Bar the doors, tend the wounded, and keep the ledger dry. If the Hearth falls, memory must carry what bodies cannot.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+      ]}
+    },
+    "ending_keeper_covenant": {"repeat":"once_ever","variants":{"default":[
+      {"speaker":"The Keeper","text":"The old covenant named gods as judges, prisoners as enemies, and mortals as fuel for both. This ledger proves every part of that sentence can be questioned.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
+      {"speaker":"Eamon","text":"Then write the amendment where no throne can hide it. The Hearth becomes guarantor, the prisons become treaties, and every bound power receives a name, a hearing, and enforceable limits.","portrait":"res://assets/roster_portraits/mage_0.png","side":"right"},
+      {"speaker":"The Keeper","text":"Let the final entry read: no eternity without witness; no power without obligation; no hero forgotten beneath another god's victory.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+    ]}},
+    "ending_mortal_compact": {"repeat":"once_ever","variants":{"default":[
+      {"speaker":"Brina","text":"Six delegations beneath one roof, and not one banner above the Hearth. I did not think they would agree to that much.","portrait":"res://assets/roster_portraits/warrior_0.png","side":"right"},
+      {"speaker":"The Keeper","text":"They did not agree because they became friends. They agreed because every road, grave, and surviving witness proves none can hold the prisons alone.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
+      {"speaker":"Mayor Corvin Rook","text":"Then the crossroads becomes neutral ground by treaty—and the Hearth its first public chamber.","portrait":"res://assets/generated_characters/town_mayor.png","side":"right"}
+    ]}},
+    "ending_divine_concord": {"repeat":"once_ever","variants":{"default":[
+      {"speaker":"The Keeper","text":"I have kept promises to gods who deny one another's truths. Today they answer under the same rule they demanded of mortals.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
+      {"speaker":"The Hearth","text":"The lamps bend beneath twelve presences. None can enter fully. Each leaves a sign of assent—and a limit the others may enforce."},
+      {"speaker":"The Keeper","text":"A concord is not trust. It is a structure strong enough to survive mistrust. For now, that is enough to keep the world from ending.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+    ]}},
+    "ending_broken_thrones": {"repeat":"once_ever","variants":{"default":[
+      {"speaker":"The Keeper","text":"The Archive proves the prisons were never sacred law. They were weapons, revised into history after their makers won.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
+      {"speaker":"The Hearth","text":"Across every route, seals fail open—not as breaches, but as doors. Gods lose the machinery that made their verdicts eternal."},
+      {"speaker":"The Keeper","text":"What comes next will be dangerous and mortal. At last, it will also be ours to answer for.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+    ]}},
+    "last_customer_resolution": {
+      "repeat": "once_ever",
+      "variants": {
+        "death": [
+          {"speaker":"The Keeper","text":"Alden will not return. Put his name in the memorial; a death hidden is a lesson wasted. His route, warnings, and witnessed courage are Contribution—and they are why the next company will go farther.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
+          {"speaker":"Mayor Corvin Rook","text":"Then the Hearth closes? The roads will not grow safer because we lower the shutters.","portrait":"res://assets/generated_characters/town_mayor.png","side":"right"},
+          {"speaker":"The Keeper","text":"No. Brina knew Alden in Nordia. Eamon came from Zarabia to argue the prison must be rebound, not merely slain. I will hear them both, prepare them better, and keep this fire lit.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+        ],
+        "victory": [
+          {"speaker":"Alden","text":"The guardian is dead, but the thing beyond it was no ordinary beast. The crypt felt built around a door. Nordia will call that proof enough. I do not.","portrait":"res://assets/roster_portraits/warrior_0.png","side":"right"},
+          {"speaker":"Mayor Corvin Rook","text":"Your haul settles the Hearth's immediate debt. More importantly, travelers are saying this is the one roof willing to prepare anyone who will face those roads.","portrait":"res://assets/generated_characters/town_mayor.png","side":"left"},
+          {"speaker":"The Keeper","text":"Then the Hearth stays mine to answer for. Brina comes from Nordia. Eamon comes from Zarabia with a different account of the seals. We will hear both before I risk the next company.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
+        ]
+      }
+    },
+    "balor_threshold": {
+      "repeat": "once_per_loop",
+      "variants": {
+        "default": [
+          {"speaker":"The Keeper","text":"The crypt was never the prison. It was built around a threshold—and the road beyond it descends into Balor's domain.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
+          {"speaker":"{hero_name}","text":"Then we carry what remains, tend wounds as we walk, and finish the road before we call it a victory.","portrait":"{hero_portrait}","side":"right"}
+        ]
+      }
+    }
+  }
+}

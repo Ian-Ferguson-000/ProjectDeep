@@ -8,9 +8,9 @@ func _run() -> void:
 	campaign.tutorial_phase=CampaignState.TUTORIAL_COMPLETE
 	campaign.ensure_roster()
 	var party:=campaign.default_party("forest")
-	_expect(campaign.begin_expedition(party,"forest",RunState.PLAY_MODE_SLASHER),"Forest expedition did not launch",failures)
+	_expect(campaign.begin_expedition(party, "forest"),"Forest expedition did not launch",failures)
 	var expedition_id:=campaign.expedition.expedition_id
-	var run:=RunState.new();run.attach_campaign(campaign);run.active_character_id=party[0];run.set_class(campaign.character(party[0]).class_id);run.start_new_run(null,"forest",RunState.PLAY_MODE_SLASHER)
+	var run:=RunState.new();run.attach_campaign(campaign);run.active_character_id=party[0];run.set_class(campaign.character(party[0]).class_id);run.start_new_run(null, "forest")
 	run.gold=47;run.current_health=maxi(1,run.max_health-2);var carried_health:=run.current_health
 	run.record_active_dungeon_completion()
 	_expect(run.is_dungeon_unlocked("crypt"),"Forest completion did not unlock the connected Crypt",failures)

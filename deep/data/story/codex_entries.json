@@ -1,0 +1,11 @@
+{
+  "schema_version":1,
+  "entries":{
+    "briarway_is_approach":{"title":"The Briarway Is an Approach","source":{"type":"discovery","id":"briarway_approach"},"text":"The forest is not a dungeon proper. It is the living approach to a mortal threshold built over Balor's prison."},
+    "balor_suppressed":{"title":"A Suppression, Not an Ending","source":{"type":"discovery","id":"suppressed_balors_hell"},"text":"Balor's defeat lowers the prison's pressure. It does not erase the prisoner or repair the failing system that contains him."},
+    "first_fall":{"title":"The Hearth Has Fallen Before","source":{"type":"discovery_prefix","id":"witnessed_hearth_fall_"},"text":"When the Hearth was destroyed, the world folded back around the Keeper's memory. Adventurers did not return with it."},
+    "moonlit_counterexample":{"title":"The Moonlit Counterexample","source":{"type":"clue","id":"moonlit_forest"},"text":"Not every power beyond the seals behaves like an enemy. The official history confuses danger, difference, and guilt."},
+    "abyssal_record":{"title":"The Archive's Contradiction","source":{"type":"clue","id":"abyssal_crypt"},"text":"The oldest surviving records disagree with the gods' public account of who designed the prisons and why direct divine intervention is now limited."},
+    "divine_promises":{"title":"Promises Bind Both Ways","source":{"type":"obligation_count","value":1},"text":"A boon is not a talent purchased from a tree. It is a witnessed exchange whose fulfillment—or breach—changes a divine relationship."}
+  }
+}

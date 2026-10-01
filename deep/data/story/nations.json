@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "nations": {
+    "crossroads": {
+      "name": "The Crossroads",
+      "status": "neutral",
+      "default_doctrine": "unaligned",
+      "class_affinities": [],
+      "divine_relationship": "Many traditions meet beneath the Hearth's roof."
+    },
+    "nordia": {
+      "name": "Nordia",
+      "status": "current_canon",
+      "default_doctrine": "nordia_destroy",
+      "class_affinities": ["warrior", "ranger"],
+      "divine_relationship": "The gods are impressed through courage, oaths, sacrifice, and protection.",
+      "dungeon_doctrine": "The prisoners are enemies of the gods. Destroy them before they break free."
+    },
+    "zarabia": {
+      "name": "Zarabia",
+      "status": "current_canon",
+      "default_doctrine": "zarabia_rebind",
+      "class_affinities": ["mage", "summoner"],
+      "divine_relationship": "Divine and spiritual powers are approached through relationship, offering, office, and negotiated obligation.",
+      "dungeon_doctrine": "Ancient powers cannot simply be killed. Their bonds must be understood and renewed."
+    },
+    "helvetica": {
+      "name": "Helvetica",
+      "status": "current_canon",
+      "default_doctrine": "helvetica_restore",
+      "class_affinities": ["healer", "tank"],
+      "divine_relationship": "The gods are served through public duty, law, temple, and institution.",
+      "dungeon_doctrine": "The seals are divine law and must be restored correctly."
+    },
+    "verdant_concord": {
+      "name": "Verdant Concord",
+      "status": "current_canon",
+      "default_doctrine": "concord_heal",
+      "class_affinities": ["summoner", "warrior"],
+      "divine_relationship": "Sacred places and old agreements must be respected.",
+      "dungeon_doctrine": "The prisons themselves are poisoning the living world."
+    },
+    "veiled_isles": {
+      "name": "Veiled Isles",
+      "status": "current_canon",
+      "default_doctrine": "isles_reexamine",
+      "class_affinities": ["rogue"],
+      "divine_relationship": "Spirits permeate ordinary life; obligation and ancestry shape practice.",
+      "dungeon_doctrine": "Some prisoners were misnamed or unjustly confined."
+    },
+    "sun_crowned_dominion": {
+      "name": "Sun-Crowned Dominion",
+      "status": "current_canon",
+      "default_doctrine": "dominion_amend",
+      "class_affinities": ["mage", "summoner", "healer"],
+      "divine_relationship": "Divine order contains chaos through names, cycles, death rites, and preservation.",
+      "dungeon_doctrine": "Every breach threatens cosmic order, but an ancient sentence may be amended lawfully."
+    }
+  }
+}

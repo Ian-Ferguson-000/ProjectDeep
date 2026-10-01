@@ -1,12 +1,18 @@
 extends RefCounted
 class_name HearthCalendar
 
+const ECOLOGY:=preload("res://scripts/game/dungeon_ecology.gd")
+const CRISIS:=preload("res://scripts/game/world_crisis.gd")
+
 static func advance(c: CampaignState, days: int = 1, stop_at_event: bool = true) -> Dictionary:
 	if c.expedition.active: return HearthArmory.fail("Return from the manual expedition before advancing the calendar.")
 	if not c.first_company_recruited: return HearthArmory.fail("Welcome both founding adventurers before advancing the calendar.")
 	var events: Array[String] = []
 	for step in clampi(days,0,3650):
 		c.calendar_day += 1
+		events.append_array(ECOLOGY.advance_to_day(c,c.calendar_day))
+		events.append_array(CRISIS.advance(c))
+		if int(c.keeper_memory.get("loop_number",0))>0 and c.calendar_day==1:break
 		for branch in c.construction.keys():
 			if int(c.construction[branch].due_day) > c.calendar_day: continue
 			c.tavern_upgrades[branch] = int(c.tavern_upgrades.get(branch,0))+1

@@ -2,6 +2,7 @@ extends ColorRect
 class_name RecruitmentDialogue
 
 const TAVERN_THEME:=preload("res://scripts/ui/tavern_ui_theme.gd")
+const COMPATIBILITY:=preload("res://scripts/game/party_compatibility.gd")
 
 signal recruit_requested(candidate_id:String)
 signal conversation_closed
@@ -52,7 +53,8 @@ func open(candidate:CandidateRecord)->void:
 	var portrait_path:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant];portrait.texture=load(portrait_path) if ResourceLoader.exists(portrait_path) else null
 	title_label.text="%s %s · %s"%[member.display_name,member.family_name,member.class_id.capitalize()]
 	var primary:=_primary_stat(member.class_id);var known:=candidate.knowledge
-	var identity:="%s · %s · Generation %d"%[member.pronouns if String(known.get("origin","unknown"))=="exact" else "Pronouns unknown",member.origin if String(known.get("origin","unknown"))=="exact" else "Origin unknown",member.generation]
+	var identity_known:=String(known.get("origin","unknown"))=="exact"
+	var identity:="%s · %s · %s · %s · Generation %d"%[member.pronouns if identity_known else "Pronouns unknown",NarrativeContent.nation_name(member.nation_id) if identity_known else "Nation unknown",COMPATIBILITY.doctrine_name(member.doctrine_id) if identity_known else "Doctrine unknown",member.origin if identity_known else "Origin unknown",member.generation]
 	var aptitude:="%s %s"%[primary.to_upper(),_stat_display(candidate,primary)]
 	var story:=member.biography if String(known.get("biography","unknown"))=="exact" else "Backstory unknown — talk with this adventurer."
 	var preference:=member.preference if String(known.get("preference","unknown"))=="exact" else "Preference unknown"

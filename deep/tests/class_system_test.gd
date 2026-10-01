@@ -25,7 +25,7 @@ func _initialize() -> void:
 			failures.append("%s resource cap failed" % class_id)
 		if not resource.spend_class_resource(2) or resource.class_resource != 1:
 			failures.append("%s resource spend failed" % class_id)
-		if resource.get_class_resource_explanation().find(String(class_data.get("resource", ""))) == -1:
+		if resource.get_class_resource_explanation().find(resource.get_class_resource_name()) == -1:
 			failures.append("%s resource explanation missing" % class_id)
 		var sprite_path := String(class_data.get("sprite", ""))
 		if sprite_path.is_empty() or not FileAccess.file_exists(sprite_path):

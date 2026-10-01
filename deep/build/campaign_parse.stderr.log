@@ -1,0 +1,4 @@
+SCRIPT ERROR: Parse Error: Expected statement, found "Indent" instead.
+   at: GDScript::reload (res://scripts/game/campaign_state.gd:505)
+ERROR: Failed to load script "res://scripts/game/campaign_state.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

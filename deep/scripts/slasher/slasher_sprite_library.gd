@@ -20,11 +20,32 @@ static var max_generated_enemy_build_ms:=0.0
 
 static func player_frames(class_id: String) -> SpriteFrames:
 	if class_id == "warrior":
-		return load("res://assets/sprite_packs/Player/player_frames.tres") as SpriteFrames
+		return _warrior_player_frames()
 	var asset_class_id := "phantom" if class_id == "rogue" else class_id
 	var frame_resource_path:="res://assets/classes/%s/player_frames.tres"%asset_class_id
 	if ResourceLoader.exists(frame_resource_path):return load(frame_resource_path) as SpriteFrames
 	return animation_board_frames("res://assets/classes/%s/slasher_sheet.png" % asset_class_id)
+
+static func _warrior_player_frames() -> SpriteFrames:
+	const CACHE_KEY := "warrior_player_actions"
+	if _generated_cache.has(CACHE_KEY):return _generated_cache[CACHE_KEY] as SpriteFrames
+	var source:=load("res://assets/sprite_packs/Player/player_frames.tres") as SpriteFrames
+	if source==null:return null
+	var frames:=source.duplicate(true) as SpriteFrames
+	_append_directional_strips(frames,"defensive","res://assets/sprite_packs/Player/PARRY/parry_%s.png")
+	_append_directional_strips(frames,"special","res://assets/sprite_packs/Player/SPECIAL/special_%s.png")
+	_generated_cache[CACHE_KEY]=frames
+	return frames
+
+static func _append_directional_strips(frames:SpriteFrames,state:String,path_pattern:String)->void:
+	for direction:String in DIRECTIONS:
+		var animation:=StringName("%s_%s"%[state,direction])
+		if frames.has_animation(animation):frames.remove_animation(animation)
+		frames.add_animation(animation);frames.set_animation_loop(animation,false);frames.set_animation_speed(animation,28.0)
+		var texture:=load(path_pattern%direction) as Texture2D
+		if texture==null:continue
+		for frame_index:int in 8:
+			var atlas:=AtlasTexture.new();atlas.atlas=texture;atlas.region=Rect2(frame_index*96,0,96,80);frames.add_frame(animation,atlas)
 
 static func companion_frames() -> SpriteFrames:
 	return normalized_sheet_frames("res://assets/classes/wolf_companion/sheet.png")

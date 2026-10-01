@@ -41,8 +41,7 @@ func _run() -> void:
 		var forest_button:=tavern.expedition_list.find_child("ForestDungeonButton",false,false) as Button;var crypt_button:=tavern.expedition_list.find_child("CryptDungeonButton",false,false) as Button
 		_expect(forest_button.text.begins_with("▶") and crypt_button.has_meta("base_text"),"destination selection feedback is unclear",failures)
 		_expect(tavern.expedition_party_count!=null and tavern.expedition_party_count.text=="2 / 2","expedition planner does not expose its party cap",failures)
-		_expect(tavern.expedition_readiness!=null and tavern.expedition_readiness.text.contains("READY") and tavern.expedition_launch.text.contains("Strategy"),"expedition planner lacks a clear launch summary",failures)
-		tavern._select_expedition_mode(RunState.PLAY_MODE_SLASHER);_expect(tavern.expedition_readiness.text.contains("Slasher") and tavern.expedition_launch.text.contains("Slasher"),"mode selection did not update the launch summary",failures)
+		_expect(tavern.expedition_readiness!=null and tavern.expedition_readiness.text.contains("READY") and tavern.expedition_launch.text.contains("Expedition"),"expedition planner lacks a clear launch summary",failures)
 		tavern._close_modal(tavern.expedition_backdrop)
 		tavern._open_armory()
 		_expect(tavern.armory_backdrop.visible and tavern.armory_list.get_child_count()==1,"armory modal failed",failures)
