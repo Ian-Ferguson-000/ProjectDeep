@@ -24,6 +24,9 @@ func _run() -> void:
 		elif path == CAMPAIGN_STATE_PATH:
 			_expect(source.count("func save_atomic() -> bool:") == 1, "CampaignState must retain one atomic-save implementation.", failures)
 			_expect(source.count(".save_atomic()") == 2, "CampaignState may call atomic save only for the two one-time legacy import/retired-mode migrations.", failures)
+		elif path == "res://scripts/scenes/tavern.gd":
+			_expect(source.count(".autosave_on_floor_entry()") == 1,"Tavern must persist presentation and story progress through one shared atomic-save helper.",failures)
+			_expect(not source.contains("save_atomic()"),"Tavern bypasses the atomic autosave API.",failures)
 		else:
 			_expect(not source.contains("autosave_on_floor_entry()"), "%s introduces a save outside the approved floor-entry paths." % path, failures)
 			_expect(not source.contains("save_atomic()"), "%s bypasses the floor-entry autosave policy." % path, failures)

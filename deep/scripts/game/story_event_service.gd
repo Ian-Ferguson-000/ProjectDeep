@@ -37,6 +37,8 @@ static func lines(event_id: String, campaign: CampaignState, variant: String = "
 
 static func mark_played(event_id: String, campaign: CampaignState, variant: String = "default") -> void:
 	if campaign == null or definition(event_id).is_empty(): return
+	var first_completion := can_play(event_id,campaign)
+	if first_completion and bool(definition(event_id).get("major",false)): HearthCalendar.reset_story_period(campaign)
 	campaign.story_event_history[event_id] = {"loop_number":int(campaign.keeper_memory.get("loop_number", 0)),"day":campaign.calendar_day,"variant":variant}
 
 static func validate() -> Array[String]:

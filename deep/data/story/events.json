@@ -22,6 +22,7 @@
       }
     },
     "crisis_open_war": {
+      "major": true,
       "repeat":"once_per_loop",
       "variants":{"default":[
         {"speaker":"Mayor Corvin Rook","text":"Nordian and Heltic banners have crossed the western road. Both call it a protective occupation. Neither asked the villages being protected.","portrait":"res://assets/generated_characters/town_mayor.png","side":"right"},
@@ -29,6 +30,7 @@
       ]}
     },
     "crisis_fracture": {
+      "major": true,
       "repeat":"once_per_loop",
       "variants":{"default":[
         {"speaker":"Eamon","text":"Three prisons surged within the same hour. That is not coincidence. The seals are one system, and every kingdom has been fighting over pieces of a machine already failing beneath them.","portrait":"res://assets/roster_portraits/mage_0.png","side":"right"},
@@ -37,28 +39,33 @@
       ]}
     },
     "crisis_last_siege": {
+      "major": true,
       "repeat":"once_per_loop",
       "variants":{"default":[
         {"speaker":"Mayor Corvin Rook","text":"The crossroads are gone. The remaining civilians are inside, and the outer palisade will not survive another synchronized breach.","portrait":"res://assets/generated_characters/town_mayor.png","side":"right"},
         {"speaker":"The Keeper","text":"Then this roof becomes the last road. Bar the doors, tend the wounded, and keep the ledger dry. If the Hearth falls, memory must carry what bodies cannot.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
       ]}
     },
-    "ending_keeper_covenant": {"repeat":"once_ever","variants":{"default":[
+    "ending_keeper_covenant": {
+      "major": true,"repeat":"once_ever","variants":{"default":[
       {"speaker":"The Keeper","text":"The old covenant named gods as judges, prisoners as enemies, and mortals as fuel for both. This ledger proves every part of that sentence can be questioned.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
       {"speaker":"Eamon","text":"Then write the amendment where no throne can hide it. The Hearth becomes guarantor, the prisons become treaties, and every bound power receives a name, a hearing, and enforceable limits.","portrait":"res://assets/roster_portraits/mage_0.png","side":"right"},
       {"speaker":"The Keeper","text":"Let the final entry read: no eternity without witness; no power without obligation; no hero forgotten beneath another god's victory.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
     ]}},
-    "ending_mortal_compact": {"repeat":"once_ever","variants":{"default":[
+    "ending_mortal_compact": {
+      "major": true,"repeat":"once_ever","variants":{"default":[
       {"speaker":"Brina","text":"Six delegations beneath one roof, and not one banner above the Hearth. I did not think they would agree to that much.","portrait":"res://assets/roster_portraits/warrior_0.png","side":"right"},
       {"speaker":"The Keeper","text":"They did not agree because they became friends. They agreed because every road, grave, and surviving witness proves none can hold the prisons alone.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
       {"speaker":"Mayor Corvin Rook","text":"Then the crossroads becomes neutral ground by treaty—and the Hearth its first public chamber.","portrait":"res://assets/generated_characters/town_mayor.png","side":"right"}
     ]}},
-    "ending_divine_concord": {"repeat":"once_ever","variants":{"default":[
+    "ending_divine_concord": {
+      "major": true,"repeat":"once_ever","variants":{"default":[
       {"speaker":"The Keeper","text":"I have kept promises to gods who deny one another's truths. Today they answer under the same rule they demanded of mortals.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
       {"speaker":"The Hearth","text":"The lamps bend beneath twelve presences. None can enter fully. Each leaves a sign of assent—and a limit the others may enforce."},
       {"speaker":"The Keeper","text":"A concord is not trust. It is a structure strong enough to survive mistrust. For now, that is enough to keep the world from ending.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}
     ]}},
-    "ending_broken_thrones": {"repeat":"once_ever","variants":{"default":[
+    "ending_broken_thrones": {
+      "major": true,"repeat":"once_ever","variants":{"default":[
       {"speaker":"The Keeper","text":"The Archive proves the prisons were never sacred law. They were weapons, revised into history after their makers won.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"},
       {"speaker":"The Hearth","text":"Across every route, seals fail open—not as breaches, but as doors. Gods lose the machinery that made their verdicts eternal."},
       {"speaker":"The Keeper","text":"What comes next will be dangerous and mortal. At last, it will also be ours to answer for.","portrait":"res://assets/merchants/tavern_mara.png","side":"left"}

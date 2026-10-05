@@ -26,7 +26,7 @@ func _initialize()->void:
 	for event_id in ["last_customer_opening","remembered_last_customer","crisis_open_war","crisis_fracture","crisis_last_siege"]:_expect(not EVENTS.lines(event_id,blank).is_empty(),"Missing campaign story event: %s"%event_id,failures)
 	_expect(PROGRESSION.validate().is_empty() and PROGRESSION.endings().size()==4,"Ending families are incomplete.",failures)
 	for ending_id in PROGRESSION.endings():_expect(EVENTS.lines("ending_%s"%ending_id,blank).size()>=2,"Ending %s has no authored presentation."%ending_id,failures)
-	_expect(CampaignState.SAVE_VERSION==15,"Narrative completion contract expects save version 15.",failures)
+	_expect(CampaignState.SAVE_VERSION==16,"Narrative completion contract expects save version 16.",failures)
 	if failures.is_empty():print("NARRATIVE_COMPLETION_TESTS_PASSED");quit(0)
 	else:
 		for failure in failures:push_error(failure)

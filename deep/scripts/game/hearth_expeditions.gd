@@ -54,15 +54,17 @@ static func dispatch(c: CampaignState, ids: Array[String], dungeon_id: String, p
 	c.next_expedition_id += 1
 	e.deployment_type = "automated"
 	e.departure_day = c.calendar_day
-	e.due_day = c.calendar_day+7
+	e.departure_shift_index = HearthCalendar.shift_index(c)
+	e.due_shift_index = e.departure_shift_index + 1
+	e.due_day = 1 + int(e.due_shift_index / 2)
 	e.retreat_policy = policy
 	e.simulation_seed = 7919+e.expedition_id*104729
 	e.risk_ratio = float(risk(c,ids,dungeon_id).ratio)
 	lock_party(c,e)
 	c.supplies -= int(check.supplies)
 	c.dispatches[str(e.expedition_id)] = e.to_dict()
-	c._add_calendar_event("dispatch","A party departs for %s; due Day %d." % [dungeon_id.capitalize(),e.due_day])
-	return {"ok":true,"message":"Expedition dispatched. Expected return: Day %d." % e.due_day}
+	c._add_calendar_event("dispatch","A party departs for %s; due Day %d · %s." % [dungeon_id.capitalize(),e.due_day,"Early Shift" if e.due_shift_index % 2 == 0 else "Late Shift"])
+	return {"ok":true,"message":"Expedition dispatched. Expected return: Day %d · %s." % [e.due_day,"Early Shift" if e.due_shift_index % 2 == 0 else "Late Shift"]}
 
 static func lock_party(c: CampaignState, e: ExpeditionState) -> void:
 	for id in e.party_ids:
@@ -117,6 +119,17 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 	var key := str(e.expedition_id)
 	if c.settled_expeditions.has(key): return {"ok":true,"duplicate":true,"logs":[]}
 	if not e.active: return HearthArmory.fail("No expedition is active.")
+	if e.deployment_type == "manual":
+		c.expedition = ExpeditionState.new()
+		var transition: Dictionary
+		if e.due_shift_index >= 0:
+			transition = HearthCalendar.advance_shift(c,true)
+		else:
+			transition = HearthCalendar.advance(c,maxi(0,e.due_day-c.calendar_day),false)
+		if not transition.ok:
+			c.expedition = e
+			return transition
+		if transition.get("reset",false): return {"ok":true,"reset":true,"duplicate":false,"logs":[transition.message],"report":{}}
 	var divine_modifiers := DIVINE.settlement_modifiers(c,e)
 	var gross := roundi(e.carried_gold*float(divine_modifiers.gold_multiplier)) if outcome != "death" else 0
 	var share := 0 if bool(extra.get("legacy_resolve",false)) else int(gross*0.2)
@@ -142,14 +155,18 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 			HearthArmory.release(c,member,true)
 			lost.append(member.display_name)
 			continue
-		member.status = "available" if bool(extra.get("legacy_resolve",false)) else "recovering"
-		member.recovery_until = 0 if bool(extra.get("legacy_resolve",false)) else maxi(c.calendar_day,e.due_day)+maxi(1,3-int(c.tavern_upgrades.get("recovery",0)))
-		member.fatigue += 1
+		var ready_now := int(c.tavern_upgrades.get("recovery",0)) > 0
+		member.status = CharacterRecord.STATUS_AVAILABLE if ready_now else "recovering"
+		member.recovery_until = 0 if ready_now else c.calendar_day + 1
+		member.fatigue = 0 if ready_now else member.fatigue + 1
+		if ready_now: member.current_health = member.max_health
 		if outcome == "victory":
 			member.victories += 1
 			c.successful_levels += member.level
 			if e.deployment_type == "automated":
-				member.xp += 50*e.floor
+				var earned_xp := VisitorContestRules.scale_xp(50*e.floor,member.learning_potential)
+				member.xp += earned_xp
+				member.progression["total_xp"] = int(member.progression.get("total_xp",member.xp-earned_xp)) + earned_xp
 				var thresholds: Array = GameBalance.get_progression().get("xp_thresholds",[])
 				while member.level < 20 and thresholds.size() > member.level+1 and member.xp >= int(thresholds[member.level+1]): member.level += 1
 				member.progression.level = member.level
@@ -193,16 +210,14 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 	var divine_result := DIVINE.record_expedition_outcome(c,e,outcome)
 	var report := {"expedition_id":e.expedition_id,"outcome":outcome,"headline":"%s: %s" % [e.dungeon_id.capitalize(),outcome.capitalize()],"dungeon":e.dungeon_id,"deployment_type":e.deployment_type,"depth":e.floor,"gold":gross,"share":share,"net":gross-share,"essence":essence,"contribution":contribution,"returned":returned,"retired":retired,"lost":lost,"items":rewards,"events":extra.get("events",[]),"divine":divine_result}
 	c.return_reports.append(report)
+	var queued: Array = c.pending_settlement_summary.get("reports",[]).duplicate(true)
+	queued.append(report.duplicate(true))
 	c.pending_settlement_summary = report.duplicate(true)
+	c.pending_settlement_summary["reports"] = queued
+	c.period_completed_runs += 1
 	c.settled_expeditions[key] = true
 	c.last_settled_expedition_id = e.expedition_id
 	c.dispatches.erase(key)
-	if e.deployment_type == "manual":
-		c.expedition = ExpeditionState.new()
-		HearthCalendar.advance(c,maxi(0,e.due_day-c.calendar_day),false)
-		# A completed manual expedition closes the week and opens the next saved
-		# arrival wave, even when the party returned shorthanded.
-		c._generate_candidate_wave(false)
 	c._add_calendar_event(outcome,report.headline)
-	c.tavern_phase = CampaignState.TAVERN_OPEN
+	c.tavern_phase = CampaignState.TAVERN_ARRIVALS if c.last_presented_wave_id < c.candidate_wave_id else CampaignState.TAVERN_OPEN
 	return {"ok":true,"duplicate":false,"logs":["Recovered %d gold; company share %d; net %d. Contribution recorded: %d." % [gross,share,gross-share,contribution]],"report":report}

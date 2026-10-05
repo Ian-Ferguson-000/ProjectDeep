@@ -15,7 +15,7 @@ func _run()->void:
 	var snapshot:=campaign.to_dict();var restored:=CampaignState.new();restored._load_dict(snapshot);var restored_candidate:=restored.candidate_pool.get(candidate.id) as CandidateRecord;_expect(restored_candidate!=null and restored_candidate.adventurer.biography==candidate.adventurer.biography and restored_candidate.knowledge==candidate.knowledge,"Candidate dossier rerolled after save/load",failures)
 	for value in campaign.get_candidates():campaign.recruit_candidate(value.id)
 	var party:=campaign.default_party("forest");var veteran:=campaign.character(party[0]);veteran.career_limit=1;var launch:=campaign.launch_expedition([veteran.id], "forest");var runtime:=RunState.new();runtime.attach_campaign(campaign);runtime.active_character_id=veteran.id;runtime.start_new_run(null, "forest");_expect(Dictionary(runtime.hero_profiles[veteran.class_id].base_stats)==veteran.attributes,"Saved adventurer attributes did not hydrate the runtime profile",failures);campaign.settle_expedition(int(launch.expedition_id),"victory",{"headline":"Career victory"})
-	_expect(campaign.calendar_day==8 and campaign.character(veteran.id)==null and campaign.retired_heroes.size()==1,"Weekly settlement or automatic career retirement failed",failures)
+	_expect(campaign.calendar_day==1 and campaign.calendar_shift==1 and campaign.character(veteran.id)==null and campaign.retired_heroes.size()==1,"Shift settlement or automatic career retirement failed",failures)
 	campaign.calendar_day=int(campaign.retired_heroes[0].retired_day)+112
 	for attempt in 4:
 		campaign._generate_candidate_wave(false)

@@ -13,6 +13,7 @@ var knowledge:Dictionary={}
 var completed_interactions:Array[String]=[]
 var appraisal_history:Array[String]=[]
 var last_result:=""
+var contest_results:Dictionary={}
 
 static func create(record: CharacterRecord, day: int, wave: int, motivation_text: String, is_first_company: bool = false) -> CandidateRecord:
 	var candidate := CandidateRecord.new()
@@ -27,6 +28,7 @@ static func create(record: CharacterRecord, day: int, wave: int, motivation_text
 
 func to_dict() -> Dictionary:
 	return {
+		"contest_results":contest_results.duplicate(true),
 		"id": id,
 		"adventurer": adventurer.to_dict() if adventurer != null else {},
 		"arrival_day": arrival_day,
@@ -39,6 +41,9 @@ func to_dict() -> Dictionary:
 static func from_dict(data: Dictionary) -> CandidateRecord:
 	var candidate := CandidateRecord.new()
 	candidate.id = String(data.get("id", ""))
+	for contest_id in VisitorContestRules.CONTESTS:
+		var saved:Variant = Dictionary(data.get("contest_results",{})).get(contest_id)
+		if saved is Dictionary: candidate.contest_results[contest_id] = saved.duplicate(true)
 	candidate.adventurer = CharacterRecord.from_dict(Dictionary(data.get("adventurer", {})))
 	if candidate.id.is_empty(): candidate.id = candidate.adventurer.id
 	candidate.arrival_day = maxi(1, int(data.get("arrival_day", 1)))

@@ -21,6 +21,9 @@ var rewarded_checkpoints: Dictionary = {}
 var deployment_type: String = "manual"
 var departure_day: int = 1
 var due_day: int = 8
+# Negative indices denote day-based expeditions imported from older saves.
+var departure_shift_index: int = -1
+var due_shift_index: int = -1
 var retreat_policy: String = "balanced"
 var simulation_seed: int = 0
 var risk_ratio: float = 1.0
@@ -59,13 +62,15 @@ func continue_from_checkpoint() -> void:
 	extraction_available = false
 
 func to_dict() -> Dictionary:
-	return {"objective_id":objective_id,"patron_deity_id":patron_deity_id,"deployment_type":deployment_type,"departure_day":departure_day,"due_day":due_day,"retreat_policy":retreat_policy,"simulation_seed":simulation_seed,"risk_ratio":risk_ratio,"locked_loadouts":locked_loadouts,"secured_gold":secured_gold,"secured_essence":secured_essence,"active":active,"expedition_id":expedition_id,"dungeon_id":dungeon_id,"party_ids":party_ids.duplicate(),"member_runtime":member_runtime.duplicate(true),"floor":floor,"carried_gold":carried_gold,"carried_relic_essence":carried_relic_essence,"carried_contribution":carried_contribution,"carried_relics":carried_relics.duplicate(),"casualties":casualties.duplicate(),"extraction_available":extraction_available,"tutorial_run":tutorial_run,"tutorial_step":tutorial_step,"tutorial_controls_complete":tutorial_controls_complete,"tutorial_restart_count":tutorial_restart_count,"rewarded_checkpoints":rewarded_checkpoints.duplicate(true)}
+	return {"objective_id":objective_id,"patron_deity_id":patron_deity_id,"deployment_type":deployment_type,"departure_day":departure_day,"departure_shift_index":departure_shift_index,"due_shift_index":due_shift_index,"due_day":due_day,"retreat_policy":retreat_policy,"simulation_seed":simulation_seed,"risk_ratio":risk_ratio,"locked_loadouts":locked_loadouts,"secured_gold":secured_gold,"secured_essence":secured_essence,"active":active,"expedition_id":expedition_id,"dungeon_id":dungeon_id,"party_ids":party_ids.duplicate(),"member_runtime":member_runtime.duplicate(true),"floor":floor,"carried_gold":carried_gold,"carried_relic_essence":carried_relic_essence,"carried_contribution":carried_contribution,"carried_relics":carried_relics.duplicate(),"casualties":casualties.duplicate(),"extraction_available":extraction_available,"tutorial_run":tutorial_run,"tutorial_step":tutorial_step,"tutorial_controls_complete":tutorial_controls_complete,"tutorial_restart_count":tutorial_restart_count,"rewarded_checkpoints":rewarded_checkpoints.duplicate(true)}
 
 static func from_dict(data: Dictionary) -> ExpeditionState:
 	var state := ExpeditionState.new();
 	state.deployment_type = data.get("deployment_type","manual")
 	state.departure_day = data.get("departure_day",1)
 	state.due_day = data.get("due_day",8)
+	state.departure_shift_index = int(data.get("departure_shift_index",-1))
+	state.due_shift_index = int(data.get("due_shift_index",-1))
 	state.retreat_policy = data.get("retreat_policy","balanced")
 	state.simulation_seed = data.get("simulation_seed",0)
 	state.risk_ratio = data.get("risk_ratio",1.0)

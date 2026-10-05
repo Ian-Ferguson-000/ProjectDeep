@@ -12,6 +12,8 @@ var portrait_variant: int = 0
 var class_id: String = "warrior"
 var level: int = 1
 var xp: int = 0
+var learning_potential := "steady"
+var learning_potential_known := false
 var current_health: int = 1
 var max_health: int = 1
 var gear_id: String = ""
@@ -63,6 +65,7 @@ func age_on(day: int) -> int:
 static func create(character_id: String, name: String, character_class: String, trait_data: Dictionary, portrait: int = 0) -> CharacterRecord:
 	var record := CharacterRecord.new()
 	record.id = character_id
+	record.learning_potential = VisitorContestRules.learning_tier(character_id)
 	record.display_name = name
 	record.class_id = GameBalance.normalize_class_id(character_class)
 	record.portrait_variant = portrait
@@ -76,6 +79,7 @@ func to_dict() -> Dictionary:
 	return {
 		"equipment":equipment.duplicate(true),"provisions":provisions.duplicate(),"birth_day":birth_day,"recovery_until":recovery_until,"signing_fee":signing_fee,
 		"id":id, "display_name":display_name, "portrait_variant":portrait_variant, "class_id":class_id,
+		"learning_potential":learning_potential, "learning_potential_known":learning_potential_known,
 		"level":level, "xp":xp, "current_health":current_health, "max_health":max_health,
 		"gear_id":gear_id, "inventory":inventory.duplicate(), "trait_id":trait_id, "trait_name":trait_name,
 		"trait_description":trait_description, "progression":progression.duplicate(true), "status":status,
@@ -85,6 +89,9 @@ func to_dict() -> Dictionary:
 
 static func from_dict(data: Dictionary) -> CharacterRecord:
 	var record := CharacterRecord.new()
+	record.learning_potential = String(data.get("learning_potential","steady"))
+	if not VisitorContestRules.LEARNING.has(record.learning_potential): record.learning_potential = "steady"
+	record.learning_potential_known = bool(data.get("learning_potential_known",false))
 	record.equipment = Dictionary(data.get("equipment",{})).duplicate(true)
 	record.provisions.assign(data.get("provisions",[]))
 	record.birth_day = int(data.get("birth_day",-2687))

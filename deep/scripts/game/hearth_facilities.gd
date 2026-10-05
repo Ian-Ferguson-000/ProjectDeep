@@ -11,7 +11,7 @@ static func quote(c: CampaignState, branch: String) -> Dictionary:
 	else:
 		var facility: Dictionary = HearthCatalog.data().facilities.get(branch,{})
 		var rank := int(c.tavern_upgrades.get(branch,0))
-		if facility.is_empty() or rank >= 3: return {"gold":0,"essence":0,"levels":0,"available":false,"error":"Maximum rank reached."}
+		if facility.is_empty() or rank >= (1 if branch == "recovery" else 3): return {"gold":0,"essence":0,"levels":0,"available":false,"error":"Maximum rank reached."}
 		cost = facility.ranks[rank].duplicate(true)
 	cost["levels"] = 0
 	cost["available"] = true

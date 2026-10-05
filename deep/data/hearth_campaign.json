@@ -85,7 +85,7 @@
     },
     "recovery": {
       "name": "Infirmary",
-      "description": "Reduces recovery days.",
+      "description": "Surviving adventurers recover immediately on return.",
       "ranks": [
         {
           "gold": 35,

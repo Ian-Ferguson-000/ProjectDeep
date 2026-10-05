@@ -3,11 +3,12 @@ class_name HearthManagement
 
 signal manual_launch(dungeon_id: String, party: Array[String])
 signal candidate_requested(candidate_id: String)
+signal time_advanced(result: Dictionary)
 signal changed
 signal closed
 
 const THEME = preload("res://scripts/ui/tavern_ui_theme.gd")
-const SECTIONS = ["Company","Armory","Expeditions","Facilities","Merchants","Reports"]
+const SECTIONS = ["Company","Armory","Expeditions","Facilities","Merchants","Calendar","Reports"]
 @export var initial_section: String = "Company"
 var campaign: CampaignState
 var state: RunState
@@ -22,6 +23,8 @@ var bank_label: Label
 var notice: Label
 var body: VBoxContainer
 var tabs: HBoxContainer
+var advance_button: Button
+var next_event_button: Button
 
 func _ready() -> void:
 	color = Color(0.015,0.012,0.009,0.94)
@@ -61,8 +64,11 @@ func _ready() -> void:
 	stack.add_child(notice)
 	var footer := HBoxContainer.new()
 	stack.add_child(footer)
-	button(footer,"Advance Day",func(): act(HearthCalendar.advance(campaign)))
-	button(footer,"Advance to Next Event",func(): act(HearthCalendar.advance(campaign,112)))
+	advance_button = button(footer,"Advance to Late Shift",_advance_time.bind(false))
+	advance_button.name = "AdvanceShiftButton"
+	next_event_button = button(footer,"Advance to Next Event",_advance_time.bind(true))
+	next_event_button.name = "AdvanceNextEventButton"
+	next_event_button.hide()
 	button(footer,"Buy 4 Supplies · 8g",_buy_supplies)
 	section = initial_section
 	hide()
@@ -86,7 +92,11 @@ func refresh() -> void:
 		body.remove_child(child)
 		child.queue_free()
 	title_label.text = section.to_upper()
-	bank_label.text = "%s   •   Day %d   •   %dg   •   %d supplies   •   %d essence   •   Reputation %d   •   Rooms %d/%d" % [HearthCatalog.tier(campaign.establishment_tier).name,campaign.calendar_day,campaign.banked_gold,campaign.supplies,campaign.relic_essence,campaign.reputation,campaign.living_roster().size(),campaign.get_roster_capacity()]
+	advance_button.text = "Advance to Late Shift" if campaign.calendar_shift == 0 else "End Day"
+	advance_button.disabled = campaign.expedition.active or not campaign.first_company_recruited or not campaign.pending_story_event_id.is_empty() or not campaign.ending_state.is_empty()
+	next_event_button.visible = HearthCalendar.can_advance_to_next_event(campaign)
+	next_event_button.disabled = advance_button.disabled
+	bank_label.text = "%s   •   Day %d · %s   •   %dg   •   %d supplies   •   %d essence   •   Reputation %d   •   Rooms %d/%d" % [HearthCatalog.tier(campaign.establishment_tier).name,campaign.calendar_day,HearthCalendar.shift_name(campaign),campaign.banked_gold,campaign.supplies,campaign.relic_essence,campaign.reputation,campaign.living_roster().size(),campaign.get_roster_capacity()]
 	for child in tabs.get_children(): child.modulate = THEME.GOLD if child.text == section else Color.WHITE
 	match section:
 		"Company": company_page()
@@ -95,6 +105,10 @@ func refresh() -> void:
 		"Facilities": facilities_page()
 		"Merchants": merchant_page()
 		"Reports": reports_page()
+		"Calendar":
+			var calendar := preload("res://scripts/ui/hearth_calendar_view.gd").new()
+			body.add_child(calendar)
+			calendar.open(campaign)
 
 func label(text_value: String, size: int = 16, tint: Color = Color("ead9b8")) -> Label:
 	var result := Label.new()
@@ -136,6 +150,14 @@ func act(result: Dictionary) -> void:
 		changed.emit()
 	refresh()
 
+func _advance_time(skip: bool) -> void:
+	var result := HearthCalendar.advance_to_next_event(campaign) if skip else HearthCalendar.advance_shift(campaign)
+	if result.get("reset",false):
+		state = RunState.new()
+		state.attach_campaign(campaign)
+	act(result)
+	if result.get("ok",false): time_advanced.emit(result)
+
 func _buy_supplies() -> void:
 	if campaign.banked_gold < 8:
 		# Relief cannot be converted to gold and only covers a stranded company's next trip.
@@ -152,6 +174,7 @@ func company_page() -> void:
 	card("Your company","Adventurers receive 20% of expedition gold collectively. Resting adventurers do not draw wages. Equipment stays with the Hearth when a recruit retires.")
 	for member in campaign.living_roster():
 		var content := card("%s · %s · Level %d" % [member.display_name,member.class_id.capitalize(),member.level],"%s   •   Age %d / retirement 60   •   Health %d/%d   •   %d victories\n%s" % [member.status.capitalize(),member.age_on(campaign.calendar_day),member.current_health,member.max_health,member.victories,member.biography])
+		content.add_child(label("Learning potential: " + (VisitorContestRules.learning_name(member.learning_potential) if member.learning_potential_known else "Unknown"),15,THEME.MUTED))
 		var actions := HBoxContainer.new()
 		content.add_child(actions)
 		button(actions,"Equipment",func(): member_id=member.id; show_section("Armory"))
@@ -253,7 +276,7 @@ func expedition_page() -> void:
 	picker.select(maxi(0,unlocked.find(dungeon_id)))
 	picker.item_selected.connect(func(index:int): dungeon_id=unlocked[index]; selected_party.clear(); refresh())
 	body.add_child(picker)
-	var party := card("Assemble the expedition","Seven days away. Survivors keep their equipment; deaths lose assigned gear. Retreat banks secured rewards without boss-clear credit.")
+	var party := card("Assemble the expedition","One shift away. Survivors keep their equipment; deaths lose assigned gear. Retreat banks secured rewards without boss-clear credit.")
 	selected_party = selected_party.filter(func(id:String): return campaign.character(id)!=null and campaign.character(id).status=="available")
 	for member in campaign.living_roster():
 		var check := CheckBox.new()
@@ -266,7 +289,7 @@ func expedition_page() -> void:
 			refresh())
 		party.add_child(check)
 	var risk := HearthExpeditions.risk(campaign,selected_party,dungeon_id)
-	card("%s risk · %d/%d adventurers" % [risk.band,selected_party.size(),campaign.get_party_cap(dungeon_id)],"\n".join(risk.reasons)+"\nKeeper retains 80%% of recovered gold. Expected return: Day %d." % (campaign.calendar_day+7))
+	card("%s risk · %d/%d adventurers" % [risk.band,selected_party.size(),campaign.get_party_cap(dungeon_id)],"\n".join(risk.reasons)+"\nKeeper retains 80%% of recovered gold. Expected return: Day %d · %s." % [campaign.calendar_day+campaign.calendar_shift,"Late Shift" if campaign.calendar_shift == 0 else "Early Shift"])
 	var controls := HBoxContainer.new()
 	body.add_child(controls)
 	for value in ["cautious","balanced","bold"]: button(controls,("✓ " if value==policy else "")+value.capitalize(),func(): policy=value; refresh())
@@ -277,7 +300,7 @@ func expedition_page() -> void:
 	button(launch,"Lead Expedition",func(): hide(); manual_launch.emit(dungeon_id,selected_party.duplicate()),readiness.ok)
 	button(launch,"Dispatch Party",func(): act(HearthExpeditions.dispatch(campaign,selected_party,dungeon_id,policy)),readiness.ok and campaign.has_completed_dungeon(dungeon_id))
 	if not campaign.has_completed_dungeon(dungeon_id): body.add_child(label("Manually clear this dungeon to unlock automated dispatch.",15,THEME.MUTED))
-	for value in campaign.dispatches.values(): card("Party away · "+String(value.dungeon_id).capitalize(),"Return Day %d · %s retreat policy" % [value.due_day,value.retreat_policy])
+	for value in campaign.dispatches.values(): card("Party away · "+String(value.dungeon_id).capitalize(),"Return Day %d · %s · %s retreat policy" % [value.due_day,("Early Shift" if int(value.get("due_shift_index",-1)) % 2 == 0 else "Late Shift") if int(value.get("due_shift_index",-1)) >= 0 else "Morning",value.retreat_policy])
 
 func facilities_page() -> void:
 	for rank in range(4):

@@ -2,7 +2,7 @@ extends SceneTree
 
 func _initialize()->void:call_deferred("_run")
 func _run()->void:
-	var failures:Array[String]=[];var source:=CampaignState.new();source.ensure_roster();var party:=source.default_party("forest")
+	var failures:Array[String]=[];var source:=CampaignState.new();source.ensure_roster();source.first_company_recruited=true;var party:=source.default_party("forest")
 	for id in party:source.character(id).status=CharacterRecord.STATUS_EXPEDITION
 	var save_data:=source.to_dict();var expedition:Dictionary=save_data.get("expedition",{}).duplicate(true)
 	expedition.merge({"active":true,"expedition_id":12,"dungeon_id":"forest","play_mode":"strategy","party_ids":party,"floor":3,"deployment_type":"manual","due_day":8},true);save_data["expedition"]=expedition

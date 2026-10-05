@@ -47,8 +47,8 @@ func run() -> void:
 	c.expedition.carried_relic_essence=8
 	var run_id:=c.expedition.expedition_id
 	var result:=c.settle_expedition(run_id,"victory")
-	check(result.ok and c.banked_gold==before+80 and c.calendar_day==8,"Net settlement/calendar mismatch")
-	check(first.status=="recovering" and first.recovery_until==11,"Recovery date mismatch")
+	check(result.ok and c.banked_gold==before+80 and c.calendar_day==1 and c.calendar_shift==1,"Net settlement/calendar mismatch")
+	check(first.status=="recovering" and first.recovery_until==2,"Recovery date mismatch")
 	check(c.settle_expedition(run_id,"victory").duplicate and c.banked_gold==before+80,"Settlement applied twice")
 	HearthCalendar.advance(c,3,false)
 	check(first.status=="available" and first.current_health==first.max_health,"Recovery did not restore readiness")

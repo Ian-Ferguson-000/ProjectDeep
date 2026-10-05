@@ -786,6 +786,8 @@ func gain_xp(amount: int, reason: String) -> Array[String]:
 	if amount <= 0:
 		return logs
 	var profile: Dictionary = _active_profile()
+	var member := get_active_character()
+	amount = VisitorContestRules.scale_xp(amount,member.learning_potential if member!=null else "steady")
 	var old_max_health: int = int(profile["derived_stats"]["max_health"])
 	profile["xp"] = int(profile["xp"]) + amount
 	profile["total_xp"] = int(profile["total_xp"]) + amount

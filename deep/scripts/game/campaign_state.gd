@@ -1,7 +1,8 @@
 extends RefCounted
 class_name CampaignState
 
-const SAVE_VERSION := 15
+const SAVE_VERSION := 16
+const CALENDAR_HISTORY_DAYS := 112
 const TARGET_ROSTER_SIZE := 2
 const BASE_ROSTER_CAPACITY := 6
 const TUTORIAL_STARTING_HEALTH := 3
@@ -74,6 +75,9 @@ var post_tutorial_initialized: bool = false
 var former_keeper_encounter_pending: bool = false
 var former_keeper_encounter_seen: bool = false
 var calendar_day: int = 1
+var calendar_shift: int = 0
+var period_elapsed_shifts: int = 0
+var period_completed_runs: int = 0
 var tavern_phase: String = TAVERN_OPEN
 var candidate_wave_id: int = 0
 var candidate_pool: Dictionary = {}
@@ -195,6 +199,8 @@ func apply_post_tutorial_state(outcome: String) -> void:
 	candidate_pool.clear()
 	candidate_wave_id = 1
 	calendar_day = 1
+	calendar_shift = 0
+	HearthCalendar.reset_story_period(self)
 	var warrior := _character_from_definition(ADVENTURERS.definition("brina_founder"))
 	_apply_attributes(warrior,45,0x0b71a)
 	next_character_number+=1
@@ -267,7 +273,9 @@ func recruit_candidate(candidate_id:String) -> Dictionary:
 	banked_gold -= fee
 	var member:=candidate.adventurer;member.status=CharacterRecord.STATUS_AVAILABLE;roster[member.id]=member;candidate_pool.erase(candidate_id)
 	HearthArmory.ensure_starter(self,member)
-	first_company_recruited=first_company_ids.all(func(id:String):return roster.has(id))
+	var was_recruited := first_company_recruited
+	first_company_recruited=first_company_recruited or first_company_ids.all(func(id:String):return roster.has(id))
+	if first_company_recruited and not was_recruited: HearthCalendar.reset_story_period(self)
 	_add_calendar_event("recruitment","%s joins the company."%member.display_name)
 	return {"ok":true,"character_id":member.id,"message":"%s joins the company."%member.display_name}
 
@@ -289,6 +297,23 @@ func run_candidate_trial(candidate_id:String)->Dictionary:
 	var stat:=_trial_stat(candidate.adventurer.class_id);var value:=int(candidate.adventurer.attributes.get(stat,10));var rng:=_rng(candidate.quality_seed^0x54a17);var benchmark:=10+rng.randi_range(-1,1);var delta:=rng.randi_range(3,6) if value>=benchmark else -rng.randi_range(2,5);var applied:=maxi(-banked_gold,delta);banked_gold+=applied
 	candidate.knowledge[stat]="exact" if value==benchmark else "band";candidate.completed_interactions.append("trial");candidate.last_result="%s: %s is %s the benchmark (%s%d gold)."%[_trial_name(candidate.adventurer.class_id),candidate.adventurer.display_name,"equal to" if value==benchmark else ("above" if value>benchmark else "below"),"+" if applied>=0 else "",applied]
 	_add_calendar_event("assessment",candidate.last_result);return {"ok":true,"duplicate":false,"stat":stat,"value":value if value==benchmark else null,"comparison":signi(value-benchmark),"gold_change":applied,"result":candidate.last_result,"candidate":candidate}
+
+func complete_candidate_contest(candidate_id:String,result:Dictionary)->Dictionary:
+	var candidate:=candidate_pool.get(candidate_id) as CandidateRecord
+	if candidate==null:return {"ok":false,"error":"That adventurer is no longer at the Hearth."}
+	var contest_id:=String(result.get("contest_id",""))
+	if not VisitorContestRules.CONTESTS.has(contest_id):return {"ok":false,"error":"Unknown contest."}
+	if String(result.get("outcome","")) not in ["win","loss","draw"]:return {"ok":false,"error":"Invalid contest outcome."}
+	var stat:=String(VisitorContestRules.CONTESTS[contest_id].stat)
+	if String(candidate.knowledge.get(stat,"unknown"))!="exact":candidate.knowledge[stat]="band"
+	candidate.adventurer.learning_potential_known=true
+	candidate.contest_results[contest_id]={"contest_id":contest_id,"outcome":String(result.outcome),"player_score":maxi(0,int(result.get("player_score",0))),"visitor_score":maxi(0,int(result.get("visitor_score",0))),"details":Dictionary(result.get("details",{})).duplicate(true)}
+	var interaction:="contest:%s"%contest_id
+	var first:=not candidate.completed_interactions.has(interaction)
+	if first:candidate.completed_interactions.append(interaction)
+	candidate.last_result="%s · %s: You %d / Visitor %d. %s aptitude: %s. Learning potential: %s."%[VisitorContestRules.CONTESTS[contest_id].name,String(result.outcome).capitalize(),candidate.contest_results[contest_id].player_score,candidate.contest_results[contest_id].visitor_score,stat.to_upper(),VisitorContestRules.stat_analysis(int(candidate.adventurer.attributes.get(stat,10)),String(candidate.knowledge.get(stat,"unknown"))=="exact"),VisitorContestRules.learning_name(candidate.adventurer.learning_potential)]
+	if first:_add_calendar_event("assessment","%s completes %s."%[candidate.adventurer.display_name,VisitorContestRules.CONTESTS[contest_id].name])
+	return {"ok":true,"result":candidate.last_result}
 
 func appraise_candidate(candidate_id:String,stat_id:String)->Dictionary:
 	var candidate:=candidate_pool.get(candidate_id) as CandidateRecord
@@ -318,8 +343,7 @@ func launch_expedition(ids:Array[String],dungeon_id:String,patron_deity_id:Strin
 	if not patron_deity_id.is_empty() and DIVINE.deity(patron_deity_id).is_empty():return {"ok":false,"error":"That divine patron is unknown."}
 	if not objective_id.is_empty() and not OBJECTIVES.objective_ids(dungeon_id).has(objective_id):return {"ok":false,"error":"That objective is unavailable here."}
 	if not _begin_expedition_validated(ids,dungeon_id,false,patron_deity_id,objective_id):return {"ok":false,"error":"The selected party cannot enter that dungeon."}
-	for candidate in get_candidates():_add_calendar_event("departure","%s leaves with the morning crowd."%candidate.adventurer.display_name)
-	candidate_pool.clear();first_normal_launch_completed=true;tavern_phase=TAVERN_EXPEDITION
+	first_normal_launch_completed=true;tavern_phase=TAVERN_EXPEDITION
 	return {"ok":true,"expedition_id":expedition.expedition_id}
 
 func should_trigger_former_keeper_encounter(dungeon_id: String, outcome: String) -> bool:
@@ -397,7 +421,8 @@ func _generate_character(class_id:String="") -> CharacterRecord:
 
 func _generate_candidate_wave(first_wave:bool=false) -> void:
 	candidate_pool.clear();candidate_wave_id+=1
-	var count:=2 if first_wave else clampi(2+int(tavern_upgrades.get("roster_services",0)),2,7)
+	var wave_rng := _rng(7919 + calendar_day * 104729 + candidate_wave_id * 3571 + calendar_shift)
+	var count:=2 if first_wave else mini(7,wave_rng.randi_range(1,4)+int(tavern_upgrades.get("roster_services",0)))
 	for index in count:
 		var allowed:=unlocked_classes if not unlocked_classes.is_empty() else ["warrior","mage"]
 		var class_id:=String(allowed[(candidate_wave_id+index-1)%allowed.size()])
@@ -426,6 +451,8 @@ func _ensure_unrepresented_class_candidates() -> void:
 		_add_calendar_event("arrivals","%s arrives at the Hearth after the %s class becomes available."%[member.display_name,class_id.capitalize()])
 
 func _candidate_motivation(member:CharacterRecord,index:int) -> String:
+	var authored := ADVENTURERS.definition(member.definition_id)
+	if not String(authored.get("motivation","")).is_empty(): return String(authored.motivation)
 	return member.biography+" "+String(ADVENTURERS.pool("motives")[(calendar_day+candidate_wave_id+index)%ADVENTURERS.pool("motives").size()])
 
 func _rng(seed:int)->RandomNumberGenerator:var rng:=RandomNumberGenerator.new();rng.seed=seed;return rng
@@ -459,8 +486,9 @@ func _try_add_descendant()->void:
 		var descendant:=CandidateRecord.create(child,calendar_day,candidate_wave_id,"I grew up hearing what the Hearth made possible. Now I want a story of my own.",false);descendant.quality_seed=child.id.hash()^candidate_wave_id;descendant.quality_score=_quality_from_attributes(child);candidate_pool[child.id]=descendant;state.descendant_created=true;lineage_registry[parent_id]=state;parent.descendant_created=true;retired_heroes[index]=parent;_add_calendar_event("lineage","%s %s, descendant of %s, arrives at the Hearth."%[child.display_name,child.family_name,String(parent.get("name","a former hero"))]);return
 
 func _add_calendar_event(kind:String,text:String) -> void:
-	calendar_history.append({"day":calendar_day,"kind":kind,"text":text})
-	while calendar_history.size()>40:calendar_history.pop_front()
+	calendar_history.append({"day":calendar_day,"shift":calendar_shift,"kind":kind,"text":text})
+	while not calendar_history.is_empty() and int(calendar_history.front().get("day",1)) < calendar_day-CALENDAR_HISTORY_DAYS+1:
+		calendar_history.pop_front()
 
 func ensure_roster() -> void:
 	if supplies <= 0: supplies = 8
@@ -501,7 +529,9 @@ func _begin_expedition_validated(ids:Array[String],dungeon_id:String,is_tutorial
 	if not is_tutorial:run_id=next_expedition_id;next_expedition_id+=1
 	expedition.begin(ids,dungeon_id,is_tutorial,run_id,patron_deity_id,objective_id)
 	expedition.departure_day = calendar_day
-	expedition.due_day = calendar_day+7
+	expedition.departure_shift_index = HearthCalendar.shift_index(self)
+	expedition.due_shift_index = expedition.departure_shift_index + 1
+	expedition.due_day = 1 + int(expedition.due_shift_index / 2)
 	for id in ids: expedition.locked_loadouts[id] = character(id).equipment.duplicate(true)
 	return true
 
@@ -575,6 +605,7 @@ func upgrade_cost(branch: String) -> Dictionary:
 
 func purchase_upgrade(branch: String) -> Array[String]:
 	if not tavern_upgrades.has(branch): return ["Unknown tavern upgrade."]
+	if branch == "recovery" and int(tavern_upgrades.recovery) >= 1: return ["Maximum recovery rank reached."]
 	var rank := int(tavern_upgrades.get(branch,0))+1
 	var gold_cost := 20*rank
 	var essence_cost := 5*rank
@@ -587,7 +618,7 @@ func to_dict() -> Dictionary:
 	for value in roster.values(): if value is CharacterRecord: encoded_roster.append(value.to_dict())
 	var encoded_candidates:Array[Dictionary]=[]
 	for value in candidate_pool.values():if value is CandidateRecord:encoded_candidates.append(value.to_dict())
-	return {"ending_state":ending_state.duplicate(true),"world_crisis":world_crisis.duplicate(true),"active_boons":active_boons.duplicate(true),"divine_obligations":divine_obligations.duplicate(true),"dungeon_ecology":dungeon_ecology.duplicate(true),"armory":armory.duplicate(true),"next_item_id":next_item_id,"establishment_tier":establishment_tier,"construction":construction.duplicate(true),"dispatches":dispatches.duplicate(true),"settled_expeditions":settled_expeditions.duplicate(true),"return_reports":return_reports.duplicate(true),"market_stock":market_stock.duplicate(true),"consumable_stock":consumable_stock.duplicate(true),"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"keeper_journal_unlocked":keeper_journal_unlocked,"contribution":contribution,"faction_standing":faction_standing.duplicate(true),"divine_favor":divine_favor.duplicate(true),"story_event_history":story_event_history.duplicate(true),"keeper_memory":keeper_memory.duplicate(true),"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"pending_story_event_id":pending_story_event_id,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeons":completed_dungeons.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true)}
+	return {"ending_state":ending_state.duplicate(true),"world_crisis":world_crisis.duplicate(true),"active_boons":active_boons.duplicate(true),"divine_obligations":divine_obligations.duplicate(true),"dungeon_ecology":dungeon_ecology.duplicate(true),"armory":armory.duplicate(true),"next_item_id":next_item_id,"establishment_tier":establishment_tier,"construction":construction.duplicate(true),"dispatches":dispatches.duplicate(true),"settled_expeditions":settled_expeditions.duplicate(true),"return_reports":return_reports.duplicate(true),"market_stock":market_stock.duplicate(true),"consumable_stock":consumable_stock.duplicate(true),"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"keeper_journal_unlocked":keeper_journal_unlocked,"contribution":contribution,"faction_standing":faction_standing.duplicate(true),"divine_favor":divine_favor.duplicate(true),"story_event_history":story_event_history.duplicate(true),"keeper_memory":keeper_memory.duplicate(true),"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"calendar_shift":calendar_shift,"period_elapsed_shifts":period_elapsed_shifts,"period_completed_runs":period_completed_runs,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"pending_story_event_id":pending_story_event_id,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeons":completed_dungeons.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true)}
 
 func save_atomic() -> bool:
 	last_save_error = "";save_slot=clampi(save_slot,1,SAVE_SLOT_COUNT);last_saved_unix=int(Time.get_unix_time_from_system());var temporary:=temp_save_path(save_slot);var destination:=save_path(save_slot);var backup:=backup_save_path(save_slot);var file := FileAccess.open(temporary, FileAccess.WRITE)
@@ -664,6 +695,10 @@ static func _migrate_dict(source:Dictionary)->Dictionary:
 	if version<=11:data["active_boons"]=Dictionary(data.get("active_boons",{})).duplicate(true);data["divine_obligations"]=Array(data.get("divine_obligations",[])).duplicate(true)
 	if version<=12:data["world_crisis"]=Dictionary(data.get("world_crisis",{})).duplicate(true)
 	if version<=13:data["ending_state"]=Dictionary(data.get("ending_state",{})).duplicate(true)
+	if version<=15:
+		data["calendar_shift"]=0
+		data["period_elapsed_shifts"]=0
+		data["period_completed_runs"]=0
 	if version<=14:data["pending_story_event_id"]=String(data.get("pending_story_event_id",""))
 	# Convert legacy per-mode clears to the mode-free completion map and flag runs the removed runtime cannot resume.
 	var old_completions:Dictionary=Dictionary(data.get("completed_dungeon_modes",{}))
@@ -716,6 +751,9 @@ func _load_dict(data: Dictionary) -> void:
 		unlock_class("tank"); unlock_class("rogue")
 	expedition = ExpeditionState.from_dict(Dictionary(data.get("expedition", {})))
 	legacy_runtime = Dictionary(data.get("legacy_runtime", {})).duplicate(true)
+	calendar_shift=clampi(int(data.get("calendar_shift",0)),0,1)
+	period_elapsed_shifts=maxi(0,int(data.get("period_elapsed_shifts",0)))
+	period_completed_runs=maxi(0,int(data.get("period_completed_runs",0)))
 	calendar_day=maxi(1,int(data.get("calendar_day",1)));tavern_phase=String(data.get("tavern_phase",TAVERN_OPEN));candidate_wave_id=maxi(0,int(data.get("candidate_wave_id",0)));last_presented_wave_id=maxi(0,int(data.get("last_presented_wave_id",0)));calendar_history.assign(data.get("calendar_history",[]));retired_heroes.assign(data.get("retired_heroes",[]));first_company_ids.assign(data.get("first_company_ids",[]));first_company_recruited=bool(data.get("first_company_recruited",true));first_normal_launch_completed=bool(data.get("first_normal_launch_completed",true));next_expedition_id=maxi(1,int(data.get("next_expedition_id",1)));last_settled_expedition_id=maxi(0,int(data.get("last_settled_expedition_id",0)))
 	pending_settlement_summary=Dictionary(data.get("pending_settlement_summary",{})).duplicate(true);pending_story_context=String(data.get("pending_story_context",""));pending_story_event_id=String(data.get("pending_story_event_id",""))
 	reputation=clampi(int(data.get("reputation",0)),0,100);used_curated_ids.assign(data.get("used_curated_ids",[]));lineage_registry=Dictionary(data.get("lineage_registry",{})).duplicate(true)

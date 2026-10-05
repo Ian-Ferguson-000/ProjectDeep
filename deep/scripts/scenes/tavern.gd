@@ -82,7 +82,10 @@ var toolbar:HBoxContainer
 var toolbar_buttons:Dictionary={}
 var calendar_backdrop:ColorRect
 var calendar_text:RichTextLabel
+var calendar_view: HearthCalendarView
 var recruitment_dialogue:RecruitmentDialogue
+var active_contest:VisitorContest
+var contest_candidate_id:=""
 var arrivals_running:=false
 var arrivals_need_sequence:=false
 var dismissal_confirmation:ConfirmationDialog
@@ -130,6 +133,7 @@ func _ready() -> void:
 	management.manual_launch.connect(_hearth_manual_launch)
 	management.candidate_requested.connect(_open_candidate)
 	management.changed.connect(_hearth_changed)
+	management.time_advanced.connect(_on_time_advanced)
 	management.closed.connect(_restore_hub_focus)
 	get_viewport().size_changed.connect(_layout_scene)
 	_layout_scene()
@@ -177,6 +181,8 @@ func _on_story_finished() -> void:
 	else:
 		if run_state!=null and run_state.campaign!=null:
 			run_state.campaign.pending_story_context=""
+			_save_tavern_progress()
+		_refresh_ui()
 		_continue_arrival_queue()
 
 func _show_tutorial_prompt() -> void:
@@ -215,6 +221,7 @@ func _open_candidate_with_dialogue(candidate_id:String)->void:
 	if candidate==null:return
 	var packet:=tavern_dialogue_service.play("candidate_default",{"campaign":run_state.campaign,"run_state":run_state,"candidate":candidate})
 	tavern_dialogue_service.apply_effects(Dictionary(packet.get("effects",{})),{"campaign":run_state.campaign,"run_state":run_state,"candidate":candidate})
+	_save_tavern_progress()
 	var lines:Array=packet.get("lines",[])
 	if lines.is_empty():_open_candidate(candidate_id);return
 	if keeper!=null:keeper.set_modal_paused(true)
@@ -243,7 +250,7 @@ func _on_keeper_prompt(text_value:String)->void:
 
 func _build_toolbar()->void:
 	toolbar=HBoxContainer.new();toolbar.name="TavernToolbar";toolbar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE);toolbar.offset_left=190;toolbar.offset_right=-190;toolbar.offset_top=-70;toolbar.offset_bottom=-10;toolbar.alignment=BoxContainer.ALIGNMENT_CENTER;toolbar.add_theme_constant_override("separation",8);ui_root.add_child(toolbar)
-	var entries := [["Calendar","calendar",Callable(self,"_open_hearth").bind("Reports")],["Company Ledger","ledger",Callable(self,"_open_hearth").bind("Company")],["Armory","armory",Callable(self,"_open_hearth").bind("Armory")],["Merchants","merchants",Callable(self,"_open_hearth").bind("Merchants")],["Expedition","expedition",Callable(self,"_open_hearth").bind("Expeditions")]]
+	var entries := [["Calendar","calendar",Callable(self,"_open_hearth").bind("Calendar")],["Company Ledger","ledger",Callable(self,"_open_hearth").bind("Company")],["Armory","armory",Callable(self,"_open_hearth").bind("Armory")],["Merchants","merchants",Callable(self,"_open_hearth").bind("Merchants")],["Expedition","expedition",Callable(self,"_open_hearth").bind("Expeditions")]]
 	for entry in entries:
 		var title:=String(entry[0]);var button:=Button.new();button.name="%sToolbarButton"%title.replace(" ","");button.text=title;button.icon=TAVERN_THEME.icon(String(entry[1]));button.expand_icon=true;button.icon_alignment=HORIZONTAL_ALIGNMENT_LEFT;button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.pressed.connect(entry[2]);TAVERN_THEME.apply_button(button,title=="Expedition",14,Vector2(190 if title=="Expedition" else 150,56));toolbar.add_child(button);toolbar_buttons[title]=button
 	for index in toolbar.get_child_count():
@@ -253,21 +260,48 @@ func _open_tavern_merchant()->void:
 	if not _open_hearth("Merchants"): _open_merchant_shop("tavern")
 
 func _build_calendar_modal()->void:
-	calendar_backdrop=_modal_backdrop("CalendarModal");var body:=_modal_panel(calendar_backdrop,"The Hearth Calendar",Vector2(820,610))
-	calendar_text=RichTextLabel.new();calendar_text.bbcode_enabled=true;calendar_text.size_flags_vertical=Control.SIZE_EXPAND_FILL;calendar_text.add_theme_font_size_override("normal_font_size",16);body.add_child(calendar_text)
-	calendar_text.focus_mode=Control.FOCUS_ALL
+	calendar_backdrop=_modal_backdrop("CalendarModal");var body:=_modal_panel(calendar_backdrop,"The Hearth Calendar",Vector2(900,660))
+	calendar_view=preload("res://scripts/ui/hearth_calendar_view.gd").new();body.add_child(calendar_view)
+	calendar_text=calendar_view.history_text
 	var close:=Button.new();close.text="Close Calendar";close.pressed.connect(_close_modal.bind(calendar_backdrop));_style_button(close);body.add_child(close)
 
 func _open_calendar()->void:
-	var campaign:=run_state.campaign;var date:=campaign.get_calendar_date();var lines:Array[String]=["[font_size=26][color=#f1c565]%s, %s %d, Year %d[/color][/font_size]"%[date.weekday,date.season,date.season_day,date.year],"Season progress: Day %d of 28     Candidate wave: %d"%[date.season_day,campaign.candidate_wave_id],"\n[b]RECENT HEARTH HISTORY[/b]"]
-	if campaign.calendar_history.is_empty():lines.append("No entries yet.")
-	else:
-		for index in range(campaign.calendar_history.size()-1,-1,-1):
-			var event:Dictionary=campaign.calendar_history[index];lines.append("Day %d · %s — %s"%[int(event.get("day",1)),String(event.get("kind","event")).capitalize(),String(event.get("text",""))])
-	calendar_text.text="\n".join(lines);_show_modal(calendar_backdrop,calendar_text)
+	calendar_view.open(run_state.campaign)
+	_show_modal(calendar_backdrop,calendar_view.focus_target())
+	call_deferred("_layout_scene")
 
 func _build_recruitment_dialogue()->void:
-	recruitment_dialogue=RECRUITMENT_DIALOGUE.new();recruitment_dialogue.recruit_requested.connect(_recruit_candidate);recruitment_dialogue.assessment_requested.connect(_assess_candidate);recruitment_dialogue.conversation_closed.connect(_restore_hub_focus);ui_root.add_child(recruitment_dialogue)
+	recruitment_dialogue=RECRUITMENT_DIALOGUE.new();recruitment_dialogue.contest_requested.connect(_open_visitor_contest);recruitment_dialogue.recruit_requested.connect(_recruit_candidate);recruitment_dialogue.assessment_requested.connect(_assess_candidate);recruitment_dialogue.conversation_closed.connect(_restore_hub_focus);ui_root.add_child(recruitment_dialogue)
+
+func _open_visitor_contest(candidate_id:String,contest_id:String)->void:
+	if active_contest!=null or not VisitorContestRules.CONTESTS.has(contest_id):return
+	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord
+	if candidate==null:recruitment_dialogue.show_capacity_error("That adventurer is no longer at the Hearth.");return
+	var scene:=load("res://scenes/minigames/%s.tscn"%contest_id) as PackedScene
+	if scene==null:return
+	var member:=candidate.adventurer
+	active_contest=scene.instantiate() as VisitorContest;contest_candidate_id=candidate_id
+	active_contest.setup({"visitor_name":member.display_name,"portrait":"res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant],"attribute":member.attributes.get(VisitorContestRules.CONTESTS[contest_id].stat,10),"learning_potential":member.learning_potential,"attribute_known_exact":String(candidate.knowledge.get(VisitorContestRules.CONTESTS[contest_id].stat,"unknown"))=="exact","seed":Time.get_ticks_usec() ^ candidate.quality_seed})
+	active_contest.completed.connect(_complete_visitor_contest)
+	active_contest.cancelled.connect(_return_from_visitor_contest)
+	recruitment_dialogue.hide()
+	if activity_controller!=null:activity_controller.set_paused(true)
+	if keeper!=null:keeper.set_modal_paused(true)
+	ui_root.add_child(active_contest);active_contest.move_to_front()
+
+func _complete_visitor_contest(result:Dictionary)->void:
+	var response:=run_state.campaign.complete_candidate_contest(contest_candidate_id,result)
+	if not bool(response.get("ok",false)):
+		active_contest.feedback.text=String(response.get("error","Assessment failed."));return
+	_save_tavern_progress();_refresh_ui()
+
+func _return_from_visitor_contest()->void:
+	if active_contest==null:return
+	active_contest.hide();active_contest.set_process_input(false);active_contest.queue_free();active_contest=null
+	var candidate:=run_state.campaign.candidate_pool.get(contest_candidate_id) as CandidateRecord
+	contest_candidate_id=""
+	if candidate!=null:recruitment_dialogue.open(candidate)
+	else:_restore_hub_focus()
 
 func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
 	var result:Dictionary
@@ -276,6 +310,7 @@ func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
 	else:result=run_state.campaign.inspect_candidate(candidate_id,action)
 	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Assessment failed.")));return
 	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord;if candidate!=null:recruitment_dialogue.open(candidate)
+	_save_tavern_progress()
 	_refresh_ui()
 
 func _open_recruited_summary(character_id:String)->void:
@@ -314,6 +349,7 @@ func _recruit_candidate(candidate_id:String)->void:
 	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Recruitment failed.")));return
 	recruitment_dialogue.close();message=String(result.get("message","Recruitment complete."));_select_recruited_character()
 	if activity_controller!=null:activity_controller.populate(false)
+	_save_tavern_progress()
 	_refresh_ui()
 
 func _select_recruited_character()->void:
@@ -322,13 +358,24 @@ func _select_recruited_character()->void:
 
 func _continue_arrival_queue()->void:
 	if run_state==null or run_state.campaign==null:return
+	if pending_story_lines.is_empty() and not run_state.campaign.pending_story_event_id.is_empty():
+		var event_id := run_state.campaign.pending_story_event_id
+		pending_story_lines = STORY_EVENTS.lines(event_id,run_state.campaign)
+		pending_story_context = "story_event:%s" % event_id
+		run_state.campaign.pending_story_context = pending_story_context
+		_save_tavern_progress()
+	if not pending_story_lines.is_empty():
+		call_deferred("_play_pending_story")
+		return
 	if run_state.campaign.last_presented_wave_id<run_state.campaign.candidate_wave_id and not run_state.campaign.candidate_pool.is_empty():arrivals_need_sequence=true;run_state.campaign.tavern_phase=CampaignState.TAVERN_CALENDAR;_open_calendar()
 	else:_restore_hub_focus()
 
 func _start_arrivals()->void:
 	arrivals_running=true;run_state.campaign.tavern_phase=CampaignState.TAVERN_ARRIVALS;toolbar.visible=false
 	if activity_controller!=null:activity_controller.begin_arrivals()
-	get_tree().create_timer(1.8).timeout.connect(_finish_arrivals)
+	var wave_id := run_state.campaign.candidate_wave_id
+	get_tree().create_timer(1.8).timeout.connect(func():
+		if run_state.campaign.candidate_wave_id == wave_id: _finish_arrivals())
 
 func _finish_arrivals()->void:
 	if not arrivals_running:return
@@ -337,7 +384,7 @@ func _finish_arrivals()->void:
 			var actor:=value as TavernActor
 			if actor.state in [TavernActor.ActivityState.ENTERING,TavernActor.ActivityState.WALKING]:actor.finish_immediately()
 	arrivals_running=false;arrivals_need_sequence=false;toolbar.visible=true
-	run_state.campaign.mark_arrivals_presented(run_state.campaign.candidate_wave_id);_refresh_ui();_restore_hub_focus()
+	run_state.campaign.mark_arrivals_presented(run_state.campaign.candidate_wave_id);_save_tavern_progress();_refresh_ui();_restore_hub_focus()
 
 func _build_hud() -> void:
 	top_hud = PanelContainer.new(); top_hud.name = "TavernHUD"; top_hud.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -839,14 +886,18 @@ func _show_arrival_results() -> void:
 	var summary := arrival_summary
 	var headline := String(summary.get("headline",message if not message.is_empty() else "The hearth welcomes you back."))
 	var lines: Array[String] = ["[font_size=22][color=#f0c768]%s[/color][/font_size]"%headline]
-	if not summary.is_empty():
+	if not summary.is_empty() and Array(summary.get("reports",[])).is_empty():
 		lines.append("\n[b]Outcome:[/b] %s"%String(summary.get("outcome","return")).capitalize())
 		lines.append("[b]Dungeon:[/b] %s · Depth %d"%[String(summary.get("dungeon","Unknown")).capitalize(),int(summary.get("depth",0))])
 		lines.append("[b]Gold:[/b] %d   [b]Hero:[/b] %s"%[int(summary.get("gold",run_state.gold)),run_state.get_profile_summary()])
-		if not String(summary.get("slasher_progression","")).is_empty():lines.append("[b]Slasher Path:[/b] %s"%String(summary.slasher_progression))
-		var changes: Array = summary.get("changes",[])
-		if not changes.is_empty(): lines.append("\n[b]Progress[/b]\n• "+"\n• ".join(changes))
-		lines.append("\n[color=#a9c792]Visit the armory, review merchant stock, then choose a gate.[/color]")
+	for report in summary.get("reports",[]):
+		lines.append("\n[b]%s[/b] · %s\nGold %d · Company share %d · Net %d" % [String(report.get("headline","Expedition return")),String(report.get("deployment_type","manual")).capitalize(),int(report.get("gold",0)),int(report.get("share",0)),int(report.get("net",0))])
+		for field in ["returned","retired","lost"]:
+			var names: Array = report.get(field,[])
+			if not names.is_empty(): lines.append("%s: %s" % [String(field).capitalize(),", ".join(names)])
+	if not String(summary.get("slasher_progression","")).is_empty(): lines.append("\n[b]Slasher Path:[/b] %s" % String(summary.slasher_progression))
+	var changes: Array = summary.get("changes",[])
+	if not changes.is_empty(): lines.append("\n[b]Progress[/b]\n• "+"\n• ".join(changes))
 	results_text.text = "\n".join(lines); _show_modal(results_backdrop,results_backdrop.find_child("ContinueButton",true,false) as Control)
 
 func _open_merchant_shop(merchant_id: String) -> void:
@@ -874,13 +925,17 @@ func _close_modal(modal: Control) -> void:
 	if activity_controller!=null and not departure_running:activity_controller.set_paused(false)
 	if keeper!=null and not departure_running:keeper.set_modal_paused(false)
 	if modal==results_backdrop:
-		if run_state!=null and run_state.campaign!=null:run_state.campaign.pending_settlement_summary.clear()
+		if run_state!=null and run_state.campaign!=null:
+			run_state.campaign.pending_settlement_summary.clear()
+			arrival_summary.clear()
+			_save_tavern_progress()
 		if not pending_story_lines.is_empty():call_deferred("_play_pending_story")
 		else:call_deferred("_continue_arrival_queue")
 	elif modal==calendar_backdrop and arrivals_need_sequence:call_deferred("_start_arrivals")
 	else: _restore_hub_focus()
 
 func _close_top_modal() -> void:
+	if active_contest!=null:active_contest.leave();return
 	if management != null and management.visible: management.hide(); _restore_hub_focus(); return
 	if merchant_shop_panel != null and merchant_shop_panel.visible: merchant_shop_panel.close()
 	elif recruitment_dialogue!=null and recruitment_dialogue.visible:recruitment_dialogue.close()
@@ -892,7 +947,7 @@ func _close_top_modal() -> void:
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
 
 func _modal_visible() -> bool:
-	return (management != null and management.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
+	return active_contest!=null or (management != null and management.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
 
 func _restore_hub_focus() -> void:
 	if activity_controller!=null and not _modal_visible() and not departure_running:
@@ -906,7 +961,7 @@ func _restore_hub_focus() -> void:
 func _refresh_ui() -> void:
 	if hud_label == null or run_state == null: return
 	var date:=run_state.campaign.get_calendar_date();var compact:=get_viewport_rect().size.x<1100
-	hud_date_label.text="%s %d · Y%d"%[date.season,date.season_day,date.year] if compact else "%s, %s %d, Y%d"%[date.weekday,date.season,date.season_day,date.year]
+	hud_date_label.text="%s %d · %s"%[date.season,date.season_day,"Early" if run_state.campaign.calendar_shift==0 else "Late"] if compact else "%s, %s %d, Y%d · %s"%[date.weekday,date.season,date.season_day,date.year,HearthCalendar.shift_name(run_state.campaign)]
 	hud_bank_label.text=str(run_state.campaign.banked_gold) if compact else "Bank %d"%run_state.campaign.banked_gold
 	hud_company_label.text="%d/%d · %d waiting"%[run_state.campaign.living_roster().size(),run_state.campaign.get_roster_capacity(),run_state.campaign.candidate_pool.size()] if compact else "Roster %d/%d · Candidates %d"%[run_state.campaign.living_roster().size(),run_state.campaign.get_roster_capacity(),run_state.campaign.candidate_pool.size()]
 	dialogue_panel.visible = false
@@ -969,10 +1024,28 @@ func _hearth_manual_launch(dungeon_id: String, party: Array[String]) -> void:
 	if keeper != null: keeper.set_modal_paused(false)
 	controller.start_dungeon(dungeon_id,gear,party)
 
+func _save_tavern_progress() -> void:
+	if run_state != null and not run_state.autosave_on_floor_entry():
+		_show_dialogue("Save failed",run_state.campaign.last_save_error)
+
+func _on_time_advanced(result: Dictionary) -> void:
+	call_deferred("_present_time_advance",result)
+
+func _present_time_advance(result: Dictionary) -> void:
+	management.hide()
+	if result.get("reset",false):
+		if controller != null:
+			controller.run_state = management.state
+			controller.begin_game()
+		return
+	arrival_summary = run_state.campaign.pending_settlement_summary.duplicate(true)
+	if not arrival_summary.is_empty(): _show_arrival_results()
+	else: _continue_arrival_queue()
+
 func _hearth_changed() -> void:
 	_refresh_ui()
 	_refresh_wings()
-	if activity_controller != null: activity_controller.refresh_from_campaign(run_state)
+	if activity_controller != null: activity_controller.populate_from_campaign(run_state)
 
 func _refresh_wings() -> void:
 	if world == null or run_state == null: return

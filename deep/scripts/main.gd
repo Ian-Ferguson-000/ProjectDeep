@@ -321,6 +321,7 @@ func complete_slasher_farmstead() -> void:
 	return_to_tavern("victory", "The Harvest Wretch falls. You clear %d rooms and return with %d gold. Orin Cinder has joined the tavern.\n%s" % [depth, run_state.gold, " ".join(favor_logs)])
 
 func return_to_tavern(outcome: String, message: String) -> void:
+	var previous_loop := int(campaign.keeper_memory.get("loop_number",0))
 	var was_tutorial := campaign.tutorial_phase == CampaignState.TUTORIAL_EXPEDITION and campaign.expedition.tutorial_run
 	var return_dungeon := run_state.active_dungeon_id
 	if outcome == "death" and campaign.expedition.active and not campaign.expedition.living_party_ids().is_empty():
@@ -338,6 +339,12 @@ func return_to_tavern(outcome: String, message: String) -> void:
 		"changes": changes,
 	}
 	run_state.finish_run(outcome, message)
+	if previous_loop != int(campaign.keeper_memory.get("loop_number",0)):
+		run_state = RunState.new()
+		run_state.attach_campaign(campaign)
+		if not run_state.autosave_on_floor_entry(): push_warning(campaign.last_save_error)
+		begin_game()
+		return
 	var story_lines: Array = []
 	var story_context := ""
 	if was_tutorial and outcome in ["death", "victory"]:
@@ -352,6 +359,7 @@ func return_to_tavern(outcome: String, message: String) -> void:
 		var pending:=_pending_campaign_story();story_lines=pending.lines;story_context=pending.context
 	if not was_tutorial and not campaign.pending_settlement_summary.is_empty(): summary.merge(campaign.pending_settlement_summary,true)
 	campaign.pending_settlement_summary=summary.duplicate(true);campaign.pending_story_context=story_context
+	if not run_state.autosave_on_floor_entry(): push_warning(campaign.last_save_error)
 	show_tavern(message, summary, story_lines, story_context)
 
 func _opening_tutorial_dialogue() -> Array[Dictionary]:
