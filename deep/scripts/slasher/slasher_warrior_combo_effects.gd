@@ -125,4 +125,5 @@ func draw_foreground(canvas: Node2D) -> void:
 	for effect in effects:
 		if effect.kind=="arc":
 			var start := to_local(effect.a);var end := to_local(effect.b)
-			canvas.draw_line(start,end,Color("#7d746b"),7);canvas.draw_line(start,end,TINT,2)
+			WEAPON_VISUALS.chain_links(canvas,start,end,float(effect.left)/float(effect.duration))
+			WEAPON_VISUALS.weight(canvas,end,float(effect.left)/float(effect.duration))

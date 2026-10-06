@@ -270,6 +270,7 @@ func _schedule_guardian_burst()->void:
 	var step:=float(behavior_tuning.get("burst_rotation_step",PI/16.0));guardian_burst_queue.append({"time":float(behavior_tuning.get("burst_telegraph",0.22)),"rotation":guardian_burst_index*step});guardian_burst_index+=1;queue_redraw()
 
 func _release_guardian_burst(rotation_offset:float)->void:
+	AudioCue.play_from(self,"cast_aether")
 	if dead or not is_inside_tree() or not is_instance_valid(target):return
 	var count:=maxi(1,int(behavior_tuning.get("burst_projectiles",8)));var projectile_damage:=maxi(1,int(round(damage*float(behavior_tuning.get("burst_damage_multiplier",0.55)))))
 	for index:int in count:
@@ -306,13 +307,15 @@ func heal(amount:int)->void:
 		var resting_color:=Color.WHITE;resting_color.a=0.38 if behavior_id=="wolf_lurker" and not awakened else 1.0
 		var tween:=create_tween();tween.tween_property(sprite,"modulate",Color("#b9ffb1"),0.12);tween.tween_property(sprite,"modulate",resting_color,0.22)
 
-func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlayer=null,stun_duration:float=-1.0,shake_multiplier:float=1.0)->int:
+func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlayer=null,stun_duration:float=-1.0,shake_multiplier:float=1.0,sound_event:String="impact")->int:
 	if dead:return 0
 	if behavior_id=="wolf_lurker" and not awakened:_awaken_lurker()
 	var resolved_amount:=maxi(1,amount);var durability:=GameBalance.get_slasher_balance("boss_durability")
 	if boss or mini_boss:
 		if damage_shield_remaining>0.0:resolved_amount=maxi(1,int(round(resolved_amount*(1.0-float(durability.get("shield_reduction",0.75))))))
 		resolved_amount=mini(resolved_amount,maxi(1,int(floor(max_health*float(durability.get("max_damage_fraction",0.05))))));damage_shield_remaining=float(durability.get("shield_duration",0.5))
+	AudioCue.play_from(self,sound_event)
+	if health<=resolved_amount:AudioCue.play_from(self,"enemy_death")
 	health-=resolved_amount;var stun_source:=behavior_tuning if behavior_id=="elite_guardian" else tuning;var stun:=float(stun_source.get("hit_stun_duration",0.12)) if stun_duration<0.0 else minf(stun_duration,float(stun_source.get("hit_stun_duration",stun_duration)));hit_stun_timer=maxf(hit_stun_timer,stun)
 	var knockback_source:=behavior_tuning if behavior_id=="elite_guardian" else tuning;var adjusted_knockback:=knockback*float(knockback_source.get("received_knockback_multiplier",1.0))
 	if not adjusted_knockback.is_zero_approx():move_and_collide(adjusted_knockback)
@@ -326,7 +329,9 @@ func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlaye
 func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	var was_dead := dead
 	var amount:=maxi(1,int(attack.get("damage",1)));var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
-	var dealt:=receive_hit(amount,push_direction*float(attack.get("knockback",0.0)),attacker,float(attack.get("hit_stun_duration",tuning.get("hit_stun_duration",0.12))),float(attack.get("screen_shake_multiplier",1.0)))
+	var element:=String(attack.get("damage_type","physical"))
+	var sound_event:="impact_"+element if element in ["fire","ice","lightning","aether"] else "impact"
+	var dealt:=receive_hit(amount,push_direction*float(attack.get("knockback",0.0)),attacker,float(attack.get("hit_stun_duration",tuning.get("hit_stun_duration",0.12))),float(attack.get("screen_shake_multiplier",1.0)),sound_event)
 	if dealt>0 and is_instance_valid(attacker):
 		if String(attack.get("damage_type",""))=="ice" and dead and not was_dead and is_instance_valid(attacker.mage_kit) and attacker.mage_kit.has_method("on_cold_kill"):
 			attacker.mage_kit.on_cold_kill(global_position)
@@ -356,6 +361,7 @@ func _draw()->void:
 		var telegraph_color:=Color(String(behavior_tuning.get("burst_color","#c9ef72")));telegraph_color.a=0.55;draw_arc(Vector2.ZERO,42.0,0.0,TAU,32,telegraph_color,3.0)
 
 func _play_animation(state:String,restart:bool=false)->void:
+	if state=="attack" and restart:AudioCue.play_from(self,"enemy_attack")
 	if sprite==null or sprite.sprite_frames==null:return
 	var animation:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,state,facing_name)
 	if animation.is_empty():return

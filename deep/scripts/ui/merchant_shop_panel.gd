@@ -28,6 +28,7 @@ func setup(state: RunState, selected_merchant_id: String, location: String) -> v
 	_refresh()
 
 func open() -> void:
+	if not visible:AudioCue.play_from(self,"ui_open",false)
 	_refresh()
 	visible = true
 	move_to_front()
@@ -35,6 +36,7 @@ func open() -> void:
 	if first_button != null: first_button.grab_focus()
 
 func close() -> void:
+	if visible:AudioCue.play_from(self,"ui_close",false)
 	visible = false
 	closed.emit()
 
@@ -178,7 +180,14 @@ func _next_rank_text(rank: int, progress: Dictionary) -> String:
 	return "Next: "+", ".join(parts)
 
 func _purchase(offer_id: String) -> void:
+	var previous_stock:=-1
+	for offer:Dictionary in run_state.get_merchant_offers(merchant_id,shop_location):
+		if String(offer.get("offer_id",""))==offer_id:previous_stock=int(offer.get("stock_remaining",0))
 	var logs := run_state.purchase_merchant_offer(merchant_id, offer_id, shop_location)
+	var sold:=false
+	for offer:Dictionary in run_state.get_merchant_offers(merchant_id,shop_location):
+		if String(offer.get("offer_id",""))==offer_id:sold=previous_stock>int(offer.get("stock_remaining",0))
+	AudioCue.play_from(self,"coins" if sold else "ui_error",false)
 	feedback_label.text = " ".join(logs)
 	purchase_completed.emit(feedback_label.text)
 	_refresh()

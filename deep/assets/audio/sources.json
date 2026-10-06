@@ -1,0 +1,1126 @@
+{
+  "assets": [
+    {
+      "file": "kenney/impact/footstep_concrete_000.ogg",
+      "sha256": "d7267e183067757c92c169de2a379abea592cfca6b39bb2e8feea15221ad79fe",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_concrete_001.ogg",
+      "sha256": "507a75eb19b897087855a3be3cf11a12d7fa37d143ad535eeebe0b8031c7325d",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_concrete_002.ogg",
+      "sha256": "b21fa546d74941196b25da8a20b7010abd8c05c4fcf93545d1f344e66a664e13",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_concrete_003.ogg",
+      "sha256": "8b513c2f0316324060b9174b8f28df6c2147418c506e6a53b77f18e149a5547b",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_grass_000.ogg",
+      "sha256": "9d49497777405d78d7cf7f2888e28277f3a23192300cfd1d79d54876b20f479f",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_grass_001.ogg",
+      "sha256": "fb28781bd22b2eefdc14077f1adf5c94d7fe9c3a130194633b55f3e0d39d9f04",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_grass_002.ogg",
+      "sha256": "73a520139f5be716a403bfe9c80e0e94d1e61d8e9de04a354b336392164b53dc",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_grass_003.ogg",
+      "sha256": "0546e1d8ab2def714425701a18bd34c5ee2794b12e858e5b595aabcf38a34137",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_wood_000.ogg",
+      "sha256": "5f1c252942a220d658121bd9417448cd19649ded9fff2ff15f6e50899373ce8e",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_wood_001.ogg",
+      "sha256": "e4f68e1c9fd55b4dc8ca89ed2bbab6f200171bc54bdc18aa96b80d8e7336f462",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_wood_002.ogg",
+      "sha256": "9ff095b05cee5eec40b081defe3f0eef7232bb16d4865ce03b9f6dbab875cfdd",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/footstep_wood_003.ogg",
+      "sha256": "2a68a083daa9eda08fed0ea5da5280dfbe0de226196c576be02f95259dd139d9",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactMetal_light_000.ogg",
+      "sha256": "33b5e6e37c6e9d54e07bf5a89b12c76e879f40c1ea83cdd82714df1d6f9fec6d",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactMetal_light_001.ogg",
+      "sha256": "fba69c467ddd85da7b1d82e259f936b876d9ba6a3d6f1b24bdd10468e46bfe08",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactMining_000.ogg",
+      "sha256": "36b4ea107222d073c67ca64dde26944975609202d5090b2f2021213c1a7e35cd",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactMining_001.ogg",
+      "sha256": "61235a18de3f3d92118235398222dbf51d448f1be70b1c8bc962b10b86f2d9c6",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactPunch_heavy_000.ogg",
+      "sha256": "b33a8f14068aec24ec69ba85e5e87fdc41228975f6a1a3e44a6e7d6fc3d9f8d8",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactPunch_medium_000.ogg",
+      "sha256": "486988aa2d6440ffc4c62a0e8ccf3c23673ba84424bd4723378d451b7255eb5c",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactPunch_medium_001.ogg",
+      "sha256": "e71d23abcc3f10d9d6bc9615b2a431fff70b12333a5fcdd9964457564ace4349",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactPunch_medium_002.ogg",
+      "sha256": "6492f9ccbc8d24dcef607bb1b48790b7870961474561f7fe5601e1c73a3018ef",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactWood_heavy_000.ogg",
+      "sha256": "15ff82332f342c30e469215539e1cc57e11b221aa2cf7e11e811d313a9927f3d",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/impact/impactWood_heavy_001.ogg",
+      "sha256": "f1b07a53ac10c615fff9ba470511fdeb722b5902e1a8520759fc20ad6f546015",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/impact/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/interface/click_001.ogg",
+      "sha256": "ccfb7fa0cccdd9faec0eb16033c732b1e308d139d80f799161495d58f7adcdb9",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/interface/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/interface/click_002.ogg",
+      "sha256": "adcd1f4adc35f1b41bc1b5bbefeff7aa44f2f3f0d96d3199b544140c7c1e761c",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/interface/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/interface/confirmation_001.ogg",
+      "sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/interface/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/interface/confirmation_002.ogg",
+      "sha256": "33b17a9a9a2397c62b285c52c33a907fdffb476909c99e42dde603f6a7a8b12c",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/interface/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/interface/error_003.ogg",
+      "sha256": "885b28175c7b511118bcffab95675b48bbac9005cf6514656ebdad979276b3ab",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/interface/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/interface/glass_001.ogg",
+      "sha256": "183eebee20eb0a532b0b85104d139cbf2673eb66d95c3cc733ac9ea98362e7e8",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/interface/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/interface/select_001.ogg",
+      "sha256": "aec0c31ea934a35936ae0d2ab8fac8123c93aa5647f935853a58dbaf90278b7a",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0-1.0",
+      "license_file": "kenney/interface/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/bookClose.ogg",
+      "sha256": "81e976532565f4372abd14e83d2684195fa548d0a28d345de221e56052454f32",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/bookOpen.ogg",
+      "sha256": "953390534377222bee89ac8cd9e60a58fdc037c71a4d7c18c43cd647c7f34ba8",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/cloth1.ogg",
+      "sha256": "ddb93a3671233f95da0e0b10367f082f7eb42fa6caaddcf776410aa8833c747d",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/cloth2.ogg",
+      "sha256": "8a7451193c38bc05483aec25dd193e163a15d44cf7fff04ac7912573231b0201",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/creak1.ogg",
+      "sha256": "8a346186fd297254248cab8e8117060a52a5cf2a84f603153a762108550ea95e",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/doorOpen_1.ogg",
+      "sha256": "4ab93bab96522d8eb109ff96dc57cb6765deb02448fe14c10472084be5bb2a0b",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/doorOpen_2.ogg",
+      "sha256": "68962fb0458c9bac59dec3adefa9849703c7c89d34712de03dd0075d095e79e9",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/drawKnife2.ogg",
+      "sha256": "d5df6a4130cbb016f97b4883769a418917b9629cb4c21717030b186e0c73281a",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/handleCoins.ogg",
+      "sha256": "8a91f969e932df709df80ee124d86a51389eed9b67f22e5e716bc2bbf60d8dab",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/handleCoins2.ogg",
+      "sha256": "4b857968d64f9ac9336a10ffac6694d7547e1f01566ad6857b30bc8db3ee6c32",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/knifeSlice.ogg",
+      "sha256": "4cd96dc630bed9840c15f1dd2306da2cc56a4da26a5d3f1a03c5a7265ac5e54f",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/knifeSlice2.ogg",
+      "sha256": "6c2064d0ef988d1ec3d56868e823ea8823a5cac00f2742560052633529407def",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "kenney/rpg/metalLatch.ogg",
+      "sha256": "ba9ba60b172b3ebc131a940f25793cd2e207aca7af73dc80d637277f060f1708",
+      "creator": "Kenney",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "license": "CC0-1.0",
+      "license_file": "kenney/rpg/License.txt",
+      "modified": false
+    },
+    {
+      "file": "original/ambience_fire.wav",
+      "sha256": "05a72ce2ac53ab2d1ddb85aad7b840c698eee963267ead258dee64eb0e9cafe6",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/ambience_forest.wav",
+      "sha256": "c84c689b8c6a2fc5d8d990eb5a82a1d07b927f60897c282af59084f16ca36d12",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/ambience_mystic.wav",
+      "sha256": "b6df10042fdbe1f73df5074bc0ece8ec4fcf46ce85b9ad8a0d2a341179478515",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/ambience_stone.wav",
+      "sha256": "1dbddfcc40c118a8dabadae2b5dd85e205710bda8dbc7a4f596721128ac6c75d",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/ambience_water.wav",
+      "sha256": "d478a1bbcd7dc256f920ef5aa6ffe23c0e5631bb88ff1c287f81b451a86e8f99",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/cast_aether.wav",
+      "sha256": "9de4de6ff571bebe0fdd2a3e67537961a549a7f41b1dd18c58223bef7e854138",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/cast_fire.wav",
+      "sha256": "89be85eaa6ec0fe8b41948b4f1d8bc2872bfd96f66889d311a9fcac391bcc0b1",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/cast_growth.wav",
+      "sha256": "af9d0f013ff540433dea71971ffe7e1a9ea0358c34ece0a1152fc56901fbe42f",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/cast_ice.wav",
+      "sha256": "2447b366c5e01656507d5d56fabbdd4b2d368ba2cf032bca4d7bb501f76feafe",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/cast_lightning.wav",
+      "sha256": "8e077a60bb47234909836651d3a4cf7ca891b6265d4e7fb645b0d61a0ff6c090",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/combo.wav",
+      "sha256": "b57c5e652d36ee5a53928cb0941a898ecf458cf2c6a7dbba651b2de1427a7db2",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/dash.wav",
+      "sha256": "210d9f12192f36c2de2c2cb3103aa6679fabfa3ab9cf30602bab73fd3121994f",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/death.wav",
+      "sha256": "e777f39cc6615d4e3d255dc24da5a0283b98c0a6a8b678ba7ff759834b89d4ce",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/enemy_attack.wav",
+      "sha256": "3eeca06820c4491e63b4b7f3d17b71af7bdd67f6170f3ff17456097b037422c6",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/enemy_death.wav",
+      "sha256": "a23b4003e0398fa1765a83d4a1e7b599b5014c093b1c81ee9fe5c3fa484acd7c",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/eruption.wav",
+      "sha256": "e7b3458c4231201a020c299a1e9c7d0462f8a9f8600b573cd9c34016e269f6c6",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/heal.wav",
+      "sha256": "e901d8ceb36e6167aae396496319be849af26e90564b944da0b50229cf4d2da3",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/impact_aether.wav",
+      "sha256": "6a9be5bbd935617fbb2615bc861321624e6ca5a4e9c66d11a38715c42c880f7d",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/impact_fire.wav",
+      "sha256": "b6619f81c5c9388fe9671a2a723adb1c322704abfd07cd37644c8f1de2de39ac",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/impact_ice.wav",
+      "sha256": "2af344f7dabc3270983200457cbdffcf35ee986d38e2b52d5b095598120d88b8",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/impact_lightning.wav",
+      "sha256": "7f2871ebb72affce5bd20206c7be55b5815eb599a1c63c2f9480c9d8dbf21419",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/music_combat.wav",
+      "sha256": "738736fadb103539530cf4f9ce2c1ea3909443397ce8801acc5006b69521ab04",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/music_dungeon.wav",
+      "sha256": "d445cd9130320fb3867aa52a1656d1a5f42c84e5e88df3cb07fdb73c0a531772",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/music_menu.wav",
+      "sha256": "07f82d0da56d76b3286f061050a2a8365554d1f588c3fb3175552acdb1fff652",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "original/music_tavern.wav",
+      "sha256": "f4cbe4507f66676ef7c0e38adb9441a47f0882c71a88ab724f84f65311158a69",
+      "creator": "Eros original synthesis",
+      "source": "tools/build_original_audio.py",
+      "third_party_material": false
+    },
+    {
+      "file": "combat/sword_swing_01.wav",
+      "sha256": "2defb0e579cd803676c8adce221c6dd9ea1c3f257d17a772bb2fdbcb68fcc85c",
+      "creator": "artisticdude",
+      "source": [
+        "https://opengameart.org/content/swishes-sound-pack"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "artisticdude",
+          "source": "https://opengameart.org/content/swishes-sound-pack",
+          "download": "https://opengameart.org/sites/default/files/swishes.zip",
+          "recording": "swishes/swish-5.wav",
+          "sha256": "4db41f2d2f97caf94627be05ff2870217fecc86534cf30f2aab413b847a0d50a",
+          "speed": 0.88,
+          "max_duration": 0.24,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/sword_swing_02.wav",
+      "sha256": "a35cd47c4d660053aaee632b1e7ddabfefc33d476da0aeb11c331486e222c38f",
+      "creator": "artisticdude",
+      "source": [
+        "https://opengameart.org/content/swishes-sound-pack"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "artisticdude",
+          "source": "https://opengameart.org/content/swishes-sound-pack",
+          "download": "https://opengameart.org/sites/default/files/swishes.zip",
+          "recording": "swishes/swish-7.wav",
+          "sha256": "e6de737a34de16afed094d6170d7679149022f149e0a8356d2f029b0e8f4a4d7",
+          "speed": 0.88,
+          "max_duration": 0.24,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/sword_swing_03.wav",
+      "sha256": "e866972f2efaa5ff0892685a08e74e578a1ca7680aad5ffab1ea6c07e426719c",
+      "creator": "artisticdude",
+      "source": [
+        "https://opengameart.org/content/swishes-sound-pack"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "artisticdude",
+          "source": "https://opengameart.org/content/swishes-sound-pack",
+          "download": "https://opengameart.org/sites/default/files/swishes.zip",
+          "recording": "swishes/swish-9.wav",
+          "sha256": "123883f006ce55feecbff11eea5f87c4493df4399989983037144570a23723c1",
+          "speed": 0.88,
+          "max_duration": 0.24,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_aether_01.wav",
+      "sha256": "9ca628eb33b866a835f6b6d024ead9e80b19ab8d0a75fc78159fe3d4f8d94d4f",
+      "creator": "rubberduck",
+      "source": [
+        "https://opengameart.org/content/80-cc0-rpg-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "rubberduck",
+          "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+          "download": "https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip",
+          "recording": "spell_01.ogg",
+          "sha256": "09821a53c418c5eeeac4fa25bada9d245e822fed302eeeae9ae4151522a45ae5",
+          "speed": 0.9,
+          "max_duration": 0.55,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_fire_01.wav",
+      "sha256": "fd411e82d0dc5787a446d27eda1e6416de486bc132e3eb2ff183972eac3112a8",
+      "creator": "Julien Matthey",
+      "source": [
+        "https://opengameart.org/content/fireball-1"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Julien Matthey",
+          "source": "https://opengameart.org/content/fireball-1",
+          "download": "https://opengameart.org/sites/default/files/105016__julien-matthey__jm-fx-fireball-01.wav",
+          "recording": "fireball.wav",
+          "sha256": "3992598c814de25c318780e506aeda673a7e410b7b3c4f0793883483ff9766b8",
+          "speed": 1.1,
+          "max_duration": 0.65,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_ice_01.wav",
+      "sha256": "4333200af9ddd18aafa79dd9fb4cabcd94a73dbed3801b173edac6a9b2c724ba",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/compressed-air-spray-01.wav",
+          "sha256": "24439d722c11958197d39a351d6e26ba34c10df438f91e9c811e1e58b15f1135",
+          "speed": 1.05,
+          "max_duration": 0.42,
+          "gain": 0.8,
+          "delay": 0
+        },
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/wood-twigs-break-01.wav",
+          "sha256": "383c87c96cf30a207a9922f16768b1bd5138d7fd66bb7f4c2ff4e15e058b1803",
+          "speed": 1.35,
+          "max_duration": 0.3,
+          "gain": 0.5,
+          "delay": 0.025
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_lightning_01.wav",
+      "sha256": "19bbb3e0fb8de16bed46cda7ff96139a94d17d51d9602fc851b1bbcea7571aa8",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/paralyzer-discharge-01.wav",
+          "sha256": "8eaee5635e55ba4fe344f776e1b1830aa17501510ab9eb55a9fb1ba0dc82f827",
+          "speed": 1.05,
+          "max_duration": 0.42,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_growth_01.wav",
+      "sha256": "a570e443ff79cac7b1d9084cafcc049fb2f903918a4e4372de933e1c8abbaa84",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/chimes-wood-rattle.wav",
+          "sha256": "4b62c715ef1767b6d180d81f9a65738f9777bb7f0f13a24eb31533954a9a3171",
+          "speed": 0.85,
+          "max_duration": 0.5,
+          "gain": 0.7,
+          "delay": 0
+        },
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/wood-twigs-break-01.wav",
+          "sha256": "383c87c96cf30a207a9922f16768b1bd5138d7fd66bb7f4c2ff4e15e058b1803",
+          "speed": 0.8,
+          "max_duration": 0.4,
+          "gain": 0.3,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/impact_fire_01.wav",
+      "sha256": "5191091c950df061865d4fafe121c9c77a82311526a180a002e181d43c6d1513",
+      "creator": "rubberduck",
+      "source": [
+        "https://opengameart.org/content/80-cc0-rpg-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "rubberduck",
+          "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+          "download": "https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip",
+          "recording": "spell_fire_06.ogg",
+          "sha256": "66fa753e8033d08f3837d6ef1706b0450297db68c0d4b21782a03fd9ae960d63",
+          "speed": 0.85,
+          "max_duration": 0.38,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/impact_ice_01.wav",
+      "sha256": "e2818a9021bd81a321940201141e11ce134fd2e8d576976e122264b54c7bc6cc",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/wood-twigs-break-01.wav",
+          "sha256": "383c87c96cf30a207a9922f16768b1bd5138d7fd66bb7f4c2ff4e15e058b1803",
+          "speed": 1.4,
+          "max_duration": 0.28,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/impact_lightning_01.wav",
+      "sha256": "17923b241d4526cde2acd28647faf79306803f0651cf0c01c66954f04948a9bc",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/paralyzer-discharge-01.wav",
+          "sha256": "8eaee5635e55ba4fe344f776e1b1830aa17501510ab9eb55a9fb1ba0dc82f827",
+          "speed": 1.4,
+          "max_duration": 0.22,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/impact_aether_01.wav",
+      "sha256": "e9c9697fdb72385555565725d7adff3bf9aa69dcca25e0333cf3eea273116166",
+      "creator": "rubberduck",
+      "source": [
+        "https://opengameart.org/content/80-cc0-rpg-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "rubberduck",
+          "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+          "download": "https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip",
+          "recording": "spell_01.ogg",
+          "sha256": "09821a53c418c5eeeac4fa25bada9d245e822fed302eeeae9ae4151522a45ae5",
+          "speed": 0.75,
+          "max_duration": 0.24,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_aether_02.wav",
+      "sha256": "5d4832049611d6831dfbf564ee2c927da53753320d6e9a3322a74a10939d0089",
+      "creator": "rubberduck",
+      "source": [
+        "https://opengameart.org/content/80-cc0-rpg-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "rubberduck",
+          "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+          "download": "https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip",
+          "recording": "spell_02.ogg",
+          "sha256": "bf9c48b76921e56aa266172d969a2c08215d6ce0ffae7c3584f23fa05d3f8bd4",
+          "speed": 0.9,
+          "max_duration": 0.55,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_fire_02.wav",
+      "sha256": "0a62189ceb6ec8f8d5b3ef5dd05d9434e81515c0ac665412f56136a28477d283",
+      "creator": "Julien Matthey",
+      "source": [
+        "https://opengameart.org/content/fireball-1"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Julien Matthey",
+          "source": "https://opengameart.org/content/fireball-1",
+          "download": "https://opengameart.org/sites/default/files/105016__julien-matthey__jm-fx-fireball-01.wav",
+          "recording": "fireball.wav",
+          "sha256": "3992598c814de25c318780e506aeda673a7e410b7b3c4f0793883483ff9766b8",
+          "speed": 0.95,
+          "max_duration": 0.65,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_ice_02.wav",
+      "sha256": "005a69828067daf1e5d53f9b53589909d0762bdeaa4039f2e4109e92eae92d13",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/compressed-air-spray-01.wav",
+          "sha256": "24439d722c11958197d39a351d6e26ba34c10df438f91e9c811e1e58b15f1135",
+          "speed": 1.05,
+          "max_duration": 0.42,
+          "gain": 0.8,
+          "delay": 0
+        },
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/wood-twigs-break-02.wav",
+          "sha256": "444587434b25e876f34a585154f5bc339f120aee5edcc9c6605aca415995b354",
+          "speed": 1.35,
+          "max_duration": 0.3,
+          "gain": 0.5,
+          "delay": 0.025
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_lightning_02.wav",
+      "sha256": "b109a9bc68cd99f80e9f27a74fe6b581e75ab09a6e82dd04c4ffdc55ee5bcac1",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/paralyzer-discharge-01.wav",
+          "sha256": "8eaee5635e55ba4fe344f776e1b1830aa17501510ab9eb55a9fb1ba0dc82f827",
+          "speed": 0.9,
+          "max_duration": 0.42,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/cast_growth_02.wav",
+      "sha256": "9c6e59059bb8dc6f7e33a9b3abf4c8013c721e79bb5b4876a59f752b4ea3d940",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/chimes-wood-rattle.wav",
+          "sha256": "4b62c715ef1767b6d180d81f9a65738f9777bb7f0f13a24eb31533954a9a3171",
+          "speed": 1.05,
+          "max_duration": 0.5,
+          "gain": 0.7,
+          "delay": 0
+        },
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/wood-twigs-break-02.wav",
+          "sha256": "444587434b25e876f34a585154f5bc339f120aee5edcc9c6605aca415995b354",
+          "speed": 0.8,
+          "max_duration": 0.4,
+          "gain": 0.3,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/impact_fire_02.wav",
+      "sha256": "f708c5cc836537e56fee4dff12e9a702dea63b954b4028662bc8784e52232bcd",
+      "creator": "rubberduck",
+      "source": [
+        "https://opengameart.org/content/80-cc0-rpg-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "rubberduck",
+          "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+          "download": "https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip",
+          "recording": "spell_fire_07.ogg",
+          "sha256": "bb13cef9c0b0b4ec7f9335c356b14814c88418abd85dd3747cb62469e9ada93f",
+          "speed": 0.85,
+          "max_duration": 0.38,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/impact_ice_02.wav",
+      "sha256": "d8d692530a4903e428cb0fd39cc96eec94bda799cd2d7b388f4abe1a35f85107",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/wood-twigs-break-02.wav",
+          "sha256": "444587434b25e876f34a585154f5bc339f120aee5edcc9c6605aca415995b354",
+          "speed": 1.4,
+          "max_duration": 0.28,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/impact_lightning_02.wav",
+      "sha256": "24180202930a5591717552df6762f298f9dc39aed5b88e2d34478bf3c9036ae2",
+      "creator": "Jan Schupke (Vehicle)",
+      "source": [
+        "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "Jan Schupke (Vehicle)",
+          "source": "https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx",
+          "download": "https://opengameart.org/sites/default/files/tinysized.zip",
+          "recording": "sfx-cc0/paralyzer-discharge-01.wav",
+          "sha256": "8eaee5635e55ba4fe344f776e1b1830aa17501510ab9eb55a9fb1ba0dc82f827",
+          "speed": 1.2,
+          "max_duration": 0.22,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "file": "combat/impact_aether_02.wav",
+      "sha256": "3317e4787ef786a6a4fa117ec7a1fcd79c3064873f5001bb7ff85f643e40bfdc",
+      "creator": "rubberduck",
+      "source": [
+        "https://opengameart.org/content/80-cc0-rpg-sfx"
+      ],
+      "license": "CC0-1.0",
+      "license_file": "combat/License.txt",
+      "modified": true,
+      "processing": "tools/build_combat_audio.py",
+      "inputs": [
+        {
+          "creator": "rubberduck",
+          "source": "https://opengameart.org/content/80-cc0-rpg-sfx",
+          "download": "https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip",
+          "recording": "spell_02.ogg",
+          "sha256": "bf9c48b76921e56aa266172d969a2c08215d6ce0ffae7c3584f23fa05d3f8bd4",
+          "speed": 0.75,
+          "max_duration": 0.24,
+          "gain": 1,
+          "delay": 0
+        }
+      ]
+    }
+  ]
+}

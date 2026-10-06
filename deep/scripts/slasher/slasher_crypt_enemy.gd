@@ -133,9 +133,9 @@ func _spawn_projectile(origin:Vector2,direction:Vector2,config:Dictionary)->void
 	if get_tree().get_nodes_in_group("crypt_projectile").size()>=projectile_cap:return
 	var projectile:=HOSTILE_PROJECTILE.new().setup(self,target,origin,direction,maxi(1,int(round(damage*0.48))),config);get_parent().add_child(projectile);projectile.add_to_group("crypt_projectile")
 
-func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlayer=null,stun_duration:float=-1.0,shake_multiplier:float=1.0)->int:
+func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlayer=null,stun_duration:float=-1.0,shake_multiplier:float=1.0,sound_event:String="impact")->int:
 	if transition_time>0.0:return 0
-	return super.receive_hit(amount,knockback,attacker,stun_duration,shake_multiplier)
+	return super.receive_hit(amount,knockback,attacker,stun_duration,shake_multiplier,sound_event)
 
 func _draw()->void:
 	super._draw()

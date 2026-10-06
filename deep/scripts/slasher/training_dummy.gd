@@ -12,11 +12,11 @@ func _physics_process(delta: float) -> void:
 	damage_shield_remaining = maxf(0.0,damage_shield_remaining-delta)
 	queue_redraw()
 
-func receive_hit(amount: int, knockback: Vector2 = Vector2.ZERO, attacker: SlasherPlayer = null, stun_duration: float = -1.0, shake_multiplier: float = 1.0) -> int:
+func receive_hit(amount: int, knockback: Vector2 = Vector2.ZERO, attacker: SlasherPlayer = null, stun_duration: float = -1.0, shake_multiplier: float = 1.0, sound_event: String = "impact") -> int:
 	# Infinite durability, while retaining the real boss hit-cap/shield pipeline.
 	# Leave enough health for any incoming hit without changing boss cap math.
 	health = maxi(max_health,maxi(1,amount))+1
-	var dealt := super(amount,Vector2.ZERO,attacker,0.0,shake_multiplier)
+	var dealt := super(amount,Vector2.ZERO,attacker,0.0,shake_multiplier,sound_event)
 	total_damage += dealt
 	hits += 1
 	health = max_health

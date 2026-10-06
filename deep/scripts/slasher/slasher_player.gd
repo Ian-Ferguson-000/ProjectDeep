@@ -18,6 +18,7 @@ var mage_kit: Node2D
 const WARRIOR_KITS := preload("res://scripts/slasher/slasher_warrior_kits.gd")
 var warrior_kit: Node2D
 var warrior_combo_effects: Node2D
+var weapon_trails: Node2D
 var kit_buffs: Node
 
 var resource_suppression_time:=0.0
@@ -110,6 +111,10 @@ func restore_party_state(state:Dictionary)->void:
 
 func setup(state:RunState)->void:
 	run_state=state;class_id=state.selected_class_id
+	if is_instance_valid(weapon_trails):remove_child(weapon_trails);weapon_trails.queue_free()
+	weapon_trails=null
+	if class_id in ["warrior","rogue","tank"]:
+		weapon_trails=preload("res://scripts/slasher/slasher_weapon_trails.gd").new();weapon_trails.z_index=7;add_child(weapon_trails)
 	if is_instance_valid(warrior_kit):remove_child(warrior_kit);warrior_kit.queue_free()
 	if is_instance_valid(warrior_combo_effects):remove_child(warrior_combo_effects);warrior_combo_effects.queue_free()
 	if is_instance_valid(kit_buffs):remove_child(kit_buffs);kit_buffs.queue_free()
@@ -255,9 +260,24 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	if combo_effect.has("reset_cooldown"):cooldowns[String(combo_effect.reset_cooldown)]=0.0
 	resolving_combo={}
 	if int(result.get("targets_hit",0))>0 and int(tuning.get("resource_refund_on_hit",0))>0:_gain_resource(result,int(tuning.resource_refund_on_hit))
+	_play_ability_sound(slot)
+	if result.has("combo_id"):AudioCue.play_from(self,"combo")
 	result.resource_spent=resource_cost
 	cooldowns[slot]=float(result.get("cooldown_override",tuning.get("cooldown",0.4 if slot=="basic" else 3.0)))*(item_runtime.cooldown_multiplier() if item_runtime else 1.0)
 	resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());_play_action_animation(_action_animation_state(slot),float(cooldowns[slot]));animation_lock=minf(float(tuning.get("animation_lock",0.32)),float(cooldowns[slot]));ability_resolved.emit(result);return result
+
+func _play_ability_sound(slot:String)->void:
+	if slot=="movement":AudioCue.play_from(self,"dash");return
+	var cue:="sword_swing"
+	if class_id in ["mage","healer","summoner"]:
+		var element:=class_id
+		var gear_id:String=run_state.selected_gear.id if run_state.selected_gear!=null else ""
+		if uses_pyromancy():element="fire"
+		elif gear_id=="winterglass_codex":element="ice"
+		elif gear_id=="stormbringers_grimoire":element="lightning"
+		cue=AudioCue.cast_event(element)
+	elif slot=="defensive":cue="block"
+	AudioCue.play_from(self,cue)
 
 func _action_animation_state(slot:String)->String:
 	# The standard Mage's blink/repel artwork is blue; the fire kit draws its own effects.
@@ -447,6 +467,9 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 		var mitigation:Dictionary=item_runtime.mitigate_damage(final);prevented+=int(mitigation.prevented);final=int(mitigation.damage)
 		if item_runtime.try_prevent_lethal(final,health):final=maxi(0,health-1)
 	health=maxi(0,health-final);run_state.current_health=health
+	if prevented>0:AudioCue.play_from(self,"block")
+	if final>0:AudioCue.play_from(self,"player_hurt")
+	if health<=0:AudioCue.play_from(self,"death",false)
 	if final>0:add_impact_shake(minf(9.0+float(final)*0.75,12.0),0.24)
 	move_and_collide(knockback*(0.25 if prevented>0 else 1.0));_enforce_field_bounds()
 	if defense_kind=="recover" and final>0:heal(int(ceil(final*float(tuning.get("recover_fraction",0.5)))))
@@ -508,7 +531,12 @@ func reset_combo_progress()->void:
 	if combo_runtime!=null:_configure_combos()
 	last_fireball_attack={};resolving_combo={};warrior_slash_chain=0;warrior_slash_chain_time=0.0;combo_updated.emit({"type":"progress","progress":{}})
 
+func _standard_weapon_visual(origin: Vector2, direction: Vector2, reach: float, degrees: float, line: bool=false) -> void:
+	if uses_warrior_kit() or not is_instance_valid(weapon_trails):return
+	weapon_trails.play_strike(origin,direction,reach,degrees,line)
+
 func _melee_attack(data:Dictionary)->int:
+	_standard_weapon_visual(global_position,aim_direction,float(data.get("reach",64)),float(data.get("arc_degrees",70)))
 	var hits:=0;var reach:=float(data.get("reach",64.0));var threshold:=cos(deg_to_rad(float(data.get("arc_degrees",70.0))*0.5))
 	for node in get_tree().get_nodes_in_group("slasher_damageable"):
 		if node is Node2D and node.has_method("receive_attack"):
@@ -520,6 +548,7 @@ func _melee_attack(data:Dictionary)->int:
 	return hits
 
 func _line_attack(start:Vector2,end:Vector2,radius:float,data:Dictionary)->int:
+	_standard_weapon_visual(start,start.direction_to(end),start.distance_to(end),radius,true)
 	var hits:int=0;var segment:Vector2=end-start;var segment_length_squared:float=segment.length_squared()
 	for node_value:Variant in get_tree().get_nodes_in_group("slasher_damageable"):
 		var damageable:Node2D=node_value as Node2D
@@ -576,6 +605,7 @@ func _configured_attack(tuning:Dictionary,damage_type:String)->Dictionary:
 	return item_runtime.transform_attack(data,active_action_slot) if item_runtime else data
 
 func apply_consumable(effects:Dictionary)->void:
+	AudioCue.play_from(self,"potion")
 	if int(effects.get("heal",0))>0:heal(int(effects.heal)+run_state.get_derived_stat("potion_heal_bonus"))
 	if bool(effects.get("resource_fill",false)):run_state.class_resource=run_state.get_class_resource_max()
 	elif int(effects.get("resource",0))>0:run_state.gain_class_resource(int(effects.resource))
@@ -664,7 +694,9 @@ func _award_resource(amount:int)->int:
 	if resource_suppression_time>0.0:return 0
 	run_state.gain_class_resource(amount);return amount
 func _gain_resource(result:Dictionary,amount:int)->void:var awarded:=_award_resource(amount);result.resource_gained=int(result.get("resource_gained",0))+awarded
-func heal(amount:int)->void:health=mini(max_health,health+amount);run_state.current_health=health;health_changed.emit(health,max_health)
+func heal(amount:int)->void:
+	if amount>0 and health<max_health:AudioCue.play_from(self,"heal")
+	health=mini(max_health,health+amount);run_state.current_health=health;health_changed.emit(health,max_health)
 func add_impact_shake(strength:float,duration:float)->void:
 	strength*=_settings().get_float("screen_shake_intensity",1.0)
 	if strength<=0.0 or duration<=0.0:return

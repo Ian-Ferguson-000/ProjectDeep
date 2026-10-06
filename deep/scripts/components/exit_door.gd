@@ -34,4 +34,5 @@ func unlock() -> void:
 
 func enter() -> void:
 	if is_unlocked:
+		AudioCue.play_from(self,"door_open")
 		door_entered.emit(self)

@@ -349,6 +349,7 @@ func _recruit_candidate(candidate_id:String)->void:
 			return
 	var result:=run_state.campaign.recruit_candidate(candidate_id)
 	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Recruitment failed.")));return
+	AudioCue.play_from(self,"reward",false)
 	recruitment_dialogue.close();message=String(result.get("message","Recruitment complete."));_select_recruited_character()
 	if activity_controller!=null:activity_controller.populate(false)
 	_save_tavern_progress()
@@ -912,12 +913,14 @@ func _show_dialogue(speaker: String, text: String) -> void:
 		_refresh_ui())
 
 func _show_modal(modal: Control, focus: Control) -> void:
+	if not modal.visible:AudioCue.play_from(self,"ui_open",false)
 	if activity_controller!=null and not departure_running:activity_controller.set_paused(true)
 	if keeper!=null:keeper.set_modal_paused(true)
 	modal.visible = true; modal.move_to_front()
 	if focus != null: focus.grab_focus()
 
 func _close_modal(modal: Control) -> void:
+	if modal.visible:AudioCue.play_from(self,"ui_close",false)
 	modal.visible = false
 	if activity_controller!=null and not departure_running:activity_controller.set_paused(false)
 	if keeper!=null and not departure_running:keeper.set_modal_paused(false)

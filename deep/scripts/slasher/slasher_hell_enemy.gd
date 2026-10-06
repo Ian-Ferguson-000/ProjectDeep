@@ -112,10 +112,12 @@ func _release_balor_wave()->void:
 func _windup(duration:float)->void:ai_state="windup";state_timer=duration;captured_target=target.global_position;_play_animation("attack",true)
 
 func _fire_fan(count:int,spread:float,shot_speed:float)->void:
+	AudioCue.play_from(self,"cast_fire")
 	var center:=global_position.direction_to(target.global_position+target.velocity*0.25)
 	for index:int in count:_spawn_projectile(center.rotated((float(index)-float(count-1)/2.0)*spread),shot_speed,0.0)
 
 func _radial(count:int,rotation:float,shot_speed:float,curve:float=0.0)->void:
+	AudioCue.play_from(self,"cast_fire")
 	for index:int in count:_spawn_projectile(Vector2.RIGHT.rotated(rotation+TAU*float(index)/float(count)),shot_speed,curve)
 
 func _spawn_projectile(direction:Vector2,shot_speed:float,curve:float)->void:

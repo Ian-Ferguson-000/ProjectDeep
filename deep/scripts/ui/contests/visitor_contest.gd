@@ -106,6 +106,7 @@ func finish(details:Dictionary={})->void:
 	feedback.modulate=Color(1,1,1,0)
 	result_tween=create_tween();result_tween.tween_property(feedback,"modulate:a",1.0,0.35)
 	stage_art.pulse(Vector2(500,130),"",Color("#69d6c3") if outcome=="win" else THEME.GOLD)
+	AudioCue.play_from(self,"victory" if outcome=="win" else ("reward" if outcome=="draw" else "ui_error"),false)
 	completed.emit({"contest_id":contest_id,"outcome":outcome,"player_score":player_score,"visitor_score":visitor_score,"details":details})
 
 func _update_scores()->void:

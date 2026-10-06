@@ -8,7 +8,8 @@ const RESOLUTIONS=[Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vec
 const DEFAULTS:Dictionary={
 	"window_mode":"windowed","resolution":Vector2i(1280,720),"vsync":"on","ui_scale":1.0,
 	"slasher_zoom":1.30,"master_volume":1.0,"music_volume":0.8,"sfx_volume":0.9,
-	"master_mute":false,"music_mute":false,"sfx_mute":false,"screen_shake_intensity":1.0
+	"master_mute":false,"music_mute":false,"sfx_mute":false,"screen_shake_intensity":1.0,
+	"ambience_volume":0.65,"ui_volume":0.8,"ambience_mute":false,"ui_mute":false
 }
 
 var values:Dictionary={}
@@ -60,6 +61,7 @@ func apply_display()->void:
 
 func apply_audio()->void:
 	_ensure_audio_buses();_apply_bus("Master","master");_apply_bus("Music","music");_apply_bus("SFX","sfx")
+	_apply_bus("Ambience","ambience");_apply_bus("UI","ui")
 
 func _apply_bus(bus_name:String,key_prefix:String)->void:
 	var index:int=AudioServer.get_bus_index(bus_name)
@@ -68,7 +70,7 @@ func _apply_bus(bus_name:String,key_prefix:String)->void:
 	AudioServer.set_bus_volume_db(index,-80.0 if volume<=0.001 else linear_to_db(volume));AudioServer.set_bus_mute(index,get_bool("%s_mute"%key_prefix,false))
 
 func _ensure_audio_buses()->void:
-	for bus_name in ["Music","SFX"]:
+	for bus_name in ["Music","SFX","Ambience","UI"]:
 		if AudioServer.get_bus_index(bus_name)<0:AudioServer.add_bus();AudioServer.set_bus_name(AudioServer.bus_count-1,bus_name)
 
 func _sanitize(key:String,value:Variant)->Variant:
@@ -79,9 +81,9 @@ func _sanitize(key:String,value:Variant)->Variant:
 		"vsync":return String(value) if String(value) in ["off","on","adaptive"] else "on"
 		"ui_scale":return clampf(float(value),0.75,1.5)
 		"slasher_zoom":return clampf(float(value),1.0,1.5)
-		"master_volume","music_volume","sfx_volume":return clampf(float(value),0.0,1.0)
+		"master_volume","music_volume","sfx_volume","ambience_volume","ui_volume":return clampf(float(value),0.0,1.0)
 		"screen_shake_intensity":return clampf(float(value),0.0,1.5)
-		"master_mute","music_mute","sfx_mute":return bool(value)
+		"master_mute","music_mute","sfx_mute","ambience_mute","ui_mute":return bool(value)
 	return DEFAULTS.get(key,value)
 
 func _center_window(resolution:Vector2i)->void:

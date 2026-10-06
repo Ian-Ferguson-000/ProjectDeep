@@ -29,16 +29,19 @@ func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	if is_instance_valid(attacker):attacker.add_impact_shake(2.5*float(attack.get("screen_shake_multiplier",1.0)),0.11)
 	if sprite!=null:
 		var tween:=create_tween();tween.tween_property(sprite,"modulate",Color(1.8,1.8,1.8,1),0.04);tween.tween_property(sprite,"modulate",Color.WHITE,0.10)
+	AudioCue.play_from(self,"impact")
 	if health<=0:_break()
 	return amount
 
 func _break()->void:
 	if destroyed:return
+	AudioCue.play_from(self,"rock_break" if prop_kind=="rock" else "prop_break")
 	destroyed=true;remove_from_group("slasher_damageable");collision.set_deferred("disabled",true);broken.emit(self,prop_kind,cell)
 	var duration:float=float(tuning.get("break_duration",0.24));var tween:=create_tween();tween.set_parallel(true);tween.tween_property(sprite,"scale",sprite.scale*1.2,duration);tween.tween_property(sprite,"modulate:a",0.0,duration);tween.tween_property(sprite,"position:y",sprite.position.y+10.0,duration);tween.chain().tween_callback(queue_free)
 
 func open_chest()->bool:
 	if prop_kind!="chest" or destroyed or is_open:return false
+	AudioCue.play_from(self,"chest_open")
 	is_open=true;remove_from_group("slasher_damageable");remove_from_group("slasher_chest");collision.set_deferred("disabled",true)
 	var old_sprite:=sprite;var opened_sprite:=SlasherForestArt.make_sprite("chest_open");opened_sprite.position=old_sprite.position;opened_sprite.modulate=old_sprite.modulate;add_child(opened_sprite);remove_child(old_sprite);old_sprite.queue_free();sprite=opened_sprite
 	var tween:=create_tween();tween.tween_property(sprite,"position:y",sprite.position.y-5.0,0.10);tween.tween_property(sprite,"modulate",Color("#ffe49a"),0.12);opened.emit(self,cell);return true

@@ -1,0 +1,155 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Scanning file structure...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | Verifying GDExtensions...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Initializing plugins...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (6 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | SlasherPlayer[39m[0m
+[  14% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  28% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  42% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  57% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  71% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1m_update_scan_actions[22m | Started Scanning actions... (38 steps)[39m[0m
+[   0% ] [90m[1m_update_scan_actions[22m | warrior_banner_of_the_vanguard_960x540.png[39m[0m
+[   2% ] [90m[1m_update_scan_actions[22m | warrior_banner_of_the_vanguard_1280x720.png[39m[0m
+[   5% ] [90m[1m_update_scan_actions[22m | warrior_banner_of_the_vanguard_circle_960x540.png[39m[0m
+[   7% ] [90m[1m_update_scan_actions[22m | warrior_banner_of_the_vanguard_circle_1280x720.png[39m[0m
+[  10% ] [90m[1m_update_scan_actions[22m | warrior_banner_of_the_vanguard_followthrough_960x540.png[39m[0m
+[  12% ] [90m[1m_update_scan_actions[22m | warrior_banner_of_the_vanguard_followthrough_1280x720.png[39m[0m
+[  15% ] [90m[1m_update_scan_actions[22m | warrior_borderkeepers_spear_960x540.png[39m[0m
+[  17% ] [90m[1m_update_scan_actions[22m | warrior_borderkeepers_spear_1280x720.png[39m[0m
+[  20% ] [90m[1m_update_scan_actions[22m | warrior_borderkeepers_spear_circle_960x540.png[39m[0m
+[  23% ] [90m[1m_update_scan_actions[22m | warrior_borderkeepers_spear_circle_1280x720.png[39m[0m
+[  25% ] [90m[1m_update_scan_actions[22m | warrior_borderkeepers_spear_followthrough_960x540.png[39m[0m
+[  28% ] [90m[1m_update_scan_actions[22m | warrior_borderkeepers_spear_followthrough_1280x720.png[39m[0m
+[  30% ] [90m[1m_update_scan_actions[22m | warrior_chain_of_the_siege_breaker_960x540.png[39m[0m
+[  33% ] [90m[1m_update_scan_actions[22m | warrior_chain_of_the_siege_breaker_1280x720.png[39m[0m
+[  35% ] [90m[1m_update_scan_actions[22m | warrior_chain_of_the_siege_breaker_circle_960x540.png[39m[0m
+[  38% ] [90m[1m_update_scan_actions[22m | warrior_chain_of_the_siege_breaker_circle_1280x720.png[39m[0m
+[  41% ] [90m[1m_update_scan_actions[22m | warrior_chain_of_the_siege_breaker_followthrough_960x540.png[39m[0m
+[  43% ] [90m[1m_update_scan_actions[22m | warrior_chain_of_the_siege_breaker_followthrough_1280x720.png[39m[0m
+[  46% ] [90m[1m_update_scan_actions[22m | warrior_duelists_paired_sabres_960x540.png[39m[0m
+[  48% ] [90m[1m_update_scan_actions[22m | warrior_duelists_paired_sabres_1280x720.png[39m[0m
+[  51% ] [90m[1m_update_scan_actions[22m | warrior_duelists_paired_sabres_circle_960x540.png[39m[0m
+[  53% ] [90m[1m_update_scan_actions[22m | warrior_duelists_paired_sabres_circle_1280x720.png[39m[0m
+[  56% ] [90m[1m_update_scan_actions[22m | warrior_duelists_paired_sabres_followthrough_960x540.png[39m[0m
+[  58% ] [90m[1m_update_scan_actions[22m | warrior_duelists_paired_sabres_followthrough_1280x720.png[39m[0m
+[  61% ] [90m[1m_update_scan_actions[22m | warrior_editor_960x540.png[39m[0m
+[  64% ] [90m[1m_update_scan_actions[22m | warrior_editor_1280x720.png[39m[0m
+[  66% ] [90m[1m_update_scan_actions[22m | warrior_headsmans_greatsword_960x540.png[39m[0m
+[  69% ] [90m[1m_update_scan_actions[22m | warrior_headsmans_greatsword_1280x720.png[39m[0m
+[  71% ] [90m[1m_update_scan_actions[22m | warrior_headsmans_greatsword_circle_960x540.png[39m[0m
+[  74% ] [90m[1m_update_scan_actions[22m | warrior_headsmans_greatsword_circle_1280x720.png[39m[0m
+[  76% ] [90m[1m_update_scan_actions[22m | warrior_headsmans_greatsword_followthrough_960x540.png[39m[0m
+[  79% ] [90m[1m_update_scan_actions[22m | warrior_headsmans_greatsword_followthrough_1280x720.png[39m[0m
+[  82% ] [90m[1m_update_scan_actions[22m | warrior_standard_rogue_960x540.png[39m[0m
+[  84% ] [90m[1m_update_scan_actions[22m | warrior_standard_rogue_1280x720.png[39m[0m
+[  87% ] [90m[1m_update_scan_actions[22m | warrior_standard_tank_960x540.png[39m[0m
+[  89% ] [90m[1m_update_scan_actions[22m | warrior_standard_tank_1280x720.png[39m[0m
+[  92% ] [90m[1m_update_scan_actions[22m | warrior_standard_warrior_960x540.png[39m[0m
+[  94% ] [90m[1m_update_scan_actions[22m | warrior_standard_warrior_1280x720.png[39m[0m
+[92m[ DONE ][39m [1m_update_scan_actions[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (38 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   2% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   5% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   7% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  10% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  12% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  15% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  17% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  20% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  23% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  25% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  28% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  30% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  33% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  35% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  38% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  41% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  43% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  46% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  48% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  51% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  53% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  56% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  58% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  61% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  64% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  66% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  69% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  71% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  74% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  76% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  79% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  82% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  84% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  87% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  89% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  92% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[  94% ] [90m[1mreimport[22m | Preparing files to reimport...[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing pre-reimport operations...[39m[0m
+[   0% ] [90m[1mreimport[22m | warrior_duelists_paired_sabres_1280x720.png[39m[0m
+[   2% ] [90m[1mreimport[22m | warrior_duelists_paired_sabres_circle_960x540.png[39m[0m
+[   5% ] [90m[1mreimport[22m | warrior_duelists_paired_sabres_circle_1280x720.png[39m[0m
+[   7% ] [90m[1mreimport[22m | warrior_duelists_paired_sabres_followthrough_960x540.png[39m[0m
+[  10% ] [90m[1mreimport[22m | warrior_duelists_paired_sabres_followthrough_1280x720.png[39m[0m
+[  12% ] [90m[1mreimport[22m | warrior_editor_960x540.png[39m[0m
+[  15% ] [90m[1mreimport[22m | warrior_editor_1280x720.png[39m[0m
+[  17% ] [90m[1mreimport[22m | warrior_headsmans_greatsword_960x540.png[39m[0m
+[  20% ] [90m[1mreimport[22m | warrior_headsmans_greatsword_1280x720.png[39m[0m
+[  23% ] [90m[1mreimport[22m | warrior_headsmans_greatsword_circle_960x540.png[39m[0m
+[  25% ] [90m[1mreimport[22m | warrior_headsmans_greatsword_circle_1280x720.png[39m[0m
+[  28% ] [90m[1mreimport[22m | warrior_headsmans_greatsword_followthrough_960x540.png[39m[0m
+[  30% ] [90m[1mreimport[22m | warrior_headsmans_greatsword_followthrough_1280x720.png[39m[0m
+[  33% ] [90m[1mreimport[22m | warrior_standard_rogue_960x540.png[39m[0m
+[  35% ] [90m[1mreimport[22m | warrior_standard_rogue_1280x720.png[39m[0m
+[  38% ] [90m[1mreimport[22m | warrior_standard_tank_960x540.png[39m[0m
+[  41% ] [90m[1mreimport[22m | warrior_standard_tank_1280x720.png[39m[0m
+[  43% ] [90m[1mreimport[22m | warrior_standard_warrior_960x540.png[39m[0m
+[  46% ] [90m[1mreimport[22m | warrior_standard_warrior_1280x720.png[39m[0m
+[  48% ] [90m[1mreimport[22m | warrior_banner_of_the_vanguard_960x540.png[39m[0m
+[  51% ] [90m[1mreimport[22m | warrior_banner_of_the_vanguard_1280x720.png[39m[0m
+[  53% ] [90m[1mreimport[22m | warrior_banner_of_the_vanguard_circle_960x540.png[39m[0m
+[  56% ] [90m[1mreimport[22m | warrior_banner_of_the_vanguard_circle_1280x720.png[39m[0m
+[  58% ] [90m[1mreimport[22m | warrior_banner_of_the_vanguard_followthrough_960x540.png[39m[0m
+[  61% ] [90m[1mreimport[22m | warrior_banner_of_the_vanguard_followthrough_1280x720.png[39m[0m
+[  64% ] [90m[1mreimport[22m | warrior_borderkeepers_spear_960x540.png[39m[0m
+[  66% ] [90m[1mreimport[22m | warrior_borderkeepers_spear_1280x720.png[39m[0m
+[  69% ] [90m[1mreimport[22m | warrior_borderkeepers_spear_circle_960x540.png[39m[0m
+[  71% ] [90m[1mreimport[22m | warrior_borderkeepers_spear_circle_1280x720.png[39m[0m
+[  74% ] [90m[1mreimport[22m | warrior_borderkeepers_spear_followthrough_960x540.png[39m[0m
+[  76% ] [90m[1mreimport[22m | warrior_borderkeepers_spear_followthrough_1280x720.png[39m[0m
+[  79% ] [90m[1mreimport[22m | warrior_chain_of_the_siege_breaker_960x540.png[39m[0m
+[  82% ] [90m[1mreimport[22m | warrior_chain_of_the_siege_breaker_1280x720.png[39m[0m
+[  84% ] [90m[1mreimport[22m | warrior_chain_of_the_siege_breaker_circle_960x540.png[39m[0m
+[  87% ] [90m[1mreimport[22m | warrior_chain_of_the_siege_breaker_circle_1280x720.png[39m[0m
+[  89% ] [90m[1mreimport[22m | warrior_chain_of_the_siege_breaker_followthrough_960x540.png[39m[0m
+[  92% ] [90m[1mreimport[22m | warrior_chain_of_the_siege_breaker_followthrough_1280x720.png[39m[0m
+[  94% ] [90m[1mreimport[22m | warrior_duelists_paired_sabres_960x540.png[39m[0m
+[  97% ] [90m[1mreimport[22m | Finalizing Asset Import...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (38 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing post-reimport operations...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[  33% ] [90m[1mloading_editor_layout[22m | Reopening scenes...[39m[0m
+[  50% ] [90m[1mloading_editor_layout[22m | Loading central editor layout...[39m[0m
+[  66% ] [90m[1mloading_editor_layout[22m | Loading plugin window layout...[39m[0m
+[  83% ] [90m[1mloading_editor_layout[22m | Editor layout ready.[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m

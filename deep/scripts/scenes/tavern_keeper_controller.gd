@@ -69,6 +69,7 @@ func interact_nearby() -> void:
 	if target == null:
 		return
 	get_viewport().set_input_as_handled()
+	AudioCue.play_from(self,"ui_open",false)
 	interaction_requested.emit(target)
 
 func _physics_process(_delta: float) -> void:

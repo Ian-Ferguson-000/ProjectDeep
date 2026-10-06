@@ -50,7 +50,7 @@ func cast_selected(origin:Vector2,aim_position:Vector2) -> bool:
 		var target:=_remote_target(target_position,float(rune.range)*32.0)
 		if not target:return _fail("No valid target near the cursor.")
 		if not _pay(rune):return false
-		_damage_remote(target,rune);_start_cooldown(rune);return true
+		AudioCue.play_from(caster,AudioCue.cast_event(str(rune.damage_type)));_damage_remote(target,rune);_start_cooldown(rune);return true
 	if rune.form=="beam":return _start_channel(rune,origin,direction)
 	if not _pay(rune):return false
 	match str(rune.form):
@@ -64,12 +64,14 @@ func cast_selected(origin:Vector2,aim_position:Vector2) -> bool:
 		"zone","trap","environmental":_spawn_persistent(rune,origin,direction,target_position)
 		"rocket":_spawn_rocket(rune,origin,target_position)
 		"wave":_spawn_effect(rune,origin,direction)
+	AudioCue.play_from(caster,AudioCue.cast_event(str(rune.damage_type)))
 	_start_cooldown(rune);spell_started.emit(rune.id);return true
 
 ## Begins one held beam actor and pays only through continuous drain while the input remains held.
 func _start_channel(rune:Dictionary,origin:Vector2,direction:Vector2) -> bool:
 	if active_channel:return false
 	if current_mana<=0:return _fail("Not enough mana.")
+	AudioCue.play_from(caster,AudioCue.cast_event(str(rune.damage_type)))
 	active_channel_rune=rune;active_channel=SpellEffect.new().setup(caster,rune,origin,direction);actor_requested.emit(active_channel);spell_started.emit(rune.id);regeneration_left=regeneration_delay;return true
 
 ## Stops the maintained beam, starts its cooldown, and clears channel ownership safely.

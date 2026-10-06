@@ -1,3 +1,11 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Temporary source packs downloaded while curating the audio library.
+/build/audio_*
+/build/hearth_check_audio_*.log
+/build/ErosAudioCheck.pck
+/build/hearth_check_crypt_slasher_contract.log
+/build/hearth_check_crypt_slasher_overhaul.log
+/build/hearth_check_rogue_abilities.log

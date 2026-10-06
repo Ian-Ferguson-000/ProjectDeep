@@ -19,6 +19,7 @@ var history: Array[Dictionary]=[]
 var last_slam_center := Vector2.ZERO
 var last_hits := 0
 var last_targets: Array[WeakRef]=[]
+const WEAPON_VISUALS := preload("res://scripts/slasher/slasher_weapon_visuals.gd")
 const TINT := Color("#ffdc93")
 const BANNER_RADIUS := 150.0
 
@@ -252,19 +253,17 @@ func _physics_process(delta: float) -> void:
 
 func draw_swing(canvas: Node2D, strike: Dictionary, opacity: float) -> void:
 	var tint := Color("#9de8ff") if int(strike.get("side",0))<0 else TINT
-	var origin := to_local(strike.origin);var direction := Vector2(strike.direction);var reach := float(strike.reach)
+	var origin := to_local(strike.origin)
+	var direction := Vector2(strike.direction)
+	var reach := float(strike.reach)
+	if not strike.has("duration"):
+		WEAPON_VISUALS.telegraph(canvas,origin,direction,reach,float(strike.degrees),bool(strike.line),tint,(sin(clock*9)+1)*0.5)
+		return
+	var progress := clampf(1-opacity,0,1)
 	if strike.line:
-		var side := direction.orthogonal()*float(strike.degrees)
-		var polygon := PackedVector2Array([origin-side,origin+side,origin+direction*reach+side,origin+direction*reach-side])
-		canvas.draw_colored_polygon(polygon,Color(1,0.65,0.25,opacity*0.2));canvas.draw_line(origin,origin+direction*reach,Color(tint,opacity),5)
-		canvas.draw_polyline(PackedVector2Array([polygon[0],polygon[3],polygon[2],polygon[1]]),Color(tint,opacity),2)
-		if weapon_id=="borderkeepers_spear":canvas.draw_line(origin+direction*reach*0.75,origin+direction*reach,Color(0.7,1,1,opacity),10)
-	elif float(strike.degrees)>=359:
-		canvas.draw_circle(origin,reach,Color(1,0.65,0.25,opacity*0.12));canvas.draw_arc(origin,reach,0,TAU,60,Color(tint,opacity),4)
+		WEAPON_VISUALS.thrust(canvas,origin,direction,reach,float(strike.degrees),tint,progress,weapon_id=="borderkeepers_spear",weapon_id=="chain_of_the_siege_breaker")
 	else:
-		var points := PackedVector2Array([origin])
-		for index in 20:points.append(origin+direction.rotated(deg_to_rad(-float(strike.degrees)/2+float(strike.degrees)*index/19))*reach)
-		canvas.draw_colored_polygon(points,Color(1,0.65,0.25,opacity*0.15));canvas.draw_polyline(points,Color(tint,opacity),4)
+		WEAPON_VISUALS.slash(canvas,origin,direction,reach,float(strike.degrees),tint,progress,int(strike.get("side",0))<0,weapon_id=="headsmans_greatsword",weapon_id=="chain_of_the_siege_breaker")
 
 func _draw() -> void:
 	for effect in effects:
@@ -287,8 +286,8 @@ func draw_foreground(canvas: Node2D) -> void:
 	var enemy := tether_target()
 	if enemy!=null:
 		var point := to_local(enemy.global_position)
-		canvas.draw_line(Vector2.ZERO,point,Color("#665851"),7);canvas.draw_line(Vector2.ZERO,point,TINT,2)
-		canvas.draw_circle(point,12,Color("#a69981"));canvas.draw_arc(point,17,0,TAU,24,TINT,3)
+		WEAPON_VISUALS.chain_links(canvas,Vector2.ZERO,point,1.0)
+		WEAPON_VISUALS.weight(canvas,point,1.0)
 	if guard_left>0:
 		canvas.draw_arc(Vector2.ZERO,55,actor.aim_direction.angle()-1.15,actor.aim_direction.angle()+1.15,30,TINT,5)
 	if not exposure.is_empty():

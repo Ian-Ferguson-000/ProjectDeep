@@ -107,6 +107,7 @@ func _build_gear_options() -> void:
 
 func show_start_screen() -> void:
 	_clear_scene()
+	AudioCue.context_from(self,"menu")
 	var start_screen := StartScreenScene.instantiate()
 	current_scene = start_screen
 	start_screen.setup(self)
@@ -170,6 +171,7 @@ func get_selectable_class_ids() -> Array[String]:
 
 func show_class_selection() -> void:
 	_clear_scene()
+	AudioCue.context_from(self,"class_selection")
 	var class_selection := ClassSelectionScene.instantiate()
 	current_scene = class_selection
 	class_selection.setup(self)
@@ -194,6 +196,7 @@ func _select_first_available_character() -> void:
 func show_tavern(message: String = "", arrival_summary: Dictionary = {}, story_lines: Array = [], story_context: String = "") -> void:
 	if campaign!=null and campaign.is_tutorial_complete() and not campaign.expedition.active:campaign.ensure_tavern_cycle()
 	_clear_scene()
+	AudioCue.context_from(self,"tavern")
 	var tavern := TavernScene.instantiate()
 	current_scene = tavern
 	tavern.setup(self, run_state, _gear_options_for_class(run_state.selected_class_id), message, arrival_summary, story_lines, story_context)
@@ -202,6 +205,7 @@ func show_tavern(message: String = "", arrival_summary: Dictionary = {}, story_l
 func open_testing_ground() -> void:
 	if campaign != null and campaign.expedition.active: return
 	_clear_scene()
+	AudioCue.context_from(self,"testing_ground")
 	var ground := TestingGroundScene.instantiate()
 	current_scene = ground
 	ground.setup(self)
@@ -255,6 +259,7 @@ func _load_active_dungeon() -> void:
 		"moonlit_grove": scene = SlasherGroveScene
 		"abyssal_archive": scene = SlasherArchiveScene
 		_: show_tavern("That expedition is not available."); return
+	AudioCue.context_from(self,run_state.active_dungeon_id)
 	var dungeon := scene.instantiate(); current_scene = dungeon; dungeon.setup(self, run_state); add_child(dungeon)
 
 func complete_slasher_forest_floor() -> void:
@@ -395,6 +400,8 @@ func _gear_options_for_class(class_id: String) -> Array[GearData]:
 	return options
 
 func _clear_scene() -> void:
+	var audio:=get_node_or_null("/root/Audio")
+	if audio!=null:audio.stop_world_sounds()
 	if current_scene != null:
 		current_scene.queue_free()
 		current_scene = null

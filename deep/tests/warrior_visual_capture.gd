@@ -28,6 +28,20 @@ func capture() -> void:
 		if id=="duelists_paired_sabres":player.invulnerable=0;player.receive_damage(1,Vector2.ZERO,enemy)
 		ground.combo_panel.visible=true
 		await save_view(id)
+		kit._physics_process(0.1);kit.foreground.queue_redraw()
+		await save_view(id+"_followthrough")
+		# Exercise a full-circle finisher and its tapered fade with real strike history.
+		player.warrior_combo_effects.strike(player.global_position,Vector2.RIGHT,180,360,1,"Visual sweep")
+		player.warrior_combo_effects._physics_process(0.14)
+		await save_view(id+"_circle")
+	for class_index in [0,4,3]:
+		ground.class_picker.select(class_index);ground._refresh_class();ground.gear_picker.select(0)
+		ground.apply_build();ground.set_editor_visible(false);await process_frame
+		var player: SlasherPlayer=ground.player
+		player.set_physics_process(false);player.weapon_trails.set_physics_process(false)
+		player.global_position=Vector2(-80,10);player.aim_direction=Vector2.RIGHT
+		player.use_action("basic");player.weapon_trails._physics_process(0.08)
+		await save_view("standard_"+player.class_id)
 	ground.set_editor_visible(true)
 	await save_view("editor")
 	ground.queue_free();await process_frame;await process_frame;quit()

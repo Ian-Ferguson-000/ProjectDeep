@@ -126,6 +126,7 @@ func _process(delta:float)->void:
 	_process_hazards(delta);_check_door_transition();_refresh_hud()
 
 func _on_farmstead_effect(kind:String,origin:Vector2,payload:Dictionary)->void:
+	AudioCue.play_at_from(self,"eruption" if kind=="ash_burst" else "cast_fire",origin)
 	match kind:
 		"summon_rats":
 			var cap:=int(Dictionary(GameBalance.get_dungeon("ashen_farmstead").get("slasher",{})).get("summon_cap",5));var available:=maxi(0,cap-get_tree().get_nodes_in_group("farmstead_summon").size())
@@ -151,6 +152,7 @@ func _check_door_transition()->void:
 	var neighbors:Dictionary=room.get("neighbors",{})
 	for direction in neighbors:
 		if player.global_position.distance_to(Vector2(door_positions.get(direction,Vector2.ZERO)))<34:
+			AudioCue.play_at_from(self,"door_open",player.global_position)
 			_snapshot_room();run_state.enter_field_room(int(neighbors[direction]),room_id);call_deferred("_build_floor");return
 
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
@@ -163,6 +165,7 @@ func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 			var amount:=run_state.apply_reward_bonus(int(Dictionary(GameBalance.get_dungeon("ashen_farmstead").get("slasher",{})).get("room_clear_gold",5)),"gold");run_state.gold+=amount;_show_message("Room cleared · doors open · +%d gold · choose the next route."%amount)
 
 func _open_field_treasure(area:Area2D)->void:
+	AudioCue.play_at_from(self,"chest_open",area.global_position)
 	loot_nodes.erase(area);area.queue_free();run_state.update_field_room(room_id,{"reward_claimed":true});relic_choice_source="field_treasure";var choices:=run_state.generate_slasher_chest_choices(1,"farmstead_room_%d"%room_id,0);relic_modal.open(run_state,choices,true)
 
 func _snapshot_room()->void:

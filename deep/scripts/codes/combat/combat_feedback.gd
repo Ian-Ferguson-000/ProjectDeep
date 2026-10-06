@@ -9,6 +9,7 @@ static func spawn(target: Node2D, amount: int, packet: DamagePacket) -> void:
 	if amount<=0 or not is_instance_valid(target): return
 	var parent:=target.get_parent()
 	if not parent: return
+	AudioCue.play_from(target,"impact")
 	var number:=FloatingDamageNumber.new().setup(amount,packet.damage_type)
 	parent.add_child(number); number.global_position=target.global_position+Vector2(0,-42)
 	var effect:=CombatHitEffect.new().setup(packet.damage_type)

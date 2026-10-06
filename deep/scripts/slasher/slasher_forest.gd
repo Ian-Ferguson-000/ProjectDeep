@@ -415,7 +415,9 @@ func _process(delta:float)->void:
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	run_state.record_enemy_defeat(enemy.visual_id);enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
 	if player.item_runtime:player.item_runtime.handle_event({"trigger":"boss_kill" if enemy.boss else ("elite_kill" if enemy.elite else "enemy_kill"),"enemy":enemy})
-	if enemies_remaining==0:exit_open=true;_reveal_secret_door();_show_message("Encounter cleared · the way onward opens.")
+	if enemies_remaining==0:
+		AudioCue.play_from(self,"reward",false)
+		exit_open=true;_reveal_secret_door();_show_message("Encounter cleared · the way onward opens.")
 
 func _dungeon_merchant_id()->String:
 	var configured:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id",""))
@@ -441,6 +443,7 @@ func _find_merchant_offer(merchant_id:String,offer_id:String)->Dictionary:
 
 func _complete_floor()->void:
 	if floor_reward_claimed:return
+	AudioCue.play_from(self,"victory",false)
 	floor_reward_claimed=true;_close_codex();_store_active_slasher_state()
 	var rewards:=GameBalance.get_slasher_balance("rewards")
 	# TUNING: Campaign, elite, boss, and Endless XP values live together in slasher_balance.json rewards.
@@ -475,6 +478,7 @@ func _cycle_party_member()->void:
 	player.setup(run_state);player.companion=active_summons.get(run_state.active_character_id) as CharacterBody2D;_restore_active_slasher_state();player.global_position=sanitize_player_position(swap_position)
 	for enemy in get_tree().get_nodes_in_group("slasher_enemy"):
 		if enemy is SlasherEnemy:enemy.target=player
+	AudioCue.play_from(self,"ui_open",false)
 	_show_message("Now controlling %s · %s"%[run_state.get_active_character().display_name,run_state.selected_class_name]);_refresh_hud()
 
 func _store_active_slasher_state()->void:
@@ -520,6 +524,7 @@ func _tick_benched_party(delta:float)->void:
 func _use_potion()->bool:
 	var consumables:=run_state.get_consumables();var index:=consumables.find("healing_potion")
 	if index<0:_show_message("No healing potion available.");return false
+	AudioCue.play_from(player,"potion")
 	run_state.remove_consumable_at(index);player.heal(6+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
 	return true
 
@@ -535,10 +540,11 @@ func _collect_loot(loot:Area2D)->void:
 	loot.set_deferred("monitoring",false)
 	match String(loot.get_meta("kind","gold")):
 		"potion":
-			if run_state.add_consumable("healing_potion"):_show_message("Healing potion collected.")
-			else:_show_message("Consumable pouch is full.")
-		"key":run_state.keys+=1;_show_message("Forest key collected.")
+			if run_state.add_consumable("healing_potion"):AudioCue.play_from(loot,"pickup");_show_message("Healing potion collected.")
+			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
+		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
 		_:
+			AudioCue.play_from(loot,"coins")
 			var rewards:=GameBalance.get_slasher_balance("rewards");var raw_amount:int=int(loot.get_meta("amount",int(rewards.get("loot_gold_base",5))+run_state.current_floor));var amount:=run_state.apply_reward_bonus(raw_amount,"gold");run_state.gold+=amount;_show_message("Collected %d gold."%amount)
 	var tween:=create_tween();tween.set_parallel(true);tween.tween_property(loot,"global_position",player.global_position-Vector2(0,28),0.22).set_trans(Tween.TRANS_QUAD);tween.tween_property(loot,"scale",Vector2(1.35,1.35),0.16);tween.tween_property(loot,"modulate:a",0.0,0.22);tween.chain().tween_callback(loot.queue_free)
 	if bool(loot.get_meta("tutorial_reward",false)) and tutorial_sequence!=null:tutorial_sequence.observe_reward()
@@ -561,7 +567,9 @@ func _offer_starter_relic()->void:
 	relic_choice_source="starter";var choices:Array[String]=run_state.generate_slasher_chest_choices(1,"starter",0);relic_modal.open(run_state,choices,true)
 
 func _claim_relic(item_id:String)->void:
+	var inventory_count:=run_state.inventory_items.size()
 	var logs:Array[String]=run_state.choose_starter_item(item_id) if relic_choice_source=="starter" else run_state.choose_chest_item(item_id)
+	AudioCue.play_from(self,"reward" if run_state.inventory_items.size()>inventory_count else "ui_error",false)
 	if player.item_runtime:player.item_runtime.refresh()
 	player.setup(run_state);relic_modal.finish();relic_choice_source="";_refresh_hud()
 	_show_message(" ".join(logs))

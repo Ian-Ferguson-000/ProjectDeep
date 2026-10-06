@@ -33,10 +33,12 @@ func _ready()->void:
 
 func open(state:RunState,actor:SlasherPlayer)->void:
 	if visible:return
+	AudioCue.play_from(self,"ui_open",false)
 	run_state=state;player=actor;previous_pause=get_tree().paused;visible=true;move_to_front();_select_tab(active_tab);get_tree().paused=true
 
 func close()->void:
 	if not visible:return
+	AudioCue.play_from(self,"ui_close",false)
 	visible=false;get_tree().paused=previous_pause;closed.emit()
 
 func _unhandled_input(event:InputEvent)->void:

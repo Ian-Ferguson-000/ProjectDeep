@@ -42,6 +42,7 @@ func _physics_process(delta: float) -> void:
 	if animation_lock<=0.0:_play_animation("run" if velocity.length()>0.1 else "idle")
 	move_and_slide()
 func _attack_damageable(target:Node2D)->void:
+	AudioCue.play_from(self,"enemy_attack")
 	var power:int=owner_spell_power if String(tuning.get("power_stat","attack_power"))=="spell_power" else owner_attack_power
 	var damage:int=maxi(1,int(round(power*float(tuning.get("damage_coefficient",1.0))))+int(tuning.get("flat_damage",0)));target.call("receive_attack",{"damage":damage,"damage_type":"physical","knockback":0.0},owner_player);attack_cooldown=float(tuning.get("attack_cooldown",0.8));_play_animation("attack");animation_lock=float(tuning.get("animation_lock",0.3))
 

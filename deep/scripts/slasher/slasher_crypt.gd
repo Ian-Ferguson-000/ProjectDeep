@@ -84,6 +84,7 @@ func _on_reinforcement_requested(archetypes:Array,origin:Vector2)->void:
 		var id:=String(archetypes[index]);var visual:="necromancer" if id=="grave_acolyte" else id;var requested:=origin+Vector2.RIGHT.rotated(TAU*float(index)/maxf(1.0,float(archetypes.size())))*115.0;_spawn_enemy(sanitize_player_position(requested),visual,id)
 
 func _on_hazard_projectile(origin:Vector2,direction:Vector2,config:Dictionary)->void:
+	AudioCue.play_at_from(self,"cast_aether",origin)
 	if get_tree().get_nodes_in_group("crypt_projectile").size()>=72:return
 	var projectile:=HOSTILE_PROJECTILE.new().setup(null,player,origin,direction,maxi(1,run_state.current_floor/2),config);actor_layer.add_child(projectile);projectile.add_to_group("crypt_projectile")
 

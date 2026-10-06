@@ -45,7 +45,7 @@ func _ready() -> void:
 		## Forwards component health values through the player-facing signal consumed by the HUD.
 		health.health_changed.connect(func(current,maximum): health_changed.emit(current,maximum))
 		## Converts component death into the player's persistent dead flag and defeat signal.
-		health.died.connect(func(_packet): dead=true; defeated.emit())
+		health.died.connect(func(_packet): dead=true; AudioCue.play_from(self,"death",false); defeated.emit())
 	## Forwards status activation/deactivation without exposing component ownership to UI consumers.
 	if statuses: statuses.setup(health); statuses.status_changed.connect(func(effect,active): status_changed.emit(effect,active))
 	spell_caster=SpellCaster.new();spell_caster.name="SpellCaster";add_child(spell_caster);spell_caster.setup(self)
@@ -86,6 +86,7 @@ func _can_dash() -> bool:
 
 ## Locks direction toward the cursor, starts the lunge animation, cooldown, and dash-long invulnerability.
 func _start_dash() -> void:
+	AudioCue.play_from(self,"dash")
 	dash_direction=(get_global_mouse_position()-global_position).normalized()
 	dash_remaining=dash_duration; dash_cooldown=dash_cooldown_time; dash_hit_targets.clear()
 	knockback_velocity=Vector2.ZERO; facing=_facing_from_vector(dash_direction)

@@ -63,6 +63,7 @@ func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",
 	return enemy
 
 func _on_hell_effect_requested(kind:String,origin:Vector2,payload:Dictionary)->void:
+	AudioCue.play_at_from(self,"eruption",origin)
 	match kind:
 		"summon_spirits":_summon_hell_units(origin,"fire_spirit",int(payload.get("count",3)),6)
 		"summon_minions":_summon_hell_units(origin,"fire_spirit",int(payload.get("count",5)),9)

@@ -1,0 +1,21 @@
+Combat recordings are adaptations of CC0 1.0 public-domain sound effects.
+License: https://creativecommons.org/publicdomain/zero/1.0/
+
+Swishes Sound Pack: artisticdude (recorded for Summoning Wars)
+https://opengameart.org/content/swishes-sound-pack
+
+Tinysized SFX: Jan Schupke (Vehicle)
+https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx
+Original pack readme: "Distributed under Creative Commons Zero"
+
+80 CC0 RPG SFX: rubberduck
+https://opengameart.org/content/80-cc0-rpg-sfx
+
+Fireball: Julien Matthey (OpenGameArt uploader: diligentcircle)
+https://opengameart.org/content/fireball-1
+Original: https://freesound.org/people/Julien%20Matthey/sounds/105016/
+
+All four source pages identify their sound recordings as CC0.
+Eros edits: silence trimming, mono conversion, resampling, layering, short fades
+and gain adjustment. See assets/audio/sources.json for per-cue input provenance
+and tools/build_combat_audio.py for the reproducible processing recipes.

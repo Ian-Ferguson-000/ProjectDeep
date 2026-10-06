@@ -47,6 +47,7 @@ func setup(callback: Callable) -> void:
 
 func set_open(open: bool) -> void:
 	if visible == open: return
+	AudioCue.play_from(self,"ui_open" if open else "ui_close",false)
 	if open:
 		previous_pause = get_tree().paused
 		visible = true

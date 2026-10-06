@@ -67,6 +67,7 @@ func _physics_process(delta:float)->void:
 
 func deflect(deflector:SlasherPlayer,outgoing_direction:Vector2)->bool:
 	if impacted or is_instance_valid(deflected_by) or not is_instance_valid(deflector):return false
+	AudioCue.play_from(self,"block")
 	deflected_by=deflector
 	direction=outgoing_direction.normalized() if not outgoing_direction.is_zero_approx() else -direction
 	movement_pattern="straight";angular_velocity=0.0;traveled=0.0;age=0.0

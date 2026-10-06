@@ -37,6 +37,7 @@ func _move_ai(destination:Vector2)->void:
 	var safe_destination:Vector2=Vector2(position_sanitizer.call(destination)) if position_sanitizer.is_valid() else destination;var waypoint:=grid_navigator.next_waypoint(pathfinder,global_position,safe_destination);var direction:=global_position.direction_to(waypoint);velocity=direction*speed*0.82;move_and_slide();_enforce_field_bounds();last_direction=direction;_play_animation("run")
 
 func _attack_target(enemy:SlasherEnemy)->void:
+	_play_ability_sound("basic")
 	var damage:=maxi(2,attack_power if class_id not in ["mage","healer","summoner"] else spell_power);var multiplier:=0.75 if class_id=="healer" else (1.15 if class_id=="rogue" else 0.9)
 	enemy.receive_attack({"damage":maxi(1,int(round(damage*multiplier))),"knockback":35.0,"hit_stun_duration":0.08},self);ai_attack_cooldown=1.15 if class_id in ["tank","healer"] else 0.8;last_direction=global_position.direction_to(enemy.global_position);_play_animation("attack")
 
