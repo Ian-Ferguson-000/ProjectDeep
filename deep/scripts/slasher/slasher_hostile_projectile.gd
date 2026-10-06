@@ -58,7 +58,11 @@ func _physics_process(delta:float)->void:
 		if traveled>=max_range:_finish()
 		return
 	if is_instance_valid(target) and global_position.distance_to(target.global_position)<=hit_radius:
-		target.receive_damage(damage,direction*95.0,source if is_instance_valid(source) else null);_finish();return
+		var previous_kind: bool=target._receiving_projectile
+		target._receiving_projectile=true
+		target.receive_damage(damage,direction*95.0,source if is_instance_valid(source) else null)
+		if is_instance_valid(target):target._receiving_projectile=previous_kind
+		_finish();return
 	if traveled>=max_range:_finish()
 
 func deflect(deflector:SlasherPlayer,outgoing_direction:Vector2)->bool:

@@ -2,7 +2,7 @@
 
 **Status: unapproved design candidates.** Prepared October 5, 2026. This packet proposes a release catalogue for Eros; it does not authorize implementation. Numbers in new designs are illustrative playtest starting points, not measured balance. Standard-kit values are observations of base tuning, before progression, equipment, and input modifiers.
 
-**Prototype exception, October 6:** The user separately authorized the armory testing ground and all five alternate Mage prototypes (KIT-MAG-02 through KIT-MAG-06). Stormcaller's Folio is now **Stormbringer's Grimoire**, with unconditional chaining and conductor-supported damage retention. See the [testing-ground guide](../TestingGround.md) and [Mage builds](../MageBuilds.md) for current mechanics and tuning. Non-Mage candidates and release acquisition rules remain unapproved. Original numerical examples for unimplemented candidates are not release targets.
+**Prototype exception, October 6:** The user separately authorized the armory testing ground and all five alternate Mage prototypes (KIT-MAG-02 through KIT-MAG-06). Stormcaller's Folio is now **Stormbringer's Grimoire**, with unconditional chaining and conductor-supported damage retention. See the [testing-ground guide](../TestingGround.md) and [Mage builds](../MageBuilds.md) for current mechanics and tuning. The user subsequently authorized all five Warrior alternatives (KIT-WAR-02 through KIT-WAR-06), including six combos for each Warrior kit. See [Warrior builds](../WarriorBuilds.md) and [Warrior combos](../WarriorCombos.md). Other class candidates and release acquisition rules remain unapproved. Original numerical examples for unimplemented candidates are not release targets.
 
 ## Pacing and readability requirements for prototypes
 

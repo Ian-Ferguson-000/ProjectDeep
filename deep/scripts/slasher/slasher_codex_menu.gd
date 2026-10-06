@@ -70,7 +70,7 @@ func _build_stats()->void:
 	for slot in ["basic","movement","special","defensive"]:
 		var tuning:=run_state.get_effective_slasher_ability_tuning(slot);var action:Dictionary=actions.get(slot,{})
 		content.add_child(_text_panel("[font_size=19][b]%s · %s[/b][/font_size]\n%s\n%s"%[slot.capitalize(),String(action.get("name",slot.capitalize())),String(action.get("description","")), _tuning_summary(tuning)]))
-	var combos:=GameBalance.get_slasher_combos(run_state.selected_class_id)
+	var combos: Array[Dictionary]=player.combo_runtime.recipes if is_instance_valid(player) and player.combo_runtime!=null else GameBalance.get_slasher_combos(run_state.selected_class_id)
 	if not combos.is_empty():
 		content.add_child(_text_panel("[font_size=23][b]Combat Combos[/b][/font_size]\nComplete each step within 2.5 seconds. Confirmed hits and parries are marked explicitly."))
 		for combo in combos:

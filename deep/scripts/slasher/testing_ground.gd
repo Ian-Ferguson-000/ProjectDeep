@@ -6,6 +6,7 @@ const LIVE := preload("res://scripts/slasher/training_combatant.gd")
 const POPUP := preload("res://scripts/slasher/training_damage_popup.gd")
 const FIRE := preload("res://scripts/slasher/slasher_fire_visuals.gd")
 const PYROMANCY := preload("res://scripts/slasher/slasher_pyromancy.gd")
+const WARRIOR_KITS := preload("res://scripts/slasher/slasher_warrior_kits.gd")
 const MAGE_KITS := preload("res://scripts/slasher/slasher_mage_kits.gd")
 const FLOOR := Rect2(-470,-270,940,540)
 const CLASS_IDS := ["warrior","mage","healer","tank","rogue","summoner"]
@@ -15,6 +16,8 @@ var state := RunState.new()
 var combat_root: Node2D
 var player: SlasherPlayer
 var camera: Camera2D
+var combo_panel: PanelContainer
+var combo_button: Button
 var editor: Control
 var class_picker: OptionButton
 var gear_picker: OptionButton
@@ -59,6 +62,7 @@ func _ensure_controls() -> void:
 		if not InputMap.has_action(action): InputMap.add_action(action)
 
 func _resize() -> void:
+	if is_instance_valid(combo_panel):combo_panel.offset_bottom=get_viewport_rect().size.y-76
 	if camera:
 		var size := get_viewport_rect().size
 		camera.zoom = Vector2.ONE*minf(size.x/1040.0,size.y/740.0)
@@ -85,6 +89,12 @@ func _build_ui() -> void:
 	_button(top,"Return to armory",return_to_armory)
 	hud = _label(screen,""); hud.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE); hud.offset_left=22; hud.offset_top=58; hud.offset_right=-22; hud.offset_bottom=115
 	actions = _label(screen,""); actions.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE); actions.offset_left=22; actions.offset_top=-60; actions.offset_right=-22; actions.offset_bottom=-12
+	combo_button=_button(top,"Combos [C]",toggle_combo_panel)
+	combo_button.toggle_mode=true
+	combo_panel=preload("res://scripts/slasher/combo_practice_panel.gd").new();screen.add_child(combo_panel)
+	combo_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	combo_panel.offset_left=-346;combo_panel.offset_right=-18;combo_panel.offset_top=140;combo_panel.offset_bottom=450
+	combo_panel.visible=false
 	editor = ColorRect.new(); (editor as ColorRect).color=Color(0.025,0.03,0.04,0.94); editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); screen.add_child(editor)
 	var margin := MarginContainer.new(); margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); margin.add_theme_constant_override("margin_left",30); margin.add_theme_constant_override("margin_right",30); margin.add_theme_constant_override("margin_top",18); margin.add_theme_constant_override("margin_bottom",18); editor.add_child(margin)
 	var body := VBoxContainer.new(); body.add_theme_constant_override("separation",8); margin.add_child(body)
@@ -104,7 +114,7 @@ func _build_ui() -> void:
 	foundation_picker=OptionButton.new(); foundation_picker.size_flags_horizontal=Control.SIZE_EXPAND_FILL; progression.add_child(foundation_picker)
 	for name_value in ["No foundation","Relentless Technique","Unbroken Tempo","Battlefield Resolve"]:foundation_picker.add_item(name_value)
 	branch_picker=OptionButton.new(); branch_picker.size_flags_horizontal=Control.SIZE_EXPAND_FILL; progression.add_child(branch_picker)
-	_label(build,"Choose a branch and milestone variants at the selected level. Alternate Mage kits inherit numerical damage and cooldown progression; standard-kit mechanics such as Force Prism stay with the standard spellbook.")
+	_label(build,"Choose a branch and milestone variants at the selected level. Upgrades affect alternative kits' damage and cooldowns. Each kit keeps its own abilities and combo recipes.")
 	for level in MILESTONES:
 		var pick := OptionButton.new(); pick.add_item("Level %d: no upgrade"%level); pick.add_item("Level %d: Mastery"%level); pick.add_item("Level %d: Flow"%level); build.add_child(pick); upgrade_pickers.append(pick)
 	var loot := VBoxContainer.new(); loot.name="Items and relics"; tabs.add_child(loot)
@@ -142,6 +152,8 @@ func _refresh_class() -> void:
 			var gear := HearthCatalog.gear(gear_id); gear_options.append(gear); gear_picker.add_item(gear.display_name)
 	if id=="mage":
 		for gear in MAGE_KITS.all_gear():gear_options.append(gear);gear_picker.add_item(gear.display_name+"  ·  NEW")
+	if id=="warrior":
+		for gear in WARRIOR_KITS.all_gear():gear_options.append(gear);gear_picker.add_item(gear.display_name+"  ·  NEW")
 	branch_picker.clear(); branch_picker.add_item("No branch")
 	for branch in GameBalance.get_slasher_progression(id).get("branches",[]):branch_picker.add_item(String(branch.name))
 	for pick in upgrade_pickers:pick.select(0)
@@ -150,7 +162,9 @@ func _refresh_class() -> void:
 func _update_details() -> void:
 	if gear_options.is_empty():return
 	var gear := gear_options[gear_picker.selected]
-	if MAGE_KITS.script_for(gear.id)!=null:
+	if WARRIOR_KITS.has_kit(gear.id):
+		details.text=WARRIOR_KITS.description(gear.id)+"\nFast physical prototype; movement is free. Numeric progression and current items apply."
+	elif MAGE_KITS.script_for(gear.id)!=null:
 		details.text=MAGE_KITS.description(gear.id)+"\nFast prototype tuning; movement is free. Numeric progression and current items apply."
 	else:
 		details.text=gear.description+"\nExisting weapon: uses the current class ability kit and this weapon's stats. Select items and progression to compare builds."
@@ -184,6 +198,7 @@ func reset_arena() -> void:
 	combat_root=Node2D.new();combat_root.name="Combat";combat_root.z_index=10;add_child(combat_root)
 	state.current_health=state.max_health;state.class_resource=state.get_class_resource_max()
 	player=PLAYER.new();player.name="TrainingPlayer";player.setup(state);player.position=Vector2(-180,100);player.position_sanitizer=_safe_position;combat_root.add_child(player)
+	combo_panel.bind_player(player)
 	player.defeated.connect(func():call_deferred("reset_arena"))
 	player.aim_direction=Vector2.RIGHT
 	var points: Array[Vector2]=[Vector2(120,0)]
@@ -231,6 +246,12 @@ func set_editor_visible(visible: bool) -> void:
 	if visible:class_picker.grab_focus()
 	_update_hud()
 
+func toggle_combo_panel() -> void:
+	combo_panel.visible=not combo_panel.visible
+	combo_button.button_pressed=combo_panel.visible
+	if is_instance_valid(player):player.basic_mouse_held=false
+	combo_panel.refresh()
+
 func return_to_armory() -> void:
 	if is_instance_valid(controller) and controller.has_method("leave_testing_ground"):controller.leave_testing_ground()
 
@@ -238,6 +259,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_B,KEY_ESCAPE:set_editor_visible(not editor.visible);get_viewport().set_input_as_handled()
+			KEY_C:toggle_combo_panel();get_viewport().set_input_as_handled()
 			KEY_R:reset_arena();get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:

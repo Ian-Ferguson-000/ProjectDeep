@@ -39,6 +39,7 @@ func perform(slot: String, result: Dictionary) -> Dictionary:
 	return result
 
 func on_frozen_field(point: Vector2, field: Dictionary) -> bool:
+	if field.kind=="disk":return point.distance_to(field.a)<=float(field.radius) and clear_line(field.a,point)
 	if field.kind=="strip":return Geometry2D.get_closest_point_to_segment(point,field.a,field.b).distance_to(point)<=24
 	var offset := point-Vector2(field.a)
 	return offset.length()<=270 and (offset.is_zero_approx() or offset.normalized().dot(field.direction)>=cos(deg_to_rad(50))) and clear_line(field.a,point)
@@ -159,7 +160,9 @@ func _draw() -> void:
 	for field in frozen_fields:
 		var opacity := minf(1,float(field.left))*0.3
 		var a := to_local(field.a)
-		if field.kind=="strip":
+		if field.kind=="disk":
+			VISUALS.sigil(self,a,field.radius,clock,tint)
+		elif field.kind=="strip":
 			var b := to_local(field.b)
 			draw_line(a,b,Color(0.5,0.85,1,opacity),48)
 			draw_line(a,b,Color(0.7,0.95,1,opacity+0.1),3)

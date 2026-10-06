@@ -1,13 +1,15 @@
 extends RefCounted
 class_name SlasherComboRuntime
 
+var kit_id := ""
 var class_id: String = ""
 var recipes: Array[Dictionary] = []
 var states: Dictionary = {}
 
-func setup(value: String) -> void:
+func setup(value: String, kit: String = "standard", names: Dictionary = {}) -> void:
 	class_id = GameBalance.normalize_class_id(value)
-	recipes = GameBalance.get_slasher_combos(class_id)
+	kit_id=kit
+	recipes = preload("res://scripts/slasher/slasher_mage_combos.gd").recipes(kit,names) if class_id=="mage" else preload("res://scripts/slasher/slasher_warrior_combos.gd").recipes(kit,names) if class_id=="warrior" else GameBalance.get_slasher_combos(class_id)
 	states.clear()
 	for recipe in recipes:
 		states[String(recipe.get("id", ""))] = {"index": 0, "remaining": 0.0}
@@ -32,10 +34,10 @@ func tick(delta: float) -> bool:
 	return changed
 
 func snapshot() -> Dictionary:
-	return {"class_id": class_id, "states": states.duplicate(true)}
+	return {"class_id": class_id, "kit_id":kit_id,"states": states.duplicate(true)}
 
 func restore(value: Dictionary) -> void:
-	if String(value.get("class_id", class_id)) != class_id: return
+	if String(value.get("class_id", class_id)) != class_id or String(value.get("kit_id",kit_id))!=kit_id: return
 	var saved: Dictionary = Dictionary(value.get("states", {}))
 	for recipe in recipes:
 		var id := String(recipe.get("id", ""))

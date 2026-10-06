@@ -113,9 +113,9 @@ func _physics_process(delta: float) -> void:
 		if float(rod.tick)<=0:
 			rod.tick+=0.45
 			var attack := secondary_copy(rod.attack)
-			attack.damage=maxi(1,int(round(int(attack.damage)*(1.5 if bool(rod.charged) else 1.0))))
+			attack.damage=maxi(1,int(round(int(attack.damage)*(float(rod.get("pulse_bonus",1.5)) if bool(rod.charged) else 1.0))))
 			attack["hit_stun_duration"]=0.0;attack["screen_shake_multiplier"]=0.0
-			rod.charged=false
+			rod.charged=false;rod.erase("pulse_bonus")
 			for enemy in enemies():
 				if enemy.global_position.distance_to(rod.center)<=110 and clear_line(rod.center,enemy.global_position):hit(enemy,attack);arc(rod.center,enemy.global_position)
 			flash(rod.center,110,"burst",0.3)

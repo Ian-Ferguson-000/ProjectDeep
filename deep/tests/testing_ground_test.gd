@@ -36,7 +36,7 @@ func _run() -> void:
 			_expect(ground.state.selected_gear==ground.gear_options[gear_index],"Selected kit was not applied")
 			_expect(not ground.state.campaign.expedition.active,"Training must not start a campaign expedition")
 			kit_count += 1
-	_expect(kit_count==29,"Expected 24 current weapons and all five alternate Mage kits")
+	_expect(kit_count==34,"Expected 24 current weapons and five alternatives each for Mage and Warrior")
 	ground.class_picker.select(1);ground._refresh_class();ground.gear_picker.select(4)
 	ground.apply_build();_check_pacing(ground)
 	ground.loot_checks["flameheart_talisman"].button_pressed=true

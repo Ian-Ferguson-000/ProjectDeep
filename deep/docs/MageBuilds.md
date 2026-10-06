@@ -91,7 +91,11 @@ The stationary mirror has a clear silhouette, lifetime ring, and an arrow showin
 
 ## Verification
 
-`tests/mage_kits_test.gd` checks the deliberate Winterglass damage reduction and compares the other kits' basic damage cadence against the standard kit at entry level and across progressed branches and variants. It exercises unconditional chains and falloff, conductor support and expiry, capped screen interception/charges, Chill consumption and boss resistance, wall collision/navigation and shot blocking, well pulls and boss bursts, projectile-speed restoration, anchor returns, mirror playback and barriers, stacking continuous Cinder Trails, special ignition, unconditional Furnace burn, three-rod placement and click selection, lesser mirror shots, frozen terrain expiry/speed, and cold-death chains. `tests/testing_ground_test.gd` verifies all 29 equipment selections, resets, damage reports, and campaign isolation. `tests/mage_kits_visual_capture.gd` renders every new Mage kit at 1280 × 720 and 960 × 540.
+`tests/mage_kits_test.gd` checks the deliberate Winterglass damage reduction and compares the other kits' basic damage cadence against the standard kit at entry level and across progressed branches and variants. It exercises unconditional chains and falloff, conductor support and expiry, capped screen interception/charges, Chill consumption and boss resistance, wall collision/navigation and shot blocking, well pulls and boss bursts, projectile-speed restoration, anchor returns, mirror playback and barriers, stacking continuous Cinder Trails, special ignition, unconditional Furnace burn, three-rod placement and click selection, lesser mirror shots, frozen terrain expiry/speed, and cold-death chains. `tests/testing_ground_test.gd` verifies all 34 equipment selections, resets, damage reports, and campaign isolation. `tests/mage_kits_visual_capture.gd` renders every new Mage kit at 1280 × 720 and 960 × 540.
 
 Final encounter balance and release acquisition remain separate decisions. No campaign equipment unlocks, drops, armory persistence, or save migration were added.
 
+
+## Combo practice
+
+Enable **Combos [C]** in the training hall to select recipes and follow live steps, timing, effects, and success counts. Each Mage kit now has six playable combos. See [Mage combo design and practice guide](MageCombos.md) for all 36 recipes and interaction rules. Holding Basic sends repeated inputs; use discrete clicks while practicing a specific sequence.

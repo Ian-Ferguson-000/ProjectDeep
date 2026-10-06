@@ -15,6 +15,10 @@ const PYROMANCY := preload("res://scripts/slasher/slasher_pyromancy.gd")
 const MAGE_KITS := preload("res://scripts/slasher/slasher_mage_kits.gd")
 var pyromancy: Node2D
 var mage_kit: Node2D
+const WARRIOR_KITS := preload("res://scripts/slasher/slasher_warrior_kits.gd")
+var warrior_kit: Node2D
+var warrior_combo_effects: Node2D
+var kit_buffs: Node
 
 var resource_suppression_time:=0.0
 var resource_regen_accumulator:=0.0
@@ -37,6 +41,7 @@ var cooldowns:={"basic":0.0,"special":0.0,"defensive":0.0,"movement":0.0}
 var invulnerable:=0.0
 var defense_window:=0.0
 var defense_kind:=""
+var _receiving_projectile := false
 var empowered:=false
 var is_hidden:=false
 var hidden_time:=0.0
@@ -78,6 +83,7 @@ func _settings()->Node:
 	return local_settings
 var movement_debuff_time:=0.0
 var next_attack_multiplier:=1.0
+var mage_combo_effects: Node2D
 var combo_runtime
 var resolving_combo:Dictionary={}
 var last_fireball_attack:Dictionary={}
@@ -104,6 +110,15 @@ func restore_party_state(state:Dictionary)->void:
 
 func setup(state:RunState)->void:
 	run_state=state;class_id=state.selected_class_id
+	if is_instance_valid(warrior_kit):remove_child(warrior_kit);warrior_kit.queue_free()
+	if is_instance_valid(warrior_combo_effects):remove_child(warrior_combo_effects);warrior_combo_effects.queue_free()
+	if is_instance_valid(kit_buffs):remove_child(kit_buffs);kit_buffs.queue_free()
+	warrior_kit=null;warrior_combo_effects=null
+	kit_buffs=preload("res://scripts/slasher/slasher_combat_buffs.gd").new();kit_buffs.actor=self;add_child(kit_buffs)
+	if class_id=="warrior" and state.selected_gear!=null and WARRIOR_KITS.has_kit(state.selected_gear.id):
+		warrior_kit=WARRIOR_KITS.KIT.new();warrior_kit.configure(self,state.selected_gear.id,WARRIOR_KITS.DATA[state.selected_gear.id].actions);add_child(warrior_kit)
+	if class_id=="warrior":
+		warrior_combo_effects=preload("res://scripts/slasher/slasher_warrior_combo_effects.gd").new();warrior_combo_effects.configure(self,state.selected_gear.id if uses_warrior_kit() else "standard",{});add_child(warrior_combo_effects)
 	if is_instance_valid(mage_kit):
 		remove_child(mage_kit);mage_kit.queue_free()
 	mage_kit=null;pyromancy=null
@@ -112,7 +127,12 @@ func setup(state:RunState)->void:
 		mage_kit=kit_script.new();mage_kit.name="MageKit";mage_kit.setup(self);add_child(mage_kit)
 		if uses_pyromancy():pyromancy=mage_kit
 	if combo_runtime==null:combo_runtime=COMBO_RUNTIME.new()
-	combo_runtime.setup(class_id);resolving_combo={}
+	if is_instance_valid(mage_combo_effects):remove_child(mage_combo_effects);mage_combo_effects.queue_free()
+	mage_combo_effects=null
+	if class_id=="mage":
+		mage_combo_effects=preload("res://scripts/slasher/slasher_mage_combo_effects.gd").new()
+		mage_combo_effects.configure(self,state.selected_gear.id if uses_mage_kit() else "standard");add_child(mage_combo_effects)
+	_configure_combos();resolving_combo={}
 	var tuning:Dictionary=GameBalance.get_slasher_class_tuning(class_id)
 	speed=float(tuning.get("speed",speed));max_health=state.max_health;health=state.current_health
 	attack_power=maxi(2,state.get_derived_stat("attack_power")+(state.selected_gear.damage if state.selected_gear else 1))
@@ -126,7 +146,7 @@ func _ready()->void:
 	_ensure_input_actions_exist()
 	add_to_group("slasher_player")
 	item_runtime=ITEM_RUNTIME.new();item_runtime.name="SlasherItemRuntime";add_child(item_runtime);item_runtime.setup(run_state,self)
-	if combo_runtime==null:combo_runtime=COMBO_RUNTIME.new();combo_runtime.setup(class_id)
+	if combo_runtime==null:combo_runtime=COMBO_RUNTIME.new();_configure_combos()
 	var shape:=CollisionShape2D.new();shape.name="PlayerHitbox";var circle:=CircleShape2D.new();circle.radius=float(GameBalance.get_slasher_class_tuning(class_id).get("collision_radius",18.0));shape.shape=circle;add_child(shape);_refresh_presentation()
 
 func _ensure_input_actions_exist()->void:
@@ -165,7 +185,7 @@ func _physics_process(delta:float)->void:
 	var direction:=Input.get_vector("slasher_left","slasher_right","slasher_up","slasher_down")
 	if direction.length()>0.1:last_direction=direction.normalized()
 	var kit_speed: float=mage_kit.movement_speed_multiplier() if is_instance_valid(mage_kit) and mage_kit.has_method("movement_speed_multiplier") else 1.0
-	velocity=direction*speed*kit_speed*consumable_speed_multiplier*movement_debuff_multiplier*(item_runtime.conversion("speed_multiplier",1.0) if item_runtime else 1.0);move_and_slide()
+	velocity=direction*speed*kit_speed*(kit_buffs.speed_multiplier() if is_instance_valid(kit_buffs) else 1.0)*consumable_speed_multiplier*movement_debuff_multiplier*(item_runtime.conversion("speed_multiplier",1.0) if item_runtime else 1.0);move_and_slide()
 	_enforce_field_bounds()
 	if animation_lock<=0.0:_play_animation("run" if direction.length()>0.1 else "idle")
 	if Input.is_action_just_pressed("slasher_controller_basic"):use_action("basic", "controller")
@@ -195,9 +215,9 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	var tuning:Dictionary=_ability_tuning(slot)
 	var default_cost:=2 if slot=="special" else (int(run_state.get_class_resource_rules(class_id).get("movement_cost",1)) if slot=="movement" else 0)
 	var resource_cost:=int(tuning.get("resource_cost",default_cost))
-	if slot=="movement" and resource_cost<=0 and not uses_mage_kit(): resource_cost=default_cost
+	if slot=="movement" and resource_cost<=0 and not uses_mage_kit() and not uses_warrior_kit(): resource_cost=default_cost
 	var combo_before:Dictionary=combo_runtime.snapshot() if combo_runtime!=null else {}
-	var combo_outcome:Dictionary=combo_runtime.record_action(slot) if combo_runtime!=null and not uses_mage_kit() else {"triggered":{},"progress":{}}
+	var combo_outcome:Dictionary=combo_runtime.record_action(slot) if combo_runtime!=null else {"triggered":{},"progress":{}}
 	resolving_combo=Dictionary(combo_outcome.get("triggered",{}))
 	var combo_effect:Dictionary=Dictionary(resolving_combo.get("effect",{}))
 	if combo_effect.has("resource_cost_override"):resource_cost=int(combo_effect.resource_cost_override)
@@ -205,8 +225,11 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 		if combo_runtime!=null:combo_runtime.restore(combo_before)
 		resolving_combo={};result.failure="Not enough %s."%run_state.get_class_resource_name();ability_resolved.emit(result);return result
 	result.started=true
+	var combo_context: Dictionary=mage_combo_effects.capture() if is_instance_valid(mage_combo_effects) else warrior_combo_effects.capture() if is_instance_valid(warrior_combo_effects) else {}
 	active_action_slot=slot
-	if uses_mage_kit():
+	if uses_warrior_kit():
+		result=warrior_kit.perform(slot,result)
+	elif uses_mage_kit():
 		result=mage_kit.perform(slot,result)
 	else:
 		match slot:
@@ -219,8 +242,12 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 		resolving_combo={}
 		if resource_cost>0:run_state.gain_class_resource(resource_cost)
 		resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());ability_resolved.emit(result);return result
+	if is_instance_valid(mage_combo_effects):mage_combo_effects.accept_action(slot,combo_context)
+	if is_instance_valid(warrior_combo_effects):warrior_combo_effects.accept_action(slot,combo_context)
 	if class_id=="warrior" and slot!="basic":warrior_slash_chain=0;warrior_slash_chain_time=0.0
 	if not resolving_combo.is_empty():
+		if is_instance_valid(mage_combo_effects) and bool(combo_effect.get("mage_combo",false)):mage_combo_effects.execute(resolving_combo)
+		if is_instance_valid(warrior_combo_effects) and bool(combo_effect.get("warrior_combo",false)):warrior_combo_effects.execute(resolving_combo)
 		result["combo_id"]=String(resolving_combo.get("id",""));result["combo_name"]=String(resolving_combo.get("name",""))
 		combo_updated.emit({"type":"triggered","combo":resolving_combo.duplicate(true)})
 	elif combo_runtime!=null:combo_updated.emit({"type":"progress","progress":combo_runtime.feedback()})
@@ -396,6 +423,10 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 				if prevented>0 and is_instance_valid(mage_kit):
 					var gain: int=mage_kit.defense_resource_gain()
 					mage_kit.on_prevented_damage(prevented);_award_resource(gain)
+			"warrior_kit":
+				if is_instance_valid(warrior_kit):
+					prevented=int(round(amount*warrior_kit.mitigation_for(attacker,knockback)))
+					if prevented>0:warrior_kit.prevention(attacker)
 			"guard":
 				prevented=int(round(amount*float(tuning.get("mitigation",0.75))))
 				if prevented>0:_award_resource(int(tuning.get("resource_gain",1)))
@@ -403,10 +434,12 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 				var wolf:=GameBalance.get_slasher_companion_tuning("wolf");var nearby:=is_instance_valid(companion) and companion.global_position.distance_to(global_position)<float(wolf.get("interception_radius",90.0))
 				prevented=int(round(amount*float(wolf.get("cover_mitigation_near" if nearby else "cover_mitigation_far",0.6 if nearby else 0.3))))
 			"retribution_ready":prevented=int(round(amount*float(tuning.get("mitigation",0.5))));retribution_stored+=int(round(amount*float(tuning.get("storage_fraction",0.5))))
-		defense_window=0.0
-	if prevented>0 and defense_kind not in ["guard","mage_kit"]: _award_resource(1)
+		if defense_kind!="warrior_kit" or prevented>0:defense_window=0.0
+	if prevented>0 and defense_kind not in ["guard","mage_kit","warrior_kit"]: _award_resource(1)
 	if is_instance_valid(mage_kit) and not uses_pyromancy():
 		prevented+=int(mage_kit.absorb_damage(maxi(0,amount-prevented)))
+	if is_instance_valid(mage_combo_effects):prevented+=mage_combo_effects.absorb_damage(maxi(0,amount-prevented))
+	if is_instance_valid(kit_buffs):prevented+=kit_buffs.absorb_damage(maxi(0,amount-prevented))
 	if consumable_aegis>0:
 		var aegis_prevented:int=mini(consumable_aegis,maxi(0,amount-prevented));consumable_aegis-=aegis_prevented;prevented+=aegis_prevented
 	var final:=maxi(0,amount-prevented)
@@ -418,7 +451,8 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 	move_and_collide(knockback*(0.25 if prevented>0 else 1.0));_enforce_field_bounds()
 	if defense_kind=="recover" and final>0:heal(int(ceil(final*float(tuning.get("recover_fraction",0.5)))))
 	if defense_kind=="retribution_ready" and retribution_stored>0:_area_attack(global_position,float(tuning.get("release_radius",80.0)),_attack_data(retribution_stored,"physical",{"knockback":float(tuning.get("release_knockback",30.0))}));retribution_stored=0
-	defense_kind="";health_changed.emit(health,max_health);queue_redraw()
+	if defense_window<=0:defense_kind=""
+	health_changed.emit(health,max_health);queue_redraw()
 	if health<=0:defeated.emit()
 
 func _spawn_projectile(data:Dictionary,gain_on_hit:bool,direction_override:Vector2=Vector2.ZERO,origin_override:Vector2=Vector2.INF,combo_cast_id:String="")->void:
@@ -430,13 +464,14 @@ func _spawn_projectile(data:Dictionary,gain_on_hit:bool,direction_override:Vecto
 	projectile.hit_landed.connect(func(hit_target:Node2D,_distance:float):
 		if is_instance_valid(pyromancy):pyromancy.on_direct_hit(hit_target,data)
 		elif is_instance_valid(mage_kit):mage_kit.on_direct_hit(hit_target,data)
+		elif is_instance_valid(warrior_kit):warrior_kit.on_direct_hit(hit_target,data)
 		if item_runtime and not bool(data.get("mage_secondary",false)) and hit_target.is_in_group("slasher_enemy") and _combo_proc_allowed(combo_cast_id,hit_target):item_runtime.handle_event({"trigger":"hit","target":hit_target,"attack":data}))
 	if bool(data.get("force_prism",false)):
 		projectile.impact_resolved.connect(func(impact_position:Vector2,_impact_data:Dictionary):_spawn_force_prism_bolts(impact_position,data,combo_cast_id),CONNECT_ONE_SHOT)
 	var echo_multiplier:float=float(data.get("echo_damage_multiplier",0.0))
 	if echo_multiplier>0.0:
 		var echo_data:Dictionary=data.duplicate(true)
-		for key in ["pyro_burn","pyro_cast","mage_kit","mage_cast","mage_resource"]:echo_data.erase(key)
+		for key in ["pyro_burn","pyro_cast","mage_kit","mage_cast","mage_resource","warrior_kit","warrior_cast","warrior_resource"]:echo_data.erase(key)
 		echo_data["mage_secondary"]=true;echo_data.damage=maxi(1,int(round(int(data.damage)*echo_multiplier)));echo_data["screen_shake_multiplier"]=float(data.get("screen_shake_multiplier",1.0))*0.6
 		var echo:SlasherProjectile=PROJECTILE.new().setup(self,global_position+aim_direction.rotated(0.08)*24.0,aim_direction.rotated(0.08),echo_data);get_parent().add_child(echo)
 	if gain_on_hit:projectile.hit_landed.connect(func(hit_target:Node2D,distance:float):
@@ -464,8 +499,13 @@ func _record_combo_confirmation(token:String)->void:
 	if combo_runtime==null:return
 	var outcome:Dictionary=combo_runtime.record_confirmation(token);combo_updated.emit({"type":"progress","progress":Dictionary(outcome.get("progress",{}))})
 
+func _configure_combos() -> void:
+	var names: Dictionary={}
+	for slot in ["basic","special","defensive","movement"]:names[slot]=_action_name(slot)
+	combo_runtime.setup(class_id,run_state.selected_gear.id if uses_mage_kit() or uses_warrior_kit() else "standard",names)
+
 func reset_combo_progress()->void:
-	if combo_runtime!=null:combo_runtime.setup(class_id)
+	if combo_runtime!=null:_configure_combos()
 	last_fireball_attack={};resolving_combo={};warrior_slash_chain=0;warrior_slash_chain_time=0.0;combo_updated.emit({"type":"progress","progress":{}})
 
 func _melee_attack(data:Dictionary)->int:
@@ -600,10 +640,14 @@ func _update_aim()->void:
 func uses_pyromancy()->bool:
 	return run_state!=null and run_state.selected_gear!=null and run_state.selected_gear.id==PYROMANCY.GEAR_ID
 
+func uses_warrior_kit()->bool:
+	return class_id=="warrior" and run_state!=null and run_state.selected_gear!=null and WARRIOR_KITS.has_kit(run_state.selected_gear.id)
+
 func uses_mage_kit()->bool:
 	return run_state!=null and run_state.selected_gear!=null and MAGE_KITS.script_for(run_state.selected_gear.id)!=null
 
 func _ability_tuning(slot:String)->Dictionary:
+	if uses_warrior_kit() and is_instance_valid(warrior_kit):return warrior_kit.tuning(slot)
 	if uses_mage_kit() and is_instance_valid(mage_kit):return mage_kit.tuning(slot)
 	return run_state.get_effective_slasher_ability_tuning(slot) if run_state!=null else GameBalance.get_slasher_ability_tuning(class_id,slot)
 func _apply_echo_hit(target:Node,data:Dictionary)->void:
@@ -611,6 +655,7 @@ func _apply_echo_hit(target:Node,data:Dictionary)->void:
 	if multiplier<=0.0:return
 	var echo:Dictionary=data.duplicate(true);echo.erase("echo_damage_multiplier");echo.damage=maxi(1,int(round(int(data.damage)*multiplier)));echo.knockback=float(data.get("knockback",0.0))*0.5;target.call("receive_attack",echo,self)
 func _action_name(slot:String)->String:
+	if uses_warrior_kit() and is_instance_valid(warrior_kit):return warrior_kit.action_name(slot)
 	if uses_pyromancy():return String(PYROMANCY.ACTIONS.get(slot,slot.capitalize()))
 	if uses_mage_kit() and is_instance_valid(mage_kit):return mage_kit.action_name(slot)
 	return String(GameBalance.get_class_action(class_id,slot).get("name",slot.capitalize()))
@@ -633,6 +678,9 @@ func _update_screen_shake(delta:float)->void:
 	var falloff:=screen_shake_time/maxf(0.001,screen_shake_duration)
 	camera.offset=Vector2(randf_range(-1.0,1.0),randf_range(-1.0,1.0))*screen_shake_strength*falloff
 func _draw()->void:
+	if is_instance_valid(kit_buffs) and kit_buffs.ward_amount()>0:
+		draw_arc(Vector2.ZERO,45,0,TAU,48,Color("#ffdc93"),3)
+		draw_string(ThemeDB.fallback_font,Vector2(-45,-83),"WARD %d"%kit_buffs.ward_amount(),HORIZONTAL_ALIGNMENT_CENTER,90,12,Color("#ffdc93"))
 	if sprite==null or sprite.sprite_frames==null:draw_circle(Vector2.ZERO,18.0,Color.WHITE)
 	if invulnerable>0.0:
 		var pulse:=0.72+sin(Time.get_ticks_msec()*0.025)*0.18

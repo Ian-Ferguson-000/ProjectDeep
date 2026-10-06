@@ -2,7 +2,7 @@
 
 Open **Hearth → Armory → Enter testing ground**. The entrance is in the fixed bottom bar, next to **Buy 4 Supplies**, and does not require scrolling through equipment. Choose a class, equipment, level, class progression, and items, then select **Apply build and fight**. Press **B** or **Escape** to reopen the editor; **R** restores health and resource, clears cooldowns and effects, and replaces the targets. **Return to armory** reopens the Hearth armory.
 
-All six classes, 24 existing weapons, 52 existing expedition items, 12 Hearth relics, and **all five alternate Mage kits** are available without campaign unlocks. That makes 29 equipment selections. Existing weapons keep their current standard class abilities and equipment stats. See [Mage builds](MageBuilds.md) for Winterglass Codex, Stormbringer's Grimoire, Grimoire of Gravity, and Mirrorbound Manuscript. Non-Mage alternate kits and proposed item/relic rules in the [design packet](equipment-design/README.md) remain proposals.
+All six classes, 24 existing weapons, 52 existing expedition items, 12 Hearth relics, and **all five alternate Mage kits** are available without campaign unlocks. That makes 34 equipment selections. Existing weapons keep their current standard class abilities and equipment stats. See [Mage builds](MageBuilds.md) for Winterglass Codex, Stormbringer's Grimoire, Grimoire of Gravity, and Mirrorbound Manuscript. Non-Mage alternate kits and proposed item/relic rules in the [design packet](equipment-design/README.md) remain proposals.
 
 Choose **Single target**, **Cluster**, **Boss target**, or **Live enemies** from the floor controls. Targets have infinite durability and show damage and hit counts. Hits produce floating damage numbers with explicit damage types and colors. Fire ticks distinguish **Burn** and **Ground** from **Lance** and **Blast**. The HUD totals damage by type. Popups show actual damage after boss mitigation, not the requested attack damage. At most six popups per target overlap, while every hit remains included in totals. Boss targets retain the current per-hit damage cap and temporary damage shield. DPS includes target damage divided by elapsed practice time, including idle time; reset before comparing builds. Live enemies attack and can die, and also show typed popups; this mode is for practical combat rather than dummy DPS. Player defeat resets the floor automatically.
 
@@ -32,3 +32,11 @@ The floor lives in `scenes/slasher/TestingGround.tscn` and `scripts/slasher/test
 `tests/testing_ground_test.gd` verifies all class/equipment selections, item availability, editor pause, fire ignition direction, resource rules, Burn refresh and consumption, mitigation, reset cleanup, target durability, boss limits, live enemy spawning, campaign isolation, and return to the armory. `tests/testing_ground_visual_capture.gd` captures the editor and floor for layout inspection at 1280 × 720 and 960 × 540.
 
 Final encounter balance still needs playtesting. The prototype reuses current Mage casting, animated fireball atlases, and fire-patch artwork. Training-only combatants report damage without changing normal expedition enemies.
+
+## Combo practice
+
+Enable **Combos [C]** in the training hall to select recipes and follow live steps, timing, effects, and success counts. Each Mage kit now has six playable combos. See [Mage combo design and practice guide](MageCombos.md) for all 36 recipes and interaction rules. Holding Basic sends repeated inputs; use discrete clicks while practicing a specific sequence.
+
+## Warrior weapon practice
+
+All five alternative Warrior kits are unlocked, alongside the four existing standard-kit weapons. Each of the six Warrior kits has six combos, shown through **Combos [C]**. See [Warrior builds](WarriorBuilds.md) and [Warrior combos](WarriorCombos.md). The hall now offers 34 equipment choices in total: 24 existing weapons plus five Mage and five Warrior alternatives.

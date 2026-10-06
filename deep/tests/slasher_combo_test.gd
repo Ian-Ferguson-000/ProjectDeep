@@ -19,7 +19,7 @@ func _run()->void:
 	runtime.setup("mage");runtime.record_action("special");runtime.tick(2.6);var expired:Dictionary=runtime.record_action("movement")
 	_expect(Dictionary(expired.triggered).is_empty(),"Expired combo progress still triggered",failures)
 	runtime.setup("mage");runtime.record_action("basic");runtime.record_action("defensive")
-	_expect(runtime.feedback().is_empty(),"A wrong successful action did not reset combo progress",failures)
+	_expect(int(runtime.states.spellstorm_volley.index)==0,"A wrong successful action did not reset Spellstorm progress",failures)
 
 	runtime.setup("warrior");runtime.record_confirmation("parry_success");runtime.record_action("movement");runtime.record_confirmation("movement_hit");var priority:Dictionary=runtime.record_action("special")
 	_expect(String(Dictionary(priority.triggered).get("id",""))=="vengeful_spiral","Vengeful Spiral did not override Break the Line",failures)

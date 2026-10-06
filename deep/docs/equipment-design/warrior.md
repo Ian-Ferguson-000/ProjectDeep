@@ -2,7 +2,7 @@
 
 [Packet overview and shared rules](README.md) · [Review decisions](review-workbook.md)
 
-**Class promise:** Earn Momentum by committing to melee and choosing when to stand, advance, or counter. Every kit can defeat an isolated boss without adds. All candidates are unapproved. New timings are illustrative; standard values are base-runtime observations.
+**Class promise:** Earn Momentum by committing to melee and choosing when to stand, advance, or counter. Every kit can defeat an isolated boss without adds. All five alternatives are now authorized training-hall prototypes; release selection/acquisition remains unapproved. The [current Warrior build guide](../WarriorBuilds.md) and [36-combo catalogue](../WarriorCombos.md) describe the implemented fast tuning and supersede the older slow/held-charge examples. Standard values remain baseline observations.
 
 | ID | Kit | Status | Distinct decisions | Cost |
 |---|---|---|---|---|
@@ -53,10 +53,10 @@ These are preferred offer pools, not guaranteed drops or new map requirements. A
 
 | Slot | Proposed behavior |
 |---|---|
-| Basic — Hew | Close, broad physical arc; 0.8s CD. Hold up to 0.6s to widen the arc, not increase hit count. Release stops the hold; gain 1 Momentum on any hit. Movement slows while winding up. |
-| Special — Sentence | 2 Momentum, 4s CD. Telegraph a medium narrow ground cleave for 0.7s, then heavy damage and Stagger. Hitting a previously staggered target adds damage instead of extending control. |
-| Defensive — Shoulder the Blow | 5s CD. For 0.6s reduce the next frontal hit by 60%; remain vulnerable from behind. Successful prevention grants 1 Momentum and allows the next Hew within 2s to release without its hold. |
-| Movement — Committed Step | 3s CD. Short forward step; brief protection during the first 0.15s, followed by 0.25s attack recovery. Reposition before Sentence, not through an entire room. |
+| Basic - Hew | 0.24s CD; 4.8x attack power. Snapshot a 170-range, 155-degree sweep; it lands after a 0.12s windup. Two Stamina on connection, once per cast. A readied Hew removes the windup, not the cooldown. |
+| Special - Sentence | Two Stamina; 0.9s CD. Snapshot a 300-long lane with 42 half-width; resolve after 0.22s for 10x attack power. Briefly stagger ordinary enemies. Already-staggered ordinary foes take 25% extra damage instead of renewed control; bosses take damage with no stagger. |
+| Defensive - Shoulder the Blow | 0.7s CD. For 0.6s, mitigate the next frontal hit by 60%, gain at most one Stamina, and ready an instant Hew for two seconds. Rear attacks deal full damage and do not spend the remaining guard window. |
+| Movement - Committed Step | 0.65s CD. Step forward up to 200 with 0.15s protection. The shorter reach and anchored windup reward committing to a punishable angle; movement neither resets cooldowns nor refunds Stamina. |
 
 **Sequence:** Bait a swing → Shoulder → instant wide Hew → Sentence into stagger. A missed Sentence consumes its cost, exposing the commitment.
 
@@ -64,7 +64,7 @@ These are preferred offer pools, not guaranteed drops or new map requirements. A
 
 **Builds:** Deliberate execution: [Veteran's Whetstone](supporting-items.md#itm-war-03) + [Worldbreaker Gauntlet](relics.md#rel-05). Defensive retaliation: [Runebound Bracer](supporting-items.md#itm-war-01) + [Blackoak Covenant](relics.md#rel-15). Avoid rapid-hit items and forced-movement effects that scatter Sentence's targets.
 
-**Readability/production:** Medium. New windup/held-input pose, fixed lane telegraph, directional mitigation indicator. Distinguish player charging from boss danger through shape as well as color. Needs release/cancel behavior; interruption cancels damage and does not grant Momentum.
+**Readability/production:** Medium. New windup/held-input pose, fixed lane telegraph, directional mitigation indicator. Distinguish player charging from boss danger through shape as well as color. Prototype uses a short fixed windup instead of the older held-charge proposal; future held-input expansion needs separate design. Pending damage clears on kit removal and cannot grant resource without a hit.
 
 <a id="kit-war-03"></a>
 ## KIT-WAR-03 — Borderkeeper's Spear
@@ -73,10 +73,10 @@ These are preferred offer pools, not guaranteed drops or new map requirements. A
 
 | Slot | Proposed behavior |
 |---|---|
-| Basic — Measured Thrust | Medium narrow line, 0.55s CD; normal damage, with a tip zone in the last quarter of reach. A tip hit grants 1 Momentum, at most once per thrust. Close hits remain useful but earn none. |
-| Special — Hold the Pass | 2 Momentum, 5s CD. Plant a visible medium lane for 3s. The first enemy entering it suffers heavy thrust damage and Stagger, then the lane expires. Recast is unavailable while planted. |
-| Defensive — Yielding Guard | 4s CD. Backstep a short distance while guarding the front for 0.5s. Preventing a hit grants 1 Momentum; the step cannot cross terrain. |
-| Movement — Flank March | 2.5s CD. Medium lateral dash relative to aim, choosing the clearer side from movement input; with no lateral input, move backward. No damage; 0.15s protection. |
+| Basic - Measured Thrust | 0.18s CD; 3.2x attack power along a 260-long, 24-half-width line. The last quarter is a tip zone: +35% damage and two Stamina once if any tip target connects. Close hits remain useful but grant none. |
+| Special - Hold the Pass | Two Stamina; 0.9s CD. Snapshot a 320-long, 32-half-width lane for three seconds. Arm after 0.12s; the first eligible enemy in the lane takes 10x damage and ordinary foes briefly stagger. A stationary boss triggers it without needing to move. One lane per caster; replacing discards the old lane. |
+| Defensive - Yielding Guard | 0.7s CD. Collision-checked backstep up to 110 with 0.1s protection, then a 0.6s frontal next-hit guard reducing damage 60%; prevention grants at most one Stamina. Refuse obstructed movement without consuming the action. |
+| Movement - Flank March | 0.65s CD. Dash 220 laterally, choosing the side from movement input relative to aim; with no movement input, retreat along negative aim. Gain 0.15s protection. No damage or tip resource from movement. |
 
 **Sequence:** Thrust at the tip → plant a lane on an approach → Yield backward → sidestep to regain the tip. A stationary boss touching the newly planted lane can trigger it after its 0.4s arming delay; no need for boss movement.
 
@@ -93,10 +93,10 @@ These are preferred offer pools, not guaranteed drops or new map requirements. A
 
 | Slot | Proposed behavior |
 |---|---|
-| Basic — Rally Cut | Close sweep, 0.5s CD. Gain 1 Momentum on hit. Each hit within medium distance of the planted banner also extends its remaining life by 0.5s, maximum 2s added per planting. |
-| Special — Plant the Standard | 2 Momentum, 6s CD. Place one banner at an aimed open point within medium range for 5s. The planting deals normal physical damage; the owner and nearby deployed allies gain 10% movement speed while near it. |
-| Defensive — Stand Together | 5s CD. Grant self a 10%-health barrier for 2s. If within the banner radius, also grant that barrier to one nearest living deployed ally; no ally means self duration becomes 3s, not a second barrier. |
-| Movement — Advance the Colors | 3s CD. Short protected dash. If a banner exists, carry it to the landing point without renewing its duration or triggering planting damage. |
+| Basic - Rally Cut | 0.18s CD; 3.6x attack power in a 135-range, 110-degree sweep. Gain two Stamina once on hit. Connecting cuts from within the rally radius add 0.5s per target to the banner, with a total two-second extension budget per planting. |
+| Special - Plant the Standard | Two Stamina; 0.9s CD. Place one banner within 250 aimed range for five seconds. Planting deals 10x physical damage within 150. Its 150-radius aura gives the owner and nearby living, visible, actively deployed SlasherPlayer allies +15% movement speed. This aura is a field, never a summon. |
+| Defensive - Stand Together | 0.7s CD. Grant self a 15%-maximum-HP barrier, minimum one. If the owner is near the banner, also grant it to the nearest living deployed ally within that same banner radius. With a recipient, both last two seconds; alone, self lasts three. No heal or automatic resurrection. |
+| Movement - Advance the Colors | 0.65s CD. Advance up to 230 with 0.15s protection. Carry a live banner to landing without resetting its lifetime, extension budget, or planting damage. No banner is required for movement. |
 
 **Sequence:** Fight to earn Momentum → plant ahead → cut within the rally zone → advance the banner when pressure changes. Solo always receives the speed and barrier benefits.
 
@@ -113,10 +113,10 @@ These are preferred offer pools, not guaranteed drops or new map requirements. A
 
 | Slot | Proposed behavior |
 |---|---|
-| Basic — Answering Cuts | Close alternating left/right arcs, 0.3s CD. Every second connected stroke on the same enemy grants 1 Momentum; misses or a new target restart the pair. |
-| Special — Crossing Blades | 2 Momentum, 3.5s CD. Two crossing close cuts after a 0.3s windup. Both must connect for the heavy combined payoff; count as one proc activation. |
-| Defensive — Bind Steel | 4s CD. A 0.35s frontal parry catches one melee attack, grants 1 Momentum, and exposes the attacker for 2s to the next Basic's wider arc. Ranged hits are reduced 50%, without the exposure. |
-| Movement — Passing Step | 2s CD. Short lateral dash with 0.12s protection; preserves the Basic pair if used between strokes. |
+| Basic - Answering Cuts | 0.14s CD; 3x attack power in alternating left/right 125-range, 95-degree cuts. A second connected stroke on the same enemy within two seconds gains two Stamina; the first earns none. Misses/new first targets restart the pair; movement preserves it. Exposure widens the next Basic to 145 degrees and boosts damage 35% against that exposed target only. |
+| Special - Crossing Blades | Two Stamina; 0.9s CD. Snapshot two opposing 175-range, 85-degree arcs, resolving at 0.08s and 0.16s. Each deals half of the 10x total. The second is secondary and cannot double primary hit procs. Both hits are needed for the full combined payoff. |
+| Defensive - Bind Steel | 0.7s CD. For 0.6s, fully parry one frontal melee attacker within 130, gain at most one Stamina, and expose that enemy for two seconds. Frontal ranged/unknown-source hits are mitigated 50% without exposure; rear hits bypass the guard. Exposure never moves or stuns a boss. |
+| Movement - Passing Step | 0.65s CD. Dash 220 laterally relative to aim, choosing the opposite side when movement input requests it; default to the left-hand side. Gain 0.15s protection and preserve the Basic pair. |
 
 **Sequence:** First cut → Passing Step → second cut → bait Bind → Crossing Blades. Solo fights depend on rhythm rather than ally setup. Bosses can be exposed without being stunned; the effect is an attack-shape opportunity, not a defense bypass.
 
@@ -131,10 +131,10 @@ These are preferred offer pools, not guaranteed drops or new map requirements. A
 
 | Slot | Proposed behavior |
 |---|---|
-| Basic — Cast the Weight | Medium aimed line, 0.65s CD; stops at the first enemy and tethers it for 2s. Gain 1 Momentum on connection. Only one tether; re-aiming replaces it. |
-| Special — Draw and Break | 2 Momentum, 4s CD. Pull a tethered ordinary foe a short distance and slam a close area; without a tether, perform a weaker direct close slam. Bosses take the full slam at their tether point without moving. |
-| Defensive — Chain Guard | 5s CD. Spin a close frontal guard for 0.7s, destroying up to three normal projectiles. The first destroyed shot grants 1 Momentum. Melee damage is reduced 50% during the guard. |
-| Movement — Reel Through | 3s CD. With a tether, dash toward it, stopping short of collision; otherwise a short forward step. Brief 0.15s protection; sever tether after arrival. |
+| Basic - Cast the Weight | 0.22s CD; 4.2x attack power. Strike only the nearest eligible enemy in a 300-long, 28-half-width aimed line; connect for two Stamina and a two-second tether. One tether only. A miss severs the old one; a broken wall line of sight, death, or expiry also severs it. |
+| Special - Draw and Break | Two Stamina; 0.9s CD. Pull tethered ordinary prey up to 180 toward an 85-distance standoff, respecting collision, then slam 100 range around it for 10x damage. A boss takes the full slam at its existing point without displacement. Without a tether, slam 95 ahead for 75% damage. Sever the tether afterward. |
+| Defensive - Chain Guard | 0.7s CD. Spin a frontal 130-range guard for 0.7s and destroy at most three ordinary hostile projectiles; beams, unblockable shots, and already-reflected shots bypass it. Also mitigate the next frontal hit by 50%. Award at most one Stamina total across interception and mitigation. Interception persists after that hit is consumed. |
+| Movement - Reel Through | 0.65s CD. With a live tether, move toward its point, stopping 55 before the target; otherwise advance 230 along aim. Validate travel against walls and floor bounds. Gain 0.15s protection and sever the tether only on successful movement. |
 
 **Sequence:** Cast → pull → reposition → recast, choosing whether to spend the tether on offense or movement. Good against priority ranged enemies, weaker when swarmed or blocked by props. Works solo; allies benefit from a pulled foe but receive no automatic buffs.
 

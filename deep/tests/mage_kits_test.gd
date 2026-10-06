@@ -21,6 +21,8 @@ func equip(id: String, mode: String = "cluster", level: int = 1, branch: int = 0
 	check(ground.details.text.contains(KITS.description(id)),"Build editor must describe the selected Mage kit")
 	await physics_frame;await process_frame
 	ground.player.set_physics_process(false);ground.player.mage_kit.set_physics_process(false)
+	# This suite measures standalone spells; combo payloads are covered separately.
+	ground.player.combo_runtime.recipes.clear();ground.player.combo_runtime.states.clear()
 
 func targets() -> Array[SlasherEnemy]:
 	var result: Array[SlasherEnemy]=[]
