@@ -3,6 +3,7 @@ extends Node
 const StartScreenScene := preload("res://scenes/start/StartScreen.tscn")
 const ClassSelectionScene := preload("res://scenes/class_selection/ClassSelection.tscn")
 const TavernScene := preload("res://scenes/tavern/Tavern.tscn")
+const TestingGroundScene := preload("res://scenes/slasher/TestingGround.tscn")
 const SlasherForestScene := preload("res://scenes/slasher/SlasherForest.tscn")
 const SlasherFarmsteadScene := preload("res://scenes/slasher/SlasherFarmstead.tscn")
 const SlasherMineScene := preload("res://scenes/slasher/SlasherMine.tscn")
@@ -197,6 +198,19 @@ func show_tavern(message: String = "", arrival_summary: Dictionary = {}, story_l
 	current_scene = tavern
 	tavern.setup(self, run_state, _gear_options_for_class(run_state.selected_class_id), message, arrival_summary, story_lines, story_context)
 	add_child(tavern)
+
+func open_testing_ground() -> void:
+	if campaign != null and campaign.expedition.active: return
+	_clear_scene()
+	var ground := TestingGroundScene.instantiate()
+	current_scene = ground
+	ground.setup(self)
+	add_child(ground)
+
+func leave_testing_ground() -> void:
+	show_tavern("Back from the testing ground.")
+	if current_scene != null and current_scene.has_method("_open_armory"):
+		current_scene.call_deferred("_open_armory")
 
 func start_dungeon(dungeon_id: String, gear: GearData, requested_party: Array[String] = [], patron_deity_id: String = "", objective_id: String = "") -> void:
 	if not run_state.is_dungeon_unlocked(dungeon_id):

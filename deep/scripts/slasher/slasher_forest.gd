@@ -43,6 +43,10 @@ var loot_nodes:Array[Area2D]=[]
 var exit_position:=Vector2.ZERO
 var merchant_position:=Vector2.ZERO
 var has_dungeon_merchant:=true
+var secret_door_position:=Vector2.ZERO
+var secret_door_available:=false
+var secret_door_node:Node2D
+var merchant_offer_nodes:Array[Area2D]=[]
 var message_label:Label
 var combo_label:Label
 var objective_label:Label
@@ -116,16 +120,24 @@ func _exit_tree()->void:
 
 func _build_floor()->void:
 	get_tree().paused=false
+	secret_door_available=false;secret_door_node=null;merchant_offer_nodes.clear();has_dungeon_merchant=false
 	if use_authored_layout and authored_layout_cache.is_empty():authored_layout_cache=_layout_from_authored_nodes()
 	if use_authored_visuals and authored_visual_cache.is_empty():_cache_authored_visuals()
 	authored_visuals_active=use_authored_visuals and not authored_visual_cache.is_empty()
 	var authored_layout:=authored_layout_cache.duplicate(true)
 	for child in get_children():child.free()
 	layout=authored_layout if not authored_layout.is_empty() else SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor,run_state.active_dungeon_id)
+	if run_state.slasher_merchant_interlude:layout=_merchant_interlude_layout()
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
 	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();player.reset_combo_progress();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
 	if player.item_runtime:player.item_runtime.floor_entered()
-	if run_state.current_floor==1 and not run_state.starter_reward_claimed and (not _is_tutorial_expedition() or run_state.campaign.expedition.tutorial_controls_complete):call_deferred("_offer_starter_relic")
+	if not run_state.slasher_merchant_interlude and run_state.current_floor==1 and not run_state.starter_reward_claimed and (not _is_tutorial_expedition() or run_state.campaign.expedition.tutorial_controls_complete):call_deferred("_offer_starter_relic")
+
+func _merchant_interlude_layout()->Dictionary:
+	var cells:Dictionary={};var rooms:Array[Rect2i]=[Rect2i(2,2,16,11)]
+	for y in range(2,13):
+		for x in range(2,18):cells[Vector2i(x,y)]=true
+	return {"width":20,"height":15,"cells":cells,"rooms":rooms,"start":Vector2i(10,10),"exit":Vector2i(10,12),"merchant":Vector2i(10,5),"enemy_spawns":[],"loot_spawns":[],"solid_props":[],"decorations":[],"edges":SlasherForestGenerator.classify_edges(cells),"is_boss_floor":false,"is_elite_floor":false}
 
 func _layout_from_authored_nodes()->Dictionary:
 	var geometry:=get_node_or_null("Geometry")
@@ -255,9 +267,19 @@ func _build_solid_props()->void:
 func _build_landmarks()->void:
 	exit_position=_world(layout.exit);merchant_position=_world(layout.merchant)
 	var exit_root:=Node2D.new();exit_root.name="RootGate";exit_root.position=exit_position;exit_root.z_index=12;exit_root.add_child(_glow(Color("#83d978"),34));var exit_sprite:=SlasherForestArt.make_sprite("exit");exit_sprite.position=Vector2(0,-30);exit_root.add_child(exit_sprite);actor_layer.add_child(exit_root)
-	has_dungeon_merchant=not String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id","")).is_empty()
-	if has_dungeon_merchant:
-		var merchant_root:=Node2D.new();merchant_root.name="DungeonMerchant";merchant_root.position=merchant_position;merchant_root.add_child(_glow(Color("#e8b94e"),28));var merchant_sprite:=SlasherForestArt.make_sprite("merchant");merchant_sprite.position=Vector2(0,-28);merchant_root.add_child(merchant_sprite);actor_layer.add_child(merchant_root)
+	if run_state.slasher_merchant_interlude:
+		var merchant_id:=_dungeon_merchant_id();var merchant_data:=GameBalance.get_merchant(merchant_id)
+		var merchant_root:=Node2D.new();merchant_root.name="InterludeMerchant";merchant_root.position=merchant_position;merchant_root.add_child(_glow(Color("#e8b94e"),28));var merchant_sprite:=SlasherForestArt.make_sprite("merchant");merchant_sprite.position=Vector2(0,-28);merchant_root.add_child(merchant_sprite);actor_layer.add_child(merchant_root)
+		var offers:=run_state.get_merchant_offers(merchant_id,"dungeon");var offer_index:=0
+		for offer:Dictionary in offers:
+			var spot:=Vector2i(6+offer_index%4*2,7+offer_index/4*2);var offer_area:=Area2D.new();offer_area.name="MerchantOffer_%s"%String(offer.get("offer_id",""));offer_area.position=_world(spot);offer_area.set_meta("offer_id",String(offer.get("offer_id","")));offer_area.set_meta("merchant_offer",true)
+			var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=24;shape.shape=circle;offer_area.add_child(shape)
+			var item_sprite:=SlasherForestArt.make_sprite("treasure");item_sprite.position=Vector2(0,-14);offer_area.add_child(item_sprite)
+			var name_tag:=Label.new();name_tag.text="%s\n%s"%[String(offer.get("name","Item")),("%d Favor"%int(offer.get("favor",0))) if int(offer.get("favor",0))>0 else ("%d gold"%int(offer.get("gold",0)))];name_tag.position=Vector2(-88,10);name_tag.size=Vector2(176,48);name_tag.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;name_tag.add_theme_font_size_override("font_size",12);name_tag.add_theme_color_override("font_color",Color("#ffe6a3"));offer_area.add_child(name_tag)
+			actor_layer.add_child(offer_area);merchant_offer_nodes.append(offer_area);offer_index+=1
+		return
+	has_dungeon_merchant=false
+	secret_door_available=false
 
 func _build_mist()->void:
 	var mist:=CPUParticles2D.new();mist.name="ForestMist";mist.amount=42;mist.lifetime=9.0;mist.preprocess=9.0;mist.emission_shape=CPUParticles2D.EMISSION_SHAPE_RECTANGLE;mist.emission_rect_extents=Vector2(float(layout.width*TILE)/2.0,float(layout.height*TILE)/2.0);mist.position=ORIGIN+Vector2(float(layout.width*TILE)/2.0,float(layout.height*TILE)/2.0);mist.direction=Vector2(1,-0.12);mist.spread=18;mist.initial_velocity_min=3;mist.initial_velocity_max=8;mist.scale_amount_min=3;mist.scale_amount_max=8;mist.color=Color(0.65,0.85,0.72,0.055);mist.z_index=6;add_child(mist)
@@ -287,6 +309,7 @@ func _spawn_enemies()->void:
 			var spec:=_normal_enemy_spec(spawn_index,wolf_counts);visual_id=String(spec.visual_id);behavior_id=String(spec.behavior_id)
 		_spawn_enemy(_world(spawn),visual_id,behavior_id,bool(spawn_record.get("is_boss",false)),bool(spawn_record.get("is_mini_boss",false)));spawn_index+=1
 	exit_open=enemies_remaining==0
+	if exit_open:_reveal_secret_door()
 
 func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 	var wolves:Array[String]=["wolf_vanguard","wolf_lurker","wolf_charger","wolf_hunter","wolf_howler"]
@@ -356,6 +379,24 @@ func _process(delta:float)->void:
 			else:run_state.keys-=1;nearby_chest.open_chest();_show_message("The key turns. The chest opens.")
 	for loot in loot_nodes.duplicate():
 		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<30:_collect_loot(loot);loot_nodes.erase(loot)
+	if run_state.slasher_merchant_interlude:
+		for offer_area:Area2D in merchant_offer_nodes:
+			if is_instance_valid(offer_area) and player.global_position.distance_to(offer_area.global_position)<42:
+				var merchant_id:=_dungeon_merchant_id();var offer_id:=String(offer_area.get_meta("offer_id",""));var offer:=_find_merchant_offer(merchant_id,offer_id)
+				_show_message("%s · %s · press E to buy"%[String(offer.get("name","Offer")),("%d Favor"%int(offer.get("favor",0))) if int(offer.get("favor",0))>0 else ("%d gold"%int(offer.get("gold",0)))],0.15)
+				if Input.is_action_just_pressed("interact") and not interaction_used:
+					interaction_used=true;player.basic_mouse_held=false;var logs:=run_state.purchase_merchant_offer(merchant_id,offer_id,"dungeon");_show_message(" ".join(logs));_refresh_hud()
+				break
+		if player.global_position.distance_to(exit_position)<42:
+			_show_message("Leave the market and continue to the next floor · press E.",0.15)
+			if Input.is_action_just_pressed("interact"):
+				run_state.slasher_merchant_interlude=false;floor_reward_claimed=false;_complete_floor();return
+		elif Input.is_action_just_pressed("slasher_potion"):_use_potion()
+		_refresh_hud();return
+	if secret_door_available and player.global_position.distance_to(secret_door_position)<48:
+		_show_message("A hidden merchant door · press E to enter.",0.15)
+		if Input.is_action_just_pressed("interact"):
+			run_state.slasher_merchant_interlude=true;floor_reward_claimed=false;_store_active_slasher_state();_build_floor();return
 	if has_dungeon_merchant and player.global_position.distance_to(merchant_position)<48:
 		var merchant_id:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id",run_state.active_dungeon_id));var merchant:=GameBalance.get_merchant(merchant_id);var merchant_name:=String(merchant.get("name","Dungeon merchant"))
 		_show_message("%s · press E to trade."%merchant_name,0.15)
@@ -374,7 +415,29 @@ func _process(delta:float)->void:
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	run_state.record_enemy_defeat(enemy.visual_id);enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
 	if player.item_runtime:player.item_runtime.handle_event({"trigger":"boss_kill" if enemy.boss else ("elite_kill" if enemy.elite else "enemy_kill"),"enemy":enemy})
-	if enemies_remaining==0:exit_open=true;_show_message("Encounter cleared · the way onward opens.")
+	if enemies_remaining==0:exit_open=true;_reveal_secret_door();_show_message("Encounter cleared · the way onward opens.")
+
+func _dungeon_merchant_id()->String:
+	var configured:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id",""))
+	return configured if not configured.is_empty() else run_state.active_dungeon_id
+
+func _should_have_secret_door()->bool:
+	if run_state.slasher_endless_mode or run_state.slasher_merchant_interlude or _is_tutorial_expedition():return false
+	if String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id","")).is_empty():return false
+	var rng:=RandomNumberGenerator.new();rng.seed=hash("%d:%d:merchant_door"%[run_state.get_current_floor_seed(),run_state.current_floor])
+	return rng.randf()<0.35
+
+func _reveal_secret_door()->void:
+	if run_state==null or run_state.slasher_merchant_interlude or secret_door_node!=null or not _should_have_secret_door():return
+	var candidates:Array=layout.get("rooms",[]);var room:Rect2i=Rect2i(candidates[mini(1,candidates.size()-1)]) if not candidates.is_empty() else Rect2i(2,2,8,8)
+	var cell:=room.get_center()+Vector2i(0,2);if cell==Vector2i(layout.get("exit",Vector2i.ZERO)):cell+=Vector2i.LEFT*2
+	secret_door_position=_world(cell);secret_door_available=true;secret_door_node=Node2D.new();secret_door_node.name="SecretMerchantDoor";secret_door_node.position=secret_door_position;secret_door_node.z_index=12
+	var door:=Polygon2D.new();door.polygon=PackedVector2Array([Vector2(-18,0),Vector2(-18,-34),Vector2(0,-48),Vector2(18,-34),Vector2(18,0)]);door.color=Color("#a36cce");secret_door_node.add_child(door);secret_door_node.add_child(_glow(Color("#bb7bfa"),26));actor_layer.add_child(secret_door_node)
+
+func _find_merchant_offer(merchant_id:String,offer_id:String)->Dictionary:
+	for offer:Dictionary in run_state.get_merchant_offers(merchant_id,"dungeon"):
+		if String(offer.get("offer_id",""))==offer_id:return offer
+	return {}
 
 func _complete_floor()->void:
 	if floor_reward_claimed:return

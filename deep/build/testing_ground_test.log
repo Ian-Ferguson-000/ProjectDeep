@@ -1,0 +1,5 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+Level 1 normalized direct damage/sec: standard 236.4, Pyromancer 266.7 (before Burn or ground)
+Level 20 normalized direct damage/sec: standard 2677.4, Pyromancer 3021.7 (before Burn or ground)
+Testing ground and Pyromancer: PASS

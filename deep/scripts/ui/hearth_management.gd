@@ -6,6 +6,7 @@ signal candidate_requested(candidate_id: String)
 signal time_advanced(result: Dictionary)
 signal changed
 signal closed
+signal testing_ground_requested
 
 const THEME = preload("res://scripts/ui/tavern_ui_theme.gd")
 const SECTIONS = ["Company","Armory","Expeditions","Facilities","Merchants","Calendar","Reports"]
@@ -25,6 +26,7 @@ var body: VBoxContainer
 var tabs: HBoxContainer
 var advance_button: Button
 var next_event_button: Button
+var testing_ground_button: Button
 
 func _ready() -> void:
 	color = Color(0.015,0.012,0.009,0.94)
@@ -70,6 +72,10 @@ func _ready() -> void:
 	next_event_button.name = "AdvanceNextEventButton"
 	next_event_button.hide()
 	button(footer,"Buy 4 Supplies · 8g",_buy_supplies)
+	testing_ground_button = button(footer,"Enter testing ground",func(): testing_ground_requested.emit())
+	testing_ground_button.name = "OpenTestingGround"
+	testing_ground_button.tooltip_text = "Try every class, weapon, item, and relic with free build swapping. Your campaign is preserved."
+	testing_ground_button.hide()
 	section = initial_section
 	hide()
 
@@ -92,6 +98,8 @@ func refresh() -> void:
 		body.remove_child(child)
 		child.queue_free()
 	title_label.text = section.to_upper()
+	testing_ground_button.visible = section == "Armory"
+	testing_ground_button.disabled = campaign.expedition.active
 	advance_button.text = "Advance to Late Shift" if campaign.calendar_shift == 0 else "End Day"
 	advance_button.disabled = campaign.expedition.active or not campaign.first_company_recruited or not campaign.pending_story_event_id.is_empty() or not campaign.ending_state.is_empty()
 	next_event_button.visible = HearthCalendar.can_advance_to_next_event(campaign)

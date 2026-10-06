@@ -64,6 +64,7 @@ var pending_shop_consumables: Array[String] = []
 var enemy_defeat_counts:Dictionary={}
 var slasher_endless_mode:=false
 var slasher_campaign_boss_cleared:=false
+var slasher_merchant_interlude:=false
 var campaign: CampaignState = CampaignState.new()
 var active_character_id: String = ""
 

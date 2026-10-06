@@ -324,8 +324,15 @@ func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlaye
 	return resolved_amount
 
 func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
+	var was_dead := dead
 	var amount:=maxi(1,int(attack.get("damage",1)));var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
 	var dealt:=receive_hit(amount,push_direction*float(attack.get("knockback",0.0)),attacker,float(attack.get("hit_stun_duration",tuning.get("hit_stun_duration",0.12))),float(attack.get("screen_shake_multiplier",1.0)))
+	if dealt>0 and is_instance_valid(attacker):
+		if String(attack.get("damage_type",""))=="ice" and dead and not was_dead and is_instance_valid(attacker.mage_kit) and attacker.mage_kit.has_method("on_cold_kill"):
+			attacker.mage_kit.on_cold_kill(global_position)
+	if dealt>0 and String(attack.get("damage_type",""))=="fire" and is_inside_tree():
+		for player in get_tree().get_nodes_in_group("slasher_player"):
+			if player is SlasherPlayer and is_instance_valid(player.pyromancy) and player.get_parent()==get_parent():player.pyromancy.ignite_at(global_position,20)
 	match String(attack.get("status","")):
 		"slow":movement_slow=float(attack.get("status_strength",tuning.get("slow_multiplier",0.55)));status_time=float(attack.get("status_duration",tuning.get("slow_duration",1.5)))
 		"stagger":movement_slow=float(attack.get("status_strength",tuning.get("stagger_multiplier",0.0)));status_time=float(attack.get("status_duration",tuning.get("stagger_duration",0.45)))

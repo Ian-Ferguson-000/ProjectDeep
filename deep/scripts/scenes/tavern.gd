@@ -135,6 +135,8 @@ func _ready() -> void:
 	management.changed.connect(_hearth_changed)
 	management.time_advanced.connect(_on_time_advanced)
 	management.closed.connect(_restore_hub_focus)
+	management.testing_ground_requested.connect(func():
+		if controller != null and controller.has_method("open_testing_ground"): controller.call_deferred("open_testing_ground"))
 	get_viewport().size_changed.connect(_layout_scene)
 	_layout_scene()
 	_refresh_ui()
@@ -449,6 +451,9 @@ func _build_armory_modal() -> void:
 	armory_detail = Label.new(); armory_detail.custom_minimum_size = Vector2(0,78); armory_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; body.add_child(armory_detail)
 	var scroll := ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; body.add_child(scroll)
 	armory_list = VBoxContainer.new(); armory_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL; armory_list.add_theme_constant_override("separation",8); scroll.add_child(armory_list)
+	var testing := Button.new(); testing.name="OpenTestingGround"; testing.text="Enter testing ground"; testing.tooltip_text="Try every class, weapon, item, and relic with free build swapping."; testing.pressed.connect(func():
+		if controller != null and controller.has_method("open_testing_ground"):controller.open_testing_ground())
+	_style_button(testing); body.add_child(testing)
 	var close := Button.new(); close.text = "Close"; close.pressed.connect(_close_modal.bind(armory_backdrop)); _style_button(close); body.add_child(close)
 
 func _build_expedition_modal() -> void:
@@ -484,9 +489,11 @@ func _build_expedition_modal() -> void:
 
 func _build_results_modal() -> void:
 	results_backdrop = _modal_backdrop("RunResultsModal")
-	var body := _modal_panel(results_backdrop,"Return to the Hearth",Vector2(680,500))
-	results_text = RichTextLabel.new(); results_text.bbcode_enabled = true; results_text.fit_content = true; results_text.size_flags_vertical = Control.SIZE_EXPAND_FILL; body.add_child(results_text)
-	var close := Button.new(); close.name = "ContinueButton"; close.text = "Continue in Tavern"; close.pressed.connect(_close_modal.bind(results_backdrop)); _style_button(close); body.add_child(close)
+	var presentation := preload("res://scripts/ui/expedition_results.gd").new()
+	presentation.size = Vector2(900,620)
+	results_backdrop.add_child(presentation)
+	results_text = presentation.details
+	presentation.continue_button.pressed.connect(_close_modal.bind(results_backdrop))
 
 func _build_company_modal()->void:
 	company_backdrop=_modal_backdrop("CompanyLedgerModal")
@@ -749,6 +756,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact") and toolbar!=null and toolbar.get_child_count()>0:(toolbar.get_child(0) as Button).grab_focus()
 
 func _open_armory() -> void:
+	if _open_hearth("Armory"): return
 	for child in armory_list.get_children(): child.queue_free()
 	var first: Button
 	for gear in gear_options:
@@ -883,22 +891,11 @@ func _toggle_party_member(enabled: bool, character_id: String, dungeon_id: Strin
 	call_deferred("_select_dungeon",dungeon_id)
 
 func _show_arrival_results() -> void:
-	var summary := arrival_summary
-	var headline := String(summary.get("headline",message if not message.is_empty() else "The hearth welcomes you back."))
-	var lines: Array[String] = ["[font_size=22][color=#f0c768]%s[/color][/font_size]"%headline]
-	if not summary.is_empty() and Array(summary.get("reports",[])).is_empty():
-		lines.append("\n[b]Outcome:[/b] %s"%String(summary.get("outcome","return")).capitalize())
-		lines.append("[b]Dungeon:[/b] %s · Depth %d"%[String(summary.get("dungeon","Unknown")).capitalize(),int(summary.get("depth",0))])
-		lines.append("[b]Gold:[/b] %d   [b]Hero:[/b] %s"%[int(summary.get("gold",run_state.gold)),run_state.get_profile_summary()])
-	for report in summary.get("reports",[]):
-		lines.append("\n[b]%s[/b] · %s\nGold %d · Company share %d · Net %d" % [String(report.get("headline","Expedition return")),String(report.get("deployment_type","manual")).capitalize(),int(report.get("gold",0)),int(report.get("share",0)),int(report.get("net",0))])
-		for field in ["returned","retired","lost"]:
-			var names: Array = report.get(field,[])
-			if not names.is_empty(): lines.append("%s: %s" % [String(field).capitalize(),", ".join(names)])
-	if not String(summary.get("slasher_progression","")).is_empty(): lines.append("\n[b]Slasher Path:[/b] %s" % String(summary.slasher_progression))
-	var changes: Array = summary.get("changes",[])
-	if not changes.is_empty(): lines.append("\n[b]Progress[/b]\n• "+"\n• ".join(changes))
-	results_text.text = "\n".join(lines); _show_modal(results_backdrop,results_backdrop.find_child("ContinueButton",true,false) as Control)
+	var presentation = results_backdrop.get_child(0)
+	presentation.present(arrival_summary, run_state, message)
+	_layout_scene()
+	call_deferred("_layout_scene")
+	_show_modal(results_backdrop, presentation.continue_button)
 
 func _open_merchant_shop(merchant_id: String) -> void:
 	if activity_controller!=null:activity_controller.set_paused(true)

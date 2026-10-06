@@ -6,7 +6,7 @@ import sys
 
 p=argparse.ArgumentParser()
 p.add_argument('--godot',required=True)
-p.add_argument('tests',nargs='*',default=['visitor_contests','visitor_contests_presentation','narrative_completion','narrative_foundation','nation_arrivals','party_compatibility','dungeon_ecology','dungeon_objectives','divine_favor','world_crisis','narrative_progression','hearth_campaign','tavern_cycle','tavern_shift','tavern_shift_ui','tavern_calendar','save_compatibility','party_runtime','recruitment_generations','merchant_economy','combat_stats','class_system','multi_save','autosave_policy','tutorial_sequence','campaign_loop','tavern_activity','consumables_and_targeting','secret_dungeons'])
+p.add_argument('tests',nargs='*',default=['expedition_results','visitor_contests','visitor_contests_presentation','narrative_completion','narrative_foundation','nation_arrivals','party_compatibility','dungeon_ecology','dungeon_objectives','divine_favor','world_crisis','narrative_progression','hearth_campaign','tavern_cycle','tavern_shift','tavern_shift_ui','tavern_calendar','save_compatibility','party_runtime','recruitment_generations','merchant_economy','combat_stats','class_system','multi_save','autosave_policy','tutorial_sequence','campaign_loop','tavern_activity','consumables_and_targeting','secret_dungeons'])
 args=p.parse_args()
 root=Path(__file__).resolve().parents[1]
 failed=[]
