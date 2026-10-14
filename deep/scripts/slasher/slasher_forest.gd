@@ -16,6 +16,7 @@ const GRID_PATHFINDER:=preload("res://scripts/slasher/slasher_grid_pathfinder.gd
 const PARTY_HEALTH_PORTRAIT:=preload("res://scripts/ui/party_health_portrait.gd")
 const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
 const TUTORIAL_SEQUENCE:=preload("res://scripts/slasher/forest_tutorial_sequence.gd")
+const FOREST_TERRAIN_ART:=preload("res://scripts/slasher/slasher_forest_terrain_art.gd")
 
 @export_category("Authored map")
 @export var use_authored_layout:=false
@@ -243,8 +244,11 @@ func _build_world()->void:
 	canopy_layer=Node2D.new();canopy_layer.name="Canopy";canopy_layer.y_sort_enabled=true;canopy_layer.z_index=8;add_child(canopy_layer)
 	var cells:Dictionary=layout.cells
 	if show_generated_ground or not authored_visuals_active:
-		for value:Variant in cells:
-			var cell:Vector2i=value;var base:=SlasherForestArt.make_ground_sprite(cell,TILE);base.name="Ground_%d_%d"%[cell.x,cell.y];base.position=_world(cell);ground_layer.add_child(base)
+		if run_state.active_dungeon_id=="forest":
+			FOREST_TERRAIN_ART.build_ground(ground_layer,layout,TILE,ORIGIN)
+		else:
+			for value:Variant in cells:
+				var cell:Vector2i=value;var base:=SlasherForestArt.make_ground_sprite(cell,TILE);base.name="Ground_%d_%d"%[cell.x,cell.y];base.position=_world(cell);ground_layer.add_child(base)
 	_build_topology_walls(cells)
 	_build_decorations();_build_solid_props();_build_landmarks();_build_mist();_build_vignette()
 
@@ -254,7 +258,7 @@ func _build_topology_walls(cells:Dictionary)->void:
 
 func _build_decorations()->void:
 	for value:Variant in layout.get("decorations",[]):
-		var decoration:Dictionary=value;var sprite:=SlasherForestArt.make_sprite(String(decoration.kind));sprite.name="Decor_%s"%String(decoration.kind);sprite.position=_world(Vector2i(decoration.cell))+Vector2(decoration.offset)
+		var decoration:Dictionary=value;var kind:=String(decoration.kind);var sprite:=FOREST_TERRAIN_ART.make_decoration(kind) if run_state.active_dungeon_id=="forest" else SlasherForestArt.make_sprite(kind);sprite.name="Decor_%s"%kind;sprite.position=_world(Vector2i(decoration.cell))+Vector2(decoration.offset)
 		if bool(decoration.get("edge",false)) and String(decoration.kind).begins_with("tree"):canopy_layer.add_child(sprite)
 		else:low_decor_layer.add_child(sprite)
 

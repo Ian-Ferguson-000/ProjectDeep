@@ -3,7 +3,6 @@ extends Node2D
 const PLAYER := preload("res://scripts/slasher/slasher_player.gd")
 const DUMMY := preload("res://scripts/slasher/training_dummy.gd")
 const LIVE := preload("res://scripts/slasher/training_combatant.gd")
-const POPUP := preload("res://scripts/slasher/training_damage_popup.gd")
 const FIRE := preload("res://scripts/slasher/slasher_fire_visuals.gd")
 const PYROMANCY := preload("res://scripts/slasher/slasher_pyromancy.gd")
 const WARRIOR_KITS := preload("res://scripts/slasher/slasher_warrior_kits.gd")
@@ -35,8 +34,10 @@ var hud_timer := 0.0
 var dummy_mode := "cluster"
 var applied_items: Array[String] = []
 var damage_by_type: Dictionary = {}
-var target_popups: Dictionary = {}
-var popup_counts: Dictionary = {}
+var target_popups: Dictionary:
+	get:
+		var layer := combat_root.get_node_or_null("DamagePopups") if is_instance_valid(combat_root) else null
+		return layer.target_popups if layer != null else {}
 
 func setup(game_controller: Node) -> void:
 	controller = game_controller
@@ -194,7 +195,7 @@ func apply_build() -> void:
 
 func reset_arena() -> void:
 	if is_instance_valid(combat_root):remove_child(combat_root);combat_root.queue_free()
-	damage_by_type.clear();target_popups.clear();popup_counts.clear()
+	damage_by_type.clear()
 	combat_root=Node2D.new();combat_root.name="Combat";combat_root.z_index=10;add_child(combat_root)
 	state.current_health=state.max_health;state.class_resource=state.get_class_resource_max()
 	player=PLAYER.new();player.name="TrainingPlayer";player.setup(state);player.position=Vector2(-180,100);player.position_sanitizer=_safe_position;combat_root.add_child(player)
@@ -218,22 +219,8 @@ func reset_arena() -> void:
 	combat_root.process_mode=Node.PROCESS_MODE_DISABLED if editor.visible else Node.PROCESS_MODE_INHERIT
 	_update_hud()
 
-func _on_target_damage(amount: int, kind: String, source: String, critical: bool, target: SlasherEnemy) -> void:
+func _on_target_damage(amount: int, kind: String, _source: String, _critical: bool, _target: SlasherEnemy) -> void:
 	damage_by_type[kind]=int(damage_by_type.get(kind,0))+amount
-	var target_id := target.get_instance_id()
-	var active: Array=target_popups.get(target_id,[])
-	active=active.filter(func(reference:WeakRef):return is_instance_valid(reference.get_ref()) and not reference.get_ref().is_queued_for_deletion())
-	# Bound overlapping numbers, while keeping every hit in the damage totals.
-	while active.size()>=6:
-		var oldest: Node=active.pop_front().get_ref()
-		if is_instance_valid(oldest):oldest.queue_free()
-	var popup := POPUP.new()
-	var ordinal := int(popup_counts.get(target_id,0))
-	var lane := ordinal%3
-	popup_counts[target_id]=ordinal+1
-	popup.setup(amount,kind,source,critical,lane)
-	combat_root.add_child(popup);popup.global_position=target.global_position+Vector2((lane-1)*60,-66)
-	active.append(weakref(popup));target_popups[target_id]=active
 	_update_hud()
 
 func _safe_position(position: Vector2) -> Vector2:

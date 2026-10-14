@@ -4,6 +4,8 @@ class_name SlasherBreakableProp
 signal broken(prop:SlasherBreakableProp,kind:String,cell:Vector2i)
 signal opened(prop:SlasherBreakableProp,cell:Vector2i)
 
+const DAMAGE_POPUPS:=preload("res://scripts/slasher/slasher_damage_popups.gd")
+
 var prop_kind:="rock"
 var cell:=Vector2i.ZERO
 var health:=4
@@ -30,6 +32,7 @@ func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	if sprite!=null:
 		var tween:=create_tween();tween.tween_property(sprite,"modulate",Color(1.8,1.8,1.8,1),0.04);tween.tween_property(sprite,"modulate",Color.WHITE,0.10)
 	AudioCue.play_from(self,"impact")
+	DAMAGE_POPUPS.spawn(self,amount,String(attack.get("damage_type","physical")),String(attack.get("damage_source","")),bool(attack.get("critical",false)))
 	if health<=0:_break()
 	return amount
 

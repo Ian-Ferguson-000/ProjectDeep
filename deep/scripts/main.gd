@@ -263,12 +263,6 @@ func _load_active_dungeon() -> void:
 	var dungeon := scene.instantiate(); current_scene = dungeon; dungeon.setup(self, run_state); add_child(dungeon)
 
 func complete_slasher_forest_floor() -> void:
-	if campaign.expedition.tutorial_run:
-		if run_state.current_floor < run_state.max_floors:
-			_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
-		else:
-			return_to_tavern("victory", "Alden defeats the Briarway's guardian and carries its final haul home.")
-		return
 	var cycle_boss:bool=run_state.is_slasher_boss_floor();var first_boss:bool=cycle_boss and not run_state.slasher_campaign_boss_cleared;var favor_logs:Array[String]=[]
 	# Campaign credit is awarded exactly once. Endless floors do not repeatedly grant dungeon-clear credit or merchant favor.
 	if not run_state.slasher_endless_mode:favor_logs=run_state.record_dungeon_floor_clear("forest",run_state.current_floor,first_boss)

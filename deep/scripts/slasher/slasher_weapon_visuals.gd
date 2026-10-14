@@ -104,4 +104,3 @@ static func telegraph(canvas: Node2D, origin: Vector2, direction: Vector2, reach
 		var angle := direction.angle();var half := deg_to_rad(degrees)*0.5
 		canvas.draw_arc(origin,reach,angle-half,angle+half,32,Color(tint,alpha),1.5,true)
 		glint(canvas,origin+direction*reach*0.6,direction,13,alpha+0.2)
-

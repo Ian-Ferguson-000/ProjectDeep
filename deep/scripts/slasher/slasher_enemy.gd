@@ -7,6 +7,7 @@ signal farmstead_effect_requested(kind:String,origin:Vector2,payload:Dictionary)
 
 const SPAWN_ACTIVATION_DELAY:=1.2
 const HOSTILE_PROJECTILE:=preload("res://scripts/slasher/slasher_hostile_projectile.gd")
+const DAMAGE_POPUPS:=preload("res://scripts/slasher/slasher_damage_popups.gd")
 
 var target:SlasherPlayer
 var pathfinder:SlasherGridPathfinder
@@ -51,6 +52,9 @@ var speed_boost_time:=0.0
 var activation_delay:=SPAWN_ACTIVATION_DELAY
 var retarget_timer:=0.0
 var damage_shield_remaining:=0.0
+var incoming_type := "physical"
+var incoming_source := ""
+var incoming_critical := false
 var guardian_burst_queue:Array[Dictionary]=[]
 var guardian_burst_index:=0
 
@@ -323,6 +327,7 @@ func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlaye
 		var damage_shake_scale:=1.0+minf(float(resolved_amount),20.0)*0.025;attacker.add_impact_shake(float(tuning.get("screen_shake_strength",4.5))*damage_shake_scale*shake_multiplier,float(tuning.get("screen_shake_duration",0.16)))
 	if behavior_id=="elite_guardian":_schedule_guardian_burst()
 	queue_redraw()
+	DAMAGE_POPUPS.spawn(self,resolved_amount,incoming_type,incoming_source,incoming_critical)
 	if health<=0:dead=true;guardian_burst_queue.clear();remove_from_group("slasher_enemy");remove_from_group("slasher_damageable");remove_from_group("slasher_wolf");defeated.emit(self,reward);queue_free()
 	return resolved_amount
 
@@ -331,7 +336,10 @@ func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	var amount:=maxi(1,int(attack.get("damage",1)));var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
 	var element:=String(attack.get("damage_type","physical"))
 	var sound_event:="impact_"+element if element in ["fire","ice","lightning","aether"] else "impact"
+	var previous := [incoming_type,incoming_source,incoming_critical]
+	incoming_type=element;incoming_source=String(attack.get("damage_source",""));incoming_critical=bool(attack.get("critical",false))
 	var dealt:=receive_hit(amount,push_direction*float(attack.get("knockback",0.0)),attacker,float(attack.get("hit_stun_duration",tuning.get("hit_stun_duration",0.12))),float(attack.get("screen_shake_multiplier",1.0)),sound_event)
+	incoming_type=previous[0];incoming_source=previous[1];incoming_critical=previous[2]
 	if dealt>0 and is_instance_valid(attacker):
 		if String(attack.get("damage_type",""))=="ice" and dead and not was_dead and is_instance_valid(attacker.mage_kit) and attacker.mage_kit.has_method("on_cold_kill"):
 			attacker.mage_kit.on_cold_kill(global_position)
