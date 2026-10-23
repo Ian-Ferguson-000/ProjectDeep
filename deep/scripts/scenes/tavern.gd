@@ -252,7 +252,7 @@ func _on_keeper_prompt(text_value:String)->void:
 
 func _build_toolbar()->void:
 	toolbar=HBoxContainer.new();toolbar.name="TavernToolbar";toolbar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE);toolbar.offset_left=190;toolbar.offset_right=-190;toolbar.offset_top=-70;toolbar.offset_bottom=-10;toolbar.alignment=BoxContainer.ALIGNMENT_CENTER;toolbar.add_theme_constant_override("separation",8);ui_root.add_child(toolbar)
-	var entries := [["Calendar","calendar",Callable(self,"_open_hearth").bind("Calendar")],["Company Ledger","ledger",Callable(self,"_open_hearth").bind("Company")],["Armory","armory",Callable(self,"_open_hearth").bind("Armory")],["Merchants","merchants",Callable(self,"_open_hearth").bind("Merchants")],["Expedition","expedition",Callable(self,"_open_hearth").bind("Expeditions")]]
+	var entries := [["Calendar","calendar",Callable(self,"_open_hearth").bind("Calendar")],["Company","roster",Callable(self,"_open_hearth").bind("Company")],["Facilities","hearth",Callable(self,"_open_hearth").bind("Facilities")],["Expedition","expedition",Callable(self,"_open_hearth").bind("Expeditions")]]
 	for entry in entries:
 		var title:=String(entry[0]);var button:=Button.new();button.name="%sToolbarButton"%title.replace(" ","");button.text=title;button.icon=TAVERN_THEME.icon(String(entry[1]));button.expand_icon=true;button.icon_alignment=HORIZONTAL_ALIGNMENT_LEFT;button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.pressed.connect(entry[2]);TAVERN_THEME.apply_button(button,title=="Expedition",14,Vector2(190 if title=="Expedition" else 150,56));toolbar.add_child(button);toolbar_buttons[title]=button
 	for index in toolbar.get_child_count():

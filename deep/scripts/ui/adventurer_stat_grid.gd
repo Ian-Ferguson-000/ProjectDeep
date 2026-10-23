@@ -69,7 +69,7 @@ func _add_row(stat: String, span: Vector2i, value_text: String, exact: bool) -> 
 		var chip := VBoxContainer.new()
 		chip.tooltip_text = tooltip
 		chip.add_theme_constant_override("separation", 2)
-		chip.custom_minimum_size = Vector2(70, 0)
+		chip.custom_minimum_size = Vector2(62, 0)
 		var line := HBoxContainer.new()
 		line.add_child(name_label)
 		var value_label := _value_label(value_text, exact, 15)
