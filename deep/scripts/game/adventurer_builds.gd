@@ -160,7 +160,7 @@ static func estimated_attributes(candidate: CandidateRecord) -> Dictionary:
 
 static func max_health_for(class_id: String, level: int, attributes: Dictionary) -> int:
 	var rule: Dictionary = Dictionary(Dictionary(GameBalance.get_base_class(class_id).get("derived",{})).get("max_health",{}))
-	var health := int(rule.get("base",1)) + (level-1) * int(rule.get("per_level",0))
+	var health := int(rule.get("base",1)) + (GameBalance.effective_level(level)-1) * int(rule.get("per_level",0))
 	var stat := String(rule.get("stat",""))
 	if not stat.is_empty():
 		var modifier := int(floori(float(int(attributes.get(stat,10)) - 10) / 2.0)) + int(rule.get("stat_offset",0))

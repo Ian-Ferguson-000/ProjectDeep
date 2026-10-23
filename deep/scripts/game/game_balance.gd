@@ -4,11 +4,13 @@ class_name GameBalance
 const PROGRESSION_PATH := "res://data/progression.json"
 const COMBAT_PATH := "res://data/combat_balance.json"
 const ENEMY_PATH := "res://data/enemy_balance.json"
-const ITEMS_PATH := "res://data/items.json"
+## Every pickup item (chests, pedestals, starter relics, merchants), grouped by
+## which classes can use it. See the how_to_edit notes at the top of the file.
+const PICKUP_ITEMS_PATH := "res://data/pickup_items.json"
+const ITEM_GROUPS := ["any_class","melee_only","ranged_only"]
 const LOOT_TABLES_PATH := "res://data/loot_tables.json"
 const CLASS_PROGRESSION_PATH := "res://data/class_progression.json"
 const CLASSES_PATH := "res://data/classes.json"
-const ITEM_EFFECTS_PATH := "res://data/item_effects.json"
 const MERCHANTS_PATH := "res://data/merchants.json"
 const CONSUMABLES_PATH := "res://data/consumables.json"
 const DUNGEONS_PATH := "res://data/dungeons.json"
@@ -16,7 +18,6 @@ const FIELD_ROOMS_PATH := "res://data/field_rooms.json"
 const SLASHER_BALANCE_PATH := "res://data/slasher_balance.json"
 const SLASHER_JOURNAL_PATH := "res://data/slasher_journal.json"
 const SLASHER_PROGRESSION_PATH := "res://data/slasher_progression.json"
-const SLASHER_ITEM_EFFECTS_PATH := "res://data/slasher_item_effects.json"
 
 static var _progression: Dictionary = {}
 static var _combat: Dictionary = {}
@@ -35,6 +36,8 @@ static var _slasher_journal: Dictionary = {}
 static var _slasher_progression: Dictionary = {}
 static var _debug_unlock_all_dungeons := false
 static var _slasher_item_effects: Dictionary = {}
+static var _class_groups: Dictionary = {}
+static var _leveling_override: Variant = null
 static var _loaded := false
 
 static func get_progression() -> Dictionary:
@@ -572,11 +575,10 @@ static func _load_all() -> void:
 	_progression = _load_json(PROGRESSION_PATH)
 	_combat = _load_json(COMBAT_PATH)
 	_enemies = _load_json(ENEMY_PATH)
-	_items = _load_json(ITEMS_PATH)
+	_load_pickup_items(_load_json(PICKUP_ITEMS_PATH))
 	_loot_tables = _load_json(LOOT_TABLES_PATH)
 	_class_progression = _load_json(CLASS_PROGRESSION_PATH)
 	_classes = _load_json(CLASSES_PATH)
-	_item_effects = _load_json(ITEM_EFFECTS_PATH)
 	_merchants = _load_json(MERCHANTS_PATH)
 	_consumables = _load_json(CONSUMABLES_PATH)
 	_dungeons = _load_json(DUNGEONS_PATH)
@@ -584,7 +586,83 @@ static func _load_all() -> void:
 	_slasher_balance = _load_json(SLASHER_BALANCE_PATH)
 	_slasher_journal = _load_json(SLASHER_JOURNAL_PATH)
 	_slasher_progression = _load_json(SLASHER_PROGRESSION_PATH)
-	_slasher_item_effects = _load_json(SLASHER_ITEM_EFFECTS_PATH)
+
+## Unpacks pickup_items.json into the shapes the rest of the game reads: the item
+## catalog (stats, durations, descriptions), the real-time combat rules, and the
+## older turn-based rules. Each item records which group it came from.
+static func _load_pickup_items(source: Dictionary) -> void:
+	var catalog: Dictionary = {}
+	var combat: Dictionary = {}
+	for group in ITEM_GROUPS:
+		var entries: Variant = source.get(group, {})
+		if not (entries is Dictionary): continue
+		for item_id in entries:
+			var authored: Dictionary = Dictionary(entries[item_id])
+			var item := {
+				"name": String(authored.get("name", item_id)),
+				"rarity": String(authored.get("rarity", "common")),
+				"duration_type": String(authored.get("lasts", "dungeon_bound")),
+				"description": String(authored.get("description", "")),
+				"modifiers": Dictionary(authored.get("stats", {})).duplicate(true),
+				"tags": Array(authored.get("tags", [])).duplicate(),
+				"icon_key": String(authored.get("icon", "")),
+				"usable_by": group,
+				"drops": bool(authored.get("drops", true)),
+			}
+			if authored.has("floors"): item["duration_floors"] = int(authored.floors)
+			var turn_based: Dictionary = Dictionary(authored.get("turn_based", {}))
+			if turn_based.has("rules_text"): item["rules_text"] = String(turn_based.rules_text)
+			if turn_based.has("effects"): item["effects"] = Array(turn_based.effects).duplicate(true)
+			catalog[String(item_id)] = item
+			if authored.get("combat") is Dictionary: combat[String(item_id)] = Dictionary(authored.combat).duplicate(true)
+	_items = {"rarities": Dictionary(source.get("rarities", {})).duplicate(true), "items": catalog}
+	_item_effects = {}
+	_slasher_item_effects = Dictionary(source.get("drop_settings", {})).duplicate(true)
+	_slasher_item_effects["items"] = combat
+	_class_groups = Dictionary(source.get("class_groups", {})).duplicate(true)
+
+## "melee" or "ranged" for a class, from pickup_items.json class_groups.
+static func get_class_item_group(class_id: String) -> String:
+	_load_all()
+	class_id = normalize_class_id(class_id)
+	for group in _class_groups:
+		if Array(_class_groups[group]).has(class_id): return String(group)
+	return ""
+
+## Whether a class can use a pickup item. Unknown items (such as Hearth equipment
+## effects) are never restricted here.
+static func item_usable_by_class(item_id: String, class_id: String) -> bool:
+	var item: Dictionary = Dictionary(get_items().get(item_id, {}))
+	match String(item.get("usable_by", "any_class")):
+		"melee_only": return get_class_item_group(class_id) == "melee"
+		"ranged_only": return get_class_item_group(class_id) == "ranged"
+	return true
+
+## Items that may appear in chests, on pedestals, and in merchant stock for a class.
+static func get_droppable_item_ids(class_id: String = "") -> Array[String]:
+	var result: Array[String] = []
+	var items := get_items()
+	for item_id in items:
+		if not bool(Dictionary(items[item_id]).get("drops", true)): continue
+		if not class_id.is_empty() and not item_usable_by_class(String(item_id), class_id): continue
+		result.append(String(item_id))
+	return result
+
+## Levelling can be switched off in progression.json ("leveling_enabled"). While
+## off, no XP or levels are gained and everyone fights at level 1, so items are
+## the only upgrades. Stored levels are kept, so switching it back on restores them.
+static func leveling_enabled() -> bool:
+	if _leveling_override != null: return bool(_leveling_override)
+	_load_all()
+	return bool(_progression.get("leveling_enabled", true))
+
+## Tests and tools can force levelling on or off; pass null to use the data file.
+static func set_leveling_override(value: Variant) -> void:
+	_leveling_override = value
+
+## The level used for stats, health and upgrade unlocks.
+static func effective_level(level: int) -> int:
+	return maxi(1, level) if leveling_enabled() else 1
 
 static func _load_json(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

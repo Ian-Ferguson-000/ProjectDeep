@@ -465,7 +465,7 @@ func _member_card(member: CharacterRecord) -> void:
 	title.add_theme_constant_override("separation",8)
 	info.add_child(title)
 	title.add_child(label("%s %s" % [member.display_name,member.family_name],20,THEME.HIGHLIGHT_GOLD))
-	title.add_child(_chip("%s · Level %d" % [member.class_id.capitalize(),member.level],THEME.GOLD))
+	title.add_child(_chip(_class_label(member),THEME.GOLD))
 	title.add_child(_status_chip(member))
 	var facts := PackedStringArray([_build_name(member),member.trait_name,"Age %d" % member.age_on(campaign.calendar_day),"%d victories" % member.victories,(VisitorContestRules.learning_name(member.learning_potential) if member.learning_potential_known else "Learning pace unknown")])
 	var facts_label := label("  ·  ".join(facts),14,THEME.IVORY)
@@ -497,10 +497,13 @@ func _member_card(member: CharacterRecord) -> void:
 	var available := member.status == "available"
 	var equipment := button(actions,"Outfit",func(): member_id=member.id; show_section("Armory"))
 	equipment.tooltip_text = "Open the Armory for this adventurer."
-	var train := button(actions,"Train · %dg" % (15*member.level),func(): act(HearthFacilities.train(campaign,member.id)),available)
-	train.tooltip_text = "Pay to train them up a level. They spend two days recovering."
-	var retire := button(actions,"Retire",_confirm_retire.bind(member.id),available)
-	for small in [equipment,train,retire]: small.custom_minimum_size = Vector2(110,36)
+	var small_buttons: Array[Button] = [equipment]
+	if GameBalance.leveling_enabled():
+		var train := button(actions,"Train · %dg" % (15*member.level),func(): act(HearthFacilities.train(campaign,member.id)),available)
+		train.tooltip_text = "Pay to train them up a level. They spend two days recovering."
+		small_buttons.append(train)
+	small_buttons.append(button(actions,"Retire",_confirm_retire.bind(member.id),available))
+	for small in small_buttons: small.custom_minimum_size = Vector2(110,36)
 
 func _health_bar(member: CharacterRecord, width: int = 180) -> HBoxContainer:
 	var row := HBoxContainer.new()
@@ -551,6 +554,9 @@ func _arrival_card(candidate: CandidateRecord) -> void:
 	row.add_child(side)
 	side.add_child(label("Signing fee %dg" % member.signing_fee if member.signing_fee > 0 else "No signing fee",14,THEME.GOLD))
 	button(side,"Meet and assess",func(): hide(); candidate_requested.emit(candidate.id))
+
+func _class_label(member: CharacterRecord) -> String:
+	return "%s · Level %d" % [member.class_id.capitalize(),member.level] if GameBalance.leveling_enabled() else member.class_id.capitalize()
 
 func _build_name(member: CharacterRecord) -> String:
 	return AdventurerBuilds.build_name(member.stat_build_id) if not member.stat_build_id.is_empty() else "Adventurer"
@@ -656,7 +662,7 @@ func armory_page() -> void:
 	var summary_info := VBoxContainer.new()
 	summary_row.add_child(summary_info)
 	summary_info.add_child(label("%s %s" % [member.display_name,member.family_name],18,THEME.HIGHLIGHT_GOLD))
-	summary_info.add_child(label("%s · Level %d" % [member.class_id.capitalize(),member.level],14,THEME.IVORY))
+	summary_info.add_child(label(_class_label(member),14,THEME.IVORY))
 	summary_info.add_child(_health_bar(member,110))
 	if locked: summary_info.add_child(label("Away · loadout locked",13,Color("e7b45a")))
 	_heading("Loadout","",loadout_column)
@@ -787,7 +793,7 @@ func expedition_page() -> void:
 		row.add_theme_constant_override("separation",8)
 		party.add_child(row)
 		var check := CheckBox.new()
-		check.text = "%s · %s L%d" % [member.display_name,member.class_id.capitalize(),member.level]
+		check.text = "%s · %s" % [member.display_name,_class_label(member)]
 		check.add_theme_font_size_override("font_size",15)
 		_style_check(check)
 		check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -881,11 +887,13 @@ func facilities_page() -> void:
 		content.add_child(label("CURRENT" if current else ("BUILT" if reached else "TIER %d" % (rank+1)),11,THEME.GOLD if current else THEME.MUTED))
 		content.add_child(label(String(tier.name),16,THEME.HIGHLIGHT_GOLD if reached else THEME.MUTED))
 		content.add_child(label("%d rooms · %d slots" % [tier.capacity,tier.expedition_slots],13,THEME.IVORY if reached else THEME.MUTED))
-		content.add_child(label("Recruits L%d–%d" % [tier.recruit_levels[0],tier.recruit_levels[1]],13,THEME.IVORY if reached else THEME.MUTED))
+		if GameBalance.leveling_enabled(): content.add_child(label("Recruits L%d–%d" % [tier.recruit_levels[0],tier.recruit_levels[1]],13,THEME.IVORY if reached else THEME.MUTED))
 	_heading("Improvements","Commissioned work finishes after a few days")
 	var grid := _grid(2)
 	var branches: Array = ["roster_services"]+HearthCatalog.data().facilities.keys()
 	for branch in branches:
+		# Training only raises levels, so it is hidden while levelling is switched off.
+		if branch == "replacement_quality" and not GameBalance.leveling_enabled(): continue
 		var definition: Dictionary=HearthCatalog.data().facilities.get(branch,{"name":"Expand the Hearth","description":"Build the next authored wing and increase company capacity."})
 		var cost := HearthFacilities.quote(campaign,branch)
 		var rank := int(campaign.tavern_upgrades.get(branch,0))

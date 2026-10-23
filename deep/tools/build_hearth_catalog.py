@@ -3,7 +3,9 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-legacy = json.loads((ROOT / 'data/items.json').read_text())['items']
+_pickups = json.loads((ROOT / 'data/pickup_items.json').read_text())
+# Pickup items now live in one file grouped by class; flatten back to the old shape.
+legacy = {key: dict(value, duration_type=value.get('lasts', 'dungeon_bound')) for group in ('any_class', 'melee_only', 'ranged_only') for key, value in _pickups.get(group, {}).items()}
 items = {}
 rarities = ['common', 'uncommon', 'rare', 'legendary']
 sources = ['forest', 'ashen_farmstead', 'crypt', 'ember_foundry']

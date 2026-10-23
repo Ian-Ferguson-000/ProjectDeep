@@ -32,6 +32,7 @@ static func purchase(c: CampaignState, branch: String) -> Dictionary:
 static func train(c: CampaignState, id: String) -> Dictionary:
 	var member := c.character(id)
 	if member == null or member.status != CharacterRecord.STATUS_AVAILABLE: return HearthArmory.fail("That adventurer is not ready to train.")
+	if not GameBalance.leveling_enabled(): return HearthArmory.fail("Training is closed while levelling is switched off. Items are the way to grow stronger.")
 	var ceiling := mini(20, 2 + c.establishment_tier*4 + int(c.tavern_upgrades.replacement_quality))
 	if int(c.tavern_upgrades.replacement_quality) == 0 or member.level >= ceiling: return HearthArmory.fail("Improve Training to develop this adventurer further.")
 	var cost := 15*member.level

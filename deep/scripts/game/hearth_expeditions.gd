@@ -163,7 +163,7 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 		if outcome == "victory":
 			member.victories += 1
 			c.successful_levels += member.level
-			if e.deployment_type == "automated":
+			if e.deployment_type == "automated" and GameBalance.leveling_enabled():
 				var earned_xp := VisitorContestRules.scale_xp(50*e.floor,member.learning_potential)
 				member.xp += earned_xp
 				member.progression["total_xp"] = int(member.progression.get("total_xp",member.xp-earned_xp)) + earned_xp

@@ -27,6 +27,9 @@ func play(game:VisitorContest)->void:
 	check(game.phase=="playing","Countdown did not start gameplay")
 
 func run()->void:
+	# Levelling is switched off in progression.json for now; this test covers the
+	# dormant levelling rules so they keep working when it is switched back on.
+	GameBalance.set_leveling_override(true)
 	root.size=Vector2i(1280,720)
 	var state:=MemoryState.new();state.campaign.apply_post_tutorial_state("victory")
 	var campaign:=state.campaign;var candidate:=campaign.get_candidates()[0]

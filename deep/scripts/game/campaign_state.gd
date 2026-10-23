@@ -407,6 +407,7 @@ func _generate_character(class_id:String="") -> CharacterRecord:
 		var hidden_id:=String(Dictionary(trait_pool[hidden_rng.randi_range(0,trait_pool.size()-1)]).get("id",""));if not hidden_id.is_empty() and hidden_id!=character.trait_id:character.hidden_traits.append(hidden_id)
 	var band: Array = HearthCatalog.tier(establishment_tier).recruit_levels
 	character.level = mini(20, int(band[0])+int(tavern_upgrades.replacement_quality) if establishment_tier == 0 else identity_rng.randi_range(int(band[0]),int(band[1]))+int(tavern_upgrades.replacement_quality))
+	if not GameBalance.leveling_enabled(): character.level = 1
 	character.progression["level"] = character.level
 	character.xp = int(GameBalance.get_progression().xp_thresholds[character.level])
 	character.progression["xp"] = character.xp

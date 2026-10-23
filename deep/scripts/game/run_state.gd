@@ -686,6 +686,8 @@ func get_merchant_offers(merchant_id: String, location: String) -> Array[Diction
 			continue
 		var offer: Dictionary = value.duplicate(true)
 		var offer_id := String(offer.get("offer_id", ""))
+		if String(offer.get("kind", "")) == "item" and not _item_offer_allowed(String(offer.get("item_id", ""))):
+			continue
 		var offer_location := String(offer.get("location", "both"))
 		var location_matches := offer_location == "both" or offer_location == location or (location == "tavern" and offer_location == "favor")
 		if not location_matches:
@@ -784,7 +786,7 @@ func get_profile_summary() -> String:
 func gain_xp(amount: int, reason: String) -> Array[String]:
 	_ensure_profiles()
 	var logs: Array[String] = []
-	if amount <= 0:
+	if amount <= 0 or not GameBalance.leveling_enabled():
 		return logs
 	var profile: Dictionary = _active_profile()
 	var member := get_active_character()
@@ -936,6 +938,7 @@ func consume_pending_level_logs() -> Array[String]:
 	return logs
 
 func has_pending_progression_choice() -> bool:
+	if not GameBalance.leveling_enabled(): return false
 	var pending: Array = _profile_array(_active_profile(), "pending_progression_choices")
 	return not pending.is_empty()
 
@@ -1018,7 +1021,7 @@ func get_progression_flag_value(flag_id: String) -> int:
 func reconcile_slasher_progression()->Array[String]:
 	_ensure_profiles();var logs:Array[String]=[];var profile:Dictionary=_active_profile();var pending:Array=_profile_array(profile,"pending_slasher_progression_choices")
 	if not pending.is_empty():return logs
-	var level:int=int(profile.get("level",1));var class_id:String=String(profile.get("class_id",selected_class_id))
+	var level:int=GameBalance.effective_level(int(profile.get("level",1)));var class_id:String=String(profile.get("class_id",selected_class_id))
 	for milestone:int in [3,5,7,9,10,11,13,15,17,19,20]:
 		if milestone>level:break
 		if milestone in [10,15,20]:
@@ -1034,6 +1037,7 @@ func reconcile_slasher_progression()->Array[String]:
 	hero_profiles[_profile_key()]=profile;return logs
 
 func has_pending_slasher_progression_choice()->bool:
+	if not GameBalance.leveling_enabled():return false
 	return not _profile_array(_active_profile(),"pending_slasher_progression_choices").is_empty()
 
 func get_pending_slasher_progression_choice()->Dictionary:
@@ -1178,7 +1182,7 @@ func _active_profile() -> Dictionary:
 
 func _recalculate_profile(profile: Dictionary) -> void:
 	var class_id: String = String(profile["class_id"])
-	var level: int = int(profile["level"])
+	var level: int = GameBalance.effective_level(int(profile["level"]))
 	var base_stats_value: Variant = profile.get("base_stats", {})
 	var base_stats: Dictionary = base_stats_value if base_stats_value is Dictionary else {}
 	var stats: Dictionary = base_stats.duplicate(true)
@@ -1320,7 +1324,7 @@ func _enqueue_progression_choices(profile: Dictionary, level: int) -> Array[Stri
 
 func _enqueue_missing_progression_choices(profile: Dictionary) -> Array[String]:
 	var logs: Array[String] = []
-	var level: int = int(profile.get("level", 1))
+	var level: int = GameBalance.effective_level(int(profile.get("level", 1)))
 	for gained_level in range(2, level + 1):
 		logs.append_array(_enqueue_progression_choices(profile, gained_level))
 	return logs
@@ -1518,17 +1522,24 @@ func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
 		if not order.has(String(rarity)) or order.find(String(rarity))>maximum_index:result[rarity]=0
 	return result
 
+## Pickup items the active hero could actually use: in the drop pool and allowed
+## for their class group (pickup_items.json any_class / melee_only / ranged_only).
+func _item_offer_allowed(item_id: String) -> bool:
+	var item: Dictionary = Dictionary(GameBalance.get_items().get(item_id, {}))
+	if item.is_empty(): return true
+	return bool(item.get("drops", true)) and GameBalance.item_usable_by_class(item_id, selected_class_id)
+
 func _item_ids_for_rarity(items: Dictionary, rarity: String) -> Array[String]:
 	var ids: Array[String] = []
 	for item_id in items.keys():
 		var item_value: Variant = items[item_id]
-		if item_value is Dictionary and not GameBalance.is_favor_exclusive_item(String(item_id)) and String(item_value.get("rarity", "common")) == rarity:
+		if item_value is Dictionary and _item_offer_allowed(String(item_id)) and not GameBalance.is_favor_exclusive_item(String(item_id)) and String(item_value.get("rarity", "common")) == rarity:
 			ids.append(String(item_id))
 	return ids
 
 func _all_item_ids(items: Dictionary) -> Array[String]:
 	var ids: Array[String] = []
 	for item_id in items.keys():
-		if not GameBalance.is_favor_exclusive_item(String(item_id)):
+		if _item_offer_allowed(String(item_id)) and not GameBalance.is_favor_exclusive_item(String(item_id)):
 			ids.append(String(item_id))
 	return ids

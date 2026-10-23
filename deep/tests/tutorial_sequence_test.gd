@@ -13,6 +13,9 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	# Levelling is switched off in progression.json for now; this test covers the
+	# dormant levelling rules so they keep working when it is switched back on.
+	GameBalance.set_leveling_override(true)
 	var failures: Array[String] = []
 	var tutorial_campaign := CampaignState.new()
 	var alden := tutorial_campaign.create_tutorial_adventurer()

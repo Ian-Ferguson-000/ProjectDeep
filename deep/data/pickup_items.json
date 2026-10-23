@@ -1,0 +1,633 @@
+{
+  "how_to_edit": [
+    "Every item the party can pick up in a dungeon (chests, treasure pedestals, the starter relic, merchants) lives in this file.",
+    "Items are grouped by who can use them: any_class, melee_only, ranged_only. Move an item between groups to change who can find it.",
+    "class_groups says which classes count as melee and ranged.",
+    "To add an item, copy an existing block, give it a new unique id (lowercase_with_underscores) and change its fields.",
+    "name: shown to players. rarity: common, uncommon, rare, very_rare or legendary.",
+    "lasts: permanent (kept between expeditions), dungeon_bound or run (both lost when the expedition ends), or temporary (lasts 'floors' floors).",
+    "stats: flat bonuses such as attack_bonus, spell_power, spell_potency, defense, armor_class, max_health, movement, initiative_modifier, potion_heal_bonus, gold_bonus_percent.",
+    "combat (optional): how the item behaves in real-time combat. 'rules' is the text players read; 'trigger' is passive, hit, potion_use, floor_entry, action_complete, lethal_damage and so on; other numbers tune the effect.",
+    "drops: false keeps an item out of chests and shops without deleting it. note: a reminder for the team, not shown in game.",
+    "turn_based (optional): rules for the older turn-based combat mode. Leave it alone unless you are working on that mode.",
+    "Run tests/pickup_items_test.gd after editing to check the file."
+  ],
+  "class_groups": {
+    "melee": ["warrior", "tank", "rogue"],
+    "ranged": ["mage", "healer", "summoner"]
+  },
+  "rarities": {
+    "common": {"name": "Common", "color": "#c9c2aa"},
+    "uncommon": {"name": "Uncommon", "color": "#6fd082"},
+    "rare": {"name": "Rare", "color": "#65a7ff"},
+    "very_rare": {"name": "Very Rare", "color": "#c17cff"},
+    "legendary": {"name": "Legendary", "color": "#ffb24d"}
+  },
+  "drop_settings": {
+    "choice_count": 3,
+    "endless_rarity": {"shift_per_cycle": 4, "legendary_per_cycle": 2, "legendary_weight_cap": 15},
+    "timing_defaults": {"once_per_turn_seconds": 2.5, "timed_buff_seconds": 5.0, "periodic_seconds": 8.0}
+  },
+  "any_class": {
+    "charred_horseshoe": {
+      "name": "Charred Horseshoe",
+      "rarity": "common",
+      "lasts": "run",
+      "description": "A smoke-black iron shoe that still remembers the open road.",
+      "stats": {"movement": 1},
+      "tags": ["farmstead", "movement"],
+      "icon": "movement",
+      "turn_based": {"rules_text": "After crossing a Field-room doorway, gain +1 Evasion until your next turn.", "effects": [{"trigger": "field_room_enter", "modifiers": {"evasion": 1}}]}
+    },
+
+    "healers_brooch": {
+      "name": "Healer's Brooch",
+      "rarity": "common",
+      "lasts": "dungeon_bound",
+      "description": "Silver leaves unfold when restorative draughts touch the tongue.",
+      "stats": {"potion_heal_bonus": 2},
+      "combat": {"rules": "Slasher: healing potions restore additional health.", "trigger": "potion_use"},
+      "tags": ["healing", "utility"],
+      "icon": "potion",
+      "turn_based": {"rules_text": "Drinking a potion also clears Slow and restores 1 class resource.", "effects": [{"trigger": "potion", "cleanse": "slow", "resource": 1}]}
+    },
+
+    "ironroot_ring": {
+      "name": "Ironroot Ring",
+      "rarity": "common",
+      "lasts": "dungeon_bound",
+      "description": "Iron-bound rootwood anchors flesh against forced movement.",
+      "stats": {"max_health": 2, "threshold": 1},
+      "tags": ["defense", "health"],
+      "icon": "defense",
+      "turn_based": {"rules_text": "Reduce forced movement by 1 tile and gain +1 physical Aegis.", "effects": [{"trigger": "forced_move", "reduce_tiles": 1}, {"condition": "always", "modifiers": {"aegis_physical": 1}}]}
+    },
+
+    "menders_sachet": {
+      "name": "Mender's Sachet",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 3,
+      "description": "Bitter herbs release a restorative breath when blood is first drawn.",
+      "stats": {"potion_heal_bonus": 1},
+      "tags": ["healing", "utility"],
+      "icon": "potion",
+      "turn_based": {"rules_text": "The first time you fall below half health each combat, heal 3.", "effects": [{"trigger": "cross_low_health", "heal": 3, "limit": "combat"}]}
+    },
+
+    "quickstep_charm": {
+      "name": "Quickstep Charm",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 2,
+      "description": "Seven wind-knots tighten after a committed dash.",
+      "stats": {"movement": 1},
+      "combat": {"rules": "Slasher: movement speed and mobility distance increase.", "trigger": "passive"},
+      "tags": ["movement", "utility"],
+      "icon": "move",
+      "turn_based": {"rules_text": "After using a movement ability, gain +2 Evasion until your next turn.", "effects": [{"condition": "moved", "modifiers": {"evasion": 2}}]}
+    },
+
+    "scavengers_token": {
+      "name": "Scavenger's Token",
+      "rarity": "common",
+      "lasts": "dungeon_bound",
+      "description": "The token remembers overlooked corners after a room falls silent.",
+      "stats": {"gold_bonus_percent": 10},
+      "tags": ["loot", "luck"],
+      "icon": "gold",
+      "turn_based": {"rules_text": "Clearing a floor grants 3 additional gold for each unopened chest or cache.", "effects": [{"trigger": "floor_clear", "gold_per_unopened_secret": 3}]}
+    },
+
+    "soldiers_buckle": {
+      "name": "Soldier's Buckle",
+      "rarity": "common",
+      "lasts": "dungeon_bound",
+      "description": "A drilled guard-oath steadies your stance just before a blow lands.",
+      "stats": {"armor_class": 1},
+      "combat": {"rules": "Slasher: reduce incoming damage by 3.5%.", "trigger": "passive"},
+      "tags": ["martial", "defense"],
+      "icon": "defense",
+      "turn_based": {"rules_text": "When a defensive reaction triggers, gain 1 Threshold for that attack.", "effects": [{"trigger": "reaction", "modifiers": {"threshold": 1}}]}
+    },
+
+    "windknotted_thread": {
+      "name": "Windknotted Thread",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 2,
+      "description": "A pale cord pulls its wearer toward unoccupied ground.",
+      "stats": {"initiative_modifier": 1},
+      "tags": ["movement", "speed"],
+      "icon": "move",
+      "turn_based": {"rules_text": "With no adjacent enemies, gain +1 movement and +1 Evasion.", "effects": [{"condition": "unengaged", "modifiers": {"movement": 1, "evasion": 1}}]}
+    },
+
+    "amulet_of_vigor": {
+      "name": "Amulet of Vigor",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "Green glass beats like a spare heart when yours falters.",
+      "stats": {"max_health": 4, "threshold": 1},
+      "tags": ["health"],
+      "icon": "health",
+      "turn_based": {"rules_text": "Below half health, gain another +2 Threshold.", "effects": [{"condition": "low_health", "modifiers": {"threshold": 2}}]}
+    },
+
+    "apothecarys_cup": {
+      "name": "Apothecary's Cup",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "Impossible measuring marks make every draught exact rather than merely strong.",
+      "stats": {"potion_heal_bonus": 3},
+      "tags": ["healing", "utility"],
+      "icon": "potion",
+      "turn_based": {"rules_text": "Potions cannot overheal; unused healing becomes temporary Aegis, up to 3.", "effects": [{"trigger": "overheal", "temporary_aegis_cap": 3}]}
+    },
+
+    "brambleguard_clasp": {
+      "name": "Brambleguard Clasp",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "Bronze thorns punish anything that presses into the wearer's guard.",
+      "stats": {"armor_class": 1, "max_health": 2},
+      "tags": ["defense", "health"],
+      "icon": "defense",
+      "turn_based": {"rules_text": "When a melee defensive reaction triggers, deal 1 physical damage to the attacker.", "effects": [{"trigger": "melee_reaction", "retaliate": 1, "damage_type": "physical"}]}
+    },
+
+    "cutpurses_favor": {
+      "name": "Cutpurse's Favor",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "The charm pays its bearer for precise, bloodless work.",
+      "stats": {"gold_bonus_percent": 25, "accuracy": 1},
+      "tags": ["loot", "luck"],
+      "icon": "gold",
+      "turn_based": {"rules_text": "Defeating an enemy while at full health grants 2 additional gold.", "effects": [{"trigger": "kill_at_full_health", "gold": 2}]}
+    },
+
+    "harvesters_gloves": {
+      "name": "Harvester's Gloves",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "Warding straw and copper thread guide both steel and spell through chaff.",
+      "stats": {"accuracy": 1, "penetration": 1},
+      "tags": ["farmstead", "power"],
+      "icon": "attack",
+      "turn_based": {"rules_text": "Against an enemy standing beside a destructible prop, gain +2 Accuracy.", "effects": [{"condition": "target_near_prop", "modifiers": {"accuracy": 2}}]}
+    },
+
+    "lucky_coin": {
+      "name": "Lucky Coin",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "The coin steals a little probability whenever an attack narrowly misses.",
+      "stats": {"gold_bonus_percent": 20},
+      "tags": ["loot", "luck"],
+      "icon": "gold",
+      "turn_based": {"rules_text": "Once per turn, an attack that misses by 2 or less gains +2 Accuracy.", "effects": [{"trigger": "near_miss", "accuracy": 2, "limit": "turn"}]}
+    },
+
+    "redstep_spurs": {
+      "name": "Redstep Spurs",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "The spurs bite only when their wearer commits to a line of attack.",
+      "stats": {"movement": 1, "initiative_modifier": 1},
+      "tags": ["movement", "speed"],
+      "icon": "move",
+      "turn_based": {"rules_text": "After moving at least 2 tiles, gain +2 Attack Power on the next martial attack.", "effects": [{"condition": "moved_far", "modifiers": {"attack_power": 2}}]}
+    },
+
+    "wayfinders_compass": {
+      "name": "Wayfinder's Compass",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "Its needle points toward the safest useful square.",
+      "stats": {"initiative_modifier": 2},
+      "tags": ["movement", "utility"],
+      "icon": "move",
+      "turn_based": {"rules_text": "Movement abilities gain +1 Range; landing unengaged restores 1 class resource.", "effects": [{"condition": "movement_ability", "modifiers": {"range": 1}}, {"trigger": "land_unengaged", "resource": 1}]}
+    },
+
+    "blackoak_ward": {
+      "name": "Blackoak Ward",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "Blackoak is too dense to yield to weak blows.",
+      "stats": {"armor_class": 2, "threshold": 2, "max_health": 2},
+      "tags": ["defense", "health"],
+      "icon": "defense",
+      "turn_based": {"rules_text": "Physical damage stopped by Threshold restores 1 class resource.", "effects": [{"trigger": "threshold_block", "damage_type": "physical", "resource": 1}]}
+    },
+
+    "boots_of_the_hare": {
+      "name": "Boots of the Hare",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "A stored spring releases whenever danger closes from several sides.",
+      "stats": {"movement": 1, "evasion": 1},
+      "tags": ["movement", "speed"],
+      "icon": "move",
+      "turn_based": {"rules_text": "While adjacent to two or more enemies, gain +2 Evasion.", "effects": [{"condition": "surrounded", "modifiers": {"evasion": 2}}]}
+    },
+
+    "gilded_beetle": {
+      "name": "Gilded Beetle",
+      "rarity": "rare",
+      "lasts": "permanent",
+      "description": "The jeweled beetle wakes whenever fortune produces an excess.",
+      "stats": {"gold_bonus_percent": 40},
+      "tags": ["loot", "luck"],
+      "icon": "gold",
+      "turn_based": {"rules_text": "Gold pickups of 10 or more restore 1 class resource.", "effects": [{"trigger": "large_gold_pickup", "resource": 1, "minimum": 10}]}
+    },
+
+    "moonleaf_cloak": {
+      "name": "Moonleaf Cloak",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "Moonleaf fibers blur at the edge of an attacker's vision.",
+      "stats": {"evasion": 2, "initiative_modifier": 1},
+      "tags": ["defense", "speed"],
+      "icon": "defense",
+      "turn_based": {"rules_text": "While Hidden or before your first attack, gain +2 Armor Class.", "effects": [{"condition": "unrevealed", "modifiers": {"armor_class": 2}}]}
+    },
+
+    "pilgrims_greaves": {
+      "name": "Pilgrim's Greaves",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "The greaves harden with every deliberate step.",
+      "stats": {"movement": 1, "armor_class": 1},
+      "tags": ["movement", "defense"],
+      "icon": "move",
+      "turn_based": {"rules_text": "After moving at least 2 tiles, gain +2 Threshold until your next turn.", "effects": [{"condition": "moved_far", "modifiers": {"threshold": 2}}]}
+    },
+
+    "saints_phial": {
+      "name": "Saint's Phial",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "The empty phial preserves the echo of healing for the next wound.",
+      "stats": {"max_health": 3, "potion_heal_bonus": 3},
+      "tags": ["healing", "health"],
+      "icon": "potion",
+      "turn_based": {"rules_text": "After drinking a potion, gain 2 Aegis against the next damage type received.", "effects": [{"trigger": "potion", "temporary_aegis": 2}]}
+    },
+
+    "war_scholars_codex": {
+      "name": "War Scholar's Codex",
+      "rarity": "rare",
+      "lasts": "permanent",
+      "description": "Margins compare monster anatomy with diagrams of battle magic.",
+      "stats": {"xp_bonus_percent": 20, "accuracy": 1},
+      "tags": ["xp", "martial", "arcane"],
+      "icon": "mode",
+      "turn_based": {"rules_text": "After first hitting an enemy, gain +1 Attack Power and Spell Potency against that enemy.", "effects": [{"condition": "studied_target", "modifiers": {"attack_power": 1, "spell_potency": 1}}]}
+    },
+
+    "deepdelvers_lantern": {
+      "name": "Deepdelver's Lantern",
+      "rarity": "very_rare",
+      "lasts": "dungeon_bound",
+      "description": "Pale flame reveals danger and treasure in equal measure.",
+      "stats": {"gold_bonus_percent": 40, "xp_bonus_percent": 20},
+      "tags": ["loot", "xp", "utility"],
+      "icon": "gold",
+      "turn_based": {"rules_text": "Against undiscovered enemy types, gain +2 Accuracy and +2 Armor Class.", "effects": [{"condition": "first_enemy_type", "modifiers": {"accuracy": 2, "armor_class": 2}}]}
+    },
+
+    "kingsroad_aegis": {
+      "name": "Kingsroad Aegis",
+      "rarity": "very_rare",
+      "lasts": "permanent",
+      "description": "A royal ward turns the first wound of every battle into a glancing blow.",
+      "stats": {"armor_class": 2, "threshold": 1, "max_health": 4},
+      "tags": ["defense", "health"],
+      "icon": "defense",
+      "turn_based": {"rules_text": "The first damaging hit each combat gains 3 Aegis against its damage type.", "effects": [{"condition": "first_incoming_hit", "modifiers": {"aegis_all": 3}}]}
+    },
+
+    "sunward_periapt": {
+      "name": "Sunward Periapt",
+      "rarity": "very_rare",
+      "lasts": "permanent",
+      "description": "Sunlight pools in the periapt and refuses to let healing go to waste.",
+      "stats": {"max_health": 6, "potion_heal_bonus": 3, "aegis_necrotic": 2},
+      "tags": ["health", "healing"],
+      "icon": "health",
+      "turn_based": {"rules_text": "Healing at full health grants 2 temporary Aegis against all damage.", "effects": [{"trigger": "overheal", "temporary_aegis": 2}]}
+    },
+
+    "aegis_of_the_last_king": {
+      "name": "Aegis of the Last King",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "A broken royal seal remembers a kingdom that refused every kind of ruin.",
+      "stats": {"armor_class": 4, "threshold": 3, "max_health": 12, "aegis_all": 2},
+      "combat": {"rules": "Slasher: gain heavy mitigation and survive one lethal hit per floor.", "trigger": "lethal_damage", "once_per_floor": true},
+      "tags": ["legendary", "defense", "health"],
+      "icon": "defense",
+      "turn_based": {"rules_text": "A triggered reaction doubles Aegis against that attack and heals 2 afterward.", "effects": [{"trigger": "reaction", "double_aegis": true, "heal": 2}]}
+    },
+
+    "cinderheart_locket": {
+      "name": "Cinderheart Locket",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "The Farmstead's last clean ember flares when its bearer is nearly spent.",
+      "stats": {"max_health": 10, "armor_class": 2, "potion_heal_bonus": 2},
+      "tags": ["farmstead", "health", "defense"],
+      "icon": "health",
+      "turn_based": {"rules_text": "Below half health, gain 2 fire Aegis and restore 1 additional health from consumables.", "effects": [{"condition": "low_health", "modifiers": {"aegis_fire": 2, "potion_heal_bonus": 1}}]}
+    },
+
+    "fortune_eaters_idol": {
+      "name": "Fortune-Eater's Idol",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "The idol consumes lucky outcomes and returns them as escalating rewards.",
+      "stats": {"gold_bonus_percent": 80, "xp_bonus_percent": 35, "accuracy": 1},
+      "tags": ["legendary", "loot", "xp", "luck"],
+      "icon": "gold",
+      "turn_based": {"rules_text": "Natural 20s grant 3 gold; natural 1s consume 3 gold to reroll when possible.", "effects": [{"trigger": "critical_hit", "gold": 3}, {"trigger": "critical_miss", "spend_gold_reroll": 3}]}
+    },
+
+    "heartwood_crown": {
+      "name": "Heartwood Crown",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "Living roots harden when their bearer refuses to move.",
+      "stats": {"max_health": 10, "threshold": 2},
+      "combat": {"rules": "Slasher: recover 2 health on each floor entry.", "trigger": "floor_entry", "heal": 2},
+      "tags": ["legendary", "health"],
+      "icon": "health",
+      "turn_based": {"rules_text": "If you have not moved this turn, gain +3 Armor Class and +2 Threshold.", "effects": [{"condition": "stationary", "modifiers": {"armor_class": 3, "threshold": 2}}]}
+    },
+
+    "starfallen_sigil": {
+      "name": "Starfallen Sigil",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "A patient silver star aligns weapon and spell trajectories alike.",
+      "stats": {"accuracy": 3, "penetration": 2, "initiative_modifier": 2},
+      "combat": {"rules": "Slasher: specials create a 45% echo impact once every 4 seconds.", "trigger": "action_complete", "echo_multiplier": 0.45, "internal_cooldown": 4.0},
+      "tags": ["legendary", "power"],
+      "icon": "special",
+      "turn_based": {"rules_text": "On a natural 20, restore 1 class resource.", "effects": [{"trigger": "critical_hit", "resource": 1}]}
+    }
+  },
+  "melee_only": {
+    "drillmasters_whistle": {
+      "name": "Drillmaster's Whistle",
+      "rarity": "common",
+      "lasts": "dungeon_bound",
+      "description": "One sharp note turns a successful defense into a practiced lesson.",
+      "stats": {"xp_bonus_percent": 8},
+      "drops": false,
+      "note": "Only grants XP, which does nothing while levelling is switched off.",
+      "tags": ["xp", "martial"],
+      "icon": "mode",
+      "turn_based": {"rules_text": "A triggered defensive reaction grants 2 bonus XP and 1 class resource.", "effects": [{"trigger": "reaction", "xp": 2, "resource": 1}]}
+    },
+
+    "keen_edge_oil": {
+      "name": "Keen Edge Oil",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 2,
+      "description": "Its first clean cut parts armor before the oil burns away.",
+      "stats": {"penetration": 1},
+      "combat": {"rules": "Slasher: gain attack power for its remaining floors.", "trigger": "passive"},
+      "tags": ["martial", "weapon"],
+      "icon": "attack",
+      "turn_based": {"rules_text": "Your first attack each combat gains +2 Penetration and +1 Attack Power.", "effects": [{"condition": "first_attack", "modifiers": {"penetration": 2, "attack_power": 1}}]}
+    },
+
+    "sparkwire_wrap": {
+      "name": "Sparkwire Wrap",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 2,
+      "description": "Copper wire discharges into the first target struck each round.",
+      "stats": {"accuracy": 1},
+      "tags": ["martial", "weapon"],
+      "icon": "attack",
+      "turn_based": {"rules_text": "Your first hit each round deals 2 additional lightning damage.", "effects": [{"trigger": "first_hit_round", "bonus_damage": 2, "damage_type": "lightning"}]}
+    },
+
+    "duelist_gloves": {
+      "name": "Duelist Gloves",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "The gloves guide a blade toward whichever opening appears first.",
+      "stats": {"accuracy": 1},
+      "tags": ["martial", "speed"],
+      "icon": "attack",
+      "turn_based": {"rules_text": "Against an isolated enemy, gain +2 Accuracy and +1 Penetration.", "effects": [{"condition": "isolated_target", "modifiers": {"accuracy": 2, "penetration": 1}}]}
+    },
+
+    "veterans_whetstone": {
+      "name": "Veteran's Whetstone",
+      "rarity": "uncommon",
+      "lasts": "temporary",
+      "floors": 3,
+      "description": "A scarred whetstone favors repeated blows against the same foe.",
+      "stats": {"attack_power": 1, "penetration": 1},
+      "tags": ["martial", "weapon"],
+      "icon": "attack",
+      "turn_based": {"rules_text": "Consecutive attacks against the same target gain +1 Accuracy and +1 Penetration.", "effects": [{"condition": "repeated_target", "modifiers": {"accuracy": 1, "penetration": 1}}]}
+    },
+
+    "giant_bane_grip": {
+      "name": "Giant-Bane Grip",
+      "rarity": "rare",
+      "lasts": "permanent",
+      "description": "The grip tightens around weapons raised against oversized or elite prey.",
+      "stats": {"attack_power": 2, "max_health": 3},
+      "combat": {"rules": "Slasher: deal 16% more damage to elites and bosses.", "trigger": "hit", "elite_damage_multiplier": 1.16},
+      "tags": ["martial", "weapon"],
+      "icon": "attack",
+      "turn_based": {"rules_text": "Against elite and boss enemies, gain +3 Penetration.", "effects": [{"condition": "elite_target", "modifiers": {"penetration": 3}}]}
+    },
+
+    "runebound_bracer": {
+      "name": "Runebound Bracer",
+      "rarity": "rare",
+      "lasts": "permanent",
+      "description": "A warm rune divides its loyalty between blade and guard.",
+      "stats": {"attack_power": 2, "armor_class": 1},
+      "tags": ["martial", "defense"],
+      "icon": "attack",
+      "turn_based": {"rules_text": "After a defensive reaction triggers, your next martial attack gains +2 Accuracy.", "effects": [{"trigger": "reaction", "next_attack": {"accuracy": 2}}]}
+    },
+
+    "titanblood_torc": {
+      "name": "Titanblood Torc",
+      "rarity": "very_rare",
+      "lasts": "permanent",
+      "description": "A bronze second pulse turns pain into crushing force.",
+      "stats": {"max_health": 9, "attack_power": 2, "threshold": 1},
+      "tags": ["health", "martial"],
+      "icon": "health",
+      "turn_based": {"rules_text": "Below half health, gain +3 Attack Power but lose 1 Evasion.", "effects": [{"condition": "low_health", "modifiers": {"attack_power": 3, "evasion": -1}}]}
+    },
+
+    "wyvernscale_mantle": {
+      "name": "Wyvernscale Mantle",
+      "rarity": "very_rare",
+      "lasts": "permanent",
+      "description": "Overlapping scales turn poison and blades in different ways.",
+      "stats": {"armor_class": 2, "aegis_physical": 2, "aegis_poison": 4},
+      "tags": ["defense", "martial"],
+      "icon": "defense",
+      "turn_based": {"rules_text": "When poison damage is fully absorbed, gain +2 Attack Power next turn.", "effects": [{"trigger": "absorbed_attack", "damage_type": "poison", "next_attack": {"attack_power": 2}}]}
+    },
+
+    "worldbreaker_gauntlet": {
+      "name": "Worldbreaker Gauntlet",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "Its runes turn excess force into fractures that outlast the blow.",
+      "stats": {"attack_power": 5, "penetration": 3, "threshold": 2},
+      "combat": {"rules": "Slasher: impacts gain power, knockback, and area.", "trigger": "hit", "area_radius_bonus": 20.0},
+      "tags": ["legendary", "martial", "power"],
+      "icon": "attack",
+      "turn_based": {"rules_text": "Martial hits reduce the target's Threshold by 1 for the rest of combat.", "effects": [{"trigger": "martial_hit", "shred_threshold": 1}]}
+    }
+  },
+  "ranged_only": {
+    "chalk_rune_tablet": {
+      "name": "Chalk Rune Tablet",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 2,
+      "description": "The rune can be broken to force a spell through resistant wards.",
+      "stats": {"spell_potency": 1},
+      "tags": ["arcane", "spell"],
+      "icon": "spell",
+      "turn_based": {"rules_text": "Your first spell each floor gains +3 Penetration.", "effects": [{"condition": "first_spell_floor", "modifiers": {"penetration": 3}}]}
+    },
+
+    "embershard_focus": {
+      "name": "Embershard Focus",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 2,
+      "description": "A disposable ember lens stretches fire beyond its natural reach.",
+      "stats": {"spell_potency": 1, "aegis_fire": 1},
+      "combat": {"rules": "Slasher: gain spell power for its remaining floors.", "trigger": "passive"},
+      "tags": ["arcane", "spell"],
+      "icon": "spell",
+      "turn_based": {"rules_text": "Fire attacks gain +1 Range and +1 Spell Potency.", "effects": [{"condition": "damage_type", "damage_type": "fire", "modifiers": {"range": 1, "spell_potency": 1}}]}
+    },
+
+    "scholars_lens": {
+      "name": "Scholar's Lens",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "Every enemy defense becomes a lesson written in reflected light.",
+      "stats": {"xp_bonus_percent": 15},
+      "drops": false,
+      "note": "Only grants XP, which does nothing while levelling is switched off.",
+      "tags": ["xp", "arcane"],
+      "icon": "mode",
+      "turn_based": {"rules_text": "After an attack is stopped by Threshold or Aegis, gain +1 Penetration for the next attack.", "effects": [{"trigger": "absorbed_attack", "next_attack": {"penetration": 1}}]}
+    },
+
+    "stormglass_bead": {
+      "name": "Stormglass Bead",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "A captive storm leaps farther after movement.",
+      "stats": {"spell_potency": 1, "aegis_lightning": 2},
+      "tags": ["arcane", "lightning"],
+      "icon": "spell",
+      "turn_based": {"rules_text": "After moving, lightning attacks gain +1 Range and +2 Spell Potency.", "effects": [{"condition": "moved", "damage_type": "lightning", "modifiers": {"range": 1, "spell_potency": 2}}]}
+    },
+
+    "wand_of_cinders": {
+      "name": "Wand of Cinders",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "The wand banks heat until magic finds clustered prey.",
+      "stats": {"spell_potency": 2},
+      "combat": {"rules": "Slasher: spell hits build precision; the cadence hit deals 25% bonus damage.", "trigger": "hit", "precision_bonus": 0.25, "precision_hits": 6},
+      "tags": ["arcane", "fire"],
+      "icon": "spell",
+      "turn_based": {"rules_text": "Spell attacks that can hit multiple tiles gain +1 Range.", "effects": [{"condition": "area_attack", "modifiers": {"range": 1}}]}
+    },
+
+    "aether_prism": {
+      "name": "Aether Prism",
+      "rarity": "rare",
+      "lasts": "permanent",
+      "description": "Each facet converts one school of harm into another angle of force.",
+      "stats": {"spell_potency": 2, "penetration": 1},
+      "tags": ["arcane", "spell"],
+      "icon": "spell",
+      "turn_based": {"rules_text": "Arcane attacks gain +1 Range and ignore 1 additional Aegis.", "effects": [{"condition": "damage_type", "damage_type": "arcane", "modifiers": {"range": 1, "penetration": 1}}]}
+    },
+
+    "glass_magus_eye": {
+      "name": "Glass Magus Eye",
+      "rarity": "rare",
+      "lasts": "permanent",
+      "description": "The lens exposes the thinnest seam in magical resistance.",
+      "stats": {"spell_potency": 2, "accuracy": 1},
+      "tags": ["arcane", "spell"],
+      "icon": "spell",
+      "turn_based": {"rules_text": "Spell attacks gain Penetration equal to half their Range bonus.", "effects": [{"condition": "spell_attack", "penetration_from_range": 0.5}]}
+    },
+
+    "chronomancers_pin": {
+      "name": "Chronomancer's Pin",
+      "rarity": "very_rare",
+      "lasts": "permanent",
+      "description": "Its hands twitch backward at the instant an action goes wrong.",
+      "stats": {"initiative_modifier": 4, "evasion": 1},
+      "combat": {"rules": "Slasher: periodically shave 0.4 seconds from active cooldowns.", "trigger": "periodic", "internal_cooldown": 8.0, "cooldown_flat": 0.4},
+      "tags": ["speed", "arcane"],
+      "icon": "special",
+      "turn_based": {"rules_text": "Once per combat, reroll a missed attack and keep the new result.", "effects": [{"trigger": "miss", "reroll": true, "limit": "combat"}]}
+    },
+
+    "flameheart_talisman": {
+      "name": "Flameheart Talisman",
+      "rarity": "very_rare",
+      "lasts": "permanent",
+      "description": "The talisman rewards spellcasters who stand close enough to feel the heat.",
+      "stats": {"spell_potency": 3, "aegis_fire": 3},
+      "combat": {"rules": "Slasher: spell impacts gain an 18-pixel area burst.", "trigger": "hit", "area_radius_bonus": 18.0, "internal_cooldown": 1.5},
+      "tags": ["arcane", "fire"],
+      "icon": "spell",
+      "turn_based": {"rules_text": "Fire attacks made within 2 tiles gain +2 Spell Potency and +1 Penetration.", "effects": [{"condition": "close_spell", "damage_type": "fire", "modifiers": {"spell_potency": 2, "penetration": 1}}]}
+    },
+
+    "phoenix_ash_reliquary": {
+      "name": "Phoenix-Ash Reliquary",
+      "rarity": "very_rare",
+      "lasts": "permanent",
+      "description": "Uncooling ash kindles when healing would otherwise be too late.",
+      "stats": {"spell_potency": 3, "aegis_fire": 3},
+      "combat": {"rules": "Slasher: survive one lethal hit per floor at 1 health.", "trigger": "lethal_damage", "once_per_floor": true},
+      "tags": ["arcane", "fire", "healing"],
+      "icon": "spell",
+      "turn_based": {"rules_text": "Once per floor, lethal damage leaves you at 1 health and ignites adjacent enemies.", "effects": [{"trigger": "lethal_damage", "survive": 1, "retaliate": 3, "damage_type": "fire", "limit": "floor"}]}
+    },
+
+    "crown_of_the_first_flame": {
+      "name": "Crown of the First Flame",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "The first flame refuses resistance and feeds on fallen magic.",
+      "stats": {"spell_potency": 5, "penetration": 2, "aegis_fire": 5},
+      "combat": {"rules": "Slasher: specials gain 30% damage and a wider impact.", "trigger": "action_start", "special_damage_multiplier": 1.3, "area_radius_bonus": 28.0},
+      "tags": ["legendary", "arcane", "fire"],
+      "icon": "special",
+      "turn_based": {"rules_text": "Fire attacks convert half of prevented damage into bonus damage on the next spell.", "effects": [{"trigger": "absorbed_attack", "damage_type": "fire", "store_prevented_spell_damage": 0.5}]}
+    }
+  }
+}

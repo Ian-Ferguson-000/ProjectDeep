@@ -154,7 +154,7 @@ func open(candidate:CandidateRecord)->void:
 func _fill_tags(member:CharacterRecord)->void:
 	for child in tags_row.get_children():tags_row.remove_child(child);child.queue_free()
 	if not member.stat_build_id.is_empty():_tag(AdventurerBuilds.build_name(member.stat_build_id),String(AdventurerBuilds.build(member.stat_build_id).get("description","")),true)
-	_tag("Level %d"%member.level,"Experience they bring to the company.")
+	if GameBalance.leveling_enabled():_tag("Level %d"%member.level,"Experience they bring to the company.")
 	_tag(member.trait_name,member.trait_description)
 	_tag("Hopes to be a %s"%member.calling_class_id.capitalize(),"Their calling. You can train them as any class you have unlocked.")
 

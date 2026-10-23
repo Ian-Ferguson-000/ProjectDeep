@@ -323,7 +323,7 @@ func _open_recruited_summary(character_id:String)->void:
 	var member:=run_state.campaign.character(character_id)
 	if member==null:return
 	if tavern_dialogue_service==null or actor_dialogue==null:
-		_show_dialogue(member.display_name,"%s · Level %d · %s · %s · HP %d/%d"%[member.class_id.capitalize(),member.level,member.gear_id.replace("_"," ").capitalize(),member.trait_name,member.current_health,member.max_health])
+		_show_dialogue(member.display_name,"%s%s · %s · %s · HP %d/%d"%[member.class_id.capitalize(),(" · Level %d"%member.level) if GameBalance.leveling_enabled() else "",member.gear_id.replace("_"," ").capitalize(),member.trait_name,member.current_health,member.max_health])
 		return
 	var packet:=tavern_dialogue_service.play("roster_default",{"campaign":run_state.campaign,"run_state":run_state,"member":member})
 	var lines:Array=packet.get("lines",[])
@@ -666,7 +666,7 @@ func _add_ledger_heading(text_value:String,color:Color,target:VBoxContainer)->vo
 func _add_recruit_ledger_row(member:CharacterRecord)->void:
 	var panel:=PanelContainer.new();panel.add_theme_stylebox_override("panel",_panel_style(Color(0.045,0.055,0.07,0.92),Color(0.28,0.48,0.64),7));company_list.add_child(panel);var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);panel.add_child(row)
 	var portrait:=TextureRect.new();portrait.custom_minimum_size=Vector2(72,86);portrait.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;portrait.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;var roster_path:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant];portrait.texture=load(roster_path) if ResourceLoader.exists(roster_path) else load("res://assets/ui/class_cards/%s.png"%("phantom" if member.class_id=="rogue" else member.class_id));row.add_child(portrait)
-	var copy:=Label.new();copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL;copy.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;copy.text="%s\n%s · Level %d · %s\n%s\n%d expeditions · %d victories · deepest floor %d"%[member.display_name,member.class_id.capitalize(),member.level,member.trait_name,member.trait_description,member.expeditions,member.victories,member.deepest_floor];row.add_child(copy)
+	var copy:=Label.new();copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL;copy.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;copy.text="%s\n%s%s · %s\n%s\n%d expeditions · %d victories · deepest floor %d"%[member.display_name,member.class_id.capitalize(),(" · Level %d"%member.level) if GameBalance.leveling_enabled() else "",member.trait_name,member.trait_description,member.expeditions,member.victories,member.deepest_floor];row.add_child(copy)
 	var status:=Label.new();status.text=member.status.to_upper();status.add_theme_color_override("font_color",Color(0.55,0.9,0.62) if member.status==CharacterRecord.STATUS_AVAILABLE else Color(0.94,0.72,0.34));row.add_child(status)
 
 func _add_upgrade_ledger_row(branch:String,target:VBoxContainer)->void:

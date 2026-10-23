@@ -107,7 +107,7 @@ func _hero_card(hero_name: String, status: String, state: RunState) -> void:
 	portrait.texture = load(path) if not path.is_empty() and ResourceLoader.exists(path) else UI.icon("roster"); row.add_child(portrait)
 	var copy := VBoxContainer.new(); copy.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_child(copy)
 	copy.add_child(_label(hero_name, 17, UI.IVORY))
-	copy.add_child(_label("%s · Lv %d" % [member.class_id.capitalize(), member.level] if member != null else "Adventurer", 12, UI.MUTED))
+	copy.add_child(_label((("%s · Lv %d" % [member.class_id.capitalize(), member.level]) if GameBalance.leveling_enabled() else member.class_id.capitalize()) if member != null else "Adventurer", 12, UI.MUTED))
 	copy.add_child(_label("RETURNED" if status == "returned" else status.to_upper(), 10, Color("#c9d9b0") if status != "lost" else Color("#e49c8e")))
 
 func _process(delta: float) -> void:

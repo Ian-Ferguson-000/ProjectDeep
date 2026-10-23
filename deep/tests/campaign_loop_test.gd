@@ -3,6 +3,9 @@ extends SceneTree
 func _initialize() -> void: call_deferred("_run")
 
 func _run() -> void:
+	# Levelling is switched off in progression.json for now; this test covers the
+	# dormant levelling rules so they keep working when it is switched back on.
+	GameBalance.set_leveling_override(true)
 	var failures: Array[String] = []
 	var tutorial_campaign:=CampaignState.new();var tutorial_starter:=tutorial_campaign.create_character("warrior");_expect(tutorial_campaign.begin_expedition([tutorial_starter.id], "forest", true),"tutorial expedition did not begin",failures)
 	var tutorial_run:=RunState.new();tutorial_run.attach_campaign(tutorial_campaign);tutorial_run.active_character_id=tutorial_starter.id;tutorial_run.start_new_run(null, "forest")
