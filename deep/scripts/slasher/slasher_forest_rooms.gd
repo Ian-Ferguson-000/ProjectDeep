@@ -15,7 +15,10 @@ const ROOMS := preload("res://scripts/slasher/forest_room_library.gd")
 const ROOM_MINIMAP := preload("res://scripts/slasher/forest_room_minimap.gd")
 const DOOR_TRIGGER_RADIUS := 30.0
 const THICKET_KINDS := ["tree_wide","tree_small","tree_wide","rounded_bush","tree_small","low_bush_a"]
-const TEMPLATE_ROLE := {"start":"start","combat":"combat","elite":"elite","treasure":"treasure","shop":"shop","boss":"boss"}
+const TEMPLATE_ROLE := {"start":"start","combat":"combat","elite":"elite","treasure":"treasure","shop":"shop","rest":"rest","boss":"boss"}
+const CAMPFIRE_HEIGHT := 64.0
+# TUNING: share of maximum health restored by resting once at a campfire.
+const REST_HEAL_SHARE := 0.35
 
 var room_id := 0
 var room: Dictionary = {}
@@ -23,6 +26,7 @@ var room_role := "start"
 var door_nodes: Dictionary = {}
 var transition_cooldown := 0.0
 var treasure_area: Area2D
+var campfire_position := Vector2(-99999,-99999)
 var rooms_active := false
 
 func uses_room_layout() -> bool:
@@ -67,7 +71,32 @@ func _ensure_floor_graph() -> bool:
 	run_state.field_run["forest_floor_key"] = floor_key
 	run_state.field_run["layout_kind"] = "forest_rooms"
 	run_state.field_run["arrival_direction"] = ""
+	_assign_rest_room()
 	return true
+
+## One combat room per floor becomes a campfire clearing: no foes, a place to
+## rest. It sits partway along the route, never beside the start or the gate.
+func _assign_rest_room() -> void:
+	var rooms: Array = run_state.field_run.get("rooms",[])
+	var distances := {0:0}
+	var open: Array[int] = [0]
+	while not open.is_empty():
+		var id: int = open.pop_front()
+		for neighbor in Dictionary(Dictionary(rooms[id]).neighbors).values():
+			if not distances.has(int(neighbor)): distances[int(neighbor)] = int(distances[id]) + 1; open.append(int(neighbor))
+	var gate_distance := 0
+	for value in rooms:
+		if String(value.role) == "boss": gate_distance = int(distances.get(int(value.id),0))
+	var best := -1
+	var best_score := 999
+	for value in rooms:
+		if String(value.role) != "combat": continue
+		var distance := int(distances.get(int(value.id),0))
+		if distance < 2: continue
+		var score: int = absi(distance - maxi(2,gate_distance/2))
+		if score < best_score: best = int(value.id); best_score = score
+	if best >= 0:
+		run_state.update_field_room(best,{"role":"rest","cleared":true})
 
 func _room_layout() -> Dictionary:
 	var floor_key := String(run_state.field_run.get("forest_floor_key",""))
@@ -98,7 +127,7 @@ func _neighbor_template_ids() -> Array:
 ## Which foes hold this room. Plain foes use the forest's normal wolf and beast
 ## rotation; elite rooms and the gate room add guardians on their cycle floors.
 func _encounter(built: Dictionary) -> Array:
-	if room_role in ["start","shop","treasure"]: return []
+	if ROOMS.PEACEFUL_ROLES.has(room_role): return []
 	var markers: Array = Array(built.enemy_markers).duplicate()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("%s:%d:foes" % [String(run_state.field_run.get("forest_floor_key","")),room_id])
@@ -162,17 +191,6 @@ func _build_thicket() -> void:
 			tree.modulate = Color(shade,shade*1.03,shade,1.0)
 			canopy_layer.add_child(tree)
 
-## Decorations come from the shared forest art, but the campfire there is a
-## landmark-sized sprite; scale it down to a camp prop.
-func _build_decorations() -> void:
-	super._build_decorations()
-	if not rooms_active: return
-	for child in low_decor_layer.get_children():
-		if child is Sprite2D and child.name.begins_with("Decor_campfire"):
-			var sprite := child as Sprite2D
-			var height := sprite.get_rect().size.y
-			if height > 0.0: sprite.scale = Vector2.ONE * (64.0 / height)
-
 func _build_landmarks() -> void:
 	if not rooms_active:
 		super._build_landmarks()
@@ -188,6 +206,17 @@ func _build_landmarks() -> void:
 	if has_dungeon_merchant:
 		var merchant_root := Node2D.new(); merchant_root.name = "CampMerchant"; merchant_root.position = merchant_position; merchant_root.add_child(_glow(Color("#e8b94e"),28))
 		var merchant_sprite := SlasherForestArt.make_sprite("merchant"); merchant_sprite.position = Vector2(0,-28); merchant_root.add_child(merchant_sprite); actor_layer.add_child(merchant_root)
+	var fire := Vector2i(layout.get("campfire",Vector2i(-100,-100)))
+	campfire_position = _world(fire) if fire.x >= 0 else Vector2(-99999,-99999)
+	if fire.x >= 0:
+		var camp := Node2D.new(); camp.name = "Campfire"; camp.position = campfire_position
+		var flames := SlasherForestArt.make_sprite("campfire"); flames.name = "Flames"
+		var height := flames.get_rect().size.y
+		if height > 0.0: flames.scale = Vector2.ONE * (CAMPFIRE_HEIGHT / height)
+		flames.position = Vector2(0,-CAMPFIRE_HEIGHT*0.3); camp.add_child(flames); camp.add_child(_glow(Color("#ff9a3d"),46))
+		var blocker := StaticBody2D.new(); var shape := CollisionShape2D.new(); var circle := CircleShape2D.new(); circle.radius = 18; shape.shape = circle; blocker.add_child(shape); camp.add_child(blocker)
+		actor_layer.add_child(camp)
+		if pathfinder != null: pathfinder.set_cell_blocked(fire,true)
 	var pedestal := Vector2i(layout.treasure)
 	if room_role == "treasure" and pedestal.x >= 0 and not bool(room.get("reward_claimed",false)):
 		treasure_area = Area2D.new(); treasure_area.name = "TreasurePedestal"; treasure_area.position = _world(pedestal)
@@ -220,6 +249,7 @@ func _door_hint(neighbor: Dictionary) -> String:
 		"shop": return "Camp"
 		"treasure": return "Treasure" if not bool(neighbor.get("reward_claimed",false)) else ""
 		"boss": return "Root Gate"
+		"rest": return "Campfire"
 	return ""
 
 func _set_doors_open(open: bool) -> void:
@@ -320,6 +350,7 @@ func _process(delta: float) -> void:
 	transition_cooldown = maxf(0.0,transition_cooldown-delta)
 	if player.input_locked or (relic_modal != null and relic_modal.visible): return
 	if treasure_area != null and is_instance_valid(treasure_area) and player.global_position.distance_to(treasure_area.global_position) < 40: _open_treasure()
+	if room_role == "rest" and player.global_position.distance_to(campfire_position) < 70: _offer_rest()
 	_check_doors()
 
 func _check_doors() -> void:
@@ -335,6 +366,27 @@ func _check_doors() -> void:
 		run_state.enter_field_room(neighbor,room_id)
 		call_deferred("_build_floor")
 		return
+
+func _offer_rest() -> void:
+	if bool(room.get("rested",false)):
+		_show_message("The fire has burned low. You have already rested here.",0.15)
+		return
+	var amount := maxi(1,int(round(player.max_health * REST_HEAL_SHARE)))
+	_show_message("Rest by the fire · press E to recover %d health." % amount,0.15)
+	if not Input.is_action_just_pressed("interact"): return
+	player.basic_mouse_held = false
+	rest_at_campfire()
+
+## Rest once per campfire, restoring part of the active hero's health.
+func rest_at_campfire() -> bool:
+	if room_role != "rest" or bool(room.get("rested",false)): return false
+	player.heal(maxi(1,int(round(player.max_health * REST_HEAL_SHARE))))
+	room["rested"] = true
+	run_state.update_field_room(room_id,{"rested":true})
+	AudioCue.play_from(self,"reward",false)
+	_store_active_slasher_state(); _refresh_hud()
+	_show_message("%s rests by the fire and recovers." % run_state.get_active_character().display_name if run_state.get_active_character() != null else "You rest by the fire and recover.")
+	return true
 
 func _open_treasure() -> void:
 	if relic_modal == null or relic_modal.visible: return

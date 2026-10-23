@@ -21,7 +21,10 @@ const SOLID_KINDS := {"R":"rock","T":"tree_large","C":"chest"}
 const DECORATION_KINDS := {"r":"mossy_rock","p":"pebbles","m":"mushrooms","F":"campfire"}
 const BUSH_KINDS := ["low_bush_a","low_bush_b","rounded_bush"]
 const KNOWN_SYMBOLS := "#.=c~RTCrpmbFeE$*MXPNSW"
-const ROLES := ["start","combat","elite","treasure","shop","boss"]
+const ROLES := ["start","combat","elite","treasure","shop","rest","boss"]
+## Rooms where nothing hostile spawns. Campfires and merchants belong only here.
+const PEACEFUL_ROLES := ["start","treasure","shop","rest"]
+const CAMP_SYMBOLS := {"F":["shop","rest"],"M":["shop"]}
 
 static var _cache: Dictionary = {}
 
@@ -104,7 +107,8 @@ static func build_layout(template_data: Dictionary, open_doors: Array, seed_valu
 						"=": path_cells[cell] = true
 						"c": cobble_cells[cell] = true
 						"R","T","C": solid_props.append({"kind":SOLID_KINDS[symbol],"cell":cell})
-						"r","p","m","F": decorations.append({"kind":DECORATION_KINDS[symbol],"cell":cell,"offset":Vector2(rng.randf_range(-6,6),rng.randf_range(-4,6)),"edge":false})
+						"r","p","m": decorations.append({"kind":DECORATION_KINDS[symbol],"cell":cell,"offset":Vector2(rng.randf_range(-6,6),rng.randf_range(-4,6)),"edge":false})
+						"F": markers["campfire"] = cell
 						"b": decorations.append({"kind":String(BUSH_KINDS[rng.randi_range(0,BUSH_KINDS.size()-1)]),"cell":cell,"offset":Vector2(rng.randf_range(-6,6),rng.randf_range(-4,4)),"edge":false})
 						"e": enemy_markers.append(cell)
 						"E": elite_markers.append(cell)
@@ -130,6 +134,7 @@ static func build_layout(template_data: Dictionary, open_doors: Array, seed_valu
 		"exit":Vector2i(markers.get("gate",Vector2i(-100,-100))),
 		"merchant":Vector2i(markers.get("merchant",Vector2i(-100,-100))),
 		"treasure":Vector2i(markers.get("treasure",Vector2i(-100,-100))),
+		"campfire":Vector2i(markers.get("campfire",Vector2i(-100,-100))),
 		"edges":SlasherForestGenerator.classify_edges(cells),
 	}
 
@@ -204,9 +209,16 @@ static func validate() -> Array[String]:
 				var on_edge := x == 0 or y == 0 or x == size.x-1 or y == size.y-1
 				if on_edge and not slots.values().has(cell) and symbol != "#": errors.append("%s border cell %d,%d must be thicket." % [id,x,y])
 				if not on_edge and "eE$*MXP".contains(symbol): markers.append(cell)
+				if CAMP_SYMBOLS.has(symbol):
+					for role in Array(entry.get("roles",[])):
+						if not Array(CAMP_SYMBOLS[symbol]).has(String(role)): errors.append("%s: '%s' only belongs in %s rooms, not %s." % [id,symbol," or ".join(CAMP_SYMBOLS[symbol]),role])
+				if "eE".contains(symbol) and not on_edge:
+					for role in Array(entry.get("roles",[])):
+						if PEACEFUL_ROLES.has(String(role)): errors.append("%s: a %s room cannot hold enemy spawns." % [id,role])
 		var layout := build_layout(entry,DIRECTIONS.keys())
 		var blocked := {}
 		for prop in layout.solid_props: blocked[Vector2i(prop.cell)] = true
+		if Vector2i(layout.campfire).x >= 0: blocked[Vector2i(layout.campfire)] = true
 		var reach := _reachable(layout.cells,blocked,slots.north)
 		for direction in slots:
 			if not reach.has(slots[direction]): errors.append("%s: the %s door cannot be reached from the north door." % [id,direction])
@@ -216,6 +228,7 @@ static func validate() -> Array[String]:
 		if roles.has("boss") and Vector2i(layout.exit).x < 0: errors.append("%s is a boss room without an X gate." % id)
 		if roles.has("treasure") and Vector2i(layout.treasure).x < 0: errors.append("%s is a treasure room without a * pedestal." % id)
 		if roles.has("shop") and Vector2i(layout.merchant).x < 0: errors.append("%s is a shop room without an M merchant." % id)
+		if roles.has("rest") and Vector2i(layout.campfire).x < 0: errors.append("%s is a rest room without an F campfire." % id)
 	for role in ROLES:
 		if not role_coverage.has(role): errors.append("No forest room can serve as %s." % role)
 	return errors

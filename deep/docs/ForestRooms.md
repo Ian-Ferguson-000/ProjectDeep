@@ -11,7 +11,14 @@ endless depth.
 
 1. `FieldDungeonGenerator` lays out a grid graph of rooms for the floor and assigns
    roles: `start`, `combat`, `elite`, `treasure`, `shop`, and `boss` (the gate room,
-   placed at the farthest dead end).
+   placed at the farthest dead end). The forest then turns one combat room partway
+   along the route into a `rest` room.
+   - **Camps are peaceful.** `start`, `treasure`, `shop` and `rest` rooms never spawn
+     enemies.
+   - **Campfires** appear only in the trader camp (`shop`) and campfire clearings
+     (`rest`). Resting at a clearing's campfire restores 35% of the active hero's
+     health, once per fire; the trader camp's fire is just for show.
+   - **Merchants** appear only in the trader camp.
 2. Each room picks a map from `data/forest_rooms.json` whose `roles` include its role.
    The pick is seeded by the floor, so a room keeps its map when you walk back in.
 3. `ForestRoomLibrary.build_layout()` turns the map into a layout. Door slots facing a
@@ -29,7 +36,11 @@ The tutorial expedition, merchant interludes, and the authored template scenes i
 
 ## Authoring a room
 
-Add an entry to `rooms` in `data/forest_rooms.json`:
+Rooms are drawn by `tools/forest_rooms/build_forest_rooms.py`. It has small
+helpers (`cross`, `hline`, `vline`, `rect`, `ring`, `blob`, `oval`, `corners`) so
+large maps stay readable. Run it from the project folder to rewrite
+`data/forest_rooms.json`; it validates every room first. You can also edit the
+JSON directly. An entry looks like this:
 
 ```json
 {"id":"my_room","name":"Display Name","roles":["combat"],"weight":1.0,"map":[
@@ -39,9 +50,9 @@ Add an entry to `rooms` in `data/forest_rooms.json`:
 "#########S#########"]}
 ```
 
-- **Size:** any odd width and height of at least 7. Standard rooms are 19×11, which
-  fits the screen at default zoom. Large rooms such as Great Mere and Druid's Circle
-  are 27×15, and the camera follows inside them.
+- **Size:** any odd width and height of at least 7. Standard rooms are 27×15; large
+  rooms (Great Mere, Old Grove, Druid's Circle) are 35×19. The camera follows the
+  party inside them.
 - **Doors:** the centre cell of each edge must hold its door letter: `N` top, `S`
   bottom, `W` left, `E` right. Every other edge cell must be `#`.
 - **Weight:** makes a map more or less common within its role (default 1.0).
@@ -60,12 +71,12 @@ Add an entry to `rooms` in `data/forest_rooms.json`:
 | `p` | Pebbles (decoration) |
 | `m` | Mushrooms (decoration) |
 | `b` | Bush (decoration) |
-| `F` | Campfire (decoration) |
+| `F` | Campfire (`shop` and `rest` rooms only; you can rest at it in `rest` rooms) |
 | `e` | Enemy spawn point. More are used on deeper floors |
 | `E` | Inside the room: elite or boss spawn point |
 | `$` | Loot cache, which appears once the room is cleared |
 | `*` | Treasure pedestal (relic choice) |
-| `M` | Merchant |
+| `M` | Merchant (`shop` rooms only) |
 | `X` | Root Gate down to the next floor |
 | `P` | Player start (start rooms) |
 
@@ -74,6 +85,8 @@ Add an entry to `rooms` in `data/forest_rooms.json`:
 - `boss` rooms need an `X` gate.
 - `treasure` rooms need a `*` pedestal.
 - `shop` rooms need an `M` merchant.
+- `rest` rooms need an `F` campfire.
+- Peaceful rooms cannot hold `e` or `E` spawns.
 
 **Validation:** `ForestRoomLibrary.validate()` checks all of this. It also checks
 that every door reaches every other door and every marker without crossing water,

@@ -13,7 +13,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_expect(ROOMS.validate().is_empty(),"Forest room data is invalid: %s" % "; ".join(ROOMS.validate()))
-	_expect(ROOMS.templates().size() >= 12,"Expected at least a dozen authored forest rooms")
+	_expect(ROOMS.templates().size() >= 18,"Expected at least a dozen authored forest rooms")
 	# Every map must work with any combination of open doors.
 	var directions: Array = ROOMS.DIRECTIONS.keys()
 	for template_value in ROOMS.templates():
@@ -49,7 +49,7 @@ func _run() -> void:
 	_expect(rooms.size() >= 8,"Floor 2 should have at least 8 rooms, has %d" % rooms.size())
 	var roles := {}
 	for room in rooms: roles[String(room.role)] = true
-	for role in ["start","boss","treasure","shop"]: _expect(roles.has(role),"Floor graph is missing a %s room" % role)
+	for role in ["start","boss","treasure","shop","rest"]: _expect(roles.has(role),"Floor graph is missing a %s room" % role)
 	_expect(scene.room_role == "start" and scene.exit_open,"The start room should be safe with open doors")
 	_expect(scene.ground_layer.get_child(0).texture == preload("res://scripts/slasher/slasher_forest_terrain_art.gd").SHEET,"Rooms are not drawn with the new forest tile sheet")
 	_expect(scene.door_nodes.size() == Dictionary(rooms[0].neighbors).size(),"Start room doors do not match its neighbours")
@@ -90,6 +90,24 @@ func _run() -> void:
 	# Revisiting keeps the same map.
 	var first_template := String(state.get_field_room(int(start_neighbors.values()[0])).get("template_id",""))
 	_expect(not first_template.is_empty(),"Visited rooms should remember their map")
+	# Camps are peaceful: the rest room has a campfire at prop size and no foes,
+	# and resting heals once.
+	for room in rooms:
+		if String(room.role) != "rest": continue
+		state.enter_field_room(int(room.id),-1)
+		scene._build_floor()
+		await process_frame
+		_expect(scene.enemies_remaining == 0 and scene.exit_open,"The campfire room should hold no enemies")
+		var fire := scene.actor_layer.get_node_or_null("Campfire/Flames") as Sprite2D
+		_expect(fire != null and fire.get_rect().size.y * fire.scale.y <= 70.0,"Campfire is missing or drawn oversized")
+		scene.player.health = 1
+		_expect(scene.rest_at_campfire() and scene.player.health > 1,"Resting at the campfire did not heal")
+		_expect(not scene.rest_at_campfire(),"Rested twice at the same campfire")
+	for template_value in ROOMS.templates():
+		var roles_here: Array = Array(Dictionary(template_value).roles)
+		for row in Array(Dictionary(template_value).map):
+			if String(row).contains("F"): _expect(roles_here.all(func(r): return r in ["shop","rest"]),"%s has a campfire outside a camp room" % template_value.id)
+			if String(row).contains("M"): _expect(roles_here == ["shop"],"%s has a merchant outside the trader camp" % template_value.id)
 	# The gate room carries the root gate.
 	var gate_id := -1
 	for room in rooms:

@@ -8,7 +8,7 @@ class_name ForestRoomMinimap
 const CELL := Vector2(26,18)
 const GAP := 4.0
 const COLORS := {"current":Color("#f3e3b4"),"cleared":Color("#6f9b67"),"visited":Color("#a9875a"),"unknown":Color("#5d4a35"),"line":Color("#3d2d1f")}
-const MARKERS := {"shop":["$",Color("#f0c552")],"treasure":["♦",Color("#e08af0")],"boss":["▼",Color("#e86a4a")],"elite":["!",Color("#ff9e5a")],"start":["•",Color("#d9cfb7")]}
+const MARKERS := {"shop":["$",Color("#f0c552")],"treasure":["♦",Color("#e08af0")],"boss":["▼",Color("#e86a4a")],"elite":["!",Color("#ff9e5a")],"start":["•",Color("#d9cfb7")],"rest":["^",Color("#ff9a3d")]}
 
 var run_state: RunState
 
