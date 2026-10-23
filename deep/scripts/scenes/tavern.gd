@@ -275,6 +275,10 @@ func _open_calendar()->void:
 func _build_recruitment_dialogue()->void:
 	recruitment_dialogue=RECRUITMENT_DIALOGUE.new();recruitment_dialogue.contest_requested.connect(_open_visitor_contest);recruitment_dialogue.recruit_requested.connect(_recruit_candidate);recruitment_dialogue.assessment_requested.connect(_assess_candidate);recruitment_dialogue.conversation_closed.connect(_restore_hub_focus);ui_root.add_child(recruitment_dialogue)
 
+func _show_recruitment(candidate:CandidateRecord)->void:
+	recruitment_dialogue.allowed_classes.assign(run_state.campaign.unlocked_classes)
+	recruitment_dialogue.open(candidate)
+
 func _open_visitor_contest(candidate_id:String,contest_id:String)->void:
 	if active_contest!=null or not VisitorContestRules.CONTESTS.has(contest_id):return
 	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord
@@ -302,7 +306,7 @@ func _return_from_visitor_contest()->void:
 	active_contest.hide();active_contest.set_process_input(false);active_contest.queue_free();active_contest=null
 	var candidate:=run_state.campaign.candidate_pool.get(contest_candidate_id) as CandidateRecord
 	contest_candidate_id=""
-	if candidate!=null:recruitment_dialogue.open(candidate)
+	if candidate!=null:_show_recruitment(candidate)
 	else:_restore_hub_focus()
 
 func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
@@ -311,7 +315,7 @@ func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
 	elif action=="appraise":result=run_state.campaign.appraise_candidate(candidate_id,stat_id)
 	else:result=run_state.campaign.inspect_candidate(candidate_id,action)
 	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Assessment failed.")));return
-	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord;if candidate!=null:recruitment_dialogue.open(candidate)
+	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord;if candidate!=null:_show_recruitment(candidate)
 	_save_tavern_progress()
 	_refresh_ui()
 
@@ -338,7 +342,7 @@ func _open_candidate(candidate_id:String)->void:
 	if candidate!=null:
 		if activity_controller!=null:activity_controller.set_paused(true)
 		if keeper!=null:keeper.set_modal_paused(true)
-		recruitment_dialogue.open(candidate)
+		_show_recruitment(candidate)
 
 func _recruit_candidate(candidate_id:String)->void:
 	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord
@@ -347,7 +351,8 @@ func _recruit_candidate(candidate_id:String)->void:
 		if not requirement_message.is_empty():
 			recruitment_dialogue.show_capacity_error(requirement_message)
 			return
-	var result:=run_state.campaign.recruit_candidate(candidate_id)
+	var chosen_class:=recruitment_dialogue.selected_class_id if recruitment_dialogue.candidate_id==candidate_id else ""
+	var result:=run_state.campaign.recruit_candidate(candidate_id,chosen_class)
 	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Recruitment failed.")));return
 	AudioCue.play_from(self,"reward",false)
 	recruitment_dialogue.close();message=String(result.get("message","Recruitment complete."));_select_recruited_character()

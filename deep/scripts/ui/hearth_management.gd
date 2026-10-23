@@ -183,17 +183,62 @@ func company_page() -> void:
 	for member in campaign.living_roster():
 		var content := card("%s · %s · Level %d" % [member.display_name,member.class_id.capitalize(),member.level],"%s   •   Age %d / retirement 60   •   Health %d/%d   •   %d victories\n%s" % [member.status.capitalize(),member.age_on(campaign.calendar_day),member.current_health,member.max_health,member.victories,member.biography])
 		content.add_child(label("Learning potential: " + (VisitorContestRules.learning_name(member.learning_potential) if member.learning_potential_known else "Unknown"),15,THEME.MUTED))
+		content.add_child(label(_stat_block_text(member),15,Color("d7c7a6")))
 		var actions := HBoxContainer.new()
 		content.add_child(actions)
 		button(actions,"Equipment",func(): member_id=member.id; show_section("Armory"))
 		button(actions,"Train · %dg" % (15*member.level),func(): act(HearthFacilities.train(campaign,member.id)),member.status=="available")
 		button(actions,"Retire",_confirm_retire.bind(member.id),member.status=="available")
+		_add_class_assignment(content,member)
 		if member.recovery_until>campaign.calendar_day: content.add_child(label("Ready on Day %d" % member.recovery_until,15,THEME.MUTED))
 	card("Arrivals","Contracts show signing costs before recruitment. Assess candidates through conversation to learn their strengths.")
 	for candidate in campaign.get_candidates():
 		var member := candidate.adventurer
-		var content := card(member.display_name+" · "+member.class_id.capitalize(),"Signing fee %dg · 20%% collective expedition share · %s" % [member.signing_fee,candidate.motivation])
+		var content := card(member.display_name+" · "+_build_name(member)+" · hopes to train as "+member.calling_class_id.capitalize(),"Signing fee %dg · 20%% collective expedition share · %s" % [member.signing_fee,candidate.motivation])
 		button(content,"Meet and assess",func(): hide(); candidate_requested.emit(candidate.id))
+
+func _build_name(member: CharacterRecord) -> String:
+	return AdventurerBuilds.build_name(member.stat_build_id) if not member.stat_build_id.is_empty() else "Adventurer"
+
+func _stat_block_text(member: CharacterRecord) -> String:
+	var stats := PackedStringArray()
+	for stat in AdventurerBuilds.ATTRIBUTE_IDS: stats.append("%s %d" % [stat.to_upper(),int(member.attributes.get(stat,10))])
+	var calling := "" if member.calling_class_id == member.class_id else "   •   Calling: %s" % member.calling_class_id.capitalize()
+	return "%s   •   %s   •   %s fit%s" % [_build_name(member),"  ".join(stats),AdventurerBuilds.class_fit(member.attributes,member.class_id),calling]
+
+## Lets the keeper move an adventurer into any unlocked class while they are home.
+func _add_class_assignment(content: VBoxContainer, member: CharacterRecord) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation",8)
+	content.add_child(row)
+	row.add_child(label("Class",15,THEME.GOLD))
+	var picker := OptionButton.new()
+	picker.custom_minimum_size = Vector2(280,40)
+	for class_id in AdventurerBuilds.ranked_classes(member.attributes,campaign.unlocked_classes):
+		var text_value := "%s — %s fit" % [class_id.capitalize(),AdventurerBuilds.class_fit(member.attributes,class_id)]
+		if class_id == member.calling_class_id: text_value += "  (calling)"
+		picker.add_item(text_value)
+		picker.set_item_metadata(picker.item_count-1,class_id)
+		if class_id == member.class_id: picker.select(picker.item_count-1)
+	picker.disabled = member.status != "available"
+	row.add_child(picker)
+	var retrain := button(row,"Retrain",func(): _retrain(member.id,String(picker.get_selected_metadata())),false)
+	picker.item_selected.connect(func(index: int): retrain.disabled = member.status != "available" or String(picker.get_item_metadata(index)) == member.class_id)
+	retrain.tooltip_text = "Keeps level and attributes. Class upgrade choices are picked again, and gear the new class cannot use returns to the armory."
+
+func _retrain(id: String, class_id: String) -> void:
+	var member := campaign.character(id)
+	if member == null: return
+	var dialog := ConfirmationDialog.new()
+	dialog.dialog_text = "Retrain %s as a %s?\nLevel and attributes stay. Class upgrade choices will be picked again, and starter gear is swapped for the new class." % [member.display_name,class_id.capitalize()]
+	dialog.confirmed.connect(func():
+		var result := campaign.reassign_class(id,class_id)
+		if result.get("ok",false) and state != null: state.hero_profiles.erase(id)
+		act(result)
+		dialog.queue_free())
+	dialog.canceled.connect(dialog.queue_free)
+	add_child(dialog)
+	dialog.popup_centered()
 
 func _confirm_retire(id: String) -> void:
 	var dialog := ConfirmationDialog.new()

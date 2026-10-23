@@ -33,7 +33,9 @@ func run()->void:
 	var range_cases:={4:"4–7",7:"4–7",8:"8–11",11:"8–11",12:"12–15",15:"12–15",16:"16–20",20:"16–20"}
 	for value in range_cases:check(VisitorContestRules.stat_range(value)==range_cases[value],"Incorrect numeric estimate at a range boundary")
 	var dossier:=RecruitmentDialogue.new()
-	check(dossier._stat_display(candidate,"str")==VisitorContestRules.band(int(candidate.adventurer.attributes.str)),"Numeric estimate revealed before contest")
+	var lead:=AdventurerBuilds.lead_stat(candidate.adventurer.attributes,candidate.adventurer.stat_build_id)
+	check(dossier._stat_display(candidate,lead)==VisitorContestRules.band(int(candidate.adventurer.attributes[lead])),"Numeric estimate revealed before contest")
+	for stat in AdventurerBuilds.ATTRIBUTE_IDS:if stat!=lead:check(dossier._stat_display(candidate,stat)=="Unknown","Hidden attribute revealed before contest")
 	var gold:=campaign.banked_gold;var day:=campaign.calendar_day;var shift:=campaign.calendar_shift;var xp:=candidate.adventurer.xp
 	for id in VisitorContestRules.CONTESTS:
 		var result:={"contest_id":id,"outcome":"loss","player_score":0,"visitor_score":10,"details":{}}

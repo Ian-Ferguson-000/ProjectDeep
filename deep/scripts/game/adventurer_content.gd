@@ -33,6 +33,7 @@ static func validate()->Array[String]:
 		if not NarrativeContent.nations().has(nation_id):errors.append("%s references unknown nation %s."%[id,nation_id])
 		if int(entry.get("portrait",-1)) not in range(4):errors.append("%s has an invalid portrait."%id)
 	for class_id in ["warrior","mage","healer","tank","rogue","summoner"]:if int(coverage.get(class_id,0))<4:errors.append("%s needs four curated adventurers."%class_id)
+	errors.append_array(AdventurerBuilds.validate())
 	var known_deities:=DivineFavorService.deities();var known_doctrines:=PartyCompatibility.doctrines()
 	for definition_id in Dictionary(data().get("faith_by_definition",{})):
 		if not known_deities.has(String(data().faith_by_definition[definition_id])):errors.append("%s references an unknown faith."%definition_id)
