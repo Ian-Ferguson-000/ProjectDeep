@@ -1,0 +1,382 @@
+extends "res://scripts/slasher/slasher_forest.gd"
+
+## Verdant Forest as interconnected rooms, Binding of Isaac style.
+##
+## Each floor is a graph of hand-authored rooms (data/forest_rooms.json) laid out
+## by FieldDungeonGenerator. Doors sit on the centre of each room edge, stay
+## barred by brambles while foes remain, and open once the room is cleared. The
+## gate room holds the root gate down to the next floor, so the existing descent,
+## elite and boss cadence, and endless depth all carry on unchanged.
+##
+## The tutorial expedition, merchant interludes and authored template scenes keep
+## using the single generated floor from slasher_forest.gd.
+
+const ROOMS := preload("res://scripts/slasher/forest_room_library.gd")
+const ROOM_MINIMAP := preload("res://scripts/slasher/forest_room_minimap.gd")
+const DOOR_TRIGGER_RADIUS := 30.0
+const THICKET_KINDS := ["tree_wide","tree_small","tree_wide","rounded_bush","tree_small","low_bush_a"]
+const TEMPLATE_ROLE := {"start":"start","combat":"combat","elite":"elite","treasure":"treasure","shop":"shop","boss":"boss"}
+
+var room_id := 0
+var room: Dictionary = {}
+var room_role := "start"
+var door_nodes: Dictionary = {}
+var transition_cooldown := 0.0
+var treasure_area: Area2D
+var rooms_active := false
+
+func uses_room_layout() -> bool:
+	if run_state == null or use_authored_layout or run_state.slasher_merchant_interlude or _is_tutorial_expedition(): return false
+	return String(Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{})).get("layout","")) == "rooms"
+
+func _build_floor() -> void:
+	rooms_active = uses_room_layout()
+	if not rooms_active:
+		super._build_floor()
+		return
+	get_tree().paused = false
+	secret_door_available = false; secret_door_node = null; merchant_offer_nodes.clear(); has_dungeon_merchant = false; treasure_area = null
+	var new_floor := _ensure_floor_graph()
+	var snapshot := _snapshot_player()
+	if is_instance_valid(player): _store_active_slasher_state()
+	for child in get_children(): child.free()
+	room_id = int(run_state.field_run.get("current_room",0))
+	run_state.enter_field_room(room_id,int(run_state.field_run.get("previous_room",-1)))
+	room = run_state.get_field_room(room_id)
+	room_role = String(room.get("role","combat"))
+	layout = _room_layout()
+	pathfinder = GRID_PATHFINDER.new().configure(Dictionary(layout.cells),Array(layout.solid_props),ORIGIN,float(TILE))
+	active_summons.clear()
+	_build_world(); _spawn_player(); _restore_player(snapshot)
+	if new_floor: player.reset_combo_progress()
+	_spawn_enemies(); _spawn_loot(); _build_hud(); _refresh_hud(); _entry_fade()
+	if new_floor and player.item_runtime: player.item_runtime.floor_entered()
+	if new_floor: _show_message("%s · floor %d" % [String(layout.room_name),run_state.current_floor],3.0)
+	if new_floor and run_state.current_floor == 1 and not run_state.starter_reward_claimed: call_deferred("_offer_starter_relic")
+	transition_cooldown = 0.5
+
+## Generates this floor's room graph the first time the floor is entered.
+func _ensure_floor_graph() -> bool:
+	var floor_key := "%d:%d" % [run_state.get_current_floor_seed(),run_state.current_floor]
+	if String(run_state.field_run.get("forest_floor_key","")) == floor_key: return false
+	var tuning: Dictionary = Dictionary(Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{})).get("room_count",{}))
+	# TUNING: forest.slasher.room_count in dungeons.json sets how sprawling each floor is.
+	var growth := mini(int(tuning.get("growth_cap",4)),(run_state.current_floor-1)*int(tuning.get("growth_per_floor",1)))
+	var minimum := int(tuning.get("min",7)) + growth
+	run_state.field_run = FieldDungeonGenerator.generate(run_state.get_current_floor_seed(),minimum,maxi(minimum,int(tuning.get("max",9))+growth))
+	run_state.field_run["forest_floor_key"] = floor_key
+	run_state.field_run["layout_kind"] = "forest_rooms"
+	run_state.field_run["arrival_direction"] = ""
+	return true
+
+func _room_layout() -> Dictionary:
+	var floor_key := String(run_state.field_run.get("forest_floor_key",""))
+	var template := ROOMS.template(String(room.get("template_id","")))
+	if template.is_empty():
+		template = ROOMS.pick(String(TEMPLATE_ROLE.get(room_role,"combat")),hash("%s:%d:room" % [floor_key,room_id]),_neighbor_template_ids())
+		run_state.update_field_room(room_id,{"template_id":String(template.get("id",""))})
+		room["template_id"] = String(template.get("id",""))
+	var built := ROOMS.build_layout(template,Dictionary(room.get("neighbors",{})).keys(),hash("%s:%d:decor" % [floor_key,room_id]))
+	var state: Dictionary = Dictionary(room.get("slasher",{}))
+	var destroyed: Array = Array(state.get("destroyed_props",[]))
+	built.solid_props = Array(built.solid_props).filter(func(prop): return not destroyed.has(Vector2i(prop.cell)))
+	built["is_boss_floor"] = room_role == "boss" and run_state.is_slasher_boss_floor()
+	built["is_elite_floor"] = room_role == "boss" and run_state.is_slasher_elite_floor()
+	built["cycle_floor"] = run_state.get_slasher_cycle_floor()
+	var arrival := String(run_state.field_run.get("arrival_direction",""))
+	if int(run_state.field_run.get("previous_room",-1)) >= 0 and Dictionary(built.doors).has(arrival): built.start = ROOMS.arrival_cell(built,arrival)
+	built.enemy_spawns = [] if bool(room.get("cleared",false)) else _encounter(built)
+	return built
+
+func _neighbor_template_ids() -> Array:
+	var ids: Array = []
+	for neighbor in Dictionary(room.get("neighbors",{})).values():
+		var other := run_state.get_field_room(int(neighbor))
+		if not String(other.get("template_id","")).is_empty(): ids.append(String(other.template_id))
+	return ids
+
+## Which foes hold this room. Plain foes use the forest's normal wolf and beast
+## rotation; elite rooms and the gate room add guardians on their cycle floors.
+func _encounter(built: Dictionary) -> Array:
+	if room_role in ["start","shop","treasure"]: return []
+	var markers: Array = Array(built.enemy_markers).duplicate()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("%s:%d:foes" % [String(run_state.field_run.get("forest_floor_key","")),room_id])
+	for index in range(markers.size()-1,0,-1):
+		var swap := rng.randi_range(0,index); var held = markers[index]; markers[index] = markers[swap]; markers[swap] = held
+	var elite_cell: Vector2i = Array(built.elite_markers)[0] if not Array(built.elite_markers).is_empty() else (markers.pop_back() if not markers.is_empty() else Vector2i(int(built.width)/2,int(built.height)/2))
+	# TUNING: plain foes per room grow with depth and stop at the room's markers.
+	var count := clampi(2 + int(run_state.current_floor/2.0),2,maxi(2,markers.size()))
+	var spawns: Array = []
+	if room_role == "boss" and bool(built.is_boss_floor):
+		spawns.append({"position":elite_cell,"visual_id":"dark_druid","behavior_id":"","is_boss":true,"is_mini_boss":false})
+		for index in mini(2,markers.size()): spawns.append({"position":markers[index],"visual_id":"briar_guardian","behavior_id":"elite_guardian","is_boss":false,"is_mini_boss":true})
+		return spawns
+	if room_role == "elite" or (room_role == "boss" and bool(built.is_elite_floor)):
+		spawns.append({"position":elite_cell,"visual_id":"briar_guardian","behavior_id":"elite_guardian","is_boss":false,"is_mini_boss":true})
+		count = maxi(1,count-1)
+	elif not Array(built.elite_markers).is_empty():
+		markers.push_front(elite_cell)
+	for index in mini(count,markers.size()): spawns.append({"position":markers[index],"visual_id":"","behavior_id":"","is_boss":false,"is_mini_boss":false})
+	return spawns
+
+# ---------------------------------------------------------------- world
+
+func _build_world() -> void:
+	if not rooms_active:
+		super._build_world()
+		return
+	var profile := DungeonRuntimeProfile.get_profile(run_state.active_dungeon_id)
+	var underlay := ColorRect.new(); underlay.name = "DungeonDepth"; underlay.color = Color("#"+String(profile.get("underlay","07100d"))); underlay.position = Vector2.ZERO; underlay.size = Vector2(float(layout.width*TILE+128),float(layout.height*TILE+128)); underlay.mouse_filter = Control.MOUSE_FILTER_IGNORE; underlay.z_index = -20; add_child(underlay)
+	ground_layer = Node2D.new(); ground_layer.name = "Ground"; ground_layer.z_index = -10; add_child(ground_layer)
+	low_decor_layer = Node2D.new(); low_decor_layer.name = "LowDecor"; low_decor_layer.z_index = -2; add_child(low_decor_layer)
+	actor_layer = Node2D.new(); actor_layer.name = "Actors"; actor_layer.y_sort_enabled = true; add_child(actor_layer)
+	canopy_layer = Node2D.new(); canopy_layer.name = "Canopy"; canopy_layer.y_sort_enabled = true; canopy_layer.z_index = 8; add_child(canopy_layer)
+	FOREST_TERRAIN_ART.build_room_ground(ground_layer,layout,TILE,ORIGIN)
+	# Collision follows the walkable edge; the thicket trees are the visible wall.
+	wall_generator = SlasherWallGenerator.new(); wall_generator.name = "WallGenerator"; wall_generator.profile_id = String(profile.get("wall_profile","stone_wall")); wall_generator.tile_size = TILE; wall_generator.render_visuals = false; wall_generator.render_collisions = true; add_child(wall_generator)
+	wall_topology = wall_generator.generate(layout.cells,[],ORIGIN)
+	_build_thicket(); _build_decorations(); _build_solid_props(); _build_landmarks(); _build_doors(); _build_mist(); _build_vignette()
+
+func _build_thicket() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("%s:%d:thicket" % [String(run_state.field_run.get("forest_floor_key","")),room_id])
+	var cells: Dictionary = layout.cells
+	var thicket: Dictionary = layout.thicket_cells
+	for value in thicket:
+		var cell: Vector2i = value
+		# Dark undergrowth makes the boundary read as impassable even between trunks.
+		var shade_rect := ColorRect.new(); shade_rect.name = "Undergrowth_%d_%d" % [cell.x,cell.y]; shade_rect.color = Color(0.03,0.09,0.04,0.62); shade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shade_rect.position = _world(cell) - Vector2(TILE,TILE) * 0.5; shade_rect.size = Vector2(TILE,TILE); ground_layer.add_child(shade_rect)
+		var facing_room := false
+		for direction in ROOMS.DIRECTIONS.values():
+			if cells.has(cell + Vector2i(direction)): facing_room = true
+		var count := 1 if facing_room else 2
+		for index in count:
+			var kind: String = THICKET_KINDS[rng.randi_range(0,THICKET_KINDS.size()-1)] if facing_room and index == 0 else ("tree_wide" if rng.randf() < 0.6 else "tree_small")
+			var tree := SlasherForestArt.make_sprite(kind)
+			tree.name = "Thicket_%d_%d_%d" % [cell.x,cell.y,index]
+			tree.position = _world(cell) + Vector2(rng.randf_range(-12,12),rng.randf_range(-8,12))
+			if rng.randf() < 0.5: tree.flip_h = true
+			var shade := rng.randf_range(0.7,0.95) if not facing_room else rng.randf_range(0.82,1.0)
+			tree.modulate = Color(shade,shade*1.03,shade,1.0)
+			canopy_layer.add_child(tree)
+
+## Decorations come from the shared forest art, but the campfire there is a
+## landmark-sized sprite; scale it down to a camp prop.
+func _build_decorations() -> void:
+	super._build_decorations()
+	if not rooms_active: return
+	for child in low_decor_layer.get_children():
+		if child is Sprite2D and child.name.begins_with("Decor_campfire"):
+			var sprite := child as Sprite2D
+			var height := sprite.get_rect().size.y
+			if height > 0.0: sprite.scale = Vector2.ONE * (64.0 / height)
+
+func _build_landmarks() -> void:
+	if not rooms_active:
+		super._build_landmarks()
+		return
+	var gate := Vector2i(layout.exit)
+	exit_position = _world(gate) if gate.x >= 0 else Vector2(-99999,-99999)
+	if gate.x >= 0:
+		var exit_root := Node2D.new(); exit_root.name = "RootGate"; exit_root.position = exit_position; exit_root.z_index = 12; exit_root.add_child(_glow(Color("#83d978"),34))
+		var exit_sprite := SlasherForestArt.make_sprite("exit"); exit_sprite.position = Vector2(0,-30); exit_root.add_child(exit_sprite); actor_layer.add_child(exit_root)
+	var merchant_cell := Vector2i(layout.merchant)
+	has_dungeon_merchant = room_role == "shop" and merchant_cell.x >= 0
+	merchant_position = _world(merchant_cell) if has_dungeon_merchant else Vector2(-99999,-99999)
+	if has_dungeon_merchant:
+		var merchant_root := Node2D.new(); merchant_root.name = "CampMerchant"; merchant_root.position = merchant_position; merchant_root.add_child(_glow(Color("#e8b94e"),28))
+		var merchant_sprite := SlasherForestArt.make_sprite("merchant"); merchant_sprite.position = Vector2(0,-28); merchant_root.add_child(merchant_sprite); actor_layer.add_child(merchant_root)
+	var pedestal := Vector2i(layout.treasure)
+	if room_role == "treasure" and pedestal.x >= 0 and not bool(room.get("reward_claimed",false)):
+		treasure_area = Area2D.new(); treasure_area.name = "TreasurePedestal"; treasure_area.position = _world(pedestal)
+		var shape := CollisionShape2D.new(); var circle := CircleShape2D.new(); circle.radius = 24; shape.shape = circle; treasure_area.add_child(shape)
+		treasure_area.add_child(_glow(Color("#d67ee8"),30))
+		var relic := SlasherForestArt.make_sprite("chest_open"); relic.position = Vector2(0,-10); treasure_area.add_child(relic)
+		actor_layer.add_child(treasure_area)
+
+## A door is an opening in the thicket on the centre of an edge. While foes remain
+## it is barred by brambles; once the room is clear the brambles pull back.
+func _build_doors() -> void:
+	door_nodes.clear()
+	for direction in Dictionary(layout.doors):
+		var cell: Vector2i = layout.doors[direction]
+		var door := Node2D.new(); door.name = "Door_%s" % direction; door.position = _world(cell); actor_layer.add_child(door)
+		var barrier := StaticBody2D.new(); barrier.name = "Brambles"
+		var shape := CollisionShape2D.new(); var rect := RectangleShape2D.new(); rect.size = Vector2(TILE,TILE); shape.shape = rect; barrier.add_child(shape)
+		for offset in [Vector2(-12,-4),Vector2(12,2),Vector2(0,10)]:
+			var bush := SlasherForestArt.make_sprite("rounded_bush" if offset.y < 5 else "low_bush_b"); bush.position = offset; bush.modulate = Color(0.62,0.48,0.42); barrier.add_child(bush)
+		door.add_child(barrier)
+		var glow := _glow(Color("#9fe39a"),22); glow.name = "OpenGlow"; door.add_child(glow)
+		var neighbor := run_state.get_field_room(int(Dictionary(room.neighbors).get(direction,-1)))
+		var hint := Label.new(); hint.name = "Hint"; hint.text = _door_hint(neighbor); hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; hint.size = Vector2(120,20); hint.position = Vector2(-60,-46 if direction != "north" else 24); hint.add_theme_font_size_override("font_size",12); hint.add_theme_color_override("font_color",Color("#f3e3b4")); hint.add_theme_color_override("font_outline_color",Color(0,0,0,0.85)); hint.add_theme_constant_override("outline_size",4); door.add_child(hint)
+		door_nodes[direction] = door
+	_set_doors_open(exit_open)
+
+func _door_hint(neighbor: Dictionary) -> String:
+	if not bool(neighbor.get("visited",false)): return "?"
+	match String(neighbor.get("role","")):
+		"shop": return "Camp"
+		"treasure": return "Treasure" if not bool(neighbor.get("reward_claimed",false)) else ""
+		"boss": return "Root Gate"
+	return ""
+
+func _set_doors_open(open: bool) -> void:
+	for direction in door_nodes:
+		var door: Node2D = door_nodes[direction]
+		if not is_instance_valid(door): continue
+		var barrier := door.get_node_or_null("Brambles") as StaticBody2D
+		if barrier != null:
+			barrier.visible = not open
+			(barrier.get_child(0) as CollisionShape2D).set_deferred("disabled",open)
+		var glow := door.get_node_or_null("OpenGlow") as Node2D
+		if glow != null: glow.visible = open
+		var hint := door.get_node_or_null("Hint") as Label
+		if hint != null: hint.visible = open and not hint.text.is_empty()
+
+# ---------------------------------------------------------------- encounters
+
+func _spawn_enemies() -> void:
+	super._spawn_enemies()
+	if rooms_active:
+		if exit_open and not bool(room.get("cleared",false)): _mark_room_cleared(false)
+		_set_doors_open(exit_open)
+
+func _reveal_secret_door() -> void:
+	if rooms_active: return
+	super._reveal_secret_door()
+
+func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
+	super._on_enemy_defeated(enemy,reward)
+	if rooms_active and enemies_remaining == 0:
+		_mark_room_cleared(true)
+		_set_doors_open(true)
+		_spawn_loot()
+		_show_message("Gate open · descend through the roots." if Vector2i(layout.exit).x >= 0 else "Room cleared · the brambles pull back.")
+
+func _mark_room_cleared(fought: bool) -> void:
+	room["cleared"] = true
+	run_state.update_field_room(room_id,{"cleared":true})
+	if fought:
+		# TUNING: a small purse for every room fought through, on top of enemy rewards.
+		var amount := run_state.apply_reward_bonus(int(Dictionary(Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{})).get("room_count",{})).get("room_clear_gold",3)),"gold")
+		run_state.gold += amount
+
+## Loot caches appear once a room is safe and stay collected when you come back.
+func _spawn_loot() -> void:
+	if not rooms_active:
+		super._spawn_loot()
+		return
+	for loot in loot_nodes:
+		if is_instance_valid(loot): loot.queue_free()
+	loot_nodes.clear()
+	if not exit_open: return
+	var taken: Array = Array(Dictionary(room.get("slasher",{})).get("loot_taken",[]))
+	var kinds := ["gold","potion","key"]
+	for index in Array(layout.loot_spawns).size():
+		var cell: Vector2i = layout.loot_spawns[index]
+		if taken.has(cell): continue
+		var area := Area2D.new(); area.name = "ForestCache"; area.position = _world(cell)
+		var shape := CollisionShape2D.new(); var circle := CircleShape2D.new(); circle.radius = 14; shape.shape = circle; area.add_child(shape)
+		var kind := String(kinds[(room_id + index) % kinds.size()])
+		var sprite := SlasherForestArt.make_sprite(kind); sprite.position = Vector2(0,-8); area.add_child(sprite); area.add_child(_glow(Color("#f3d366"),18))
+		area.set_meta("kind",kind); area.set_meta("room_cell",cell)
+		actor_layer.add_child(area); loot_nodes.append(area)
+
+func _collect_loot(loot: Area2D) -> void:
+	if rooms_active and loot.has_meta("room_cell"): _remember("loot_taken",Vector2i(loot.get_meta("room_cell")))
+	super._collect_loot(loot)
+
+func _on_prop_broken(prop: SlasherBreakableProp, kind: String, cell: Vector2i) -> void:
+	super._on_prop_broken(prop,kind,cell)
+	if rooms_active: _remember("destroyed_props",cell)
+
+func _on_chest_opened(chest: SlasherBreakableProp, cell: Vector2i) -> void:
+	if not rooms_active:
+		super._on_chest_opened(chest,cell)
+		return
+	if pathfinder != null: pathfinder.set_cell_blocked(cell,false)
+	_remember("destroyed_props",cell)
+	relic_choice_source = "chest"
+	var cycle: int = maxi(0,run_state.get_slasher_cycle_number()-1) if run_state.slasher_endless_mode else 0
+	relic_modal.open(run_state,run_state.generate_slasher_chest_choices(run_state.current_floor,"room_%d_chest_%d_%d" % [room_id,cell.x,cell.y],cycle),true)
+
+func _remember(key: String, cell: Vector2i) -> void:
+	var state: Dictionary = Dictionary(room.get("slasher",{}))
+	var list: Array = Array(state.get(key,[]))
+	if not list.has(cell): list.append(cell)
+	state[key] = list; room["slasher"] = state
+	run_state.update_field_room(room_id,{"slasher":state})
+
+func _should_have_secret_door() -> bool:
+	return false if rooms_active else super._should_have_secret_door()
+
+# ---------------------------------------------------------------- moving between rooms
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if not rooms_active or not is_instance_valid(player): return
+	transition_cooldown = maxf(0.0,transition_cooldown-delta)
+	if player.input_locked or (relic_modal != null and relic_modal.visible): return
+	if treasure_area != null and is_instance_valid(treasure_area) and player.global_position.distance_to(treasure_area.global_position) < 40: _open_treasure()
+	_check_doors()
+
+func _check_doors() -> void:
+	if transition_cooldown > 0.0 or not exit_open: return
+	for direction in door_nodes:
+		var door: Node2D = door_nodes[direction]
+		if not is_instance_valid(door) or player.global_position.distance_to(door.global_position) > DOOR_TRIGGER_RADIUS: continue
+		var neighbor := int(Dictionary(room.neighbors).get(direction,-1))
+		if neighbor < 0: continue
+		AudioCue.play_at_from(self,"door_open",player.global_position)
+		transition_cooldown = 1.0
+		run_state.field_run["arrival_direction"] = ROOMS.OPPOSITE[direction]
+		run_state.enter_field_room(neighbor,room_id)
+		call_deferred("_build_floor")
+		return
+
+func _open_treasure() -> void:
+	if relic_modal == null or relic_modal.visible: return
+	AudioCue.play_at_from(self,"chest_open",treasure_area.global_position)
+	treasure_area.queue_free(); treasure_area = null
+	room["reward_claimed"] = true
+	run_state.update_field_room(room_id,{"reward_claimed":true})
+	relic_choice_source = "chest"
+	var cycle: int = maxi(0,run_state.get_slasher_cycle_number()-1) if run_state.slasher_endless_mode else 0
+	relic_modal.open(run_state,run_state.generate_slasher_chest_choices(run_state.current_floor,"room_%d_treasure" % room_id,cycle),true)
+
+## The base scene connects to settings once per player spawn; rooms respawn the
+## player on every transition, so drop the previous connection first.
+func _spawn_player() -> void:
+	var settings := _settings()
+	if settings != null and settings.settings_changed.is_connected(_on_game_setting_changed): settings.settings_changed.disconnect(_on_game_setting_changed)
+	super._spawn_player()
+
+func _snapshot_player() -> Dictionary:
+	if not is_instance_valid(player): return {}
+	return {"cooldowns":player.cooldowns.duplicate(),"invulnerable":player.invulnerable,"defense_window":player.defense_window,"defense_kind":player.defense_kind,"consumable_speed_time":player.consumable_speed_time,"consumable_speed_multiplier":player.consumable_speed_multiplier}
+
+func _restore_player(snapshot: Dictionary) -> void:
+	if snapshot.is_empty(): return
+	player.cooldowns = Dictionary(snapshot.get("cooldowns",player.cooldowns)); player.invulnerable = float(snapshot.get("invulnerable",0)); player.defense_window = float(snapshot.get("defense_window",0)); player.defense_kind = String(snapshot.get("defense_kind","")); player.consumable_speed_time = float(snapshot.get("consumable_speed_time",0)); player.consumable_speed_multiplier = float(snapshot.get("consumable_speed_multiplier",1))
+
+# ---------------------------------------------------------------- HUD
+
+func _build_hud() -> void:
+	super._build_hud()
+	if not rooms_active: return
+	var map := ROOM_MINIMAP.new(); map.name = "ForestRoomMap"
+	map.set_anchors_preset(Control.PRESET_TOP_RIGHT); map.offset_left = -214; map.offset_right = -18; map.offset_top = 18; map.offset_bottom = 152
+	map.setup(run_state); get_node("HUD").add_child(map)
+
+func _refresh_hud() -> void:
+	super._refresh_hud()
+	if not rooms_active or objective_label == null or not is_instance_valid(player): return
+	var depth_text: String = "ENDLESS · FLOOR %d" % run_state.current_floor if run_state.slasher_endless_mode else "FLOOR %d" % run_state.current_floor
+	var status := "%d FOES" % enemies_remaining if not exit_open else ("GATE OPEN" if Vector2i(layout.exit).x >= 0 else "CLEAR")
+	if bool(layout.get("is_boss_floor",false)) and not exit_open: status = "BOSS"
+	elif bool(layout.get("is_elite_floor",false)) and not exit_open: status = "ELITE GUARDIAN"
+	objective_label.text = "VERDANT FOREST  ·  %s  ·  %s  ·  %s" % [depth_text,String(layout.room_name).to_upper(),status]
+	var map := get_node_or_null("HUD/ForestRoomMap")
+	if map: map.queue_redraw()

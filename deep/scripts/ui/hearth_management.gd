@@ -770,8 +770,8 @@ func expedition_page() -> void:
 	body.add_child(destinations)
 	for id in unlocked:
 		var choice := Button.new()
-		choice.text = String(GameBalance.get_dungeon(id).get("name",id)) + ("  ✓" if campaign.has_completed_dungeon(id) else "")
-		choice.tooltip_text = "Cleared before. Parties can be dispatched here." if campaign.has_completed_dungeon(id) else "Not yet cleared. Lead a party yourself to unlock dispatch."
+		choice.text = String(GameBalance.get_dungeon(id).get("name",id))
+		choice.tooltip_text = "Your company knows the way past its guardian. Parties can be dispatched here." if campaign.has_completed_dungeon(id) else "Lead a party past its guardian yourself before you can dispatch one here."
 		THEME.apply_button(choice,id == dungeon_id,14,Vector2(150,40))
 		choice.pressed.connect(func(): dungeon_id=id; selected_party.clear(); refresh())
 		destinations.add_child(choice)
@@ -829,7 +829,7 @@ func expedition_page() -> void:
 	lead.tooltip_text = "Play the expedition yourself."
 	var dispatch := button(launch,"Dispatch Party",func(): act(HearthExpeditions.dispatch(campaign,selected_party,dungeon_id,policy)),readiness.ok and campaign.has_completed_dungeon(dungeon_id))
 	dispatch.custom_minimum_size = Vector2(150,42)
-	dispatch.tooltip_text = "Send them without you. Available once you have cleared this dungeon yourself." if not campaign.has_completed_dungeon(dungeon_id) else "Send them without you. They return after one shift."
+	dispatch.tooltip_text = "Send them without you. Available once you have led a party past this dungeon's guardian yourself." if not campaign.has_completed_dungeon(dungeon_id) else "Send them without you. They return after one shift."
 	if not campaign.dispatches.is_empty():
 		_heading("Parties away")
 		for value in campaign.dispatches.values():
@@ -909,7 +909,7 @@ func facilities_page() -> void:
 		else: status = label(String(cost.error),13,THEME.MUTED)
 		status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		if cost.available: status.tooltip_text = "Requires tier %d, reputation %d, and %d manual clears." % [int(cost.tier)+1,cost.get("reputation",0),cost.get("manual_clears",0)]
+		if cost.available: status.tooltip_text = "Requires tier %d, reputation %d, and %d guardians defeated on expeditions you led." % [int(cost.tier)+1,cost.get("reputation",0),cost.get("manual_clears",0)]
 		footer.add_child(status)
 		var commission := button(footer,"Commission",func(): act(HearthFacilities.purchase(campaign,branch)),cost.available)
 		commission.custom_minimum_size = Vector2(120,36)

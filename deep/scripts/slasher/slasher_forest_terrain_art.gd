@@ -7,10 +7,60 @@ const GRASS_REGION := Rect2(208, 80, 32, 32)
 static func make_ground_sprite(cell_size: int = 48) -> Sprite2D:
 	return _region(GRASS_REGION, float(cell_size) / 32.0)
 
+const WATER_REGION := Rect2(352, 200, 32, 32)
+const WATER_EDGE_REGION := Rect2(320, 165, 32, 32)
+const COBBLE_REGION := Rect2(64, 200, 32, 32)
+
 static func make_decoration(kind: String) -> Sprite2D:
 	if kind == "mossy_rock": return _region(Rect2(76, 17, 40, 31), 1.0)
-	if kind.begins_with("grass_tuft"): return _region(Rect2(337, 79, 32, 36), 0.7)
+	if kind == "stone": return _region(Rect2(76, 80, 40, 30), 1.0)
+	if kind == "pebbles": return _region(Rect2(334, 20, 44, 26), 1.0)
+	if kind == "mushrooms" or kind.begins_with("grass_tuft"): return _region(Rect2(337, 79, 32, 36), 0.7 if kind.begins_with("grass_tuft") else 0.9)
 	return SlasherForestArt.make_sprite(kind)
+
+## Ground for a hand-authored forest room: grass everywhere (including under the
+## thicket so canopy gaps never show the void), then water, cobblestone ruins and
+## the authored dirt trails. Trails use the same connected-path pieces as the
+## generated floors.
+static func build_room_ground(parent: Node2D, layout: Dictionary, cell_size: int = 48, origin: Vector2 = Vector2.ZERO) -> void:
+	var scale_value := float(cell_size) / 32.0
+	var water: Dictionary = layout.get("water_cells", {})
+	for y in int(layout.height):
+		for x in int(layout.width):
+			var cell := Vector2i(x, y)
+			var center := origin + (Vector2(cell) + Vector2.ONE * 0.5) * cell_size
+			var tile: Sprite2D
+			if water.has(cell):
+				tile = _region(WATER_EDGE_REGION if not water.has(cell + Vector2i.UP) else WATER_REGION, scale_value)
+				tile.name = "Water_%d_%d" % [x, y]
+			elif Dictionary(layout.get("cobble_cells", {})).has(cell):
+				tile = _region(COBBLE_REGION, scale_value)
+				tile.name = "Cobble_%d_%d" % [x, y]
+			else:
+				tile = make_ground_sprite(cell_size)
+				tile.name = "Ground_%d_%d" % [x, y]
+			tile.position = center
+			parent.add_child(tile)
+	var paths := authored_paths(layout)
+	for value: Variant in paths:
+		var half: Vector2i = value
+		var dirt := _region(dirt_region(half, paths), scale_value)
+		dirt.name = "Dirt_%d_%d" % [half.x, half.y]
+		dirt.position = origin + (Vector2(half) + Vector2.ONE * 0.5) * (cell_size / 2.0)
+		parent.add_child(dirt)
+
+## Expands authored trail cells onto the half-cell grid the dirt autotile uses,
+## joining neighbouring trail cells so trails read as one continuous path.
+static func authored_paths(layout: Dictionary) -> Dictionary:
+	var trail: Dictionary = layout.get("path_cells", {})
+	var cells: Dictionary = layout.cells
+	var paths: Dictionary = {}
+	for value: Variant in trail:
+		var cell: Vector2i = value
+		_path_slice(paths, cells, cell * 2)
+		for direction: Vector2i in [Vector2i.RIGHT, Vector2i.DOWN]:
+			if trail.has(cell + direction): _path_slice(paths, cells, cell * 2 + direction)
+	return paths
 
 static func build_ground(parent: Node2D, layout: Dictionary, cell_size: int = 48, origin: Vector2 = Vector2.ZERO) -> void:
 	for value: Variant in layout.cells:
