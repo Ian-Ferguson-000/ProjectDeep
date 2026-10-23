@@ -179,50 +179,191 @@ func _buy_supplies() -> void:
 	act({"ok":true,"message":"Four supplies delivered."})
 
 func company_page() -> void:
-	card("Your company","Adventurers receive 20% of expedition gold collectively. Resting adventurers do not draw wages. Equipment stays with the Hearth when a recruit retires.")
-	for member in campaign.living_roster():
-		var content := card("%s · %s · Level %d" % [member.display_name,member.class_id.capitalize(),member.level],"%s   •   Age %d / retirement 60   •   Health %d/%d   •   %d victories\n%s" % [member.status.capitalize(),member.age_on(campaign.calendar_day),member.current_health,member.max_health,member.victories,member.biography])
-		content.add_child(label("Learning potential: " + (VisitorContestRules.learning_name(member.learning_potential) if member.learning_potential_known else "Unknown"),15,THEME.MUTED))
-		content.add_child(label(_stat_block_text(member),15,Color("d7c7a6")))
-		var actions := HBoxContainer.new()
-		content.add_child(actions)
-		button(actions,"Equipment",func(): member_id=member.id; show_section("Armory"))
-		button(actions,"Train · %dg" % (15*member.level),func(): act(HearthFacilities.train(campaign,member.id)),member.status=="available")
-		button(actions,"Retire",_confirm_retire.bind(member.id),member.status=="available")
-		_add_class_assignment(content,member)
-		if member.recovery_until>campaign.calendar_day: content.add_child(label("Ready on Day %d" % member.recovery_until,15,THEME.MUTED))
-	card("Arrivals","Contracts show signing costs before recruitment. Assess candidates through conversation to learn their strengths.")
-	for candidate in campaign.get_candidates():
-		var member := candidate.adventurer
-		var content := card(member.display_name+" · "+_build_name(member)+" · hopes to train as "+member.calling_class_id.capitalize(),"Signing fee %dg · 20%% collective expedition share · %s" % [member.signing_fee,candidate.motivation])
-		button(content,"Meet and assess",func(): hide(); candidate_requested.emit(candidate.id))
+	var intro := label("Adventurers share 20% of the gold each expedition brings home. Resting adventurers draw no wages, and equipment stays with the Hearth when someone retires.",14,THEME.MUTED)
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(intro)
+	var members := campaign.living_roster()
+	body.add_child(_heading("Your company","%d of %d rooms filled" % [members.size(),campaign.get_roster_capacity()]))
+	if members.is_empty(): body.add_child(label("No one has signed on yet. Meet the arrivals below.",15,THEME.MUTED))
+	for member in members: _member_card(member)
+	var candidates := campaign.get_candidates()
+	body.add_child(_heading("Arrivals","Meet them to learn their strengths before signing"))
+	if candidates.is_empty(): body.add_child(label("No one is waiting at the Hearth today.",15,THEME.MUTED))
+	for candidate in candidates: _arrival_card(candidate)
+
+func _heading(title: String, note: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var title_label_node := label(title.to_upper(),15,THEME.GOLD)
+	title_label_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(title_label_node)
+	row.add_child(label(note,13,THEME.MUTED))
+	return row
+
+func _card_panel() -> HBoxContainer:
+	var panel := PanelContainer.new()
+	var style := THEME.panel(Color("2b1e15"),Color("5d4428"),6,1)
+	style.set_content_margin_all(12)
+	panel.add_theme_stylebox_override("panel",style)
+	body.add_child(panel)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation",16)
+	panel.add_child(row)
+	return row
+
+func _portrait(member: CharacterRecord, size: Vector2) -> TextureRect:
+	var portrait := TextureRect.new()
+	portrait.custom_minimum_size = size
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	var path := "res://assets/roster_portraits/%s_%d.png" % [member.class_id,member.portrait_variant]
+	if ResourceLoader.exists(path): portrait.texture = load(path)
+	else: portrait.texture = THEME.class_icon(member.class_id)
+	return portrait
+
+func _chip(text_value: String, tint: Color, tooltip: String = "") -> PanelContainer:
+	var chip := PanelContainer.new()
+	var style := THEME.panel(Color(tint,0.14),Color(tint,0.7),10,1)
+	style.set_content_margin(SIDE_LEFT,9); style.set_content_margin(SIDE_RIGHT,9); style.set_content_margin(SIDE_TOP,2); style.set_content_margin(SIDE_BOTTOM,2)
+	chip.add_theme_stylebox_override("panel",style)
+	chip.tooltip_text = tooltip
+	chip.add_child(label(text_value,13,tint))
+	return chip
+
+func _status_chip(member: CharacterRecord) -> PanelContainer:
+	match member.status:
+		"available": return _chip("At the Hearth",Color("8fd48a"),"Ready for expeditions, training, and retraining.")
+		"expedition": return _chip("On expedition",Color("e7b45a"),"Away with a party.")
+		"recovering": return _chip("Recovering · Day %d" % member.recovery_until,Color("8fb8e0"),"Back on Day %d." % member.recovery_until)
+	return _chip(member.status.capitalize(),THEME.MUTED)
+
+func _member_card(member: CharacterRecord) -> void:
+	var row := _card_panel()
+	row.add_child(_portrait(member,Vector2(88,104)))
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation",6)
+	row.add_child(info)
+	var title := HBoxContainer.new()
+	title.add_theme_constant_override("separation",8)
+	info.add_child(title)
+	title.add_child(label("%s %s" % [member.display_name,member.family_name],20,THEME.HIGHLIGHT_GOLD))
+	title.add_child(_chip("%s · Level %d" % [member.class_id.capitalize(),member.level],THEME.GOLD))
+	title.add_child(_status_chip(member))
+	var facts := PackedStringArray([_build_name(member),member.trait_name,"Age %d" % member.age_on(campaign.calendar_day),"%d victories" % member.victories,(VisitorContestRules.learning_name(member.learning_potential) if member.learning_potential_known else "Learning pace unknown")])
+	var facts_label := label("  ·  ".join(facts),14,THEME.IVORY)
+	facts_label.tooltip_text = "%s: %s\n%s: %s" % [_build_name(member),String(AdventurerBuilds.build(member.stat_build_id).get("description","")),member.trait_name,member.trait_description]
+	facts_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	info.add_child(facts_label)
+	info.add_child(_health_bar(member))
+	var stats := AdventurerStatGrid.new(true)
+	stats.show_attributes(member.attributes)
+	info.add_child(stats)
+	var story := label(member.biography,13,THEME.MUTED)
+	story.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	story.max_lines_visible = 2
+	story.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	story.tooltip_text = member.biography
+	story.mouse_filter = Control.MOUSE_FILTER_PASS
+	info.add_child(story)
+	var side := VBoxContainer.new()
+	side.custom_minimum_size = Vector2(360,0)
+	side.size_flags_horizontal = Control.SIZE_SHRINK_END
+	side.add_theme_constant_override("separation",8)
+	row.add_child(side)
+	_add_class_assignment(side,member)
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation",6)
+	side.add_child(actions)
+	var available := member.status == "available"
+	var equipment := button(actions,"Equipment",func(): member_id=member.id; show_section("Armory"))
+	var train := button(actions,"Train · %dg" % (15*member.level),func(): act(HearthFacilities.train(campaign,member.id)),available)
+	train.tooltip_text = "Pay to train them up a level. They spend two days recovering."
+	var retire := button(actions,"Retire",_confirm_retire.bind(member.id),available)
+	for small in [equipment,train,retire]: small.custom_minimum_size = Vector2(100,38)
+
+func _health_bar(member: CharacterRecord) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation",8)
+	row.add_child(label("Health",13,THEME.MUTED))
+	var bar := ProgressBar.new()
+	bar.custom_minimum_size = Vector2(180,12)
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.show_percentage = false
+	bar.max_value = maxi(1,member.max_health)
+	bar.value = clampi(member.current_health,0,member.max_health)
+	var fill := StyleBoxFlat.new()
+	var ratio := float(member.current_health) / float(maxi(1,member.max_health))
+	fill.bg_color = Color("7fc46f") if ratio > 0.6 else (Color("e0b452") if ratio > 0.3 else Color("df6a52"))
+	fill.set_corner_radius_all(3)
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color("120c08")
+	track.border_color = Color("4a3522")
+	track.set_border_width_all(1)
+	track.set_corner_radius_all(3)
+	bar.add_theme_stylebox_override("fill",fill)
+	bar.add_theme_stylebox_override("background",track)
+	row.add_child(bar)
+	row.add_child(label("%d / %d" % [member.current_health,member.max_health],13,THEME.IVORY))
+	return row
+
+func _arrival_card(candidate: CandidateRecord) -> void:
+	var member := candidate.adventurer
+	var row := _card_panel()
+	row.add_child(_portrait(member,Vector2(60,70)))
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation",4)
+	row.add_child(info)
+	var title := HBoxContainer.new()
+	title.add_theme_constant_override("separation",8)
+	info.add_child(title)
+	title.add_child(label("%s %s" % [member.display_name,member.family_name],18,THEME.HIGHLIGHT_GOLD))
+	if not member.stat_build_id.is_empty(): title.add_child(_chip(_build_name(member),THEME.GOLD,String(AdventurerBuilds.build(member.stat_build_id).get("description",""))))
+	title.add_child(_chip("Hopes to be a %s" % member.calling_class_id.capitalize(),THEME.IVORY,"Their calling. You choose their class when you sign them."))
+	var quote := label("“%s”" % candidate.motivation,14,THEME.MUTED)
+	quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	quote.max_lines_visible = 2
+	quote.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	info.add_child(quote)
+	var side := VBoxContainer.new()
+	side.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(side)
+	side.add_child(label("Signing fee %dg" % member.signing_fee if member.signing_fee > 0 else "No signing fee",14,THEME.GOLD))
+	button(side,"Meet and assess",func(): hide(); candidate_requested.emit(candidate.id))
 
 func _build_name(member: CharacterRecord) -> String:
 	return AdventurerBuilds.build_name(member.stat_build_id) if not member.stat_build_id.is_empty() else "Adventurer"
 
-func _stat_block_text(member: CharacterRecord) -> String:
-	var stats := PackedStringArray()
-	for stat in AdventurerBuilds.ATTRIBUTE_IDS: stats.append("%s %d" % [stat.to_upper(),int(member.attributes.get(stat,10))])
-	var calling := "" if member.calling_class_id == member.class_id else "   •   Calling: %s" % member.calling_class_id.capitalize()
-	return "%s   •   %s   •   %s fit%s" % [_build_name(member),"  ".join(stats),AdventurerBuilds.class_fit(member.attributes,member.class_id),calling]
-
 ## Lets the keeper move an adventurer into any unlocked class while they are home.
-func _add_class_assignment(content: VBoxContainer, member: CharacterRecord) -> void:
+func _add_class_assignment(parent: VBoxContainer, member: CharacterRecord) -> void:
+	var grade := AdventurerBuilds.class_fit(member.attributes,member.class_id)
+	var fit_row := HBoxContainer.new()
+	fit_row.add_theme_constant_override("separation",8)
+	parent.add_child(fit_row)
+	fit_row.add_child(label("%s fit as %s" % [grade,member.class_id.capitalize()],15,AdventurerStatGrid.FIT_COLORS.get(grade,THEME.IVORY)))
+	var calling := label("★ Their calling" if member.calling_class_id == member.class_id else "★ Hoped to be a %s" % member.calling_class_id.capitalize(),13,THEME.MUTED)
+	parent.add_child(calling)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation",8)
-	content.add_child(row)
-	row.add_child(label("Class",15,THEME.GOLD))
+	row.add_theme_constant_override("separation",6)
+	parent.add_child(row)
 	var picker := OptionButton.new()
-	picker.custom_minimum_size = Vector2(280,40)
+	picker.custom_minimum_size = Vector2(200,38)
+	picker.fit_to_longest_item = false
+	picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	picker.tooltip_text = "Classes you have unlocked, best fit first."
 	for class_id in AdventurerBuilds.ranked_classes(member.attributes,campaign.unlocked_classes):
-		var text_value := "%s — %s fit" % [class_id.capitalize(),AdventurerBuilds.class_fit(member.attributes,class_id)]
-		if class_id == member.calling_class_id: text_value += "  (calling)"
+		var text_value := "%s — %s" % [class_id.capitalize(),AdventurerBuilds.class_fit(member.attributes,class_id)]
+		if class_id == member.calling_class_id: text_value += "  ★"
 		picker.add_item(text_value)
 		picker.set_item_metadata(picker.item_count-1,class_id)
+		var icon := THEME.class_icon(class_id)
+		if icon != null: picker.set_item_icon(picker.item_count-1,icon)
 		if class_id == member.class_id: picker.select(picker.item_count-1)
+	picker.add_theme_constant_override("icon_max_width",22)
 	picker.disabled = member.status != "available"
 	row.add_child(picker)
 	var retrain := button(row,"Retrain",func(): _retrain(member.id,String(picker.get_selected_metadata())),false)
+	retrain.custom_minimum_size = Vector2(100,38)
 	picker.item_selected.connect(func(index: int): retrain.disabled = member.status != "available" or String(picker.get_item_metadata(index)) == member.class_id)
 	retrain.tooltip_text = "Keeps level and attributes. Class upgrade choices are picked again, and gear the new class cannot use returns to the armory."
 
