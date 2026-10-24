@@ -147,6 +147,8 @@ func _on_actor_arrived(actor:TavernActor)->void:
 	var target_kind:=String(actor.get_meta("target_kind",""))
 	if target_kind=="Seat":actor.seat_at(actor.global_position)
 	elif target_kind=="Conversation":actor.state=TavernActor.ActivityState.CHATTING;actor.show_emote(["💬","🍻","!"][_rng.randi_range(0,2)])
+	elif target_kind=="Train":actor.show_emote(["⚔","💪","🏹"][_rng.randi_range(0,2)],3.0)
+	elif target_kind=="Rest":actor.show_emote("💤",3.0)
 	_schedule_next(actor)
 
 func _schedule_next(actor:TavernActor)->void:
@@ -155,7 +157,14 @@ func _schedule_next(actor:TavernActor)->void:
 	timer.timeout.connect(func():
 		var live_actor:=actor_ref.get_ref() as TavernActor
 		if paused or departing or live_actor==null or live_actor.state==TavernActor.ActivityState.INTERACTING:return
-		live_actor.stand_up();var anchor:=_claim_anchor(live_actor.actor_id,["Seat","Conversation","Wander","Wait"]);live_actor.set_meta("target_kind",String(anchor.get_meta("activity_kind","Wander")));live_actor.move_to(anchor.global_position))
+		live_actor.stand_up();var anchor:=_claim_anchor(live_actor.actor_id,_activity_kinds(live_actor));live_actor.set_meta("target_kind",String(anchor.get_meta("activity_kind","Wander")));live_actor.move_to(anchor.global_position))
+
+## Where an adventurer might go next. Company members can also train in the yard
+## and rest in their own room once those areas are open; visitors stay social.
+func _activity_kinds(actor:TavernActor)->Array[String]:
+	if actor.actor_kind=="roster":return ["Seat","Conversation","Wander","Wait","Train","Train","Rest"]
+	if actor.actor_kind=="candidate":return ["Seat","Conversation","Wander","Wait","Wander"]
+	return ["Seat","Conversation","Wander","Wait"]
 
 func _claim_anchor(actor_id:String,kinds:Array[String])->Marker2D:
 	for path in reserved.keys():
@@ -163,7 +172,13 @@ func _claim_anchor(actor_id:String,kinds:Array[String])->Marker2D:
 	var choices:Array[Marker2D]=[]
 	for child_value in anchors_root.get_parent().find_children("*","Marker2D",true,false):
 		var child:=child_value as Marker2D
-		if child!=null and String(child.get_meta("activity_kind","")) in kinds and not reserved.has(child.get_path()):choices.append(child)
+		if child==null or not child.is_inside_tree():continue
+		# A bed is only for the adventurer whose room it is.
+		if child.has_meta("occupant") and String(child.get_meta("occupant"))!=actor_id:continue
+		if String(child.get_meta("activity_kind","")) in kinds and not reserved.has(child.get_path()):
+			choices.append(child)
+			# Kinds listed twice (Train) are picked more often.
+			for repeat in kinds.count(String(child.get_meta("activity_kind","")))-1:choices.append(child)
 	if choices.is_empty():return _anchor("Entrance")
 	var selected:=choices[_rng.randi_range(0,choices.size()-1)];reserved[selected.get_path()]=actor_id;return selected
 

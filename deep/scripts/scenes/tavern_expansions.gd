@@ -73,7 +73,62 @@ func build(target_world: Node2D, source: CampaignState) -> void:
 	_build_lodgings()
 	if yard_open: _build_yard()
 	else: _build_locked_yard_door()
+	_build_navigation()
 	ground.queue_redraw()
+
+# ---------------------------------------------------------------- where people walk
+
+## Walkable navigation for every open area, joined to the main hall's navigation
+## through the doorways, plus activity spots the tavern's adventurers can visit:
+## Wander in the corridor and yard, Train at the yard's dummies and targets, and
+## Rest by their own bed.
+func _build_navigation() -> void:
+	var door := Rect2(150.0,DOOR_TOP + 14.0,HALL_FLOOR.position.x - 150.0,DOOR_BOTTOM - DOOR_TOP - 28.0)
+	_nav_rect(door)
+	var corridor := Rect2(lodging_floor.position.x + 30.0,HALL_FLOOR.position.y + ALCOVE_DEPTH,150.0 - (lodging_floor.position.x + 30.0),860.0 - (HALL_FLOOR.position.y + ALCOVE_DEPTH))
+	_nav_rect(corridor)
+	var corridor_left := lodging_floor.position.x + 80.0
+	for index in HearthLodging.room_limit(campaign):
+		var cell := Rect2(corridor_left + index * ALCOVE_WIDTH,HALL_FLOOR.position.y,ALCOVE_WIDTH,ALCOVE_DEPTH)
+		var room: Dictionary = campaign.rooms[index] if index < campaign.rooms.size() else {}
+		if room.is_empty(): continue
+		_nav_rect(Rect2(cell.position.x + 98.0,cell.position.y + 120.0,58.0,ALCOVE_DEPTH - 120.0))
+		var occupant := String(room.get("occupant",""))
+		if not occupant.is_empty(): _anchor("Rest",Vector2(cell.position.x + 127.0,cell.position.y + 168.0),occupant)
+	var x := corridor.position.x + 90.0
+	while x < 60.0:
+		_anchor("Wander",Vector2(x,700.0 + float(int(x) % 3) * 40.0))
+		x += 260.0
+	if not yard_open: return
+	_nav_rect(Rect2(HALL_FLOOR.end.x,DOOR_TOP + 14.0,yard_floor.position.x + 20.0 - HALL_FLOOR.end.x,DOOR_BOTTOM - DOOR_TOP - 28.0))
+	_nav_rect(Rect2(yard_floor.position.x + 20.0,yard_floor.position.y + 40.0,yard_floor.size.x - 60.0,yard_floor.size.y - 80.0))
+	var ring_center := Vector2(yard_floor.position.x + 330.0,yard_floor.position.y + 470.0)
+	_anchor("Train",ring_center + Vector2(-90,40))
+	_anchor("Train",ring_center + Vector2(90,40))
+	_anchor("Train",ring_center + Vector2(0,-70))
+	_anchor("Wander",Vector2(yard_floor.position.x + 560.0,yard_floor.position.y + 300.0))
+	_anchor("Wander",Vector2(yard_floor.position.x + 200.0,yard_floor.end.y - 160.0))
+	if int(campaign.establishment_tier) >= 2:
+		for index in 3: _anchor("Train",Vector2(yard_floor.end.x - 420.0,yard_floor.position.y + 230.0 + index * 150.0))
+	if int(campaign.establishment_tier) >= 3:
+		_anchor("Train",Vector2(yard_floor.position.x + 700.0,yard_floor.end.y - 70.0))
+
+func _nav_rect(rect: Rect2) -> void:
+	var region := NavigationRegion2D.new()
+	var polygon := NavigationPolygon.new()
+	polygon.vertices = PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
+	polygon.add_polygon(PackedInt32Array([0,1,2,3]))
+	region.navigation_polygon = polygon
+	add_child(region)
+
+func _anchor(kind: String, position_value: Vector2, occupant: String = "") -> Marker2D:
+	var marker := Marker2D.new()
+	marker.name = "%sSpot" % kind
+	marker.position = position_value
+	marker.set_meta("activity_kind",kind)
+	if not occupant.is_empty(): marker.set_meta("occupant",occupant)
+	add_child(marker)
+	return marker
 
 ## The area the camera may show: the hall plus every open area.
 func camera_bounds() -> Rect2:
