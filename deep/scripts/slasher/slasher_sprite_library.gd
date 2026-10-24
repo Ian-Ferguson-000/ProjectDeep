@@ -75,6 +75,7 @@ static func tavern_keeper_frames() -> SpriteFrames:
 	return frames
 
 static func enemy_frames(enemy_id: String) -> SpriteFrames:
+	if ForestCreatureArt.CREATURES.has(enemy_id):return ForestCreatureArt.frames_for(String(ForestCreatureArt.CREATURES[enemy_id]))
 	var frame_resource_path:="res://assets/enemies/%s/frames.tres"%enemy_id
 	if ResourceLoader.exists(frame_resource_path):return load(frame_resource_path) as SpriteFrames
 	var generated_path:="res://assets/enemies/%s/generated_source.png"%enemy_id

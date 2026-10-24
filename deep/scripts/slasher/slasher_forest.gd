@@ -51,6 +51,7 @@ var merchant_offer_nodes:Array[Area2D]=[]
 var message_label:Label
 var combo_label:Label
 var objective_label:Label
+var clock_label:Label
 var health_bar:ProgressBar
 var resource_bar:ProgressBar
 var health_value_label:Label
@@ -312,8 +313,17 @@ func _spawn_enemies()->void:
 		if visual_id.is_empty():
 			var spec:=_normal_enemy_spec(spawn_index,wolf_counts);visual_id=String(spec.visual_id);behavior_id=String(spec.behavior_id)
 		_spawn_enemy(_world(spawn),visual_id,behavior_id,bool(spawn_record.get("is_boss",false)),bool(spawn_record.get("is_mini_boss",false)));spawn_index+=1
+		if behavior_id=="sporeling":_spawn_sporeling_cluster(_world(spawn))
 	exit_open=enemies_remaining==0
 	if exit_open:_reveal_secret_door()
+
+## Sporelings sleep in clusters: extra caps around the first one.
+func _spawn_sporeling_cluster(center:Vector2)->void:
+	var tuning:=GameBalance.get_slasher_enemy_tuning("sporeling")
+	var count:=int(tuning.get("group_size_from_floor_3" if run_state.current_floor>=3 else "group_size",3))-1
+	for index in count:
+		var angle:=TAU*float(index)/float(maxi(1,count))+0.6
+		_spawn_enemy(sanitize_player_position(center+Vector2(cos(angle),sin(angle))*38.0),"sporeling","sporeling")
 
 func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 	var wolves:Array[String]=["wolf_vanguard","wolf_lurker","wolf_charger","wolf_hunter","wolf_howler"]
@@ -327,7 +337,10 @@ func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 		if wolf_id in ["wolf_hunter","wolf_howler"] and int(wolf_counts.get(wolf_id,0))>=1:wolf_id="wolf_vanguard" if (spawn_index%2)==0 else "wolf_charger"
 		wolf_counts[wolf_id]=int(wolf_counts.get(wolf_id,0))+1;return {"visual_id":wolf_id,"behavior_id":wolf_id}
 	var other_enemies:Array[String]=[];other_enemies.assign(DungeonRuntimeProfile.get_profile(run_state.active_dungeon_id).get("slasher_enemies",["thornback_boar","spore_beast","briar_guardian","ice_mage"]))
-	return {"visual_id":other_enemies[(spawn_index+run_state.current_floor-1)%other_enemies.size()],"behavior_id":""}
+	# Cycle through the dungeon's list room by room, starting at a floor-based offset.
+	var other_index:int=int(wolf_counts.get("_others",0));wolf_counts["_others"]=other_index+1
+	var enemy_id:String=other_enemies[(other_index+run_state.current_floor-1)%other_enemies.size()]
+	return {"visual_id":enemy_id,"behavior_id":enemy_id if enemy_id in SlasherEnemySceneLibrary.FOREST_IDS else ""}
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
 	var enemy:=_instantiate_enemy(visual_id);enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1
@@ -368,6 +381,7 @@ func _process(delta:float)->void:
 	var codex_open:bool=codex!=null and codex.visible
 	var modal_open:bool=(merchant_shop_panel!=null and merchant_shop_panel.visible) or (relic_modal!=null and relic_modal.visible)
 	player.input_locked=modal_open or codex_open
+	_tick_run_clock(delta,modal_open or codex_open)
 	if Input.is_action_just_pressed("character_menu") and not modal_open:
 		_open_codex("keyboard" if Input.is_physical_key_pressed(KEY_M) else "controller");return
 	if Input.is_action_just_pressed("cycle_party") and not modal_open and not codex_open and run_state.get_active_party_ids().size()>1:
@@ -588,6 +602,24 @@ func _nearby_chest()->SlasherBreakableProp:
 		if is_instance_valid(chest) and not chest.is_open and not chest.destroyed and player.global_position.distance_to(chest.global_position)<=interaction_radius:return chest
 	return null
 
+## The clock runs while you play: not during menus, relic choices, shops, the
+## tutorial, or after the guardian has fallen.
+func _tick_run_clock(delta:float,menu_open:bool)->void:
+	var stopped:bool=menu_open or _is_tutorial_expedition() or player.health<=0 or (bool(layout.get("is_boss_floor",false)) and exit_open)
+	if not stopped:run_state.tick_run_clock(delta)
+	_refresh_clock_label()
+
+func _refresh_clock_label()->void:
+	if clock_label==null or run_state.campaign==null:return
+	var now:=run_state.dungeon_clock();var class_id:=run_state.clear_class_id()
+	var best:Dictionary=ClearRecords.best(run_state.campaign,run_state.active_dungeon_id,class_id)
+	var text:="%s"%ClearRecords.format_time(maxf(0.0,now)) if now>0.0 else "0:00.0"
+	if not best.is_empty():
+		var target:=float(best.time)
+		text+="   ·   %s best %s"%[class_id.capitalize(),ClearRecords.format_time(target)]
+		clock_label.add_theme_color_override("font_color",Color("#f0e2b8") if now<=target else Color("#e89a7a"))
+	clock_label.text=text
+
 func _build_hud()->void:
 	var canvas:=CanvasLayer.new();canvas.name="HUD";canvas.layer=10;add_child(canvas)
 	_build_party_strip(canvas)
@@ -596,6 +628,8 @@ func _build_hud()->void:
 	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;status.add_child(objective_label)
 	combo_label=_label(Vector2.ZERO,Vector2(360,22),14);combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_color_override("font_color",Color("#e5bf68"));status.add_child(combo_label)
 	_build_resource_hud(canvas)
+	clock_label=Label.new();clock_label.name="RunClock";clock_label.set_anchors_preset(Control.PRESET_CENTER_TOP);clock_label.offset_left=-220;clock_label.offset_right=220;clock_label.offset_top=100;clock_label.offset_bottom=124;clock_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;clock_label.add_theme_font_size_override("font_size",15);clock_label.add_theme_color_override("font_color",Color("#f0e2b8"));clock_label.add_theme_color_override("font_outline_color",Color("#10120e"));clock_label.add_theme_constant_override("outline_size",5);canvas.add_child(clock_label)
+	clock_label.visible=run_state.campaign!=null and not _is_tutorial_expedition()
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)

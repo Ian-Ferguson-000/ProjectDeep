@@ -280,13 +280,13 @@ func complete_slasher_dungeon_floor() -> void:
 	else:
 		var completion_logs := run_state.record_active_dungeon_completion()
 		if _continue_connected_expedition(completion_logs): return
-		return_to_tavern("victory","The party clears %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(completion_logs)])
+		return_to_tavern("victory","The party defeats the guardian of %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(completion_logs)])
 
 func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])->void:
 	if cycle_boss:
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
 		if _continue_connected_expedition(favor_logs): return
-		return_to_tavern("victory","You conquer the Forest after floor %d with %d gold.\n%s\n%s" % [run_state.current_floor, run_state.gold, " ".join(favor_logs), run_state.get_slasher_progression_summary()])
+		return_to_tavern("victory","The forest's guardian falls on floor %d. You return with %d gold.\n%s\n%s" % [run_state.current_floor, run_state.gold, " ".join(favor_logs), run_state.get_slasher_progression_summary()])
 		return
 	_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 
@@ -350,6 +350,7 @@ func return_to_tavern(outcome: String, message: String) -> void:
 		"gold": run_state.gold,
 		"slasher_progression":run_state.get_slasher_progression_summary(),
 		"changes": changes,
+		"clear": run_state.last_clear.duplicate(true) if outcome == "victory" else {},
 	}
 	run_state.finish_run(outcome, message)
 	if previous_loop != int(campaign.keeper_memory.get("loop_number",0)):

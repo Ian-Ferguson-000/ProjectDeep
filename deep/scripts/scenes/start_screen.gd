@@ -77,7 +77,7 @@ func _slot_text(summary:Dictionary)->String:
 	if not bool(summary.get("exists",false)):return "SLOT %d · EMPTY"%slot
 	if not bool(summary.get("recoverable",false)):return "SLOT %d · UNREADABLE SAVE"%slot
 	var phase:=String(summary.get("tutorial_phase","new")).replace("_"," ").capitalize();var saved:=int(summary.get("last_saved_unix",0));var stamp:="Unknown date" if saved<=0 else Time.get_datetime_string_from_unix_time(saved,true)
-	return "SLOT %d · %s\n%d recruits · %d dungeons · %d gold · %s"%[slot,phase,int(summary.get("roster_count",0)),int(summary.get("completed_dungeons",0)),int(summary.get("banked_gold",0)),stamp]
+	return "SLOT %d · %s\n%d recruits · %d clears · %d gold · %s"%[slot,phase,int(summary.get("roster_count",0)),int(summary.get("total_clears",0)),int(summary.get("banked_gold",0)),stamp]
 
 func _select_slot(slot:int,new_game:bool,occupied:bool,overlay:Control)->void:
 	if new_game and occupied:

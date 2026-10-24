@@ -41,6 +41,7 @@ func _physics_process(delta:float)->void:
 	if age>=lifetime:_finish();return
 	if movement_pattern in ["curve","orbit"]:direction=direction.rotated(angular_velocity*delta)
 	if sprite!=null:sprite.rotation=direction.angle()
+	if visual_type=="knife":queue_redraw()
 	var movement:=direction*speed*delta
 	var query:=PhysicsRayQueryParameters2D.create(global_position,global_position+movement,collision_mask_value)
 	if is_instance_valid(source):query.exclude.append(source.get_rid())
@@ -82,5 +83,14 @@ func _finish()->void:
 func _draw()->void:
 	if sprite!=null:return
 	if visual_type=="soul":draw_circle(Vector2.ZERO,8.0,tint);draw_circle(Vector2.ZERO,3.5,Color("#e8ffff"));return
+	if visual_type=="knife":
+		# A spinning thrown dagger: steel blade, dark grip.
+		draw_set_transform(Vector2.ZERO,age*22.0)
+		draw_colored_polygon(PackedVector2Array([Vector2(13,0),Vector2(2,-3.5),Vector2(-2,0),Vector2(2,3.5)]),Color("#dfe6ee"))
+		draw_line(Vector2(2,-3.5),Vector2(13,0),Color("#8a96a3"),1.0)
+		draw_line(Vector2(-1,-5),Vector2(-1,5),Color("#6b4a2b"),2.5)
+		draw_line(Vector2(-2,0),Vector2(-9,0),Color("#4a2f1c"),3.0)
+		draw_set_transform(Vector2.ZERO,0.0)
+		return
 	if visual_type=="arrow":draw_line(-direction*13.0,direction*13.0,tint,3.0);draw_colored_polygon(PackedVector2Array([direction*15.0,direction*7.0+direction.orthogonal()*5.0,direction*7.0-direction.orthogonal()*5.0]),tint);return
 	var forward:=direction*11.0;var side:=direction.orthogonal()*5.0;draw_colored_polygon(PackedVector2Array([forward,-forward*0.65+side,-forward,-forward*0.65-side]),tint);draw_polyline(PackedVector2Array([forward,-forward*0.65+side,-forward,-forward*0.65-side,forward]),tint.darkened(0.55),2.0)

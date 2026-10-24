@@ -14,12 +14,12 @@ signal closed
 signal testing_ground_requested
 
 const THEME = preload("res://scripts/ui/tavern_ui_theme.gd")
-const SECTIONS = ["Company","Training","Lodgings","Expeditions","Facilities","Armory","Merchants","Calendar","Reports"]
+const SECTIONS = ["Company","Training","Lodgings","Expeditions","Facilities","Armory","Merchants","Calendar","Reports","Best Times"]
 const GROUPS = [
 	{"id":"Company","label":"Company","icon":"roster","pages":["Company","Training","Lodgings"]},
 	{"id":"Expeditions","label":"Expeditions","icon":"expedition","pages":["Expeditions"]},
 	{"id":"Facilities","label":"Facilities","icon":"hearth","pages":["Facilities","Armory","Merchants"]},
-	{"id":"Records","label":"Records","icon":"ledger","pages":["Calendar","Reports"]},
+	{"id":"Records","label":"Records","icon":"ledger","pages":["Calendar","Reports","Best Times"]},
 ]
 const PAGES = {
 	"Company":{"title":"Company","tab":"Roster","icon":"roster","hint":"Your adventurers and anyone waiting to sign on. Adventurers share 20% of the gold each expedition brings home."},
@@ -31,6 +31,7 @@ const PAGES = {
 	"Merchants":{"title":"Suppliers","tab":"Suppliers","icon":"merchants","hint":"Buy travel supplies, provisions, and equipment. Everything goes straight into storage."},
 	"Calendar":{"title":"Calendar","tab":"Calendar","icon":"calendar","hint":"What has happened at the Hearth, and what is coming."},
 	"Reports":{"title":"Expedition Reports","tab":"Reports","icon":"ledger","hint":"Every return: gold, losses, and what was recovered."},
+	"Best Times":{"title":"Best Times","tab":"Best Times","icon":"ledger","hint":"Dungeons are never finished. Each guardian you defeat sets a clear time: beat the record, and the best for every class."},
 }
 const RARITY_COLORS = {"common":Color("ead9b8"),"uncommon":Color("8fd48a"),"rare":Color("7fb4ee"),"epic":Color("c79af0"),"legendary":Color("f0a24f")}
 const CARD_FILL = Color("2b1e15")
@@ -257,6 +258,7 @@ func refresh() -> void:
 		"Facilities": facilities_page()
 		"Merchants": merchant_page()
 		"Reports": reports_page()
+		"Best Times": best_times_page()
 		"Calendar":
 			var calendar := preload("res://scripts/ui/hearth_calendar_view.gd").new()
 			calendar.custom_minimum_size = Vector2(0,430)
@@ -1072,6 +1074,19 @@ func expedition_page() -> void:
 		reason_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		risk_card.add_child(reason_label)
 	risk_card.add_child(label("Keeper keeps 80%% of recovered gold · back Day %d, %s" % [campaign.calendar_day+campaign.calendar_shift,"Late Shift" if campaign.calendar_shift == 0 else "Early Shift"],13,THEME.MUTED))
+	var times_card := card("Time to beat","",plan)
+	var dungeon_record := ClearRecords.best(campaign,dungeon_id)
+	if dungeon_record.is_empty():
+		times_card.add_child(label("No clear yet. Defeat the guardian to set the first time.",14,THEME.MUTED))
+	else:
+		times_card.add_child(label("Record  %s  ·  %s (%s)  ·  %d clears" % [ClearRecords.format_time(float(dungeon_record.time)),String(dungeon_record.hero),String(dungeon_record.class_id).capitalize(),ClearRecords.clears(campaign,dungeon_id)],14,THEME.HIGHLIGHT_GOLD))
+	var shown_classes: Array[String] = []
+	for member_id in selected_party:
+		var member := campaign.character(member_id)
+		if member == null or shown_classes.has(member.class_id): continue
+		shown_classes.append(member.class_id)
+		var class_best := ClearRecords.best(campaign,dungeon_id,member.class_id)
+		times_card.add_child(label("%s best  %s" % [member.class_id.capitalize(),ClearRecords.format_time(float(class_best.time)) if not class_best.is_empty() else "— not cleared as a %s yet" % member.class_id.capitalize()],14,GOOD if not class_best.is_empty() else THEME.IVORY))
 	var policy_card := card("Retreat policy","How readily a dispatched party turns back.",plan)
 	var controls := HBoxContainer.new()
 	controls.add_theme_constant_override("separation",6)
@@ -1224,6 +1239,53 @@ func merchant_page() -> void:
 	if listed == 0: _empty_state("No equipment for sale yet","Expand the Hearth to attract better suppliers.")
 
 # ---------------------------------------------------------------- records
+
+## Clear times for every dungeon: the record, the best per class, and recent runs.
+func best_times_page() -> void:
+	var any := false
+	for id in HearthCatalog.data().dungeon_levels:
+		if not state.is_dungeon_unlocked(id) and ClearRecords.clears(campaign,id) == 0: continue
+		any = true
+		var dungeon_name := String(GameBalance.get_dungeon(id).get("name",id))
+		var clears := ClearRecords.clears(campaign,id)
+		var record := ClearRecords.best(campaign,id)
+		var content := card(dungeon_name,"" if clears > 0 else "No guardian defeated yet. Your first clear sets the time to beat.")
+		if clears == 0: continue
+		var headline := HBoxContainer.new()
+		headline.add_theme_constant_override("separation",8)
+		content.add_child(headline)
+		for pair in [["Record",ClearRecords.format_time(float(record.time))],["Set by","%s · %s" % [String(record.hero),String(record.class_id).capitalize()]],["Clears",str(clears)]]:
+			var tile := _panel(headline,Color("241910"),Color("4a3522"),8)
+			var stack := VBoxContainer.new()
+			stack.add_theme_constant_override("separation",0)
+			tile.add_child(stack)
+			stack.add_child(label(String(pair[0]).to_upper(),11,THEME.MUTED))
+			stack.add_child(label(String(pair[1]),16,THEME.HIGHLIGHT_GOLD))
+		var grid := _grid(3,content)
+		grid.columns = 3
+		for class_id in ["warrior","tank","rogue","mage","healer","summoner"]:
+			var best := ClearRecords.best(campaign,id,class_id)
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation",6)
+			row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			grid.add_child(row)
+			var name_label := label(class_id.capitalize(),14,THEME.IVORY if campaign.unlocked_classes.has(class_id) else THEME.MUTED)
+			name_label.custom_minimum_size = Vector2(80,0)
+			row.add_child(name_label)
+			if best.is_empty(): row.add_child(label("—",14,THEME.MUTED))
+			else:
+				var is_record := is_equal_approx(float(best.time),float(record.time))
+				var time_label := label(ClearRecords.format_time(float(best.time)),15,THEME.HIGHLIGHT_GOLD if is_record else GOOD)
+				time_label.tooltip_text = "%s · Day %d" % [String(best.hero),int(best.day)]
+				time_label.mouse_filter = Control.MOUSE_FILTER_PASS
+				row.add_child(time_label)
+		var recent := ClearRecords.recent(campaign,id)
+		if not recent.is_empty():
+			content.add_child(label("RECENT CLEARS",11,THEME.MUTED))
+			for run in recent.slice(0,5):
+				var tag := "  ·  record" if bool(run.get("best_overall",false)) else ("  ·  class best" if bool(run.get("best_for_class",false)) else "")
+				content.add_child(label("%s   %s · %s · Day %d%s" % [ClearRecords.format_time(float(run.time)),String(run.hero),String(run.class_id).capitalize(),int(run.day),tag],13,THEME.IVORY if tag.is_empty() else THEME.HIGHLIGHT_GOLD))
+	if not any: _empty_state("No dungeons open yet","Clear times appear here once your company has somewhere to go.")
 
 func reports_page() -> void:
 	if campaign.return_reports.is_empty():

@@ -63,6 +63,9 @@ var consumable_items: Array[String] = []
 var pending_shop_consumables: Array[String] = []
 var enemy_defeat_counts:Dictionary={}
 var slasher_endless_mode:=false
+## Run clock when no expedition is active (quick play and tests).
+var local_run_seconds:=0.0
+var local_dungeon_seconds:=0.0
 var slasher_campaign_boss_cleared:=false
 var slasher_merchant_interlude:=false
 var campaign: CampaignState = CampaignState.new()
@@ -219,6 +222,7 @@ func set_class(class_id: String) -> void:
 
 func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	selected_gear = gear
+	local_run_seconds = 0.0; local_dungeon_seconds = 0.0; last_clear = {}
 	if selected_gear != null:
 		selected_gear_by_class[selected_class_id] = selected_gear
 	active_dungeon_id = dungeon_id
@@ -282,13 +286,39 @@ func advance_floor() -> bool:
 	_tick_inventory_floor_durations()
 	return true
 
+## Advances the run clock. Called by dungeon scenes while gameplay is running.
+func tick_run_clock(delta: float) -> void:
+	if campaign != null and campaign.expedition.active:
+		campaign.expedition.run_seconds += delta; campaign.expedition.dungeon_seconds += delta
+	else:
+		local_run_seconds += delta; local_dungeon_seconds += delta
+
+func dungeon_clock() -> float:
+	return campaign.expedition.dungeon_seconds if campaign != null and campaign.expedition.active else local_dungeon_seconds
+
+func run_clock() -> float:
+	return campaign.expedition.run_seconds if campaign != null and campaign.expedition.active else local_run_seconds
+
+## The class whose best time this run counts toward.
+func clear_class_id() -> String:
+	var member: CharacterRecord = campaign.character(active_character_id) if campaign != null and not active_character_id.is_empty() else null
+	return member.class_id if member != null else selected_class_id
+
+## Result of the latest guardian defeat (see ClearRecords.record_clear), for result screens.
+var last_clear: Dictionary = {}
+
 func record_active_dungeon_completion() -> Array[String]:
 	var logs: Array[String] = []
 	completed_dungeons[active_dungeon_id] = true
+	last_clear = {}
+	if campaign != null and not (campaign.expedition.active and campaign.expedition.tutorial_run):
+		var member: CharacterRecord = campaign.character(active_character_id) if not active_character_id.is_empty() else null
+		last_clear = ClearRecords.record_clear(campaign,active_dungeon_id,clear_class_id(),member.display_name if member != null else "Adventurer",dungeon_clock())
+		logs.append(String(last_clear.message))
 	if active_dungeon_id == "forest": mark_forest_cleared()
 	if campaign != null and campaign.expedition.active:
 		campaign.expedition.carried_gold = gold
-		logs = campaign.record_dungeon_clear(active_dungeon_id)
+		logs.append_array(campaign.record_dungeon_clear(active_dungeon_id))
 	return logs
 
 func transition_to_dungeon(dungeon_id: String) -> bool:
@@ -298,6 +328,7 @@ func transition_to_dungeon(dungeon_id: String) -> bool:
 	_sync_active_profile_to_character()
 	active_dungeon_id = dungeon_id
 	current_floor = 1
+	campaign.expedition.dungeon_seconds = 0.0
 	var slasher_config: Dictionary = Dictionary(dungeon.get("slasher", {}))
 	max_floors = int(dungeon.get("floors", 1))
 	class_resource = 0
