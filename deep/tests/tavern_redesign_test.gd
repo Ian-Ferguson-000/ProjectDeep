@@ -6,6 +6,9 @@ const CLASS_IDS := ["warrior","mage","healer","tank","rogue","summoner"]
 func _initialize() -> void: call_deferred("_run")
 
 func _run() -> void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party planner so it keeps working if parties come back.
+	GameBalance.set_party_size_override(4)
 	var failures: Array[String] = []
 	for viewport_size in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
 		root.size = viewport_size

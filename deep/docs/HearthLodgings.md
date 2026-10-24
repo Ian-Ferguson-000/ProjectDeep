@@ -30,3 +30,18 @@ Each adventurer can train one attribute per day while they're at the Hearth.
 - **Effect on runs:** trained stats carry into expeditions through the adventurer's attributes. Constitution also raises maximum health.
 
 Tests: `tests/hearth_lodging_test.gd`.
+
+## In the tavern
+
+The Hearth's main hall opens onto two walkable areas, built by `scripts/scenes/tavern_expansions.gd`. The camera follows the keeper between them.
+
+- **Lodgings wing (west doorway).** A corridor with one alcove for every room the Hearth has space for: 6, 10, 14 or 18 as it expands.
+  - Built rooms show a bed in the room's quality, the resident's nameplate and their furnishings.
+  - Spaces with no room built yet show as empty plots.
+  - Walk up to a room or the Lodgings ledger and press E to open Company → Lodgings.
+- **Training yard (east doorway).** Boarded up until the Hearth becomes the Established Inn.
+  - It has a sparring ring with dummies, weapon racks and supplies.
+  - At the Adventurers' Hall it gains an archery range, and at the Renowned Hearth a weights corner.
+  - Press E at the ring to open Company → Training.
+
+Beds, dummies, targets and furnishings are drawn in code as stand-ins until dedicated art exists. Their drawing code is in the small classes at the bottom of `tavern_expansions.gd`.

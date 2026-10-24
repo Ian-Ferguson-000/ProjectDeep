@@ -24,6 +24,9 @@ var pending_story_lines: Array = []
 var pending_story_context := ""
 
 @onready var world:Node2D=$TavernWorld
+var expansions:TavernExpansions
+var camera_bounds:=Rect2()
+var camera_view:=Rect2()
 @onready var actors_root:Node2D=$TavernWorld/Actors
 @onready var activity_anchors:Node2D=$TavernWorld/ActivityAnchors
 @onready var navigation_region:NavigationRegion2D=$TavernWorld/NavigationRegion2D
@@ -240,7 +243,7 @@ func _on_keeper_interaction(target:Node)->void:
 		_on_living_actor_interaction(actor.actor_kind,actor.actor_id)
 	elif target is TavernProp:
 		var prop:=target as TavernProp
-		var pages := {"weapon_rack":"Armory","notice_board":"Expeditions","supply_crates":"Merchants","bar":"Facilities"}
+		var pages := {"weapon_rack":"Armory","notice_board":"Expeditions","supply_crates":"Merchants","bar":"Facilities","lodgings_board":"Lodgings","lodgings_room":"Lodgings","lodgings_plot":"Lodgings","training_post":"Training"}
 		if pages.has(prop.prop_id) and _open_hearth(pages[prop.prop_id]): return
 		var text_value:=prop.interact(keeper)
 		if not text_value.is_empty():_show_dialogue("The Hearth",text_value)
@@ -980,11 +983,12 @@ func _layout_scene() -> void:
 		var top_inset:=viewport_size.y*0.085
 		var bottom_inset:=viewport_size.y*0.095
 		var available_height:=viewport_size.y-top_inset-bottom_inset
-		var layout_size := Vector2(2160,1160) if run_state != null and run_state.campaign.establishment_tier > 0 else WORLD_SIZE
-		var world_scale:=minf((viewport_size.x-32.0)/layout_size.x,available_height/layout_size.y)
-		var rendered_size:=layout_size*world_scale
+		# The main hall always fits the screen at this scale; the camera then follows
+		# the keeper into the Lodgings wing and Training Yard.
+		var world_scale:=minf((viewport_size.x-32.0)/WORLD_SIZE.x,available_height/WORLD_SIZE.y)
 		world.scale=Vector2.ONE*world_scale
-		world.position=Vector2((viewport_size.x-rendered_size.x)/2.0,top_inset+(available_height-rendered_size.y)/2.0)-WORLD_ORIGIN*world_scale
+		camera_view=Rect2(0.0,top_inset,viewport_size.x,available_height)
+		_update_camera(true)
 	var available:=get_viewport_rect().size-Vector2(36,36)
 	for modal in [armory_backdrop,expedition_backdrop,results_backdrop,company_backdrop,calendar_backdrop,options_backdrop]:
 		if modal==null:continue
@@ -1052,17 +1056,36 @@ func _hearth_changed() -> void:
 	_refresh_wings()
 	if activity_controller != null: activity_controller.populate_from_campaign(run_state)
 
+## Builds the Lodgings wing and Training Yard around the main hall (TavernExpansions).
 func _refresh_wings() -> void:
 	if world == null or run_state == null: return
 	var previous := world.get_node_or_null("Expansions")
 	if previous != null: previous.free()
-	var wings := Node2D.new()
-	wings.name = "Expansions"
-	world.add_child(wings)
-	var paths := ["res://scenes/tavern/LodgingWing.tscn","res://scenes/tavern/ServicesWing.tscn","res://scenes/tavern/GreatHall.tscn"]
-	for i in run_state.campaign.establishment_tier:
-		var wing = load(paths[i]).instantiate()
-		wing.position = Vector2(1470,170+i*315)
-		wings.add_child(wing)
-		wing.station_requested.connect(_open_hearth)
+	expansions = TavernExpansions.new()
+	world.add_child(expansions)
+	expansions.build(world,run_state.campaign)
+	camera_bounds = expansions.camera_bounds()
 	_layout_scene()
+
+## Keeps the keeper in view, sliding smoothly and never showing past the open areas.
+func _update_camera(snap: bool) -> void:
+	if world == null or camera_view.size == Vector2.ZERO: return
+	var scale_value := world.scale.x
+	var bounds := camera_bounds if camera_bounds.size != Vector2.ZERO else Rect2(WORLD_ORIGIN,WORLD_SIZE)
+	var hall := Rect2(WORLD_ORIGIN,WORLD_SIZE)
+	var focus := hall.get_center()
+	# Allow a screen's width around the hall so it can sit centred, as it always has.
+	var hall_view := camera_view.size / maxf(0.001,scale_value)
+	bounds = bounds.merge(Rect2(hall.get_center() - hall_view * 0.5,hall_view))
+	if keeper != null and not arrivals_running and not departure_running: focus = keeper.position
+	var target := camera_view.get_center() - focus * scale_value
+	for axis in 2:
+		var view_start := camera_view.position[axis]
+		var view_size := camera_view.size[axis]
+		var span := bounds.size[axis] * scale_value
+		if span <= view_size: target[axis] = view_start + (view_size - span) * 0.5 - bounds.position[axis] * scale_value
+		else: target[axis] = clampf(target[axis],view_start + view_size - bounds.end[axis] * scale_value,view_start - bounds.position[axis] * scale_value)
+	world.position = target if snap else world.position.lerp(target,0.18)
+
+func _process(_delta: float) -> void:
+	_update_camera(false)
