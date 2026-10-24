@@ -17,6 +17,9 @@ const STEP_DATA := [
 	{"title":"CHARACTER & JOURNAL", "input":"M", "detail":"Open the menu to review Alden and the journal."},
 ]
 
+## Tutorial steps that teach an action; skipped while that action is switched off.
+const STEP_ACTIONS := {2:"movement",3:"special",4:"defensive"}
+
 var current_step := 0
 var last_observed_position := Vector2.ZERO
 var keyboard_movement_distance := 0.0
@@ -33,7 +36,7 @@ func _ready() -> void:
 	_build_card()
 
 func begin(step: int, player_position: Vector2) -> void:
-	current_step = clampi(step, 0, STEP_COUNT)
+	current_step = _skip_disabled(clampi(step, 0, STEP_COUNT))
 	last_observed_position = player_position
 	keyboard_movement_distance = 0.0
 	visible = current_step < STEP_COUNT
@@ -66,9 +69,13 @@ func observe_reward() -> void:
 func observe_menu_opened(source: String) -> void:
 	if current_step == 8 and source == "keyboard": _complete_step()
 
+func _skip_disabled(step: int) -> int:
+	while STEP_ACTIONS.has(step) and not GameBalance.action_enabled(String(STEP_ACTIONS[step])): step += 1
+	return step
+
 func _complete_step() -> void:
 	if transitioning or current_step >= STEP_COUNT: return
-	current_step += 1
+	current_step = _skip_disabled(current_step + 1)
 	step_changed.emit(current_step)
 	if current_step >= STEP_COUNT:
 		visible = false

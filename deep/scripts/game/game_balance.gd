@@ -697,6 +697,19 @@ static func leveling_enabled() -> bool:
 	return bool(_progression.get("leveling_enabled", true))
 
 static var _party_size_override: Variant = null
+static var _actions_override: Variant = null
+const ALL_ACTIONS := ["basic","movement","special","defensive"]
+
+## Whether a combat action (basic, movement, special, defensive) is switched on
+## in progression.json "enabled_actions". Missing list = everything on.
+static func action_enabled(slot: String) -> bool:
+	if _actions_override != null: return Array(_actions_override).has(slot)
+	_load_all()
+	return Array(_progression.get("enabled_actions",ALL_ACTIONS)).has(slot)
+
+## Tests and tools can force the action list; pass null to use the data file.
+static func set_actions_override(value: Variant) -> void:
+	_actions_override = value
 
 ## Adventurers per run, from progression.json "max_party_size" (1 = solo runs).
 static func max_party_size() -> int:

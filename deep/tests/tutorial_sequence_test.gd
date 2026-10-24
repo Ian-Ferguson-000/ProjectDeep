@@ -1,5 +1,8 @@
 extends SceneTree
 
+## Dash, special and block are switched off in progression.json; this checks them anyway.
+func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
+
 const TUTORIAL_SEQUENCE := preload("res://scripts/slasher/forest_tutorial_sequence.gd")
 const DIALOGUE_CHAT := preload("res://scripts/ui/dialogue_chat.gd")
 const SLASHER_FOREST := preload("res://scripts/slasher/slasher_forest.gd")

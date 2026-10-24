@@ -1,5 +1,8 @@
 extends SceneTree
 
+## Dash, special and block are switched off in progression.json; this checks them anyway.
+func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
+
 func _initialize() -> void:
 	var failures: Array[String] = []
 	var defenses := {"armor_class":12,"evasion":14,"threshold":3,"aegis_fire":2,"aegis_all":0}

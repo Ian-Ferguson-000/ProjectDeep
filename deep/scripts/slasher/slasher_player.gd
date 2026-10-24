@@ -219,6 +219,8 @@ func _notification(what:int)->void:
 
 func use_action(slot:String,input_source:String="system")->Dictionary:
 	var result:={"started":false,"slot":slot,"class_id":class_id,"input_source":input_source,"targets_hit":0,"projectiles_deflected":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
+	# Actions switched off in progression.json "enabled_actions" do nothing.
+	if not GameBalance.action_enabled(slot):result.failure="disabled";return result
 	if float(cooldowns.get(slot,0.0))>0.0:result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
 	var tuning:Dictionary=_ability_tuning(slot)
 	var default_cost:=2 if slot=="special" else (int(run_state.get_class_resource_rules(class_id).get("movement_cost",1)) if slot=="movement" else 0)

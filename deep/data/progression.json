@@ -1,6 +1,8 @@
 {
   "leveling_enabled": false,
   "max_party_size": 1,
+  "enabled_actions": ["basic"],
+  "actions_note": "Which combat actions players can use: basic, movement (dash), special, defensive (block). Switched off actions do nothing and their tutorial steps are skipped. Add them back to this list to turn them on again.",
   "party_note": "How many adventurers go on one run. 1 = solo runs. Raise it to bring back parties (dungeons still cap themselves at 2 or 4).",
   "leveling_note": "Set leveling_enabled to true to bring back XP, levels, level-up upgrade choices and Training. While false, everyone fights at level 1 and pickup items are the only upgrades.",
   "max_level": 20,

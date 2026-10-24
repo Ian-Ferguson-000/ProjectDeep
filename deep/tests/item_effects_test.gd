@@ -1,5 +1,8 @@
 extends SceneTree
 
+## Dash, special and block are switched off in progression.json; this checks them anyway.
+func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
+
 ## Item effects in real-time combat: attack speed, move speed, crescent waves,
 ## chain lightning, burning, chilling, kill bursts, elite bonuses and periodic relics.
 

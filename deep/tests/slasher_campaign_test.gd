@@ -1,5 +1,8 @@
 extends SceneTree
 
+## Dash, special and block are switched off in progression.json; this checks them anyway.
+func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
+
 const SLASHER_SCENE := preload("res://scenes/slasher/SlasherForest.tscn")
 const SLASHER_RESOURCE_HUD := preload("res://assets/slasher/ui/slasher_resource_hud_frame.png")
 const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
