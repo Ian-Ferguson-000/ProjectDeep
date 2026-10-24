@@ -113,6 +113,12 @@ var consumable_stock: Dictionary = {}
 var reputation:=0
 var used_curated_ids:Array[String]=[]
 var lineage_registry:Dictionary={}
+## Hearth rooms (see HearthLodging): [{id, quality, furnishings, occupant}].
+var rooms:Array[Dictionary]=[]
+## Furnishings taken out of rooms, waiting to be placed again: {id: count}.
+var furnishing_storage:Dictionary={}
+## Set when loading a save from before rooms existed, so it keeps its old capacity.
+var lodging_migrated_from_capacity:=false
 
 static func save_path(slot:int)->String:return "user://campaign_slot_%d.json"%clampi(slot,1,SAVE_SLOT_COUNT)
 static func temp_save_path(slot:int)->String:return save_path(slot)+".tmp"
@@ -192,7 +198,7 @@ func apply_post_tutorial_state(outcome: String) -> void:
 	banked_relics.clear()
 	successful_levels = 0
 	completed_dungeons.clear()
-	reputation=0;used_curated_ids.clear();lineage_registry.clear()
+	reputation=0;used_curated_ids.clear();lineage_registry.clear();rooms.clear();furnishing_storage.clear();lodging_migrated_from_capacity=false
 	clues.clear()
 	unlocked_classes = ["warrior", "mage"]
 	tavern_upgrades = {"recovery":0,"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
@@ -235,8 +241,14 @@ func get_active_season_modifiers()->Array[Dictionary]:
 	# Extension hook for the later seasonal-mechanics phase.
 	return []
 
+## Rooms built at the Hearth. Each adventurer needs one; build more in Lodgings,
+## up to the establishment tier's room limit (HearthLodging.room_limit).
 func get_roster_capacity() -> int:
-	return int(HearthCatalog.tier(establishment_tier).capacity)
+	HearthLodging.ensure_rooms(self)
+	return rooms.size()
+
+func get_room_limit() -> int:
+	return HearthLodging.room_limit(self)
 
 func get_candidates() -> Array[CandidateRecord]:
 	var result:Array[CandidateRecord]=[]
@@ -271,7 +283,7 @@ func recruit_candidate(candidate_id:String,class_id:String="") -> Dictionary:
 	if candidate==null:return {"ok":false,"error":"That adventurer is no longer at the Hearth."}
 	class_id=candidate.adventurer.class_id if class_id.is_empty() else GameBalance.normalize_class_id(class_id)
 	if class_id!=candidate.adventurer.class_id and not unlocked_classes.has(class_id):return {"ok":false,"error":"No one at the Hearth can train a %s yet."%class_id.capitalize()}
-	if living_roster().size()>=get_roster_capacity():return {"ok":false,"error":"The Hearth has no open rooms."}
+	if living_roster().size()>=get_roster_capacity():return {"ok":false,"error":"The Hearth has no open rooms. Build another in Company → Lodgings."}
 	var fee := candidate.adventurer.signing_fee
 	if not candidate.first_company and living_roster().size() < 2 and banked_gold < fee and candidate.adventurer.level <= 2: fee = 0
 	if banked_gold < fee: return {"ok":false,"error":"Signing this recruit costs %d gold." % fee}
@@ -279,6 +291,7 @@ func recruit_candidate(candidate_id:String,class_id:String="") -> Dictionary:
 	var member:=candidate.adventurer;_set_class(member,class_id)
 	member.status=CharacterRecord.STATUS_AVAILABLE;roster[member.id]=member;candidate_pool.erase(candidate_id)
 	HearthArmory.ensure_starter(self,member)
+	HearthLodging.sync_occupants(self)
 	var was_recruited := first_company_recruited
 	first_company_recruited=first_company_recruited or first_company_ids.all(func(id:String):return roster.has(id))
 	if first_company_recruited and not was_recruited: HearthCalendar.reset_story_period(self)
@@ -660,7 +673,7 @@ func to_dict() -> Dictionary:
 	for value in roster.values(): if value is CharacterRecord: encoded_roster.append(value.to_dict())
 	var encoded_candidates:Array[Dictionary]=[]
 	for value in candidate_pool.values():if value is CandidateRecord:encoded_candidates.append(value.to_dict())
-	return {"ending_state":ending_state.duplicate(true),"world_crisis":world_crisis.duplicate(true),"active_boons":active_boons.duplicate(true),"divine_obligations":divine_obligations.duplicate(true),"dungeon_ecology":dungeon_ecology.duplicate(true),"armory":armory.duplicate(true),"next_item_id":next_item_id,"establishment_tier":establishment_tier,"construction":construction.duplicate(true),"dispatches":dispatches.duplicate(true),"settled_expeditions":settled_expeditions.duplicate(true),"return_reports":return_reports.duplicate(true),"market_stock":market_stock.duplicate(true),"consumable_stock":consumable_stock.duplicate(true),"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"keeper_journal_unlocked":keeper_journal_unlocked,"contribution":contribution,"faction_standing":faction_standing.duplicate(true),"divine_favor":divine_favor.duplicate(true),"story_event_history":story_event_history.duplicate(true),"keeper_memory":keeper_memory.duplicate(true),"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"calendar_shift":calendar_shift,"period_elapsed_shifts":period_elapsed_shifts,"period_completed_runs":period_completed_runs,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"pending_story_event_id":pending_story_event_id,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeons":completed_dungeons.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true)}
+	return {"ending_state":ending_state.duplicate(true),"world_crisis":world_crisis.duplicate(true),"active_boons":active_boons.duplicate(true),"divine_obligations":divine_obligations.duplicate(true),"dungeon_ecology":dungeon_ecology.duplicate(true),"armory":armory.duplicate(true),"next_item_id":next_item_id,"establishment_tier":establishment_tier,"construction":construction.duplicate(true),"dispatches":dispatches.duplicate(true),"settled_expeditions":settled_expeditions.duplicate(true),"return_reports":return_reports.duplicate(true),"market_stock":market_stock.duplicate(true),"consumable_stock":consumable_stock.duplicate(true),"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"keeper_journal_unlocked":keeper_journal_unlocked,"contribution":contribution,"faction_standing":faction_standing.duplicate(true),"divine_favor":divine_favor.duplicate(true),"story_event_history":story_event_history.duplicate(true),"keeper_memory":keeper_memory.duplicate(true),"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"calendar_shift":calendar_shift,"period_elapsed_shifts":period_elapsed_shifts,"period_completed_runs":period_completed_runs,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"pending_story_event_id":pending_story_event_id,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeons":completed_dungeons.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true),"rooms":rooms.duplicate(true),"furnishing_storage":furnishing_storage.duplicate(true)}
 
 func save_atomic() -> bool:
 	last_save_error = "";save_slot=clampi(save_slot,1,SAVE_SLOT_COUNT);last_saved_unix=int(Time.get_unix_time_from_system());var temporary:=temp_save_path(save_slot);var destination:=save_path(save_slot);var backup:=backup_save_path(save_slot);var file := FileAccess.open(temporary, FileAccess.WRITE)
@@ -773,6 +786,11 @@ func _load_dict(data: Dictionary) -> void:
 	armory = Dictionary(data.get("armory",{})).duplicate(true)
 	next_item_id = data.get("next_item_id",1)
 	establishment_tier = data.get("establishment_tier",0)
+	rooms.clear()
+	for value in Array(data.get("rooms",[])):
+		if value is Dictionary: rooms.append(Dictionary(value).duplicate(true))
+	furnishing_storage = Dictionary(data.get("furnishing_storage",{})).duplicate(true)
+	lodging_migrated_from_capacity = not data.has("rooms")
 	construction = Dictionary(data.get("construction",{})).duplicate(true)
 	dispatches = Dictionary(data.get("dispatches",{})).duplicate(true)
 	settled_expeditions = Dictionary(data.get("settled_expeditions",{})).duplicate(true)

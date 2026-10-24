@@ -14,15 +14,17 @@ signal closed
 signal testing_ground_requested
 
 const THEME = preload("res://scripts/ui/tavern_ui_theme.gd")
-const SECTIONS = ["Company","Expeditions","Facilities","Armory","Merchants","Calendar","Reports"]
+const SECTIONS = ["Company","Training","Lodgings","Expeditions","Facilities","Armory","Merchants","Calendar","Reports"]
 const GROUPS = [
-	{"id":"Company","label":"Company","icon":"roster","pages":["Company"]},
+	{"id":"Company","label":"Company","icon":"roster","pages":["Company","Training","Lodgings"]},
 	{"id":"Expeditions","label":"Expeditions","icon":"expedition","pages":["Expeditions"]},
 	{"id":"Facilities","label":"Facilities","icon":"hearth","pages":["Facilities","Armory","Merchants"]},
 	{"id":"Records","label":"Records","icon":"ledger","pages":["Calendar","Reports"]},
 ]
 const PAGES = {
 	"Company":{"title":"Company","tab":"Roster","icon":"roster","hint":"Your adventurers and anyone waiting to sign on. Adventurers share 20% of the gold each expedition brings home."},
+	"Training":{"title":"Training Yard","tab":"Training","icon":"armory","hint":"Spend gold to drill one attribute per adventurer each day. Good rooms and the right furnishings make it likelier to stick."},
+	"Lodgings":{"title":"Lodgings","tab":"Lodgings","icon":"hearth","hint":"Every adventurer needs a room. Build more, make them finer, and furnish them to suit the people who sleep there."},
 	"Expeditions":{"title":"Expeditions","tab":"Expeditions","icon":"expedition","hint":"Choose a dungeon, pick a party, and lead them yourself or dispatch them."},
 	"Facilities":{"title":"Improvements","tab":"Improvements","icon":"hearth","hint":"Expand the Hearth and commission new facilities. Construction takes days to finish."},
 	"Armory":{"title":"Armory","tab":"Armory","icon":"armory","hint":"Outfit each adventurer. Every item has one wearer, and gear stays with the Hearth when someone retires."},
@@ -249,6 +251,8 @@ func refresh() -> void:
 	match section:
 		"Company": company_page()
 		"Armory": armory_page()
+		"Training": training_page()
+		"Lodgings": lodgings_page()
 		"Expeditions": expedition_page()
 		"Facilities": facilities_page()
 		"Merchants": merchant_page()
@@ -497,13 +501,15 @@ func _member_card(member: CharacterRecord) -> void:
 	var available := member.status == "available"
 	var equipment := button(actions,"Outfit",func(): member_id=member.id; show_section("Armory"))
 	equipment.tooltip_text = "Open the Armory for this adventurer."
-	var small_buttons: Array[Button] = [equipment]
+	var drill := button(actions,"Train",func(): member_id=member.id; show_section("Training"))
+	drill.tooltip_text = "Open the Training Yard for this adventurer." if not HearthLodging.trained_today(campaign,member) else "Already trained today."
+	var small_buttons: Array[Button] = [equipment,drill]
 	if GameBalance.leveling_enabled():
 		var train := button(actions,"Train · %dg" % (15*member.level),func(): act(HearthFacilities.train(campaign,member.id)),available)
 		train.tooltip_text = "Pay to train them up a level. They spend two days recovering."
 		small_buttons.append(train)
 	small_buttons.append(button(actions,"Retire",_confirm_retire.bind(member.id),available))
-	for small in small_buttons: small.custom_minimum_size = Vector2(110,36)
+	for small in small_buttons: small.custom_minimum_size = Vector2(86,36)
 
 func _health_bar(member: CharacterRecord, width: int = 180) -> HBoxContainer:
 	var row := HBoxContainer.new()
@@ -761,6 +767,253 @@ func _item_card(parent: Node, member: CharacterRecord, id: String, instance: Dic
 	var sell := button(actions,"Sell · %dg" % int(entry.price/3),func(): act(HearthArmory.sell(campaign,id)),owner==null and not instance.bound)
 	sell.custom_minimum_size = Vector2(90,32)
 	if instance.bound: sell.tooltip_text = "Starter equipment cannot be sold."
+
+# ---------------------------------------------------------------- training
+
+const STAT_NAMES := {"str":"Strength","dex":"Dexterity","con":"Constitution","int":"Intelligence","wis":"Wisdom","cha":"Charisma"}
+
+func training_page() -> void:
+	var members := campaign.living_roster()
+	var ready_count := members.filter(func(m: CharacterRecord): return m.status == "available" and not HearthLodging.trained_today(campaign,m)).size()
+	_heading("Today's training","%d of %d ready to train · Day %d" % [ready_count,members.size(),campaign.calendar_day])
+	var member := member_picker()
+	if member == null: return
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation",12)
+	body.add_child(columns)
+	var left := VBoxContainer.new()
+	left.custom_minimum_size.x = 280
+	left.add_theme_constant_override("separation",10)
+	columns.add_child(left)
+	var summary := _panel(left)
+	var summary_box := VBoxContainer.new()
+	summary_box.add_theme_constant_override("separation",6)
+	summary.add_child(summary_box)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation",12)
+	summary_box.add_child(top)
+	top.add_child(_portrait(member,Vector2(72,88)))
+	var who := VBoxContainer.new()
+	top.add_child(who)
+	who.add_child(label("%s %s" % [member.display_name,member.family_name],18,THEME.HIGHLIGHT_GOLD))
+	who.add_child(label("%s · %s" % [member.class_id.capitalize(),_build_name(member)],14,THEME.IVORY))
+	var grade := AdventurerBuilds.class_fit(member.attributes,member.class_id)
+	who.add_child(label("%s fit" % grade,13,AdventurerStatGrid.FIT_COLORS.get(grade,THEME.IVORY)))
+	var room := HearthLodging.room_of(campaign,member.id)
+	var room_text := "No room yet" if room.is_empty() else "%s · %s" % [HearthLodging.room_label(campaign,room),String(HearthLodging.quality(String(room.quality)).name)]
+	summary_box.add_child(label(room_text,13,THEME.MUTED))
+	var furnished := PackedStringArray()
+	for furnishing_id in Array(room.get("furnishings",[])): furnished.append(String(HearthLodging.furnishing(String(furnishing_id)).get("name",furnishing_id)))
+	var furnished_label := label("Furnishings: " + (", ".join(furnished) if not furnished.is_empty() else "none yet"),13,THEME.IVORY if not furnished.is_empty() else THEME.MUTED)
+	furnished_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	summary_box.add_child(furnished_label)
+	var to_lodgings := button(summary_box,"Furnish their room",func(): show_section("Lodgings"))
+	to_lodgings.custom_minimum_size = Vector2(0,34)
+	var gains: Dictionary = Dictionary(member.training.get("gains",{}))
+	var gained := PackedStringArray()
+	for stat in HearthLodging.ATTRIBUTE_IDS:
+		if int(gains.get(stat,0)) > 0: gained.append("%s +%d" % [stat.to_upper(),int(gains[stat])])
+	card("Progress at the Hearth","%d sessions so far.%s" % [int(member.training.get("sessions",0)),("\nTrained up: " + ", ".join(gained)) if not gained.is_empty() else ""],left)
+	var state_text := ""
+	if member.status != "available": state_text = "%s is away and cannot train until they return." % member.display_name
+	elif HearthLodging.trained_today(campaign,member): state_text = "%s has trained today. They can train again tomorrow." % member.display_name
+	var drills := VBoxContainer.new()
+	drills.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	drills.add_theme_constant_override("separation",6)
+	columns.add_child(drills)
+	var header := HBoxContainer.new()
+	drills.add_child(header)
+	var header_title := label("DRILLS",14,THEME.GOLD)
+	header_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(header_title)
+	header.add_child(label("Cap %d · costs gold win or lose" % int(HearthLodging.training_rules().get("stat_cap",18)),13,THEME.MUTED))
+	if not state_text.is_empty():
+		var rested := _panel(drills,Color("2a2316"),Color("6b5a2c"),10)
+		rested.add_child(label(state_text,14,Color("f0d79a")))
+	var cap := int(HearthLodging.training_rules().get("stat_cap",18))
+	var weights := AdventurerBuilds.class_weights(member.class_id)
+	for stat in HearthLodging.ATTRIBUTE_IDS:
+		var value := int(member.attributes.get(stat,10))
+		var row_panel := _panel(drills,Color("241910"),Color("4a3522"),10)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation",12)
+		row_panel.add_child(row)
+		var name_box := VBoxContainer.new()
+		name_box.custom_minimum_size.x = 120
+		name_box.add_theme_constant_override("separation",0)
+		row.add_child(name_box)
+		name_box.add_child(label(String(STAT_NAMES[stat]),16,THEME.IVORY))
+		name_box.add_child(label("Key for %s" % member.class_id.capitalize() if int(weights.get(stat,0)) >= 4 else " ",11,Color("9fe08a")))
+		var bar := ProgressBar.new()
+		bar.custom_minimum_size = Vector2(100,12)
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bar.show_percentage = false
+		bar.min_value = 4; bar.max_value = 20; bar.value = value
+		var fill := StyleBoxFlat.new(); fill.bg_color = THEME.GOLD; fill.set_corner_radius_all(3)
+		var track := StyleBoxFlat.new(); track.bg_color = Color("120c08"); track.border_color = Color("4a3522"); track.set_border_width_all(1); track.set_corner_radius_all(3)
+		bar.add_theme_stylebox_override("fill",fill); bar.add_theme_stylebox_override("background",track)
+		row.add_child(bar)
+		var value_label := label(str(value),18,THEME.HIGHLIGHT_GOLD)
+		value_label.custom_minimum_size.x = 30
+		row.add_child(value_label)
+		var odds := VBoxContainer.new()
+		odds.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		odds.add_theme_constant_override("separation",0)
+		row.add_child(odds)
+		if value >= cap:
+			odds.add_child(label("Mastered for now",14,THEME.MUTED))
+		else:
+			var chance := HearthLodging.training_chance(campaign,member,stat)
+			var percent := int(chance.chance)
+			odds.add_child(label("%d%% chance of +1" % percent,14,GOOD if percent >= 60 else (Color("e8cf72") if percent >= 35 else Color("e0a35e"))))
+			var parts: Array = chance.parts
+			odds.add_child(label(", ".join(parts) if not parts.is_empty() else "No bonuses yet",11,THEME.MUTED))
+		var check := HearthLodging.can_train(campaign,member,stat)
+		var drill := button(row,"Mastered" if value >= cap else "Train · %dg" % HearthLodging.training_cost(member,stat),func(): act(HearthLodging.train(campaign,member.id,stat)),bool(check.ok))
+		drill.custom_minimum_size = Vector2(108,36)
+		if not bool(check.ok): drill.tooltip_text = String(check.get("error",""))
+
+# ---------------------------------------------------------------- lodgings
+
+func lodgings_page() -> void:
+	HearthLodging.ensure_rooms(campaign)
+	HearthLodging.sync_occupants(campaign)
+	var limit := HearthLodging.room_limit(campaign)
+	var bar := HBoxContainer.new()
+	bar.add_theme_constant_override("separation",10)
+	body.add_child(bar)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.add_child(info)
+	info.add_child(label("%d rooms built · space for %d at the %s" % [campaign.rooms.size(),limit,String(HearthCatalog.tier(campaign.establishment_tier).name)],16,THEME.IVORY))
+	info.add_child(label("%d adventurers housed. Expand the Hearth under Facilities for more space." % campaign.living_roster().size(),13,THEME.MUTED))
+	var can_build := campaign.rooms.size() < limit
+	var build := _primary_button(bar,"Build a room · %dg" % HearthLodging.build_cost(campaign) if can_build else "No space left",func(): act(HearthLodging.build_room(campaign)),can_build and campaign.banked_gold >= HearthLodging.build_cost(campaign))
+	build.custom_minimum_size = Vector2(200,42)
+	var grid := _grid(2)
+	for room in campaign.rooms: _room_card(grid,room)
+	if not campaign.furnishing_storage.is_empty():
+		_heading("In storage","Free to place in any room with space")
+		var stored := HFlowContainer.new()
+		stored.add_theme_constant_override("h_separation",6)
+		body.add_child(stored)
+		for furnishing_id in campaign.furnishing_storage:
+			stored.add_child(_chip("%s × %d" % [String(HearthLodging.furnishing(String(furnishing_id)).get("name",furnishing_id)),int(campaign.furnishing_storage[furnishing_id])],THEME.IVORY))
+
+func _room_card(parent: Node, room: Dictionary) -> void:
+	var quality := HearthLodging.quality(String(room.quality))
+	var occupant := campaign.character(String(room.get("occupant","")))
+	var panel := _panel(parent,Color("2f2117") if occupant != null else CARD_FILL,THEME.GOLD if HearthLodging.quality_index(String(room.quality)) >= 2 else CARD_BORDER,12)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation",6)
+	panel.add_child(content)
+	var title := HBoxContainer.new()
+	title.add_theme_constant_override("separation",8)
+	content.add_child(title)
+	title.add_child(label(HearthLodging.room_label(campaign,room),17,THEME.HIGHLIGHT_GOLD))
+	title.add_child(_chip(String(quality.name),THEME.GOLD,String(quality.get("description",""))))
+	if int(quality.get("training_bonus",0)) > 0: title.add_child(_chip("Training +%d%%" % int(quality.training_bonus),GOOD,"Everyone who sleeps here trains a little easier."))
+	var resident := HBoxContainer.new()
+	resident.add_theme_constant_override("separation",10)
+	content.add_child(resident)
+	if occupant != null:
+		resident.add_child(_portrait(occupant,Vector2(44,52)))
+		var who := VBoxContainer.new()
+		who.add_theme_constant_override("separation",0)
+		resident.add_child(who)
+		who.add_child(label(occupant.display_name,15,THEME.IVORY))
+		who.add_child(label(occupant.class_id.capitalize(),12,THEME.MUTED))
+	else:
+		resident.add_child(label("Empty · ready for a new recruit",14,THEME.MUTED))
+	var spacer := Control.new(); spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL; resident.add_child(spacer)
+	var members := campaign.living_roster()
+	if not members.is_empty():
+		var mover := OptionButton.new()
+		mover.custom_minimum_size = Vector2(130,32)
+		mover.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		mover.fit_to_longest_item = false
+		mover.add_item("Move in…")
+		mover.set_item_disabled(0,true)
+		for member in members:
+			if occupant != null and member.id == occupant.id: continue
+			mover.add_item(member.display_name)
+			mover.set_item_metadata(mover.item_count-1,member.id)
+		mover.select(0)
+		mover.tooltip_text = "Move someone into this room. Whoever lives here swaps with them."
+		mover.item_selected.connect(func(index: int): act(HearthLodging.assign_room(campaign,String(room.id),String(mover.get_item_metadata(index)))))
+		resident.add_child(mover)
+	var suits := HearthLodging.room_suits(room)
+	if not suits.is_empty():
+		var suited := PackedStringArray()
+		for class_id in suits: suited.append(class_id.capitalize())
+		var match_text := "Suits " + ", ".join(suited)
+		var tint := THEME.MUTED
+		if occupant != null and suits.has(occupant.class_id): match_text += " · a good fit for %s" % occupant.display_name; tint = GOOD
+		content.add_child(label(match_text,12,tint))
+	var placed: Array = Array(room.get("furnishings",[]))
+	var slot_row := HFlowContainer.new()
+	slot_row.add_theme_constant_override("h_separation",6)
+	slot_row.add_theme_constant_override("v_separation",6)
+	content.add_child(slot_row)
+	for slot_index in HearthLodging.slots(room):
+		if slot_index < placed.size():
+			var furnishing_id := String(placed[slot_index])
+			var item := HearthLodging.furnishing(furnishing_id)
+			var chip := Button.new()
+			chip.text = "%s  ✕" % String(item.get("name",furnishing_id))
+			chip.tooltip_text = "%s\n%s\nClick to move it to storage." % [String(item.get("description","")),_furnishing_bonus_text(item)]
+			THEME.apply_button(chip,true,12,Vector2(0,32))
+			chip.pressed.connect(func(): act(HearthLodging.remove_furnishing(campaign,String(room.id),slot_index)))
+			slot_row.add_child(chip)
+		else:
+			slot_row.add_child(_furnish_picker(room,occupant))
+	var footer := HBoxContainer.new()
+	footer.add_theme_constant_override("separation",8)
+	content.add_child(footer)
+	var next := HearthLodging.next_quality(room)
+	if next.is_empty():
+		footer.add_child(label("The finest room the Hearth can offer.",12,THEME.MUTED))
+	else:
+		var locked: bool = int(campaign.establishment_tier) < int(next.get("min_tier",0))
+		var upgrade := button(footer,("Upgrade to %s · %dg" % [String(next.name),int(next.upgrade_cost)]) if not locked else "%s needs a bigger Hearth" % String(next.name),func(): act(HearthLodging.upgrade_room(campaign,String(room.id))),not locked and campaign.banked_gold >= int(next.upgrade_cost))
+		upgrade.custom_minimum_size = Vector2(0,32)
+		upgrade.tooltip_text = "%s\n%d furnishing slots · training +%d%%" % [String(next.get("description","")),int(next.slots),int(next.get("training_bonus",0))]
+
+func _furnish_picker(room: Dictionary, occupant: CharacterRecord) -> OptionButton:
+	var picker := OptionButton.new()
+	picker.custom_minimum_size = Vector2(170,32)
+	picker.fit_to_longest_item = false
+	picker.add_item("+ Furnish")
+	picker.set_item_disabled(0,true)
+	var ids: Array = HearthLodging.furnishings().keys()
+	# Furnishings that suit whoever lives here are listed first.
+	ids.sort_custom(func(a, b):
+		var suits_a := occupant != null and Array(HearthLodging.furnishing(String(a)).suits).has(occupant.class_id)
+		var suits_b := occupant != null and Array(HearthLodging.furnishing(String(b)).suits).has(occupant.class_id)
+		if suits_a != suits_b: return suits_a
+		return int(HearthLodging.furnishing(String(a)).cost) < int(HearthLodging.furnishing(String(b)).cost))
+	for furnishing_id in ids:
+		var item := HearthLodging.furnishing(String(furnishing_id))
+		if not HearthLodging.can_fit(room,String(furnishing_id)): continue
+		var stored := int(campaign.furnishing_storage.get(furnishing_id,0))
+		var star := "★ " if occupant != null and Array(item.suits).has(occupant.class_id) else ""
+		picker.add_item("%s%s · %s" % [star,String(item.name),"stored" if stored > 0 else "%dg" % int(item.cost)])
+		picker.set_item_metadata(picker.item_count-1,furnishing_id)
+		picker.set_item_tooltip(picker.item_count-1,"%s\n%s" % [String(item.description),_furnishing_bonus_text(item)])
+		if stored == 0 and campaign.banked_gold < int(item.cost): picker.set_item_disabled(picker.item_count-1,true)
+	picker.select(0)
+	picker.tooltip_text = "Buy and place a furnishing. ★ suits whoever lives here."
+	picker.item_selected.connect(func(index: int): act(HearthLodging.place_furnishing(campaign,String(room.id),String(picker.get_item_metadata(index)))))
+	return picker
+
+func _furnishing_bonus_text(item: Dictionary) -> String:
+	var parts := PackedStringArray()
+	var stats: Dictionary = Dictionary(item.get("stats",{}))
+	for stat in stats: parts.append("%s training +%d%%" % [String(stat).to_upper(),int(stats[stat])])
+	var suits := PackedStringArray()
+	for class_id in Array(item.get("suits",[])): suits.append(String(class_id).capitalize())
+	return ", ".join(parts) + (" · suits " + ", ".join(suits) if not suits.is_empty() else "")
 
 # ---------------------------------------------------------------- expeditions
 

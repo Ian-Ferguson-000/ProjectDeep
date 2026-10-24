@@ -62,6 +62,8 @@ var signing_fee: int = 0
 var stat_build_id:=""
 ## The class this adventurer arrived hoping for. The keeper may assign another.
 var calling_class_id:=""
+## Hearth stat training: {last_day, sessions, practice:{stat:n}, gains:{stat:n}}.
+var training:Dictionary={}
 
 func age_on(day: int) -> int:
 	return maxi(18, int((day-birth_day)/112))
@@ -82,7 +84,7 @@ static func create(character_id: String, name: String, character_class: String, 
 
 func to_dict() -> Dictionary:
 	return {
-		"equipment":equipment.duplicate(true),"provisions":provisions.duplicate(),"birth_day":birth_day,"recovery_until":recovery_until,"signing_fee":signing_fee,"stat_build_id":stat_build_id,"calling_class_id":calling_class_id,
+		"equipment":equipment.duplicate(true),"provisions":provisions.duplicate(),"birth_day":birth_day,"recovery_until":recovery_until,"signing_fee":signing_fee,"stat_build_id":stat_build_id,"calling_class_id":calling_class_id,"training":training.duplicate(true),
 		"id":id, "display_name":display_name, "portrait_variant":portrait_variant, "class_id":class_id,
 		"learning_potential":learning_potential, "learning_potential_known":learning_potential_known,
 		"level":level, "xp":xp, "current_health":current_health, "max_health":max_health,
@@ -115,5 +117,5 @@ static func from_dict(data: Dictionary) -> CharacterRecord:
 	record.definition_id=String(data.get("definition_id",""));record.family_name=String(data.get("family_name",""));record.pronouns=String(data.get("pronouns","they/them"));record.origin=String(data.get("origin","Unknown"));record.nation_id=String(data.get("nation_id","crossroads"));record.faith_id=String(data.get("faith_id","unaffiliated"));record.age_band=String(data.get("age_band","Prime"));record.occupation=String(data.get("occupation","Adventurer"));record.personality=String(data.get("personality","Reserved"));record.preference=String(data.get("preference","A fair contract"));record.biography=String(data.get("biography","A traveler seeking work at the Hearth."));record.lineage_id=String(data.get("lineage_id",record.id));record.parent_id=String(data.get("parent_id",""));record.generation=maxi(1,int(data.get("generation",1)));record.arrival_year=maxi(1,int(data.get("arrival_year",1)));record.attributes=Dictionary(data.get("attributes",record.progression.get("attributes",{}))).duplicate(true);if record.attributes.is_empty():record.attributes={"str":10,"dex":10,"con":10,"int":10,"wis":10,"cha":10}
 	record.doctrine_id=String(data.get("doctrine_id",NarrativeContent.nation(record.nation_id).get("default_doctrine","unaligned")));record.relationships=Dictionary(data.get("relationships",{})).duplicate(true)
 	record.hidden_traits.assign(data.get("hidden_traits",[]));record.career_limit=clampi(int(data.get("career_limit",8)),6,10);record.fatigue=maxi(0,int(data.get("fatigue",0)));record.morale=clampi(int(data.get("morale",50)),0,100);record.loyalty=int(data.get("loyalty",0));record.scars.assign(data.get("scars",[]));record.accomplishments.assign(data.get("accomplishments",[]));record.personal_history.assign(data.get("personal_history",[]))
-	record.stat_build_id=String(data.get("stat_build_id",""));record.calling_class_id=GameBalance.normalize_class_id(String(data.get("calling_class_id",record.class_id)))
+	record.training=Dictionary(data.get("training",{})).duplicate(true);record.stat_build_id=String(data.get("stat_build_id",""));record.calling_class_id=GameBalance.normalize_class_id(String(data.get("calling_class_id",record.class_id)))
 	return record
