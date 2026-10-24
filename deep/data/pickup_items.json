@@ -8,6 +8,14 @@
     "lasts: permanent (kept between expeditions), dungeon_bound or run (both lost when the expedition ends), or temporary (lasts 'floors' floors).",
     "stats: flat bonuses such as attack_bonus, spell_power, spell_potency, defense, armor_class, max_health, movement, initiative_modifier, potion_heal_bonus, gold_bonus_percent.",
     "combat (optional): how the item behaves in real-time combat. 'rules' is the text players read; 'trigger' is passive, hit, potion_use, floor_entry, action_complete, lethal_damage and so on; other numbers tune the effect.",
+    "stats also take attack_speed (percent faster basic attacks, e.g. 15 = 15% faster, capped at 100) and move_speed (percent faster movement).",
+    "combat.procs (optional): a list of special effects. Each has a type and 'on' (when it happens: swing = basic attack, special, dash, hit = you strike an enemy, kill = you kill one).",
+    "Proc options for every type: chance (0-1, default 1), every (only every Nth time, e.g. 3 = every third swing), cooldown (seconds between triggers), message (optional popup text).",
+    "type wave: a crescent that flies forward through enemies. element (fire, wind, lightning, ice, poison, arcane), damage_percent (of the attack that caused it), damage (flat), range, speed, width, count + spread_degrees (fan of several), color (hex), burn / chill (same options as below, applied to everything it hits).",
+    "type chain_lightning: leaps from the target to nearby enemies. damage_percent, damage, jumps, jump_range.",
+    "type burn: sets the target alight. damage (per half-second tick), damage_percent, duration.  type chill: slows the target. slow (0.5 = half speed), duration.",
+    "type nova: a burst around the target (or you, for swing/special/dash). damage_percent, damage, radius, element, knockback.  type heal: amount.",
+    "See docs/ItemEffects.md for worked examples.",
     "drops: false keeps an item out of chests and shops without deleting it. note: a reminder for the team, not shown in game.",
     "turn_based (optional): rules for the older turn-based combat mode. Leave it alone unless you are working on that mode.",
     "Run tests/pickup_items_test.gd after editing to check the file."
@@ -373,10 +381,100 @@
       "lasts": "permanent",
       "description": "A patient silver star aligns weapon and spell trajectories alike.",
       "stats": {"accuracy": 3, "penetration": 2, "initiative_modifier": 2},
-      "combat": {"rules": "Slasher: specials create a 45% echo impact once every 4 seconds.", "trigger": "action_complete", "echo_multiplier": 0.45, "internal_cooldown": 4.0},
+      "combat": {"rules": "Slasher: specials release a 45% arcane shockwave around you, once every 4 seconds.", "procs": [{"type": "nova", "on": "special", "damage_percent": 45, "radius": 90, "element": "arcane", "cooldown": 4.0}]},
       "tags": ["legendary", "power"],
       "icon": "special",
       "turn_based": {"rules_text": "On a natural 20, restore 1 class resource.", "effects": [{"trigger": "critical_hit", "resource": 1}]}
+    },
+
+    "windrunner_boots": {
+      "name": "Windrunner Boots",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "Soft-soled boots that never quite touch the ground.",
+      "stats": {"move_speed": 12},
+      "combat": {
+        "rules": "Move 12% faster."
+      },
+      "tags": ["movement", "speed"],
+      "icon": "movement"
+    },
+
+    "quicksilver_locket": {
+      "name": "Quicksilver Locket",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "A bead of living metal races round the locket faster than the eye can follow.",
+      "stats": {"attack_speed": 12, "move_speed": 8},
+      "combat": {
+        "rules": "Basic attacks are 12% faster and you move 8% faster."
+      },
+      "tags": ["speed"],
+      "icon": "move"
+    },
+
+    "cinder_brand": {
+      "name": "Cinder Brand",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "A branding iron's head, still glowing, lashed to the wrist.",
+      "stats": {},
+      "combat": {
+        "rules": "Hits have a 25% chance to set the enemy alight, burning for a few seconds.",
+        "procs": [
+          {"type": "burn", "on": "hit", "chance": 0.25, "damage": 2, "duration": 3.0}
+        ]
+      },
+      "tags": ["fire", "status"],
+      "icon": "attack"
+    },
+
+    "rimefrost_chain": {
+      "name": "Rimefrost Chain",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "Every link is furred with frost that never melts.",
+      "stats": {},
+      "combat": {
+        "rules": "Hits have a 35% chance to chill the enemy, slowing them for 1.6 seconds.",
+        "procs": [
+          {"type": "chill", "on": "hit", "chance": 0.35, "slow": 0.5, "duration": 1.6}
+        ]
+      },
+      "tags": ["ice", "status"],
+      "icon": "defense"
+    },
+
+    "bursting_spore_sac": {
+      "name": "Bursting Spore Sac",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "Squeezed from a forest shroomie. It is still twitching.",
+      "stats": {},
+      "combat": {
+        "rules": "Enemies you kill burst in a cloud of spores that hurts everything nearby.",
+        "procs": [
+          {"type": "nova", "on": "kill", "damage_percent": 60, "damage": 2, "radius": 72, "element": "poison", "cooldown": 0.25}
+        ]
+      },
+      "tags": ["poison", "forest"],
+      "icon": "special"
+    },
+
+    "thunderheart_amulet": {
+      "name": "Thunderheart Amulet",
+      "rarity": "very_rare",
+      "lasts": "permanent",
+      "description": "A storm sealed in amber. It beats when something dies nearby.",
+      "stats": {},
+      "combat": {
+        "rules": "Killing an enemy has a 50% chance to release chain lightning that leaps between up to 4 enemies.",
+        "procs": [
+          {"type": "chain_lightning", "on": "kill", "chance": 0.5, "damage_percent": 80, "damage": 2, "jumps": 4, "jump_range": 190}
+        ]
+      },
+      "tags": ["lightning"],
+      "icon": "special"
     }
   },
   "melee_only": {
@@ -496,6 +594,83 @@
       "tags": ["legendary", "martial", "power"],
       "icon": "attack",
       "turn_based": {"rules_text": "Martial hits reduce the target's Threshold by 1 for the rest of combat.", "effects": [{"trigger": "martial_hit", "shred_threshold": 1}]}
+    },
+
+    "emberwind_edge": {
+      "name": "Emberwind Edge",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "A whetted ember-steel band that clips onto any blade. Swing hard enough and the air catches fire.",
+      "stats": {},
+      "combat": {
+        "rules": "Every third swing hurls a crescent of fire that cuts through enemies and leaves them burning.",
+        "procs": [
+          {"type": "wave", "on": "swing", "every": 3, "element": "fire", "damage_percent": 70, "range": 280, "speed": 560, "width": 36, "burn": {"damage": 1, "damage_percent": 10, "duration": 2.5}}
+        ]
+      },
+      "tags": ["fire", "martial", "weapon"],
+      "icon": "attack"
+    },
+
+    "galecutter_charm": {
+      "name": "Galecutter Charm",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "A carved feather that hums when it moves fast.",
+      "stats": {},
+      "combat": {
+        "rules": "Swings have a 30% chance to loose a cutting gust of wind that passes through enemies.",
+        "procs": [
+          {"type": "wave", "on": "swing", "chance": 0.3, "element": "wind", "damage_percent": 45, "range": 230, "speed": 660, "width": 30}
+        ]
+      },
+      "tags": ["wind", "martial", "weapon"],
+      "icon": "attack"
+    },
+
+    "stormcall_pommel": {
+      "name": "Stormcall Pommel",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "A copper pommel that crackles when it strikes bone.",
+      "stats": {},
+      "combat": {
+        "rules": "Hits have a 20% chance to call chain lightning that leaps between up to 3 enemies.",
+        "procs": [
+          {"type": "chain_lightning", "on": "hit", "chance": 0.2, "damage_percent": 60, "jumps": 3, "jump_range": 170, "cooldown": 0.35}
+        ]
+      },
+      "tags": ["lightning", "martial"],
+      "icon": "attack"
+    },
+
+    "duelists_whetstone": {
+      "name": "Duelist's Whetstone",
+      "rarity": "common",
+      "lasts": "run",
+      "description": "A few passes and the blade feels half its weight.",
+      "stats": {"attack_speed": 15},
+      "combat": {
+        "rules": "Basic attacks are 15% faster."
+      },
+      "tags": ["speed", "martial"],
+      "icon": "attack"
+    },
+
+    "tempest_brand": {
+      "name": "Tempest Brand",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "The storm-god's mark, burned into a sword-hilt. Thunder follows the blade.",
+      "stats": {"attack_speed": 10},
+      "combat": {
+        "rules": "Basic attacks are 10% faster. Every fourth swing fires a fan of three lightning crescents.",
+        "procs": [
+          {"type": "wave", "on": "swing", "every": 4, "count": 3, "spread_degrees": 20, "element": "lightning", "damage_percent": 50, "range": 300, "speed": 700, "width": 30}
+        ]
+      },
+      "tags": ["lightning", "legendary", "weapon"],
+      "icon": "attack"
     }
   },
   "ranged_only": {
@@ -628,6 +803,67 @@
       "tags": ["legendary", "arcane", "fire"],
       "icon": "special",
       "turn_based": {"rules_text": "Fire attacks convert half of prevented damage into bonus damage on the next spell.", "effects": [{"trigger": "absorbed_attack", "damage_type": "fire", "store_prevented_spell_damage": 0.5}]}
+    },
+
+    "conductors_rod": {
+      "name": "Conductor's Rod",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "A wand of twisted copper that drinks in stray sparks.",
+      "stats": {},
+      "combat": {
+        "rules": "Spell hits have a 25% chance to arc chain lightning to up to 3 more enemies.",
+        "procs": [
+          {"type": "chain_lightning", "on": "hit", "chance": 0.25, "damage_percent": 55, "jumps": 3, "jump_range": 180, "cooldown": 0.35}
+        ]
+      },
+      "tags": ["lightning", "arcane"],
+      "icon": "spell"
+    },
+
+    "quickcast_band": {
+      "name": "Quickcast Band",
+      "rarity": "common",
+      "lasts": "run",
+      "description": "A ring etched with shortcuts through every incantation.",
+      "stats": {"attack_speed": 15},
+      "combat": {
+        "rules": "Basic casts are 15% faster."
+      },
+      "tags": ["speed", "arcane"],
+      "icon": "spell"
+    },
+
+    "pyre_lantern": {
+      "name": "Pyre Lantern",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "The flame inside it grows a little brighter with each soul it takes.",
+      "stats": {},
+      "combat": {
+        "rules": "Enemies you kill erupt in a burst of flame.",
+        "procs": [
+          {"type": "nova", "on": "kill", "damage_percent": 70, "radius": 80, "element": "fire", "cooldown": 0.25}
+        ]
+      },
+      "tags": ["fire", "arcane"],
+      "icon": "spell"
+    },
+
+    "zephyr_quill": {
+      "name": "Zephyr Quill",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "Words written with it lift off the page.",
+      "stats": {},
+      "combat": {
+        "rules": "Basic casts have a 25% chance to also loose a crescent of wind.",
+        "procs": [
+          {"type": "wave", "on": "swing", "chance": 0.25, "element": "wind", "damage_percent": 50, "range": 260, "speed": 620, "width": 30}
+        ]
+      },
+      "tags": ["wind", "arcane"],
+      "icon": "spell"
     }
   }
 }

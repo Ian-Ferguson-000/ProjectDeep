@@ -26,7 +26,7 @@ func _run() -> void:
 			_expect(VALID_RARITIES.has(String(item.get("rarity",""))),"%s has an unknown rarity" % item_id)
 			_expect(VALID_DURATIONS.has(String(item.get("lasts",""))),"%s has an unknown 'lasts' value" % item_id)
 			if String(item.get("lasts","")) == "temporary": _expect(int(item.get("floors",0)) > 0,"%s is temporary but has no floors" % item_id)
-	_expect(seen.size() == 52 and GameBalance.get_items().size() == 52,"Item count changed during the move to pickup_items.json")
+	_expect(seen.size() >= 52 and GameBalance.get_items().size() == seen.size(),"Items went missing from pickup_items.json")
 	var giant: Dictionary = GameBalance.get_item("giant_bane_grip")
 	_expect(String(giant.usable_by) == "melee_only" and int(Dictionary(giant.modifiers).get("attack_power",0)) == 2,"Item stats did not survive the move")
 	_expect(is_equal_approx(float(GameBalance.get_slasher_item_effects("giant_bane_grip").get("elite_damage_multiplier",0)),1.16),"Combat rules did not survive the move")

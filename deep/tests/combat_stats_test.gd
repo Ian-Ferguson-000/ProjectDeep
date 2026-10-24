@@ -16,7 +16,7 @@ func _initialize() -> void:
 	var layered_aegis := CombatResolver.defense_snapshot({"aegis_all":2,"aegis_fire":3})
 	_expect(int(layered_aegis.aegis_fire) == 5, "Global and typed Aegis should stack", failures)
 	var items := GameBalance.get_items()
-	_expect(items.size() == 52, "expected all 52 upgraded items", failures)
+	_expect(items.size() >= 52, "expected at least the 52 upgraded items", failures)
 	var seen_rules: Dictionary = {}
 	for item_id in items.keys():
 		var item: Dictionary = items[item_id]
@@ -24,7 +24,9 @@ func _initialize() -> void:
 		_expect(not rules.is_empty(), "%s has no rules text" % item_id, failures)
 		_expect(not seen_rules.has(rules), "%s repeats another item's rules" % item_id, failures)
 		seen_rules[rules] = item_id
-		_expect(item.get("effects", []) is Array and not item.get("effects", []).is_empty(), "%s has no mechanical effect" % item_id, failures)
+		var has_turn_effect: bool = item.get("effects", []) is Array and not item.get("effects", []).is_empty()
+		var has_combat_effect: bool = not GameBalance.get_slasher_item_effects(String(item_id)).get("procs", []).is_empty() or not item.get("modifiers", {}).is_empty()
+		_expect(has_turn_effect or has_combat_effect, "%s has no mechanical effect" % item_id, failures)
 		var modifiers: Dictionary = item.get("modifiers", {})
 		for removed_stat in ["attack_bonus", "spell_power", "defense", "block_bonus"]:
 			_expect(not modifiers.has(removed_stat), "%s still uses legacy %s" % [item_id, removed_stat], failures)

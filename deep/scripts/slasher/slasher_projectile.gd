@@ -67,7 +67,9 @@ func _damage_impact(primary:Node2D=null)->void:
 func _damage_target(target:Node2D)->void:
 	var target_id:int=target.get_instance_id()
 	if hit_ids.has(target_id) or not target.has_method("receive_attack"):return
-	hit_ids[target_id]=true;target.call("receive_attack",attack,source);hit_landed.emit(target,traveled)
+	hit_ids[target_id]=true
+	var strike:Dictionary=source.item_runtime.adjust_for_target(attack,target) if is_instance_valid(source) and source.item_runtime and target.is_in_group("slasher_enemy") else attack
+	target.call("receive_attack",strike,source);hit_landed.emit(target,traveled)
 
 func _spawn_splash_visual(radius:float)->void:
 	var effect:=AnimatedSprite2D.new();var frames:=SpriteFrames.new();frames.remove_animation("default");frames.add_animation("splash");frames.set_animation_speed("splash",20.0);frames.set_animation_loop("splash",false)

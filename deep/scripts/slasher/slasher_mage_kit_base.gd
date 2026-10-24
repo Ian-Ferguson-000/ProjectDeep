@@ -54,11 +54,12 @@ func absorb_damage(_amount: int) -> int:return 0
 
 func hit(target: Node2D, attack: Dictionary, primary: bool = false) -> int:
 	if not is_instance_valid(target) or not target.has_method("receive_attack"):return 0
+	var was_dead: bool="dead" in target and bool(target.get("dead"))
+	if actor.item_runtime and target.is_in_group("slasher_enemy"):attack=actor.item_runtime.adjust_for_target(attack,target)
 	var dealt: int=target.receive_attack(attack,actor)
 	if primary:
 		on_direct_hit(target,attack)
-		if actor.item_runtime and target.is_in_group("slasher_enemy"):
-			actor.item_runtime.handle_event({"trigger":"hit","target":target,"attack":attack})
+		if target.is_in_group("slasher_enemy"):actor.on_item_enemy_hit(target,attack,was_dead)
 		var echo_multiplier := float(attack.get("echo_damage_multiplier",0.0))
 		if echo_multiplier>0:
 			var echo := secondary_copy(attack)

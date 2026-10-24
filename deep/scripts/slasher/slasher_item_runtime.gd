@@ -31,6 +31,8 @@ func handle_event(event:Dictionary)->Dictionary:
 	var result:Dictionary={"trigger":String(event.get("trigger","")),"damage_multiplier":1.0,"healing":0,"cooldown_reduction":0.0,"resource_change":0,"activations":[]}
 	for record:Dictionary in records:
 		if String(record.get("trigger","passive"))!=String(result.trigger):continue
+		if not _has_event_effect(record):continue
+		if record.has("slot") and String(record.slot)!=String(event.get("slot","")):continue
 		var item_id:String=String(record.get("item_id",""));var internal:float=float(record.get("internal_cooldown",0.0))
 		if float(cooldowns.get(item_id,0.0))>0.0 or bool(record.get("once_per_floor",false)) and floor_uses.has(item_id):continue
 		if internal>0.0:cooldowns[item_id]=internal
@@ -39,8 +41,36 @@ func handle_event(event:Dictionary)->Dictionary:
 		if not String(record.get("rules","")).is_empty():effect_activated.emit(String(GameBalance.get_item(item_id).get("name",item_id))+" activates.")
 	return result
 
+const EVENT_EFFECT_KEYS:=["damage_multiplier","heal","cooldown_flat","resource_change"]
+func _has_event_effect(record:Dictionary)->bool:
+	for key in EVENT_EFFECT_KEYS:
+		if record.has(key):return true
+	return false
+
 func _process(delta:float)->void:
 	for key:Variant in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-delta)
+	# "periodic" relics fire on their own every internal_cooldown seconds.
+	for record:Dictionary in records:
+		if String(record.get("trigger",""))!="periodic" or float(record.get("internal_cooldown",0.0))<=0.0:continue
+		var item_id:String=String(record.get("item_id",""))
+		if not cooldowns.has(item_id):cooldowns[item_id]=float(record.internal_cooldown);continue
+		if float(cooldowns[item_id])>0.0:continue
+		cooldowns[item_id]=float(record.internal_cooldown)
+		if is_instance_valid(owner_player):
+			if float(record.get("cooldown_flat",0.0))>0.0:owner_player.reduce_cooldowns(float(record.cooldown_flat))
+			if int(record.get("heal",0))>0:owner_player.heal(int(record.heal))
+
+## Basic attacks are this many times faster. attack_speed is a percent; capped at +100%.
+func attack_speed_multiplier()->float:return 1.0+clampf(conversion("attack_speed"),0.0,100.0)/100.0
+
+## Per-target damage changes, e.g. bonus damage against elites and bosses.
+func adjust_for_target(attack:Dictionary,target:Node)->Dictionary:
+	var elite:bool=("elite" in target and bool(target.get("elite"))) or ("boss" in target and bool(target.get("boss"))) or ("mini_boss" in target and bool(target.get("mini_boss")))
+	if not elite:return attack
+	var multiplier:float=conversion("elite_damage_multiplier",1.0)
+	for record:Dictionary in records:multiplier*=float(record.get("elite_damage_multiplier",1.0))
+	if is_equal_approx(multiplier,1.0):return attack
+	var result:Dictionary=attack.duplicate();result["damage"]=maxi(1,int(round(float(attack.get("damage",1))*multiplier)));return result
 
 func conversion(key:String,fallback:float=0.0)->float:return float(conversions.get(key,fallback))
 func cooldown_multiplier()->float:return clampf(1.0-conversion("cooldown_reduction"),0.55,1.0)

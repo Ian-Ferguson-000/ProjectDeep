@@ -264,19 +264,51 @@ static func get_slasher_item_effects(item_id:String)->Dictionary:
 			"defense":conversions["damage_reduction"]=minf(0.30,value*0.035)
 			"threshold":conversions["flat_prevention"]=value
 			"initiative_modifier":conversions["cooldown_reduction"]=minf(0.35,value*0.025)
-			"movement":conversions["speed_multiplier"]=1.0+value*0.05;conversions["mobility_multiplier"]=1.0+value*0.05
+			"movement":conversions["speed_multiplier"]=float(conversions.get("speed_multiplier",1.0))*(1.0+value*0.05);conversions["mobility_multiplier"]=1.0+value*0.05
 			"accuracy":conversions["precision_hits"]=maxi(2,7-int(value))
 			"penetration":conversions["elite_damage_multiplier"]=1.0+value*0.08
 			"evasion":conversions["defense_window_bonus"]=value*0.06
 			"range":conversions["range_pixels"]=value*48.0
+			"move_speed":conversions["speed_multiplier"]=float(conversions.get("speed_multiplier",1.0))*(1.0+value/100.0)
+			"attack_speed":conversions["attack_speed"]=value
 			_:conversions[key]=value
 	var authored_conversions:Dictionary=Dictionary(record.get("conversions",{}));authored_conversions.merge(conversions,true);record["conversions"]=authored_conversions
 	if not record.has("rules"):
 		var summary:Array[String]=[]
-		for conversion_key:Variant in conversions:summary.append("%s %s"%[String(conversion_key).replace("_"," ").capitalize(),str(conversions[conversion_key])])
-		record["rules"]="Slasher: %s."%(", ".join(summary) if not summary.is_empty() else "activates a deterministic combat effect on its listed trigger")
+		for conversion_key:Variant in conversions:
+			var phrase:String=_conversion_phrase(String(conversion_key),float(conversions[conversion_key]))
+			if not phrase.is_empty():summary.append(phrase)
+		record["rules"]="Slasher: %s."%("; ".join(summary) if not summary.is_empty() else "a subtle charm with no combat effect")
 	record["trigger"]=String(record.get("trigger","passive"));record["internal_cooldown"]=float(record.get("internal_cooldown",0.0))
 	return record
+
+## Plain-English text for an item stat in real-time combat.
+static func _conversion_phrase(key:String,value:float)->String:
+	var pct:=func(v:float)->String:return ("%d%%" % int(round(v*100.0))) if absf(v*100.0-round(v*100.0))<0.05 else ("%.1f%%" % (v*100.0))
+	match key:
+		"attack_power":return "+%d attack damage" % int(value)
+		"spell_power":return "+%d spell damage" % int(value)
+		"spell_potency":return "+%d spell potency" % int(value)
+		"damage_reduction":return "take %s less damage" % pct.call(value)
+		"flat_prevention":return "ignore %d damage from every hit" % int(value)
+		"cooldown_reduction":return "abilities recharge %s faster" % pct.call(value)
+		"speed_multiplier":return "move %s faster" % pct.call(value-1.0)
+		"mobility_multiplier","defense_window_bonus":return ""
+		"precision_hits":return "every %s attack lands a precision hit (+25%% damage)" % _ordinal(int(value))
+		"elite_damage_multiplier":return "+%s damage to elites and bosses" % pct.call(value-1.0)
+		"range_pixels":return "longer reach and spell range"
+		"attack_speed":return "basic attacks %d%% faster" % int(value)
+		"potion_heal_bonus":return "potions heal %d more" % int(value)
+		"max_health":return "+%d max health" % int(value)
+		"gold_bonus_percent":return "+%d%% gold found" % int(value)
+		"xp_bonus_percent":return ""
+		"armor_class":return "+%d armor" % int(value)
+	return "%s %+d" % [key.replace("_"," ").capitalize(),int(value)]
+
+static func _ordinal(n:int)->String:
+	var suffix:="th"
+	if n%100<11 or n%100>13:suffix={1:"st",2:"nd",3:"rd"}.get(n%10,"th")
+	return "%d%s" % [n,suffix]
 
 static func get_slasher_item_rules_text(item_id:String)->String:return String(get_slasher_item_effects(item_id).get("rules",""))
 static func get_slasher_item_stat_conversions(item_id:String)->Dictionary:return Dictionary(get_slasher_item_effects(item_id).get("conversions",{})).duplicate(true)
@@ -612,6 +644,9 @@ static func _load_pickup_items(source: Dictionary) -> void:
 			if authored.has("floors"): item["duration_floors"] = int(authored.floors)
 			var turn_based: Dictionary = Dictionary(authored.get("turn_based", {}))
 			if turn_based.has("rules_text"): item["rules_text"] = String(turn_based.rules_text)
+			# Items made only for real-time combat show their combat rules instead.
+			if not item.has("rules_text") and authored.get("combat") is Dictionary and String(Dictionary(authored.combat).get("rules", "")) != "":
+				item["rules_text"] = String(authored.combat.rules).trim_prefix("Slasher: ")
 			if turn_based.has("effects"): item["effects"] = Array(turn_based.effects).duplicate(true)
 			catalog[String(item_id)] = item
 			if authored.get("combat") is Dictionary: combat[String(item_id)] = Dictionary(authored.combat).duplicate(true)
@@ -631,9 +666,14 @@ static func get_class_item_group(class_id: String) -> String:
 
 ## Whether a class can use a pickup item. Unknown items (such as Hearth equipment
 ## effects) are never restricted here.
+## Reads one field of a catalog item without copying the whole catalog.
+static func item_field(item_id: String, key: String, fallback: Variant = null) -> Variant:
+	_load_all()
+	var item: Variant = Dictionary(_items.get("items", {})).get(item_id, {})
+	return Dictionary(item).get(key, fallback) if item is Dictionary else fallback
+
 static func item_usable_by_class(item_id: String, class_id: String) -> bool:
-	var item: Dictionary = Dictionary(get_items().get(item_id, {}))
-	match String(item.get("usable_by", "any_class")):
+	match String(item_field(item_id, "usable_by", "any_class")):
 		"melee_only": return get_class_item_group(class_id) == "melee"
 		"ranged_only": return get_class_item_group(class_id) == "ranged"
 	return true

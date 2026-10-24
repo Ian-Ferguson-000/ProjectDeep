@@ -560,7 +560,8 @@ func _modifier_text(item: Dictionary) -> String:
 	for key in modifiers.keys():
 		var value: int = int(modifiers[key])
 		var prefix: String = "+" if value >= 0 else ""
-		parts.append("%s%s %s" % [prefix, value, _modifier_label(String(key))])
+		var percent: String = "%" if String(key) in ["attack_speed", "move_speed"] else ""
+		parts.append("%s%s%s %s" % [prefix, value, percent, _modifier_label(String(key))])
 	if parts.is_empty():
 		return "No visible effect"
 	return ", ".join(parts)
@@ -617,6 +618,10 @@ func _modifier_label(stat_id: String) -> String:
 			return "Potion Heal"
 		"movement":
 			return "Move"
+		"attack_speed":
+			return "Attack Speed"
+		"move_speed":
+			return "Move Speed"
 		"block_bonus":
 			return "Block"
 		"gold_bonus_percent":

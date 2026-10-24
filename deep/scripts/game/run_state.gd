@@ -1525,9 +1525,8 @@ func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
 ## Pickup items the active hero could actually use: in the drop pool and allowed
 ## for their class group (pickup_items.json any_class / melee_only / ranged_only).
 func _item_offer_allowed(item_id: String) -> bool:
-	var item: Dictionary = Dictionary(GameBalance.get_items().get(item_id, {}))
-	if item.is_empty(): return true
-	return bool(item.get("drops", true)) and GameBalance.item_usable_by_class(item_id, selected_class_id)
+	if GameBalance.item_field(item_id, "name") == null: return true
+	return bool(GameBalance.item_field(item_id, "drops", true)) and GameBalance.item_usable_by_class(item_id, selected_class_id)
 
 func _item_ids_for_rarity(items: Dictionary, rarity: String) -> Array[String]:
 	var ids: Array[String] = []
