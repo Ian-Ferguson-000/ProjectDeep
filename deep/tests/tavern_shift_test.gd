@@ -22,6 +22,9 @@ func restored(c: CampaignState) -> CampaignState:
 	return copy
 
 func run() -> void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party rules so they keep working if parties come back.
+	GameBalance.set_party_size_override(4)
 	var founders := CampaignState.new()
 	founders.apply_post_tutorial_state("victory")
 	check(not HearthCalendar.advance_shift(founders).ok,"Calendar bypassed founding recruitment")

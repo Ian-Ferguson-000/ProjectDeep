@@ -3,6 +3,9 @@ extends SceneTree
 func _initialize()->void:call_deferred("_run")
 
 func _run()->void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party rules so they keep working if parties come back.
+	GameBalance.set_party_size_override(4)
 	var failures:Array[String]=[]
 	var campaign:=CampaignState.new();campaign.apply_post_tutorial_state("victory")
 	_expect(campaign.calendar_day==1 and campaign.get_calendar_date()=={"absolute_day":1,"weekday":"Monday","season":"Spring","season_day":1,"year":1},"Calendar did not begin on Monday, Spring 1, Year 1",failures)

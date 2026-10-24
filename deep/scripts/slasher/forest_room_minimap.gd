@@ -1,9 +1,9 @@
 extends Control
 class_name ForestRoomMinimap
 
-## Isaac-style map of the current forest floor. Visited rooms are filled, rooms
-## next to them show as faint outlines until entered, and rooms with a known
-## purpose carry a small marker. The map stays centred on the party's room.
+## Isaac-style map of the current forest floor. Only rooms the party has entered
+## are drawn; doors to unexplored rooms show as short blank passages. Rooms with a
+## known purpose carry a small marker. The map stays centred on the party's room.
 
 const CELL := Vector2(26,18)
 const GAP := 4.0
@@ -34,19 +34,21 @@ func _draw() -> void:
 		if bool(room.get("visited",false)) or int(room.id) == current:
 			known[int(room.id)] = true
 			for neighbor in Dictionary(room.get("neighbors",{})).values(): if not known.has(int(neighbor)): known[int(neighbor)] = false
+	# Only rooms the party has entered are drawn. A door leading somewhere new shows
+	# as a short blank passage, so the shape of the floor is learned by exploring.
 	for id in known:
 		if not known[id]: continue
 		var room: Dictionary = rooms[id]
 		var a := _point(room,origin,center)
 		for neighbor in Dictionary(room.get("neighbors",{})).values():
-			draw_line(a,_point(rooms[int(neighbor)],origin,center),COLORS.line,3.0)
+			var b := _point(rooms[int(neighbor)],origin,center)
+			if bool(known.get(int(neighbor),false)): draw_line(a,b,COLORS.line,3.0)
+			else: draw_line(a,a.lerp(b,0.85),COLORS.unknown,3.0)
 	for id in known:
+		if not known[id]: continue
 		var room: Dictionary = rooms[id]
 		var rect := Rect2(_point(room,origin,center) - CELL*0.5,CELL)
 		if not Rect2(Vector2.ZERO,size).grow(-2).encloses(rect): continue
-		if not known[id]:
-			draw_rect(rect,COLORS.unknown,false,1.5)
-			continue
 		var fill: Color = COLORS.current if id == current else (COLORS.cleared if bool(room.get("cleared",false)) else COLORS.visited)
 		draw_rect(rect,fill)
 		if id == current: draw_rect(rect.grow(2),Color.WHITE,false,1.5)

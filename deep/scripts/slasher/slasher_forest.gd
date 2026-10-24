@@ -615,7 +615,9 @@ func _refresh_hud()->void:
 func _build_party_strip(canvas:CanvasLayer)->void:
 	var panel:=PanelContainer.new();panel.name="PartyStripPanel";panel.position=Vector2(18,12);panel.custom_minimum_size=Vector2(300,84);panel.add_theme_stylebox_override("panel",_panel_style(Color("#101713e8"),Color("#80602d")));canvas.add_child(panel)
 	var body:=VBoxContainer.new();body.add_theme_constant_override("separation",0);panel.add_child(body);party_strip=HBoxContainer.new();party_strip.name="PartyStrip";party_strip.add_theme_constant_override("separation",2);body.add_child(party_strip)
-	var hint:=Label.new();hint.text="TAB / LB  ·  SWAP";hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;hint.add_theme_font_size_override("font_size",10);hint.add_theme_color_override("font_color",Color("c9aa6a"));body.add_child(hint);_rebuild_party_strip()
+	var hint:=Label.new();hint.text="TAB / LB  ·  SWAP";hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;hint.add_theme_font_size_override("font_size",10);hint.add_theme_color_override("font_color",Color("c9aa6a"));body.add_child(hint)
+	# Swapping only matters with more than one hero; the portrait still shows health.
+	hint.visible=GameBalance.max_party_size()>1;_rebuild_party_strip()
 
 func _rebuild_party_strip()->void:
 	if party_strip==null:return

@@ -14,6 +14,9 @@ func company() -> CampaignState:
 	return c
 
 func run() -> void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party rules so they keep working if parties come back.
+	GameBalance.set_party_size_override(4)
 	var counts: Dictionary = {}
 	for id in HearthCatalog.data().items:
 		var item := HearthCatalog.item(id)

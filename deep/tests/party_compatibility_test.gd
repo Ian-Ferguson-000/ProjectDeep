@@ -3,6 +3,9 @@ extends SceneTree
 const COMPATIBILITY := preload("res://scripts/game/party_compatibility.gd")
 
 func _initialize() -> void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party rules so they keep working if parties come back.
+	GameBalance.set_party_size_override(4)
 	var failures:Array[String]=[]
 	var campaign:=CampaignState.new();campaign.apply_post_tutorial_state("victory")
 	for candidate in campaign.get_candidates():campaign.recruit_candidate(candidate.id)

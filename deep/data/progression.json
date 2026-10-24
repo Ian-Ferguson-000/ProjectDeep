@@ -1,5 +1,7 @@
 {
   "leveling_enabled": false,
+  "max_party_size": 1,
+  "party_note": "How many adventurers go on one run. 1 = solo runs. Raise it to bring back parties (dungeons still cap themselves at 2 or 4).",
   "leveling_note": "Set leveling_enabled to true to bring back XP, levels, level-up upgrade choices and Training. While false, everyone fights at level 1 and pickup items are the only upgrades.",
   "max_level": 20,
   "xp_thresholds": [0, 0, 100, 220, 380, 580, 820, 1100, 1420, 1780, 2180, 2620, 3100, 3620, 4180, 4780, 5420, 6100, 6820, 7580, 8380],

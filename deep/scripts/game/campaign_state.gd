@@ -373,6 +373,9 @@ func mark_former_keeper_encounter_seen() -> void:
 	former_keeper_encounter_seen = true
 
 func get_party_cap(dungeon_id: String) -> int:
+	return mini(GameBalance.max_party_size(),_dungeon_party_cap(dungeon_id))
+
+func _dungeon_party_cap(dungeon_id: String) -> int:
 	return 2 if dungeon_id == "forest" else (4 if has_completed_dungeon("forest") else 2)
 
 func has_completed_dungeon(dungeon_id: String) -> bool:

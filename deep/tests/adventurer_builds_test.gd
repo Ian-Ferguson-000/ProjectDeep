@@ -61,11 +61,11 @@ func _run()->void:
 	_expect(legacy_member.calling_class_id==legacy_member.class_id and legacy_member.stat_build_id.is_empty(),"Legacy characters did not load safely",failures)
 
 	# Expeditions run the reassigned class, and retraining is blocked while away.
-	var launch:=campaign.launch_expedition([brina.id,eamon.id],"forest")
+	var launch:=campaign.launch_expedition([brina.id],"forest")
 	_expect(bool(launch.ok),"Expedition with reassigned classes failed to launch: %s"%String(launch.get("error","")),failures)
 	var runtime:=RunState.new();runtime.attach_campaign(campaign);runtime.active_character_id=brina.id;runtime.start_new_run(null,"forest")
 	_expect(runtime.selected_class_id=="mage" and String(runtime.hero_profiles[brina.id].class_id)=="mage","Runtime did not use the reassigned class",failures)
-	_expect(not bool(campaign.reassign_class(eamon.id,"mage").ok),"An adventurer retrained while on an expedition",failures)
+	_expect(not bool(campaign.reassign_class(brina.id,"warrior").ok),"An adventurer retrained while on an expedition",failures)
 
 	if failures.is_empty():print("ADVENTURER_BUILDS_TESTS_PASSED");quit(0)
 	else:

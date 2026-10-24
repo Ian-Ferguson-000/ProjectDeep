@@ -656,6 +656,18 @@ static func leveling_enabled() -> bool:
 	_load_all()
 	return bool(_progression.get("leveling_enabled", true))
 
+static var _party_size_override: Variant = null
+
+## Adventurers per run, from progression.json "max_party_size" (1 = solo runs).
+static func max_party_size() -> int:
+	if _party_size_override != null: return int(_party_size_override)
+	_load_all()
+	return maxi(1,int(_progression.get("max_party_size",4)))
+
+## Tests can force a party size; pass null to use the data file.
+static func set_party_size_override(value: Variant) -> void:
+	_party_size_override = value
+
 ## Tests and tools can force levelling on or off; pass null to use the data file.
 static func set_leveling_override(value: Variant) -> void:
 	_leveling_override = value

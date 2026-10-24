@@ -3,6 +3,9 @@ extends SceneTree
 func _initialize() -> void: call_deferred("_run")
 
 func _run() -> void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party rules so they keep working if parties come back.
+	GameBalance.set_party_size_override(4)
 	# Levelling is switched off in progression.json for now; this test covers the
 	# dormant levelling rules so they keep working when it is switched back on.
 	GameBalance.set_leveling_override(true)
