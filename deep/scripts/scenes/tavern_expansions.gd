@@ -422,7 +422,9 @@ func _tile_floor(rect: Rect2) -> void:
 		var x := rect.position.x
 		while x < rect.end.x:
 			var w := minf(32.0,rect.end.x - x); var h := minf(32.0,rect.end.y - y)
-			ground.draw_texture_rect_region(FLOOR_TEXTURE,Rect2(x,y,w,h),Rect2(128,0,w,h),FLOOR_TINT)
+			# The plank style is a 4x2 block of tiles starting at (128,0); cycle through it on the world grid.
+			var tile := Vector2(posmod(int(floor(x / 32.0)),4),posmod(int(floor(y / 32.0)),2)) * 32.0
+			ground.draw_texture_rect_region(FLOOR_TEXTURE,Rect2(x,y,w,h),Rect2(Vector2(128,0) + tile,Vector2(w,h)),FLOOR_TINT)
 			x += 32.0
 		y += 32.0
 

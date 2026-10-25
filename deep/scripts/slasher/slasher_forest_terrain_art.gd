@@ -3,9 +3,22 @@ extends RefCounted
 ## Terrain from the approved forest sheet, shared by gameplay and the art study.
 const SHEET := preload("res://assets/pixel_art/forest_art/forest tiles.png")
 const GRASS_REGION := Rect2(208, 80, 32, 32)
+## Nine 32x32 cuts from inside the sheet's grass patch (x 188-260, y 60-132).
+## They sit on the patch's 16px rhythm so neighbours join without seams; mixing
+## them stops the sprout pattern repeating every tile. Add more cuts here if the
+## sheet grows more grass.
+const GRASS_VARIANTS: Array[Vector2] = [
+	Vector2(192,64),Vector2(208,64),Vector2(224,64),
+	Vector2(192,80),Vector2(208,80),Vector2(224,80),
+	Vector2(192,96),Vector2(208,96),Vector2(224,96),
+]
 
-static func make_ground_sprite(cell_size: int = 48) -> Sprite2D:
-	return _region(GRASS_REGION, float(cell_size) / 32.0)
+## A grass tile. With a cell, picks a variant from the cell position, so the same
+## room always looks the same.
+static func make_ground_sprite(cell_size: int = 48, cell: Vector2i = Vector2i(0x7fffffff, 0)) -> Sprite2D:
+	if cell.x == 0x7fffffff: return _region(GRASS_REGION, float(cell_size) / 32.0)
+	var hash_value := absi((cell.x * 73856093) ^ (cell.y * 19349663))
+	return _region(Rect2(GRASS_VARIANTS[hash_value % GRASS_VARIANTS.size()], Vector2(32, 32)), float(cell_size) / 32.0)
 
 const WATER_REGION := Rect2(352, 200, 32, 32)
 const WATER_EDGE_REGION := Rect2(320, 165, 32, 32)
@@ -37,7 +50,7 @@ static func build_room_ground(parent: Node2D, layout: Dictionary, cell_size: int
 				tile = _region(COBBLE_REGION, scale_value)
 				tile.name = "Cobble_%d_%d" % [x, y]
 			else:
-				tile = make_ground_sprite(cell_size)
+				tile = make_ground_sprite(cell_size, cell)
 				tile.name = "Ground_%d_%d" % [x, y]
 			tile.position = center
 			parent.add_child(tile)
@@ -65,7 +78,7 @@ static func authored_paths(layout: Dictionary) -> Dictionary:
 static func build_ground(parent: Node2D, layout: Dictionary, cell_size: int = 48, origin: Vector2 = Vector2.ZERO) -> void:
 	for value: Variant in layout.cells:
 		var cell: Vector2i = value
-		var ground := make_ground_sprite(cell_size)
+		var ground := make_ground_sprite(cell_size, cell)
 		ground.name = "Ground_%d_%d" % [cell.x, cell.y]
 		ground.position = origin + (Vector2(cell) + Vector2.ONE * 0.5) * cell_size
 		parent.add_child(ground)
