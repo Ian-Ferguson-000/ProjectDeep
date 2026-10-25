@@ -2,7 +2,7 @@ extends "res://scripts/slasher/slasher_forest.gd"
 
 ## Verdant Forest as interconnected rooms, Binding of Isaac style.
 ##
-## Each floor is a graph of hand-authored rooms (data/forest_rooms.json) laid out
+## Each floor is a graph of painted rooms (maps/forest/rooms/*.tscn) laid out
 ## by FieldDungeonGenerator. Doors sit on the centre of each room edge, stay
 ## barred by brambles while foes remain, and open once the room is cleared. The
 ## gate room holds the root gate down to the next floor, so the existing descent,
@@ -72,6 +72,10 @@ func _ensure_floor_graph() -> bool:
 	run_state.field_run["layout_kind"] = "forest_rooms"
 	run_state.field_run["arrival_direction"] = ""
 	_assign_rest_room()
+	if MapPlaytest.active():
+		var tested := MapPlaytest.template()
+		var role := String(Array(tested.get("roles",["combat"]))[0]) if not Array(tested.get("roles",[])).is_empty() else "combat"
+		run_state.update_field_room(0,{"role":role,"cleared":ROOMS.PEACEFUL_ROLES.has(role),"template_id":String(tested.get("id",""))})
 	return true
 
 ## One combat room per floor becomes a campfire clearing: no foes, a place to
@@ -101,6 +105,7 @@ func _assign_rest_room() -> void:
 func _room_layout() -> Dictionary:
 	var floor_key := String(run_state.field_run.get("forest_floor_key",""))
 	var template := ROOMS.template(String(room.get("template_id","")))
+	if MapPlaytest.active() and room_id == 0: template = MapPlaytest.template()
 	if template.is_empty():
 		template = ROOMS.pick(String(TEMPLATE_ROLE.get(room_role,"combat")),hash("%s:%d:room" % [floor_key,room_id]),_neighbor_template_ids())
 		run_state.update_field_room(room_id,{"template_id":String(template.get("id",""))})
@@ -114,6 +119,9 @@ func _room_layout() -> Dictionary:
 	built["cycle_floor"] = run_state.get_slasher_cycle_floor()
 	var arrival := String(run_state.field_run.get("arrival_direction",""))
 	if int(run_state.field_run.get("previous_room",-1)) >= 0 and Dictionary(built.doors).has(arrival): built.start = ROOMS.arrival_cell(built,arrival)
+	elif MapPlaytest.active() and room_id == 0 and room_role != "start" and not Dictionary(built.doors).is_empty():
+		# Playtesting a fight: walk in through a door rather than appearing among the foes.
+		built.start = ROOMS.arrival_cell(built,String(Dictionary(built.doors).keys()[0]))
 	built.enemy_spawns = [] if bool(room.get("cleared",false)) else _encounter(built)
 	return built
 
@@ -161,11 +169,28 @@ func _build_world() -> void:
 	low_decor_layer = Node2D.new(); low_decor_layer.name = "LowDecor"; low_decor_layer.z_index = -2; add_child(low_decor_layer)
 	actor_layer = Node2D.new(); actor_layer.name = "Actors"; actor_layer.y_sort_enabled = true; add_child(actor_layer)
 	canopy_layer = Node2D.new(); canopy_layer.name = "Canopy"; canopy_layer.y_sort_enabled = true; canopy_layer.z_index = 8; add_child(canopy_layer)
-	FOREST_TERRAIN_ART.build_room_ground(ground_layer,layout,TILE,ORIGIN)
+	_build_room_art()
 	# Collision follows the walkable edge; the thicket trees are the visible wall.
 	wall_generator = SlasherWallGenerator.new(); wall_generator.name = "WallGenerator"; wall_generator.profile_id = String(profile.get("wall_profile","stone_wall")); wall_generator.tile_size = TILE; wall_generator.render_visuals = false; wall_generator.render_collisions = true; add_child(wall_generator)
 	wall_topology = wall_generator.generate(layout.cells,[],ORIGIN)
 	_build_thicket(); _build_decorations(); _build_solid_props(); _build_landmarks(); _build_doors(); _build_mist(); _build_vignette()
+
+## The room's painted art (maps/forest/rooms/*.tscn). Rooms without a scene
+## fall back to the ground drawn in code from the forest sheet.
+func _build_room_art() -> void:
+	var template := ROOMS.template(String(layout.get("template_id","")))
+	if template.is_empty() and MapPlaytest.active(): template = MapPlaytest.template()
+	if String(template.get("scene","")).is_empty():
+		FOREST_TERRAIN_ART.build_room_ground(ground_layer,layout,TILE,ORIGIN)
+		return
+	var art := MapLibrary.art_nodes(template)
+	for node in art.ground:
+		node.position += ORIGIN
+		ground_layer.add_child(node)
+	for node in art.canopy:
+		node.position += ORIGIN
+		node.z_index = 0
+		canopy_layer.add_child(node)
 
 func _build_thicket() -> void:
 	var rng := RandomNumberGenerator.new()

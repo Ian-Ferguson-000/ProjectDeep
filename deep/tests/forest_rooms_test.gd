@@ -51,7 +51,7 @@ func _run() -> void:
 	for room in rooms: roles[String(room.role)] = true
 	for role in ["start","boss","treasure","shop","rest"]: _expect(roles.has(role),"Floor graph is missing a %s room" % role)
 	_expect(scene.room_role == "start" and scene.exit_open,"The start room should be safe with open doors")
-	_expect(scene.ground_layer.get_child(0).texture == preload("res://scripts/slasher/slasher_forest_terrain_art.gd").SHEET,"Rooms are not drawn with the new forest tile sheet")
+	_expect(scene.ground_layer.get_child(0) is TileMapLayer and scene.ground_layer.get_child(0).tile_set == preload("res://maps/forest/tiles/forest_ground.tres"),"Rooms are not drawn from their painted scenes in maps/forest")
 	_expect(scene.door_nodes.size() == Dictionary(rooms[0].neighbors).size(),"Start room doors do not match its neighbours")
 	var start_neighbors: Dictionary = rooms[0].neighbors
 	for direction in start_neighbors:

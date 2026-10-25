@@ -19,11 +19,11 @@ endless depth.
      (`rest`). Resting at a clearing's campfire restores 35% of the active hero's
      health, once per fire; the trader camp's fire is just for show.
    - **Merchants** appear only in the trader camp.
-2. Each room picks a map from `data/forest_rooms.json` whose `roles` include its role.
+2. Each room picks a map from `maps/forest/rooms/` whose roles include its role.
    The pick is seeded by the floor, so a room keeps its map when you walk back in.
 3. `ForestRoomLibrary.build_layout()` turns the map into a layout. Door slots facing a
    neighbouring room open; the rest are sealed with thicket.
-4. `slasher_forest_rooms.gd` renders it with the forest tile sheet and runs the room:
+4. `slasher_forest_rooms.gd` draws the room scene's painted layers and runs the room:
    - doors are barred by brambles until every foe in the room is down
    - cleared rooms stay cleared
    - loot, broken props and opened chests are remembered for the rest of the floor
@@ -36,62 +36,29 @@ The tutorial expedition, merchant interludes, and the authored template scenes i
 
 ## Authoring a room
 
-Rooms are drawn by `tools/forest_rooms/build_forest_rooms.py`. It has small
-helpers (`cross`, `hline`, `vline`, `rect`, `ring`, `blob`, `oval`, `corners`) so
-large maps stay readable. Run it from the project folder to rewrite
-`data/forest_rooms.json`; it validates every room first. You can also edit the
-JSON directly. An entry looks like this:
+Rooms are painted Godot scenes in `maps/forest/rooms/`. **`maps/README.md` is the
+artist's guide**: layers, markers, roles, the warning triangle and F6 playtesting.
 
-```json
-{"id":"my_room","name":"Display Name","roles":["combat"],"weight":1.0,"map":[
-"#########N#########",
-"#.......=.........#",
-"...",
-"#########S#########"]}
-```
+Behind the scenes, `MapLibrary` reads each scene into a text map using the symbols
+below. That is the format `ForestRoomLibrary` has always used, so its rules and
+validation are unchanged. The 20 original rooms were converted from text maps by
+`tools/maps/convert_forest_rooms.gd`; the old text is kept in
+`tools/maps/legacy_forest_rooms.json` for reference.
 
-- **Size:** any odd width and height of at least 7. Standard rooms are 27×15; large
-  rooms (Great Mere, Old Grove, Druid's Circle) are 35×19. The camera follows the
-  party inside them.
-- **Doors:** the centre cell of each edge must hold its door letter: `N` top, `S`
-  bottom, `W` left, `E` right. Every other edge cell must be `#`.
-- **Weight:** makes a map more or less common within its role (default 1.0).
-
-| Symbol | Meaning |
+| Symbol | Comes from |
 |---|---|
-| `#` | Thicket wall, drawn as dense trees |
-| `.` | Grass |
-| `=` | Dirt trail |
-| `c` | Cobblestone ruin floor |
-| `~` | Water (impassable) |
-| `R` | Breakable rock |
-| `T` | Large tree (breakable) |
-| `C` | Locked chest (needs a key) |
-| `r` | Mossy rock (decoration) |
-| `p` | Pebbles (decoration) |
-| `m` | Mushrooms (decoration) |
-| `b` | Bush (decoration) |
-| `F` | Campfire (`shop` and `rest` rooms only; you can rest at it in `rest` rooms) |
-| `e` | Enemy spawn point. More are used on deeper floors |
-| `E` | Inside the room: elite or boss spawn point |
-| `$` | Loot cache, which appears once the room is cleared |
-| `*` | Treasure pedestal (relic choice) |
-| `M` | Merchant (`shop` rooms only) |
-| `X` | Root Gate down to the next floor |
-| `P` | Player start (start rooms) |
+| `#` | Thicket layer |
+| `.` | anything walkable with no other meaning |
+| `=` | Paths layer (a cell fully covered by dirt) |
+| `c` / `~` | Terrain layer tiles with kind `cobble` / `water` |
+| `N` `S` `W` `E` | the door cells at the middle of each edge |
+| `e` `E` `$` `*` `M` `X` `P` `F` `C` `R` `T` `r` `p` `m` `b` | markers: enemy, elite, loot, treasure, merchant, gate, start, campfire, chest, rock, big tree, mossy rock, pebbles, mushrooms, bush |
 
-**Roles:**
-- Every role needs at least one room.
-- `boss` rooms need an `X` gate.
-- `treasure` rooms need a `*` pedestal.
-- `shop` rooms need an `M` merchant.
-- `rest` rooms need an `F` campfire.
-- Peaceful rooms cannot hold `e` or `E` spawns.
-
-**Validation:** `ForestRoomLibrary.validate()` checks all of this. It also checks
-that every door reaches every other door and every marker without crossing water,
-thicket or solid props. `tests/forest_rooms_test.gd` additionally builds every map
-with all 15 combinations of open doors and walks a live floor.
+Validation (`ForestRoomLibrary.validate_template`) checks that the edge is thicket
+apart from the doors, every door and marker can be reached, camp-only markers are
+in camp rooms, peaceful rooms have no spawns, and each role has its required
+marker. `tests/forest_rooms_test.gd` also builds every map with all 15
+combinations of open doors and walks a live floor.
 
 ## Toward procedural generation
 

@@ -4,114 +4,31 @@ The game has three kinds of maps, and they are edited in different ways.
 
 | What you see | How it is made | Where to edit |
 | --- | --- | --- |
-| **Forest rooms** (the dungeon you play now) | Text maps turned into sprites by code | `tools/forest_rooms/build_forest_rooms.py` → `data/forest_rooms.json` |
-| **Forest ground art** (grass, dirt, water, cobbles) | Squares cut from one sprite sheet by code | `scripts/slasher/slasher_forest_terrain_art.gd` + `assets/pixel_art/forest_art/forest tiles.png` |
-| **Tavern floor** | A real Godot TileMap | `scenes/tavern/taverntiles.tscn` (paint in the Godot editor) |
+| **Dungeon rooms** (the forest today) | Painted Godot scenes, one per room | `maps/<dungeon>/rooms/`, guide in **`maps/README.md`** |
+| **Room tiles** | TileSets per dungeon | `maps/<dungeon>/tiles/` |
+| **Tavern floor** | A Godot TileMap | `scenes/tavern/taverntiles.tscn` |
 
-Older TileMap scenes are still in the project but are not used by forest rooms:
-`scenes/slasher/templates/ForestBranchingTemplate.tscn` (tutorial and merchant
-floors), `scenes/scenes/maps/StarterMap.tscn` (old starter map) and
-`scenes/slasher/tools/WallGenerationLab.tscn` (a wall tool).
-
----
-
-## 1. Forest rooms: edit or add a room
-
-Forest rooms are **not** Godot TileMaps, so you can't paint them in the editor.
-Each room is a small text grid where every character is one 48px cell.
-
-### Quick edit (JSON)
-
-Open `data/forest_rooms.json`, find the room by its `id`, and change characters
-in its `map`. Keep the border intact: `#` everywhere on the edge except the
-door letters `N`, `S`, `W`, `E` in the middle of each side.
-
-```json
-{"id":"my_room","name":"Mushroom Hollow","roles":["combat"],"weight":1.0,"map":[
-"#############N#############",
-"#.........................#",
-"#..m....e.........e....m..#",
-"#.........======..........#",
-"W.....R...=....=...R......E",
-"#.........======..........#",
-"#..e...............e......#",
-"#.........................#",
-"#############S#############"]}
-```
-
-### Better for new rooms (Python builder)
-
-`tools/forest_rooms/build_forest_rooms.py` draws rooms with helpers so you don't
-type every cell, then rewrites the JSON. To add a room, copy one of the existing
-blocks:
-
-```python
-c = Canvas(STANDARD).corners(2)          # 27x15 room; LARGE is 35x19
-c.cross()                                # dirt trails joining all four doors
-c.blob(19, 3, 3.2, 1.8, "~")            # a pond (x, y, width, height)
-c.puts([(4, 3), (20, 9)], "e")           # enemy spawns
-c.puts([(6, 10), (18, 4)], "m")          # mushrooms
-c.put(c.cx, c.cy, "$")                   # loot cache in the centre
-room("mushroom_hollow", "Mushroom Hollow", ["combat"], c)
-```
-
-Helpers: `cross`, `hline`, `vline`, `rect`, `ring`, `blob`, `oval`, `corners`,
-`put`, `puts`. Then run, from the `deep/` folder:
-
-```
-python3 tools/forest_rooms/build_forest_rooms.py
-```
-
-It refuses to write a room that is broken (unreachable doors, missing markers).
-Then run the room test in Godot:
-`godot --headless --path . --script tests/forest_rooms_test.gd`.
-
-### Symbols
-
-`#` thicket wall · `.` grass · `=` dirt trail · `c` cobblestone · `~` water ·
-`R` breakable rock · `T` big tree · `C` locked chest · `r` mossy rock · `p` pebbles ·
-`m` mushrooms · `b` bush · `F` campfire (camps only) · `e` enemy spawn ·
-`E` elite/boss spawn · `$` loot cache · `*` treasure pedestal · `M` merchant ·
-`X` gate to the next floor · `P` player start.
-
-**Roles** decide where a room can appear: `start`, `combat`, `elite`, `treasure`,
-`shop`, `rest`, `boss`. Full rules are in `docs/ForestRooms.md`.
+Older TileMap scenes are still in the project but are not used by rooms:
+`scenes/slasher/templates/*.tscn` (tutorial and merchant floors, and the
+generated dungeons' authoring templates), `scenes/scenes/maps/StarterMap.tscn` and
+`scenes/slasher/tools/WallGenerationLab.tscn`.
 
 ---
 
-## 2. Forest ground art: change or add tiles
+## 1. Dungeon rooms
 
-All ground art comes from `assets/pixel_art/forest_art/forest tiles.png`
-(576×256). `scripts/slasher/slasher_forest_terrain_art.gd` lists which pixel
-rectangle on that sheet is used for what:
+See **`maps/README.md`**. In short: duplicate `maps/_templates/RoomTemplate.tscn`
+into `maps/forest/rooms/`, set its name and roles in the Inspector, paint the
+Ground, Terrain, Paths, Detail and Thicket layers, drop in markers, fix anything
+the ⚠ warning lists, and press F6 to play it. The game picks up every scene in the
+folder.
 
-| Constant | Sheet rectangle | Used for |
-| --- | --- | --- |
-| `GRASS_VARIANTS` | nine 32×32 cuts inside the grass patch (x 192–256, y 64–128) | grass, picked per cell so it doesn't repeat |
-| `WATER_REGION` / `WATER_EDGE_REGION` | (352,200) / (320,165) | water, and its top edge |
-| `COBBLE_REGION` | (64,200) | cobblestone |
-| `dirt_region()` | the path block at x 400–560, y 16–112 | dirt trail pieces, 16×16, chosen by which neighbours are also dirt |
-| `make_decoration()` | rocks, pebbles, mushrooms | decorations |
+## 2. Code-drawn fallback ground
 
-**To change a tile:** edit its rectangle. To find coordinates, open the PNG in
-any image editor and read the pixel position of the top-left corner, or select a
-Sprite2D in Godot, set its texture to the sheet, turn on **Region** and use the
-region editor.
-
-**To add more grass variety:** paint more grass onto the sheet (or a new sheet)
-and add the top-left corner of each 32×32 square to `GRASS_VARIANTS`. Keep cuts
-fully inside solid grass, away from the lighter fringe, or seams show where
-tiles meet. A cut on the same 16-pixel rhythm as the existing ones joins without
-seams.
-
-**To add a new ground type** (say, `s` for sand):
-1. Add the art to the sheet and a `SAND_REGION` constant in `slasher_forest_terrain_art.gd`.
-2. Have `ForestRoomLibrary.build_layout()` (`scripts/slasher/forest_room_library.gd`)
-   collect `s` cells into the layout, the same way it does `c` for cobbles.
-3. Draw them in `build_room_ground()` like the cobble branch.
-4. Add `s` to the `LEGEND` in the builder script and to `docs/ForestRooms.md`.
-
-Trees for the thicket and the larger props come from `scripts/slasher/slasher_forest_art.gd`.
+`scripts/slasher/slasher_forest_terrain_art.gd` still draws ground from
+`assets/pixel_art/forest_art/forest tiles.png` for any room without a painted
+scene, and for the older single-floor forest (tutorial, merchant interludes). It
+picks one of nine grass cuts per cell (`GRASS_VARIANTS`).
 
 ---
 
@@ -168,6 +85,4 @@ For a new hand-painted map (a town, an interior, a special room):
    each tile are dirt. In the TileMap panel's **Terrains** tab you can draw paths
    and Godot picks the right edge pieces.
 
-Forest rooms don't load TileMap scenes yet. If you'd rather paint forest rooms in
-the editor than type them, the room loader can be taught to read a TileMap scene
-instead of a text map. It's a contained code change.
+For dungeon rooms, don't start from scratch: use `maps/_templates/RoomTemplate.tscn`, which already has the layers, TileSets and markers the game reads.

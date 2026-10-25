@@ -1,7 +1,7 @@
 extends RefCounted
 class_name ForestRoomLibrary
 
-## Hand-authored Verdant Forest rooms (data/forest_rooms.json) and the rules that
+## Painted Verdant Forest rooms (maps/forest/rooms/, via MapLibrary) and the rules that
 ## turn one into a playable layout.
 ##
 ## A room map is a grid of single-character cells (see "legend" in the JSON). Each
@@ -12,7 +12,6 @@ class_name ForestRoomLibrary
 ## can produce the same template dictionary (id, roles, map) can feed
 ## build_layout(), whether it was drawn by hand or assembled by a generator.
 
-const PATH := "res://data/forest_rooms.json"
 const DIRECTIONS := {"north":Vector2i.UP,"east":Vector2i.RIGHT,"south":Vector2i.DOWN,"west":Vector2i.LEFT}
 const OPPOSITE := {"north":"south","south":"north","east":"west","west":"east"}
 const DOOR_SYMBOLS := {"north":"N","east":"E","south":"S","west":"W"}
@@ -28,10 +27,9 @@ const CAMP_SYMBOLS := {"F":["shop","rest"],"M":["shop"]}
 
 static var _cache: Dictionary = {}
 
+## Rooms come from the painted scenes in maps/forest/rooms/ (see MapLibrary).
 static func data() -> Dictionary:
-	if _cache.is_empty():
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
-		_cache = Dictionary(parsed) if parsed is Dictionary else {}
+	if _cache.is_empty(): _cache = {"rooms":MapLibrary.rooms("forest")}
 	return _cache
 
 static func templates() -> Array:
@@ -186,52 +184,64 @@ static func validate() -> Array[String]:
 		var id := String(entry.get("id",""))
 		if id.is_empty() or ids.has(id): errors.append("Missing or duplicate forest room id: %s" % id)
 		ids[id] = true
-		for role in Array(entry.get("roles",[])):
-			if not ROLES.has(String(role)): errors.append("%s has unknown role %s." % [id,role])
-			role_coverage[String(role)] = true
-		var rows: Array = Array(entry.get("map",[]))
-		var size := size_of(entry)
-		if size.x < 7 or size.y < 7 or size.x % 2 == 0 or size.y % 2 == 0: errors.append("%s must be at least 7x7 with odd dimensions." % id); continue
-		var ragged := false
-		for row in rows:
-			if String(row).length() != size.x: ragged = true
-		if ragged: errors.append("%s has rows of different lengths." % id); continue
-		var slots := door_cells(entry)
-		for direction in slots:
-			var slot: Vector2i = slots[direction]
-			if String(rows[slot.y])[slot.x] != DOOR_SYMBOLS[direction]: errors.append("%s is missing its %s door slot." % [id,direction])
-		var markers: Array[Vector2i] = []
-		for y in size.y:
-			for x in size.x:
-				var symbol := String(rows[y])[x]
-				var cell := Vector2i(x,y)
-				if not KNOWN_SYMBOLS.contains(symbol): errors.append("%s uses unknown symbol '%s' at %d,%d." % [id,symbol,x,y])
-				var on_edge := x == 0 or y == 0 or x == size.x-1 or y == size.y-1
-				if on_edge and not slots.values().has(cell) and symbol != "#": errors.append("%s border cell %d,%d must be thicket." % [id,x,y])
-				if not on_edge and "eE$*MXP".contains(symbol): markers.append(cell)
-				if CAMP_SYMBOLS.has(symbol):
-					for role in Array(entry.get("roles",[])):
-						if not Array(CAMP_SYMBOLS[symbol]).has(String(role)): errors.append("%s: '%s' only belongs in %s rooms, not %s." % [id,symbol," or ".join(CAMP_SYMBOLS[symbol]),role])
-				if "eE".contains(symbol) and not on_edge:
-					for role in Array(entry.get("roles",[])):
-						if PEACEFUL_ROLES.has(String(role)): errors.append("%s: a %s room cannot hold enemy spawns." % [id,role])
-		var layout := build_layout(entry,DIRECTIONS.keys())
-		var blocked := {}
-		for prop in layout.solid_props: blocked[Vector2i(prop.cell)] = true
-		if Vector2i(layout.campfire).x >= 0: blocked[Vector2i(layout.campfire)] = true
-		var reach := _reachable(layout.cells,blocked,slots.north)
-		for direction in slots:
-			if not reach.has(slots[direction]): errors.append("%s: the %s door cannot be reached from the north door." % [id,direction])
-		for marker in markers:
-			if not reach.has(marker): errors.append("%s: marker at %d,%d cannot be reached." % [id,marker.x,marker.y])
-		var roles: Array = Array(entry.get("roles",[]))
-		if roles.has("boss") and Vector2i(layout.exit).x < 0: errors.append("%s is a boss room without an X gate." % id)
-		if roles.has("treasure") and Vector2i(layout.treasure).x < 0: errors.append("%s is a treasure room without a * pedestal." % id)
-		if roles.has("shop") and Vector2i(layout.merchant).x < 0: errors.append("%s is a shop room without an M merchant." % id)
-		if roles.has("rest") and Vector2i(layout.campfire).x < 0: errors.append("%s is a rest room without an F campfire." % id)
+		for role in Array(entry.get("roles",[])): role_coverage[String(role)] = true
+		errors.append_array(validate_template(entry))
 	for role in ROLES:
 		if not role_coverage.has(role): errors.append("No forest room can serve as %s." % role)
 	return errors
+
+## Problems with one room. Marker names match the MapMarker kinds artists see.
+static func validate_template(entry: Dictionary) -> Array[String]:
+	var errors: Array[String] = []
+	var id := String(entry.get("id",""))
+	for role in Array(entry.get("roles",[])):
+		if not ROLES.has(String(role)): errors.append("%s: unknown role %s." % [id,role])
+	var rows: Array = Array(entry.get("map",[]))
+	var size := size_of(entry)
+	if size.x < 7 or size.y < 7 or size.x % 2 == 0 or size.y % 2 == 0: return ["%s: must be at least 7x7 with odd dimensions." % id]
+	for row in rows:
+		if String(row).length() != size.x: return ["%s: has rows of different lengths." % id]
+	var slots := door_cells(entry)
+	for direction in slots:
+		var slot: Vector2i = slots[direction]
+		if String(rows[slot.y])[slot.x] != DOOR_SYMBOLS[direction]: errors.append("%s: is missing its %s door." % [id,direction])
+	var markers: Array[Vector2i] = []
+	var wall_gap := false
+	for y in size.y:
+		for x in size.x:
+			var symbol := String(rows[y])[x]
+			var cell := Vector2i(x,y)
+			if not KNOWN_SYMBOLS.contains(symbol): errors.append("%s: unknown symbol '%s' at %d,%d." % [id,symbol,x,y])
+			var on_edge := x == 0 or y == 0 or x == size.x-1 or y == size.y-1
+			if on_edge and not slots.values().has(cell) and symbol != "#": wall_gap = true
+			if not on_edge and "eE$*MXP".contains(symbol): markers.append(cell)
+			if CAMP_SYMBOLS.has(symbol):
+				for role in Array(entry.get("roles",[])):
+					if not Array(CAMP_SYMBOLS[symbol]).has(String(role)): errors.append("%s: a %s only belongs in %s rooms, not %s." % [id,_marker_name(symbol)," or ".join(CAMP_SYMBOLS[symbol]),role])
+			if "eE".contains(symbol) and not on_edge:
+				for role in Array(entry.get("roles",[])):
+					if PEACEFUL_ROLES.has(String(role)): errors.append("%s: a %s room cannot hold enemy spawns." % [id,role])
+	if wall_gap: errors.append("%s: the outer edge must be thicket all the way round, except the four door cells." % id)
+	var layout := build_layout(entry,DIRECTIONS.keys())
+	var blocked := {}
+	for prop in layout.solid_props: blocked[Vector2i(prop.cell)] = true
+	if Vector2i(layout.campfire).x >= 0: blocked[Vector2i(layout.campfire)] = true
+	var reach := _reachable(layout.cells,blocked,slots.north)
+	for direction in slots:
+		if not reach.has(slots[direction]): errors.append("%s: the %s door cannot be reached from the north door." % [id,direction])
+	for marker in markers:
+		if not reach.has(marker): errors.append("%s: the %s at %d,%d cannot be reached." % [id,_marker_name(String(rows[marker.y])[marker.x]),marker.x,marker.y])
+	var roles: Array = Array(entry.get("roles",[]))
+	if roles.has("boss") and Vector2i(layout.exit).x < 0: errors.append("%s: a boss room needs a Gate down marker." % id)
+	if roles.has("treasure") and Vector2i(layout.treasure).x < 0: errors.append("%s: a treasure room needs a Treasure marker." % id)
+	if roles.has("shop") and Vector2i(layout.merchant).x < 0: errors.append("%s: a shop room needs a Merchant marker." % id)
+	if roles.has("rest") and Vector2i(layout.campfire).x < 0: errors.append("%s: a rest room needs a Campfire marker." % id)
+	return errors
+
+static func _marker_name(symbol: String) -> String:
+	for kind in MapMarker.KINDS:
+		if String(MapMarker.KINDS[kind][0]) == symbol: return String(MapMarker.KINDS[kind][1])
+	return "'%s'" % symbol
 
 static func _reachable(cells: Dictionary, blocked: Dictionary, start: Vector2i) -> Dictionary:
 	var seen := {start:true}

@@ -1,0 +1,39 @@
+[gd_resource type="TileSet" format=3]
+
+[ext_resource type="Texture2D" path="res://maps/crypt/tiles/crypt_ground.png" id="1_xxmof"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_awdnl"]
+texture = ExtResource("1_xxmof")
+texture_region_size = Vector2i(48, 48)
+0:0/next_alternative_id = 4
+0:0/0 = 0
+0:0/0/custom_data_0 = "floor"
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/custom_data_0 = "floor"
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/custom_data_0 = "floor"
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/custom_data_0 = "floor"
+1:0/next_alternative_id = 4
+1:0/0 = 0
+1:0/0/custom_data_0 = "floor"
+1:0/1 = 1
+1:0/1/flip_h = true
+1:0/1/custom_data_0 = "floor"
+1:0/2 = 2
+1:0/2/flip_v = true
+1:0/2/custom_data_0 = "floor"
+1:0/3 = 3
+1:0/3/flip_h = true
+1:0/3/flip_v = true
+1:0/3/custom_data_0 = "floor"
+
+[resource]
+tile_size = Vector2i(48, 48)
+custom_data_layer_0/name = "kind"
+custom_data_layer_0/type = 4
+sources/0 = SubResource("TileSetAtlasSource_awdnl")
