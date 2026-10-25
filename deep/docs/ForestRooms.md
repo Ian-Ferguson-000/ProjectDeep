@@ -25,6 +25,12 @@ endless depth.
    neighbouring room open; the rest are sealed with thicket.
 4. `slasher_forest_rooms.gd` draws the room scene's painted layers and runs the room:
    - doors are barred by brambles until every foe in the room is down
+   - in the gate room, killing the guardian (the boss, or the elite guardian on elite
+     floors) ends the fight: its remaining pack scatters and the Root Gate opens
+   - the way to the gate room is flagged like Isaac's boss door: a horned skull and a
+     red glow over the door (a gate glyph on ordinary floors), labelled "Guardian" even
+     while barred; the map shows the gate room with a skull once you're next to it; and
+     walking in shows a banner naming the guardian
    - cleared rooms stay cleared
    - loot, broken props and opened chests are remembered for the rest of the floor
 

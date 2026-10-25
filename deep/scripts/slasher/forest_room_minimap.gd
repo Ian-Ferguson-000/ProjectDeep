@@ -43,7 +43,16 @@ func _draw() -> void:
 		for neighbor in Dictionary(room.get("neighbors",{})).values():
 			var b := _point(rooms[int(neighbor)],origin,center)
 			if bool(known.get(int(neighbor),false)): draw_line(a,b,COLORS.line,3.0)
+			elif _is_gate(rooms[int(neighbor)]): draw_line(a,b,GATE_COLOR.darkened(0.3),3.0)
 			else: draw_line(a,a.lerp(b,0.85),COLORS.unknown,3.0)
+	# Like Isaac, the gate room shows up as soon as you're next to it.
+	for id in known:
+		if known[id] or not _is_gate(rooms[id]): continue
+		var gate_rect := Rect2(_point(rooms[id],origin,center) - CELL*0.5,CELL)
+		if not Rect2(Vector2.ZERO,size).grow(-2).encloses(gate_rect): continue
+		draw_rect(gate_rect,Color("#3a1410"))
+		draw_rect(gate_rect,GATE_COLOR,false,1.5)
+		_draw_skull(gate_rect.get_center())
 	for id in known:
 		if not known[id]: continue
 		var room: Dictionary = rooms[id]
@@ -53,9 +62,23 @@ func _draw() -> void:
 		draw_rect(rect,fill)
 		if id == current: draw_rect(rect.grow(2),Color.WHITE,false,1.5)
 		var marker: Array = MARKERS.get(String(room.get("role","")),[])
+		if _is_gate(room) and not bool(room.get("cleared",false)):
+			_draw_skull(rect.get_center())
+			continue
 		if not marker.is_empty() and not (String(room.role) == "treasure" and bool(room.get("reward_claimed",false))):
 			var font := get_theme_default_font()
 			draw_string(font,rect.position+Vector2(0,13),String(marker[0]),HORIZONTAL_ALIGNMENT_CENTER,CELL.x,13,Color(0.08,0.06,0.04) if id == current else marker[1])
+
+const GATE_COLOR := Color("#e0503c")
+
+func _is_gate(room: Dictionary) -> bool:
+	return String(room.get("role","")) == "boss"
+
+func _draw_skull(at: Vector2) -> void:
+	var bone := Color("#f2e6d0"); var dark := Color("#1a0806")
+	draw_circle(at + Vector2(0,-1),5.5,bone)
+	draw_rect(Rect2(at + Vector2(-3,3),Vector2(6,3)),bone)
+	draw_circle(at + Vector2(-2,-1),1.5,dark); draw_circle(at + Vector2(2,-1),1.5,dark)
 
 func _point(room: Dictionary, origin: Vector2, center: Vector2) -> Vector2:
 	var offset := Vector2(room.get("position",Vector2i.ZERO)) - origin

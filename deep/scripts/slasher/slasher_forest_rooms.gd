@@ -56,6 +56,7 @@ func _build_floor() -> void:
 	_spawn_enemies(); _spawn_loot(); _build_hud(); _refresh_hud(); _entry_fade()
 	if new_floor and player.item_runtime: player.item_runtime.floor_entered()
 	if new_floor: _show_message("%s · floor %d" % [String(layout.room_name),run_state.current_floor],3.0)
+	if room_role == "boss" and not bool(room.get("cleared",false)) and (bool(layout.get("is_boss_floor",false)) or bool(layout.get("is_elite_floor",false))): _show_guardian_banner()
 	if new_floor and run_state.current_floor == 1 and not run_state.starter_reward_claimed: call_deferred("_offer_starter_relic")
 	transition_cooldown = 0.5
 
@@ -262,14 +263,27 @@ func _build_doors() -> void:
 		for offset in [Vector2(-12,-4),Vector2(12,2),Vector2(0,10)]:
 			var bush := SlasherForestArt.make_sprite("rounded_bush" if offset.y < 5 else "low_bush_b"); bush.position = offset; bush.modulate = Color(0.62,0.48,0.42); barrier.add_child(bush)
 		door.add_child(barrier)
-		var glow := _glow(Color("#9fe39a"),22); glow.name = "OpenGlow"; door.add_child(glow)
 		var neighbor := run_state.get_field_room(int(Dictionary(room.neighbors).get(direction,-1)))
+		var to_gate := String(neighbor.get("role","")) == "boss"
+		var guarded := to_gate and not bool(neighbor.get("cleared",false)) and (run_state.is_slasher_boss_floor() or run_state.is_slasher_elite_floor())
+		var glow := _glow(Color("#e0503c") if guarded else (Color("#83d978") if to_gate else Color("#9fe39a")),26 if to_gate else 22); glow.name = "OpenGlow"; door.add_child(glow)
+		if to_gate:
+			var mark := GateDoorMark.new(); mark.name = "GateMark"; mark.guarded = guarded; mark.position = Vector2(0,-6); mark.scale = Vector2.ONE * 1.5; mark.z_index = 9; door.add_child(mark)
 		var hint := Label.new(); hint.name = "Hint"; hint.text = _door_hint(neighbor); hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; hint.size = Vector2(120,20); hint.position = Vector2(-60,-46 if direction != "north" else 24); hint.add_theme_font_size_override("font_size",12); hint.add_theme_color_override("font_color",Color("#f3e3b4")); hint.add_theme_color_override("font_outline_color",Color(0,0,0,0.85)); hint.add_theme_constant_override("outline_size",4); door.add_child(hint)
+		if to_gate:
+			hint.position.y = -78 if direction != "north" else 30
+			hint.add_theme_color_override("font_color",Color("#ff8a70") if guarded else Color("#b8f0a8"))
+			hint.add_theme_color_override("font_outline_color",Color(0,0,0,0.9)); hint.add_theme_constant_override("outline_size",5)
+			hint.z_as_relative = false; hint.z_index = 30
 		door_nodes[direction] = door
 	_set_doors_open(exit_open)
 
 func _door_hint(neighbor: Dictionary) -> String:
-	if not bool(neighbor.get("visited",false)): return "?"
+	# Like Isaac's boss door, the way to the gate room is recognisable before you go in.
+	if String(neighbor.get("role","")) == "boss" and not bool(neighbor.get("cleared",false)):
+		if run_state.is_slasher_boss_floor(): return "Guardian"
+		if run_state.is_slasher_elite_floor(): return "Elite Guardian"
+	if not bool(neighbor.get("visited",false)): return "Root Gate" if String(neighbor.get("role","")) == "boss" else "?"
 	match String(neighbor.get("role","")):
 		"shop": return "Camp"
 		"treasure": return "Treasure" if not bool(neighbor.get("reward_claimed",false)) else ""
@@ -288,7 +302,8 @@ func _set_doors_open(open: bool) -> void:
 		var glow := door.get_node_or_null("OpenGlow") as Node2D
 		if glow != null: glow.visible = open
 		var hint := door.get_node_or_null("Hint") as Label
-		if hint != null: hint.visible = open and not hint.text.is_empty()
+		# The gate room's door is always labelled, even while the brambles are up.
+		if hint != null: hint.visible = (open or door.get_node_or_null("GateMark") != null) and not hint.text.is_empty()
 
 # ---------------------------------------------------------------- encounters
 
@@ -304,11 +319,37 @@ func _reveal_secret_door() -> void:
 
 func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
 	super._on_enemy_defeated(enemy,reward)
+	# The guardian's fall ends the fight, Isaac style: its pack scatters and the gate opens.
+	if rooms_active and room_role == "boss" and enemies_remaining > 0 and _is_room_guardian(enemy): _scatter_remaining_foes()
 	if rooms_active and enemies_remaining == 0:
 		_mark_room_cleared(true)
 		_set_doors_open(true)
 		_spawn_loot()
 		_show_message("Gate open · descend through the roots." if Vector2i(layout.exit).x >= 0 else "Room cleared · the brambles pull back.")
+
+## The foe whose death decides the gate room: the boss on boss floors, the
+## elite guardian on elite floors.
+func _is_room_guardian(enemy: SlasherEnemy) -> bool:
+	if not is_instance_valid(enemy): return false
+	if enemy.boss: return true
+	return bool(layout.get("is_elite_floor",false)) and enemy.mini_boss and not bool(layout.get("is_boss_floor",false))
+
+func _scatter_remaining_foes() -> void:
+	for node in get_tree().get_nodes_in_group("slasher_enemy"):
+		var foe := node as SlasherEnemy
+		if not is_instance_valid(foe) or foe.dead: continue
+		foe.dead = true
+		foe.remove_from_group("slasher_enemy"); foe.remove_from_group("slasher_damageable"); foe.remove_from_group("slasher_wolf")
+		foe.set_physics_process(false)
+		var fade := foe.create_tween(); fade.tween_property(foe,"modulate:a",0.0,0.45); fade.tween_callback(foe.queue_free)
+	enemies_remaining = 0
+	exit_open = true
+	_mark_room_cleared(true)
+	_set_doors_open(true)
+	_spawn_loot()
+	AudioCue.play_from(self,"reward",false)
+	_show_message("The guardian falls · its pack scatters and the Root Gate opens.",3.0)
+	_refresh_hud()
 
 func _mark_room_cleared(fought: bool) -> void:
 	room["cleared"] = true
@@ -457,3 +498,64 @@ func _refresh_hud() -> void:
 	objective_label.text = "VERDANT FOREST  ·  %s  ·  %s  ·  %s" % [depth_text,String(layout.room_name).to_upper(),status]
 	var map := get_node_or_null("HUD/ForestRoomMap")
 	if map: map.queue_redraw()
+
+
+# ---------------------------------------------------------------- guardian warnings
+
+## Isaac-style intro when you walk into the guardian's room.
+func _show_guardian_banner() -> void:
+	var hud := get_node_or_null("HUD")
+	if hud == null: return
+	var boss := bool(layout.get("is_boss_floor",false))
+	var title := String(GameBalance.get_slasher_journal_entry("dark_druid").get("name","The Guardian")) if boss else "Elite Guardian"
+	var banner := GuardianBanner.new(); banner.name = "GuardianBanner"
+	banner.setup(title.to_upper(),"Guardian of the %s" % String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Forest")) if boss else "The Root Gate is held",Color("#e0503c") if boss else Color("#ff9e3d"))
+	hud.add_child(banner)
+	AudioCue.play_from(self,"combo",false)
+
+## A horned skull over the door to a guarded gate room; a plain gate glyph otherwise.
+class GateDoorMark extends Node2D:
+	var guarded := false
+	var _time := 0.0
+	func _process(delta: float) -> void:
+		_time += delta
+		queue_redraw()
+	func _draw() -> void:
+		var pulse := 0.75 + 0.25 * sin(_time * 4.0)
+		if not guarded:
+			draw_arc(Vector2(0,-8),9.0,PI,TAU,12,Color(0.55,0.9,0.5,0.9),3.0)
+			draw_line(Vector2(-9,-8),Vector2(-9,2),Color(0.55,0.9,0.5,0.9),3.0); draw_line(Vector2(9,-8),Vector2(9,2),Color(0.55,0.9,0.5,0.9),3.0)
+			return
+		var bone := Color(0.95,0.9,0.82,pulse)
+		var dark := Color(0.12,0.04,0.04,1.0)
+		var top := Vector2(0,-6)
+		draw_colored_polygon(PackedVector2Array([top + Vector2(-10,-4),top + Vector2(-20,-16),top + Vector2(-14,-2)]),Color(0.7,0.18,0.12,pulse))
+		draw_colored_polygon(PackedVector2Array([top + Vector2(10,-4),top + Vector2(20,-16),top + Vector2(14,-2)]),Color(0.7,0.18,0.12,pulse))
+		draw_circle(top,11.0,dark); draw_circle(top,10.0,bone)
+		draw_rect(Rect2(top + Vector2(-6,6),Vector2(12,6)),bone)
+		draw_circle(top + Vector2(-4,0),3.2,dark); draw_circle(top + Vector2(4,0),3.2,dark)
+		draw_line(top + Vector2(-2,9),top + Vector2(-2,12),dark,1.0); draw_line(top + Vector2(2,9),top + Vector2(2,12),dark,1.0)
+
+## A band across the screen naming the guardian, sliding in then fading out.
+class GuardianBanner extends Control:
+	var title := ""
+	var subtitle := ""
+	var tint := Color.RED
+	func setup(title_text: String, subtitle_text: String, colour: Color) -> void:
+		title = title_text; subtitle = subtitle_text; tint = colour
+	func _ready() -> void:
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var band := ColorRect.new(); band.color = Color(0.03,0.02,0.02,0.82); band.anchor_left = 0.0; band.anchor_right = 1.0; band.anchor_top = 0.36; band.anchor_bottom = 0.56; band.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(band)
+		var edge_top := ColorRect.new(); edge_top.color = tint; edge_top.anchor_right = 1.0; edge_top.anchor_top = 0.36; edge_top.anchor_bottom = 0.36; edge_top.offset_bottom = 3; add_child(edge_top)
+		var edge_bottom := ColorRect.new(); edge_bottom.color = tint; edge_bottom.anchor_right = 1.0; edge_bottom.anchor_top = 0.56; edge_bottom.anchor_bottom = 0.56; edge_bottom.offset_top = -3; add_child(edge_bottom)
+		var name_label := Label.new(); name_label.text = title; name_label.anchor_right = 1.0; name_label.anchor_top = 0.37; name_label.anchor_bottom = 0.49; name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		name_label.add_theme_font_size_override("font_size",40); name_label.add_theme_color_override("font_color",tint.lightened(0.25)); name_label.add_theme_color_override("font_outline_color",Color.BLACK); name_label.add_theme_constant_override("outline_size",8); add_child(name_label)
+		var sub_label := Label.new(); sub_label.text = subtitle; sub_label.anchor_right = 1.0; sub_label.anchor_top = 0.48; sub_label.anchor_bottom = 0.55; sub_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; sub_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		sub_label.add_theme_font_size_override("font_size",18); sub_label.add_theme_color_override("font_color",Color("#ead9b8")); add_child(sub_label)
+		modulate.a = 0.0; position.x = -80.0
+		var tween := create_tween()
+		tween.tween_property(self,"modulate:a",1.0,0.25); tween.parallel().tween_property(self,"position:x",0.0,0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_interval(1.8)
+		tween.tween_property(self,"modulate:a",0.0,0.45)
+		tween.tween_callback(queue_free)
