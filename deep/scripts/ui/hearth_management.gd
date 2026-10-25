@@ -14,12 +14,12 @@ signal closed
 signal testing_ground_requested
 
 const THEME = preload("res://scripts/ui/tavern_ui_theme.gd")
-const SECTIONS = ["Company","Training","Lodgings","Expeditions","Facilities","Armory","Merchants","Calendar","Reports","Best Times"]
+const SECTIONS = ["Company","Training","Lodgings","Expeditions","Bounties","Facilities","Armory","Merchants","Calendar","Reports","Best Times","Unlocks"]
 const GROUPS = [
 	{"id":"Company","label":"Company","icon":"roster","pages":["Company","Training","Lodgings"]},
-	{"id":"Expeditions","label":"Expeditions","icon":"expedition","pages":["Expeditions"]},
+	{"id":"Expeditions","label":"Expeditions","icon":"expedition","pages":["Expeditions","Bounties"]},
 	{"id":"Facilities","label":"Facilities","icon":"hearth","pages":["Facilities","Armory","Merchants"]},
-	{"id":"Records","label":"Records","icon":"ledger","pages":["Calendar","Reports","Best Times"]},
+	{"id":"Records","label":"Records","icon":"ledger","pages":["Calendar","Reports","Best Times","Unlocks"]},
 ]
 const PAGES = {
 	"Company":{"title":"Company","tab":"Roster","icon":"roster","hint":"Your adventurers and anyone waiting to sign on. Adventurers share 20% of the gold each expedition brings home."},
@@ -31,6 +31,8 @@ const PAGES = {
 	"Merchants":{"title":"Suppliers","tab":"Suppliers","icon":"merchants","hint":"Buy travel supplies, provisions, and equipment. Everything goes straight into storage."},
 	"Calendar":{"title":"Calendar","tab":"Calendar","icon":"calendar","hint":"What has happened at the Hearth, and what is coming."},
 	"Reports":{"title":"Expedition Reports","tab":"Reports","icon":"ledger","hint":"Every return: gold, losses, and what was recovered."},
+	"Bounties":{"title":"Bounty Board","tab":"Bounties","icon":"ledger","hint":"Contracts posted at the Hearth. Meet one on an expedition and get home alive to collect. Unfinished bounties come down after a few days."},
+	"Unlocks":{"title":"Unlocks","tab":"Unlocks","icon":"ledger","hint":"Goals that permanently add new relics to the drop pool, raise drop luck, or put more bounties on the board."},
 	"Best Times":{"title":"Best Times","tab":"Best Times","icon":"ledger","hint":"Dungeons are never finished. Each guardian you defeat sets a clear time: beat the record, and the best for every class."},
 }
 const RARITY_COLORS = {"common":Color("ead9b8"),"uncommon":Color("8fd48a"),"rare":Color("7fb4ee"),"epic":Color("c79af0"),"legendary":Color("f0a24f")}
@@ -259,6 +261,8 @@ func refresh() -> void:
 		"Merchants": merchant_page()
 		"Reports": reports_page()
 		"Best Times": best_times_page()
+		"Bounties": bounties_page()
+		"Unlocks": unlocks_page()
 		"Calendar":
 			var calendar := preload("res://scripts/ui/hearth_calendar_view.gd").new()
 			calendar.custom_minimum_size = Vector2(0,430)
@@ -1087,6 +1091,12 @@ func expedition_page() -> void:
 		shown_classes.append(member.class_id)
 		var class_best := ClearRecords.best(campaign,dungeon_id,member.class_id)
 		times_card.add_child(label("%s best  %s" % [member.class_id.capitalize(),ClearRecords.format_time(float(class_best.time)) if not class_best.is_empty() else "— not cleared as a %s yet" % member.class_id.capitalize()],14,GOOD if not class_best.is_empty() else THEME.IVORY))
+	BountyBoard.refresh(campaign)
+	var bounty_card := card("Bounties","Meet one and get home alive to be paid.",plan)
+	for bounty in BountyBoard.offers(campaign):
+		var line := label("•  %s  (%s)" % [String(bounty.text),BountyBoard.reward_text(bounty.reward)],14,THEME.IVORY)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		bounty_card.add_child(line)
 	var policy_card := card("Retreat policy","How readily a dispatched party turns back.",plan)
 	var controls := HBoxContainer.new()
 	controls.add_theme_constant_override("separation",6)
@@ -1240,6 +1250,32 @@ func merchant_page() -> void:
 
 # ---------------------------------------------------------------- records
 
+func bounties_page() -> void:
+	BountyBoard.refresh(campaign)
+	var offers := BountyBoard.offers(campaign)
+	_heading("Posted","%d of %d slots · %d completed so far" % [offers.size(),BountyBoard.slots(campaign),int(campaign.lifetime_stats.get("bounties",0))])
+	if offers.is_empty(): _empty_state("The board is bare","New contracts are posted each day.")
+	for bounty in offers:
+		var content := card(String(bounty.text),"")
+		var row := HBoxContainer.new(); row.add_theme_constant_override("separation",8); content.add_child(row)
+		row.add_child(_chip("Reward: " + BountyBoard.reward_text(bounty.reward),THEME.HIGHLIGHT_GOLD))
+		var days_left := int(bounty.expires_day) - campaign.calendar_day
+		row.add_child(_chip("Last day" if days_left <= 0 else "%d days left" % (days_left + 1),THEME.MUTED))
+
+func unlocks_page() -> void:
+	var all := Unlocks.all()
+	var earned := 0
+	for unlock in all:
+		if campaign.unlocks_earned.has(String(unlock.id)): earned += 1
+	_heading("Progress","%d of %d earned · drop luck ×%.2f" % [earned,all.size(),Unlocks.drop_luck(campaign)])
+	var grid := _grid(2)
+	for unlock in all:
+		var done := campaign.unlocks_earned.has(String(unlock.id))
+		var content := card(String(unlock.name) if done else "Locked: " + String(unlock.hint),String(unlock.text) if done else "",grid,THEME.HIGHLIGHT_GOLD if done else THEME.MUTED)
+		var progress := Unlocks.progress(campaign,unlock)
+		if done: content.add_child(label("Earned on Day %d" % int(campaign.unlocks_earned[String(unlock.id)]),12,GOOD))
+		elif not progress.is_empty(): content.add_child(label(progress,13,THEME.IVORY))
+
 ## Clear times for every dungeon: the record, the best per class, and recent runs.
 func best_times_page() -> void:
 	var any := false
@@ -1316,6 +1352,11 @@ func reports_page() -> void:
 			value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(value)
+		for bounty_text in Array(report.get("bounties",[])):
+			var bounty_label := label("Bounty complete: " + String(bounty_text),13,THEME.HIGHLIGHT_GOLD)
+			bounty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			content.add_child(bounty_label)
+		for unlock_name in Array(report.get("unlocks",[])): content.add_child(label("Unlocked: " + String(unlock_name),13,Color("e08af0")))
 		for event in report.events:
 			var event_label := label("•  " + String(event),13,THEME.MUTED)
 			event_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

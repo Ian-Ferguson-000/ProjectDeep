@@ -74,6 +74,8 @@ func present(summary: Dictionary, state: RunState, fallback: String) -> void:
 				var key := "%s:%s" % [field, hero_name]
 				if not seen.has(key): _hero_card(String(hero_name), field, state); seen.append(key)
 		if int(report.get("essence", 0)) > 0: lines.append("[color=#c9d9b0]Relic essence recovered: +%d[/color]" % int(report.essence))
+		for bounty_text in Array(report.get("bounties", [])): lines.append("[color=#ffd36a]Bounty complete:[/color] %s" % String(bounty_text))
+		for unlock_name in Array(report.get("unlocks", [])): lines.append("[color=#e08af0]Unlocked:[/color] %s" % String(unlock_name))
 		var items: Array = report.get("items", [])
 		if not items.is_empty(): lines.append("Recovered items: %s" % ", ".join(items.map(func(item): return str(item))))
 		lines.append("")

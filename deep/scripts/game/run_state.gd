@@ -66,6 +66,7 @@ var slasher_endless_mode:=false
 ## Run clock when no expedition is active (quick play and tests).
 var local_run_seconds:=0.0
 var local_dungeon_seconds:=0.0
+var local_run_stats:Dictionary={}
 var slasher_campaign_boss_cleared:=false
 var slasher_merchant_interlude:=false
 var campaign: CampaignState = CampaignState.new()
@@ -222,7 +223,7 @@ func set_class(class_id: String) -> void:
 
 func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	selected_gear = gear
-	local_run_seconds = 0.0; local_dungeon_seconds = 0.0; last_clear = {}
+	local_run_seconds = 0.0; local_dungeon_seconds = 0.0; last_clear = {}; local_run_stats = {}
 	if selected_gear != null:
 		selected_gear_by_class[selected_class_id] = selected_gear
 	active_dungeon_id = dungeon_id
@@ -273,6 +274,7 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 		field_run = FieldDungeonGenerator.generate(get_current_floor_seed(), int(room_count.get("min", 10)), int(room_count.get("max", 12)))
 	run_outcome = "%s opens before you. The tavern falls quiet behind you." % String(dungeon.get("name", active_dungeon_id.capitalize()))
 	_sync_crypt_unlock()
+	if campaign != null and campaign.expedition.active and not campaign.expedition.tutorial_run: _note_unlocks(Unlocks.check(campaign,run_stats(),{"type":"reach","dungeon":dungeon_id}))
 
 static func dungeon_available(dungeon_id: String) -> bool:
 	return not GameBalance.get_dungeon(dungeon_id).is_empty() and not String(GameBalance.get_dungeon(dungeon_id).get("runtime", "")).is_empty()
@@ -299,6 +301,38 @@ func dungeon_clock() -> float:
 func run_clock() -> float:
 	return campaign.expedition.run_seconds if campaign != null and campaign.expedition.active else local_run_seconds
 
+## This expedition's stats (kills, potions, clears) for bounties and unlocks.
+func run_stats() -> Dictionary:
+	if campaign != null and campaign.expedition.active: return campaign.expedition.run_stats
+	return local_run_stats
+
+func _tutorial_run() -> bool:
+	return campaign != null and campaign.expedition.active and campaign.expedition.tutorial_run
+
+## Counts a kill toward bounties and unlocks. Returns unlocks it earned.
+func note_kill(enemy_id: String) -> Array:
+	if _tutorial_run(): return []
+	var family := Unlocks.family(enemy_id)
+	var stats := run_stats()
+	var kills: Dictionary = stats.get("kills",{}); kills[family] = int(kills.get(family,0)) + 1; stats["kills"] = kills
+	stats["kills_total"] = int(stats.get("kills_total",0)) + 1
+	if campaign == null: return []
+	var life: Dictionary = campaign.lifetime_stats.get("kills",{}); life[family] = int(life.get(family,0)) + 1; campaign.lifetime_stats["kills"] = life
+	campaign.lifetime_stats["kills_total"] = int(campaign.lifetime_stats.get("kills_total",0)) + 1
+	return _note_unlocks(Unlocks.check(campaign,stats,{"type":"kill","family":family}))
+
+func note_potion() -> void:
+	var stats := run_stats()
+	stats["potions"] = int(stats.get("potions",0)) + 1
+
+func _note_unlocks(earned: Array) -> Array:
+	if earned.is_empty(): return earned
+	var stats := run_stats()
+	var names: Array = stats.get("unlocked",[])
+	for unlock in earned: names.append(String(unlock.name))
+	stats["unlocked"] = names
+	return earned
+
 ## The class whose best time this run counts toward.
 func clear_class_id() -> String:
 	var member: CharacterRecord = campaign.character(active_character_id) if campaign != null and not active_character_id.is_empty() else null
@@ -315,6 +349,14 @@ func record_active_dungeon_completion() -> Array[String]:
 		var member: CharacterRecord = campaign.character(active_character_id) if not active_character_id.is_empty() else null
 		last_clear = ClearRecords.record_clear(campaign,active_dungeon_id,clear_class_id(),member.display_name if member != null else "Adventurer",dungeon_clock())
 		logs.append(String(last_clear.message))
+		var held: Array = []
+		for entry in get_inventory_items(): held.append(String(entry.get("id","")))
+		var clear := {"dungeon":active_dungeon_id,"seconds":dungeon_clock(),"class_id":clear_class_id(),"potions":int(run_stats().get("potions",0)),"holding":held}
+		var stats := run_stats()
+		var clears: Array = stats.get("clears",[]); clears.append(clear); stats["clears"] = clears
+		campaign.lifetime_stats["clears"] = int(campaign.lifetime_stats.get("clears",0)) + 1
+		var event := clear.duplicate(); event["type"] = "clear"
+		for unlock in _note_unlocks(Unlocks.check(campaign,stats,event)): logs.append("Unlocked: %s. %s" % [String(unlock.name),String(unlock.text)])
 	if active_dungeon_id == "forest": mark_forest_cleared()
 	if campaign != null and campaign.expedition.active:
 		campaign.expedition.carried_gold = gold
@@ -329,6 +371,7 @@ func transition_to_dungeon(dungeon_id: String) -> bool:
 	active_dungeon_id = dungeon_id
 	current_floor = 1
 	campaign.expedition.dungeon_seconds = 0.0
+	_note_unlocks(Unlocks.check(campaign,run_stats(),{"type":"reach","dungeon":dungeon_id}))
 	var slasher_config: Dictionary = Dictionary(dungeon.get("slasher", {}))
 	max_floors = int(dungeon.get("floors", 1))
 	class_resource = 0
@@ -1557,6 +1600,7 @@ func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
 ## for their class group (pickup_items.json any_class / melee_only / ranged_only).
 func _item_offer_allowed(item_id: String) -> bool:
 	if GameBalance.item_field(item_id, "name") == null: return true
+	if Unlocks.is_item_locked(campaign, item_id): return false
 	return bool(GameBalance.item_field(item_id, "drops", true)) and GameBalance.item_usable_by_class(item_id, selected_class_id)
 
 func _item_ids_for_rarity(items: Dictionary, rarity: String) -> Array[String]:

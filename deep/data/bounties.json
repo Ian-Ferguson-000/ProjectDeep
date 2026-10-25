@@ -1,0 +1,134 @@
+{
+  "how_to_edit": [
+    "Contracts posted on the tavern's bounty board. A bounty is completed by an expedition that returns alive (victory or retreat) having met its goal; rewards are paid on return.",
+    "settings: slots (how many are posted at once; unlocks can add more), lasts_days (days before an unfinished bounty is taken down).",
+    "text: {count}, {dungeon}, {time} and {class} are filled in from the goal.",
+    "goal types: kills (family + min/max count, in one expedition), clear_time (clear a dungeon faster than the record x seconds_from_record, or default_seconds if there is no record yet), clear_class (clear as a class from the company), clear_no_potion, gold (bring home min-max gold).",
+    "reward: gold, renown, essence; [low, high] picks a value in between."
+  ],
+  "settings": {
+    "slots": 2,
+    "lasts_days": 3
+  },
+  "bounties": [
+    {
+      "id": "cull_sporelings",
+      "text": "Cull {count} Sporelings in one expedition",
+      "goal": {
+        "type": "kills",
+        "family": "sporeling",
+        "min": 12,
+        "max": 20
+      },
+      "reward": {
+        "gold": [
+          30,
+          50
+        ]
+      }
+    },
+    {
+      "id": "bandit_bounty",
+      "text": "Bring down {count} Kobold bandits in one expedition",
+      "goal": {
+        "type": "kills",
+        "family": "bandit",
+        "min": 6,
+        "max": 12
+      },
+      "reward": {
+        "gold": [
+          40,
+          70
+        ]
+      }
+    },
+    {
+      "id": "wolf_cull",
+      "text": "Thin the wolf packs: {count} wolves in one expedition",
+      "goal": {
+        "type": "kills",
+        "family": "wolf",
+        "min": 10,
+        "max": 18
+      },
+      "reward": {
+        "gold": [
+          30,
+          60
+        ]
+      }
+    },
+    {
+      "id": "speed_clear",
+      "text": "Clear {dungeon} in under {time}",
+      "goal": {
+        "type": "clear_time",
+        "dungeon": "forest",
+        "seconds_from_record": 1.15,
+        "default_seconds": 1080
+      },
+      "reward": {
+        "gold": [
+          60,
+          90
+        ],
+        "essence": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "class_clear",
+      "text": "Clear {dungeon} as a {class}",
+      "goal": {
+        "type": "clear_class",
+        "dungeon": "forest"
+      },
+      "reward": {
+        "gold": [
+          50,
+          80
+        ],
+        "renown": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "id": "no_potion",
+      "text": "Clear {dungeon} without drinking a potion",
+      "goal": {
+        "type": "clear_no_potion",
+        "dungeon": "forest"
+      },
+      "reward": {
+        "gold": [
+          60,
+          90
+        ]
+      }
+    },
+    {
+      "id": "haul",
+      "text": "Bring home {count} gold from one expedition",
+      "goal": {
+        "type": "gold",
+        "min": 60,
+        "max": 120
+      },
+      "reward": {
+        "renown": [
+          3,
+          3
+        ],
+        "essence": [
+          1,
+          1
+        ]
+      }
+    }
+  ]
+}

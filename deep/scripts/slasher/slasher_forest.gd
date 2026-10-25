@@ -433,6 +433,9 @@ func _process(delta:float)->void:
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	run_state.record_enemy_defeat(enemy.visual_id);enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
 	if player.item_runtime:player.item_runtime.handle_event({"trigger":"boss_kill" if enemy.boss else ("elite_kill" if enemy.elite else "enemy_kill"),"enemy":enemy})
+	for unlock in run_state.note_kill(String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)):
+		AudioCue.play_from(self,"reward",false);_show_message("Unlocked: %s · %s"%[String(unlock.name),String(unlock.text)],4.0)
+	_roll_enemy_drop(enemy)
 	if enemies_remaining==0:
 		AudioCue.play_from(self,"reward",false)
 		exit_open=true;_reveal_secret_door();_show_message("Encounter cleared · the way onward opens.")
@@ -543,7 +546,7 @@ func _use_potion()->bool:
 	var consumables:=run_state.get_consumables();var index:=consumables.find("healing_potion")
 	if index<0:_show_message("No healing potion available.");return false
 	AudioCue.play_from(player,"potion")
-	run_state.remove_consumable_at(index);player.heal(6+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
+	run_state.remove_consumable_at(index);run_state.note_potion();player.heal(6+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
 	return true
 
 func _use_consumable_slot(index:int)->bool:
@@ -552,6 +555,7 @@ func _use_consumable_slot(index:int)->bool:
 	var consumable_id:String=consumables[index];var record:Dictionary=GameBalance.get_consumable(consumable_id);var effects:Dictionary=Dictionary(record.get("effects",{}))
 	run_state.remove_consumable_at(index);player.apply_consumable(effects)
 	if String(effects.get("item_trigger",""))=="potion" and player.item_runtime:player.item_runtime.handle_event({"trigger":"potion_use"})
+	if int(effects.get("heal",0))>0:run_state.note_potion()
 	_show_message("Used %s from slot %d."%[String(record.get("name",consumable_id.capitalize())),index+1]);_refresh_hud()
 	return true
 func _collect_loot(loot:Area2D)->void:
@@ -561,6 +565,13 @@ func _collect_loot(loot:Area2D)->void:
 			if run_state.add_consumable("healing_potion"):AudioCue.play_from(loot,"pickup");_show_message("Healing potion collected.")
 			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
 		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
+		"relic":
+			var choices:Array[String]=run_state.generate_slasher_chest_choices(run_state.current_floor,"enemy_relic_%d"%Time.get_ticks_usec())
+			if choices.is_empty():_show_message("The relic crumbles to dust.")
+			else:
+				var logs:=run_state.add_inventory_item(choices[0],run_state.current_floor);AudioCue.play_from(loot,"reward")
+				if player.item_runtime:player.item_runtime.refresh()
+				_show_message("Relic found: %s. %s"%[String(GameBalance.get_item(choices[0]).get("name",choices[0]))," ".join(logs)],4.0)
 		_:
 			AudioCue.play_from(loot,"coins")
 			var rewards:=GameBalance.get_slasher_balance("rewards");var raw_amount:int=int(loot.get_meta("amount",int(rewards.get("loot_gold_base",5))+run_state.current_floor));var amount:=run_state.apply_reward_bonus(raw_amount,"gold");run_state.gold+=amount;_show_message("Collected %d gold."%amount)
@@ -591,6 +602,54 @@ func _claim_relic(item_id:String)->void:
 	if player.item_runtime:player.item_runtime.refresh()
 	player.setup(run_state);relic_modal.finish();relic_choice_source="";_refresh_hud()
 	_show_message(" ".join(logs))
+
+## Enemy drops (data/enemy_drops.json): low chances to begin with, raised by
+## drop luck from unlocks. At most one drop per enemy, rarest rolled first.
+static var _drop_table:Dictionary={}
+static func drop_table()->Dictionary:
+	if _drop_table.is_empty():
+		var parsed:Variant=JSON.parse_string(FileAccess.get_file_as_string("res://data/enemy_drops.json"))
+		_drop_table=Dictionary(parsed) if parsed is Dictionary else {}
+	return _drop_table
+
+## Which drop, if any, a kill produces for this roll source. Empty = nothing.
+static func roll_drop(enemy_key:String,elite:bool,boss:bool,luck:float,rng:RandomNumberGenerator)->String:
+	var table:=drop_table();var multipliers:Dictionary=table.get("enemy_multipliers",{})
+	var scale:float=float(multipliers.get(enemy_key,multipliers.get("default",1.0)))
+	if elite:scale*=float(multipliers.get("elite",1.0))
+	if boss:scale*=float(multipliers.get("boss",0.0))
+	scale*=minf(luck,float(table.get("luck_cap",2.5)))
+	var chances:Dictionary=table.get("chances",{})
+	for kind in chances:
+		if rng.randf()<float(chances[kind])*scale:return String(kind)
+	return ""
+
+func _roll_enemy_drop(enemy:SlasherEnemy)->void:
+	if _is_tutorial_expedition() or not is_instance_valid(enemy):return
+	var key:=String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)
+	var kind:=roll_drop(key,enemy.elite or enemy.mini_boss,enemy.boss,Unlocks.drop_luck(run_state.campaign),drop_rng())
+	if kind.is_empty():return
+	var spot:=enemy.global_position
+	match kind:
+		"gold":
+			var amount_rules:Dictionary=drop_table().get("gold_amount",{})
+			var amount:=randi_range(int(amount_rules.get("min",1)),int(amount_rules.get("max",3)))+int(run_state.current_floor*float(amount_rules.get("per_floor",0.5)))
+			_spawn_gold_drop(spot,amount)
+		"healing_potion":_spawn_pickup_drop("potion",spot)
+		"key":_spawn_pickup_drop("key",spot)
+		"relic":_spawn_relic_drop(spot)
+
+var _drop_rng:RandomNumberGenerator
+func drop_rng()->RandomNumberGenerator:
+	if _drop_rng==null:_drop_rng=RandomNumberGenerator.new();_drop_rng.randomize()
+	return _drop_rng
+
+## A rare glowing relic: walk over it to take a random item your class can use.
+func _spawn_relic_drop(world_position:Vector2)->void:
+	var area:=Area2D.new();area.name="EnemyRelicDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape)
+	var gem:=Polygon2D.new();gem.polygon=PackedVector2Array([Vector2(0,-22),Vector2(9,-10),Vector2(0,2),Vector2(-9,-10)]);gem.color=Color("#d38cff");area.add_child(gem)
+	var shine:=Polygon2D.new();shine.polygon=PackedVector2Array([Vector2(0,-19),Vector2(4,-12),Vector2(0,-6),Vector2(-3,-12)]);shine.color=Color("#f6e2ff");area.add_child(shine)
+	area.add_child(_glow(Color("#c77dff"),20));area.set_meta("kind","relic");actor_layer.add_child(area);loot_nodes.append(area)
 
 func _spawn_pickup_drop(kind:String,world_position:Vector2)->void:
 	var area:=Area2D.new();area.name="Chest%sDrop"%kind.capitalize();area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),16));area.set_meta("kind",kind);actor_layer.add_child(area);loot_nodes.append(area)
