@@ -19,8 +19,11 @@ const BLOCKING := ["#","~"]
 const SOLID_KINDS := {"R":"rock","T":"tree_large","C":"chest"}
 const DECORATION_KINDS := {"r":"mossy_rock","p":"pebbles","m":"mushrooms","F":"campfire"}
 const BUSH_KINDS := ["low_bush_a","low_bush_b","rounded_bush"]
-const KNOWN_SYMBOLS := "#.=c~RTCrpmbFeE$*MXPNSW"
-const ROLES := ["start","combat","elite","treasure","shop","rest","boss"]
+const KNOWN_SYMBOLS := "#.=c~RTCrpmbFeE$*MXPNSWO"
+## Cells a colossus guardian's body blocks, centred on its marker.
+const COLOSSUS_SIZE := Vector2i(7,5)
+## guardian: the gate room on a guardian floor (holds the colossus).
+const ROLES := ["start","combat","elite","treasure","shop","rest","boss","guardian"]
 ## Rooms where nothing hostile spawns. Campfires and merchants belong only here.
 const PEACEFUL_ROLES := ["start","treasure","shop","rest"]
 const CAMP_SYMBOLS := {"F":["shop","rest"],"M":["shop"]}
@@ -114,10 +117,19 @@ static func build_layout(template_data: Dictionary, open_doors: Array, seed_valu
 						"*": markers["treasure"] = cell
 						"M": markers["merchant"] = cell
 						"X": markers["gate"] = cell
+						"O": markers["colossus"] = cell
 						"P": markers["start"] = cell
 					# Markers dropped onto a trail keep the trail continuous underneath them.
 					if "$MPX*eE".contains(symbol) and _touches_count(rows,cell,"=") >= 2: path_cells[cell] = true
 	var center := Vector2i(size.x/2,size.y/2)
+	# The colossus's body is part of the room: its cells are solid.
+	var colossus_cells := {}
+	if markers.has("colossus"):
+		var middle: Vector2i = markers.colossus
+		for y in range(middle.y - COLOSSUS_SIZE.y / 2,middle.y + COLOSSUS_SIZE.y / 2 + 1):
+			for x in range(middle.x - COLOSSUS_SIZE.x / 2,middle.x + COLOSSUS_SIZE.x / 2 + 1):
+				cells.erase(Vector2i(x,y)); path_cells.erase(Vector2i(x,y)); colossus_cells[Vector2i(x,y)] = true
+		solid_props = solid_props.filter(func(prop): return not colossus_cells.has(Vector2i(prop.cell)))
 	return {
 		"template_id":String(template_data.get("id","")),
 		"room_name":String(template_data.get("name","Forest")),
@@ -133,6 +145,7 @@ static func build_layout(template_data: Dictionary, open_doors: Array, seed_valu
 		"merchant":Vector2i(markers.get("merchant",Vector2i(-100,-100))),
 		"treasure":Vector2i(markers.get("treasure",Vector2i(-100,-100))),
 		"campfire":Vector2i(markers.get("campfire",Vector2i(-100,-100))),
+		"colossus":Vector2i(markers.get("colossus",Vector2i(-100,-100))),"colossus_cells":colossus_cells,
 		"edges":SlasherForestGenerator.classify_edges(cells),
 	}
 
@@ -236,6 +249,9 @@ static func validate_template(entry: Dictionary) -> Array[String]:
 	if roles.has("treasure") and Vector2i(layout.treasure).x < 0: errors.append("%s: a treasure room needs a Treasure marker." % id)
 	if roles.has("shop") and Vector2i(layout.merchant).x < 0: errors.append("%s: a shop room needs a Merchant marker." % id)
 	if roles.has("rest") and Vector2i(layout.campfire).x < 0: errors.append("%s: a rest room needs a Campfire marker." % id)
+	if roles.has("guardian") and Vector2i(layout.colossus).x < 0: errors.append("%s: a guardian room needs a Colossus marker." % id)
+	if roles.has("guardian") and Vector2i(layout.exit).x < 0: errors.append("%s: a guardian room needs a Gate down marker for after the fight." % id)
+	if Vector2i(layout.colossus).x >= 0 and not roles.has("guardian"): errors.append("%s: a Colossus marker only belongs in guardian rooms." % id)
 	return errors
 
 static func _marker_name(symbol: String) -> String:

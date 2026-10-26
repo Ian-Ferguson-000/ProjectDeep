@@ -25,9 +25,10 @@ const KINDS := {
 	"pebbles":["p","Pebbles","#cfcfc4"],
 	"mushrooms":["m","Mushrooms","#e86a7a"],
 	"bush":["b","Bush","#6fa34f"],
+	"colossus":["O","Colossus (7x5)","#c0392b"],
 }
 
-@export_enum("enemy","elite","loot","treasure","merchant","gate","player_start","campfire","chest","rock","big_tree","mossy_rock","pebbles","mushrooms","bush")
+@export_enum("enemy","elite","loot","treasure","merchant","gate","player_start","campfire","chest","rock","big_tree","mossy_rock","pebbles","mushrooms","bush","colossus")
 var kind: String = "enemy":
 	set(value):
 		kind = value
@@ -57,6 +58,10 @@ func symbol() -> String:
 
 func _draw() -> void:
 	var info: Array = KINDS.get(kind,["?","?","#ffffff"])
+	if kind == "colossus":
+		# Show the block of cells the colossus's body fills.
+		var area := Rect2(-Vector2(ForestRoomLibrary.COLOSSUS_SIZE) * CELL * 0.5,Vector2(ForestRoomLibrary.COLOSSUS_SIZE) * CELL)
+		draw_rect(area,Color(0.75,0.15,0.1,0.22)); draw_rect(area,Color(0.9,0.25,0.15,0.9),false,3.0)
 	var colour := Color(String(info[2]))
 	draw_circle(Vector2.ZERO,15.0,Color(0,0,0,0.55))
 	draw_circle(Vector2.ZERO,12.0,colour)

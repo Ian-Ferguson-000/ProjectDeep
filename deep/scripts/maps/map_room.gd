@@ -19,12 +19,12 @@ class_name MapRoom
 ## Press F6 to play this room on its own.
 
 const CELL := 48
-const ROLE_NAMES := ["start","combat","elite","treasure","shop","rest","boss"]
+const ROLE_NAMES := ["start","combat","elite","treasure","shop","rest","boss","guardian"]
 
 @export var room_name := "New Room":
 	set(value): room_name = value; queue_redraw()
 ## Which kinds of room this map can be used for.
-@export_flags("start","combat","elite","treasure","shop","rest","boss") var roles := 2
+@export_flags("start","combat","elite","treasure","shop","rest","boss","guardian") var roles := 2
 ## How often this map is picked compared with others of the same role (1 = normal).
 @export_range(0.05,5.0,0.05) var weight := 1.0
 ## Size in 48px cells. Must be odd. Standard 27x15, large 35x19.

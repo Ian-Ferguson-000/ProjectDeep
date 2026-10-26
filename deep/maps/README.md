@@ -88,6 +88,7 @@ one, select the **Markers** node, then **Instantiate Child Scene** (chain icon) 
 | Chest | Locked chest (needs a key) | Blocks movement |
 | Rock / Big tree | Breakable obstacles | Block movement until broken |
 | Mossy rock, Pebbles, Mushrooms, Bush | Small decorations | Don't block. You can paint these in Detail instead |
+| Colossus | A giant guardian's body (fills 7×5 cells) | Guardian rooms only; see docs/HeartwoodColossus.md |
 
 ---
 
@@ -101,7 +102,8 @@ one, select the **Markers** node, then **Instantiate Child Scene** (chain icon) 
 | treasure | Relic room | Needs a Treasure marker, no enemies |
 | shop | Trader camp | Needs a Merchant, no enemies |
 | rest | Campfire clearing | Needs a Campfire, no enemies |
-| boss | Gate room / guardian | Needs a Gate down marker |
+| boss | Gate room on ordinary floors | Needs a Gate down marker |
+| guardian | Gate room on guardian floors (the colossus arena) | Needs a Colossus and a Gate down marker |
 
 A room can have several roles (a map that works for both combat and elite).
 Every role needs at least one room in the dungeon.

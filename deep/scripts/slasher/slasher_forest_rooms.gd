@@ -108,7 +108,10 @@ func _room_layout() -> Dictionary:
 	var template := ROOMS.template(String(room.get("template_id","")))
 	if MapPlaytest.active() and room_id == 0: template = MapPlaytest.template()
 	if template.is_empty():
-		template = ROOMS.pick(String(TEMPLATE_ROLE.get(room_role,"combat")),hash("%s:%d:room" % [floor_key,room_id]),_neighbor_template_ids())
+		var pick_role := String(TEMPLATE_ROLE.get(room_role,"combat"))
+		# On guardian floors the gate room is a colossus arena, if any exist.
+		if room_role == "boss" and run_state.is_slasher_boss_floor() and not ROOMS.templates().filter(func(t): return Array(t.get("roles",[])).has("guardian")).is_empty(): pick_role = "guardian"
+		template = ROOMS.pick(pick_role,hash("%s:%d:room" % [floor_key,room_id]),_neighbor_template_ids())
 		run_state.update_field_room(room_id,{"template_id":String(template.get("id",""))})
 		room["template_id"] = String(template.get("id",""))
 	var built := ROOMS.build_layout(template,Dictionary(room.get("neighbors",{})).keys(),hash("%s:%d:decor" % [floor_key,room_id]))
@@ -146,6 +149,9 @@ func _encounter(built: Dictionary) -> Array:
 	# TUNING: plain foes per room grow with depth and stop at the room's markers.
 	var count := clampi(2 + int(run_state.current_floor/2.0),2,maxi(2,markers.size()))
 	var spawns: Array = []
+	if room_role == "boss" and bool(built.is_boss_floor) and Vector2i(built.get("colossus",Vector2i(-100,-100))).x >= 0:
+		# The colossus is the whole fight: no adds at the start.
+		return [{"position":Vector2i(built.colossus),"visual_id":"heartwood_colossus","behavior_id":"heartwood_colossus","is_boss":true,"is_mini_boss":false}]
 	if room_role == "boss" and bool(built.is_boss_floor):
 		spawns.append({"position":elite_cell,"visual_id":"dark_druid","behavior_id":"","is_boss":true,"is_mini_boss":false})
 		for index in mini(2,markers.size()): spawns.append({"position":markers[index],"visual_id":"briar_guardian","behavior_id":"elite_guardian","is_boss":false,"is_mini_boss":true})
@@ -226,6 +232,7 @@ func _build_landmarks() -> void:
 	if gate.x >= 0:
 		var exit_root := Node2D.new(); exit_root.name = "RootGate"; exit_root.position = exit_position; exit_root.z_index = 12; exit_root.add_child(_glow(Color("#83d978"),34))
 		var exit_sprite := SlasherForestArt.make_sprite("exit"); exit_sprite.position = Vector2(0,-30); exit_root.add_child(exit_sprite); actor_layer.add_child(exit_root)
+	if Vector2i(layout.get("colossus",Vector2i(-100,-100))).x >= 0 and (bool(room.get("cleared",false)) or not bool(layout.get("is_boss_floor",false))): _build_colossus_remains()
 	var merchant_cell := Vector2i(layout.merchant)
 	has_dungeon_merchant = room_role == "shop" and merchant_cell.x >= 0
 	merchant_position = _world(merchant_cell) if has_dungeon_merchant else Vector2(-99999,-99999)
@@ -319,6 +326,7 @@ func _reveal_secret_door() -> void:
 
 func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
 	super._on_enemy_defeated(enemy,reward)
+	if rooms_active and enemy is SlasherColossus: _build_colossus_remains()
 	# The guardian's fall ends the fight, Isaac style: its pack scatters and the gate opens.
 	if rooms_active and room_role == "boss" and enemies_remaining > 0 and _is_room_guardian(enemy): _scatter_remaining_foes()
 	if rooms_active and enemies_remaining == 0:
@@ -507,7 +515,10 @@ func _show_guardian_banner() -> void:
 	var hud := get_node_or_null("HUD")
 	if hud == null: return
 	var boss := bool(layout.get("is_boss_floor",false))
-	var title := String(GameBalance.get_slasher_journal_entry("dark_druid").get("name","The Guardian")) if boss else "Elite Guardian"
+	var boss_id := "dark_druid"
+	for node in actor_layer.get_children():
+		if node is SlasherEnemy and node.boss: boss_id = String(node.visual_id)
+	var title := String(GameBalance.get_slasher_journal_entry(boss_id).get("name","The Guardian")) if boss else "Elite Guardian"
 	var banner := GuardianBanner.new(); banner.name = "GuardianBanner"
 	banner.setup(title.to_upper(),"Guardian of the %s" % String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Forest")) if boss else "The Root Gate is held",Color("#e0503c") if boss else Color("#ff9e3d"))
 	hud.add_child(banner)
@@ -559,3 +570,30 @@ class GuardianBanner extends Control:
 		tween.tween_interval(1.8)
 		tween.tween_property(self,"modulate:a",0.0,0.45)
 		tween.tween_callback(queue_free)
+
+
+## What's left of a fallen colossus: a split stump filling its cells.
+func _build_colossus_remains() -> void:
+	if actor_layer.get_node_or_null("ColossusRemains") != null: return
+	var remains := ColossusRemains.new(); remains.name = "ColossusRemains"
+	remains.position = _world(Vector2i(layout.colossus))
+	actor_layer.add_child(remains)
+
+class ColossusRemains extends Node2D:
+	func _draw() -> void:
+		var half := Vector2(ForestRoomLibrary.COLOSSUS_SIZE) * 24.0
+		var bark := Color("#4a3322")
+		for index in 9:
+			var angle := PI * 0.08 + PI * 0.84 * index / 8.0
+			var start := Vector2(cos(angle) * half.x * 0.7,half.y * 0.55)
+			draw_polyline(PackedVector2Array([start,start + Vector2(cos(angle) * 60,40)]),Color("#3d2817"),7.0,true)
+		draw_set_transform(Vector2(0,half.y * 0.5),0.0,Vector2(1.0,0.4)); draw_circle(Vector2.ZERO,half.x,Color(0,0,0,0.28)); draw_set_transform(Vector2.ZERO)
+		var stump := PackedVector2Array([Vector2(-half.x * 0.62,half.y * 0.8),Vector2(-half.x * 0.55,-half.y * 0.1),Vector2(-half.x * 0.3,-half.y * 0.45),Vector2(-half.x * 0.1,-half.y * 0.15),Vector2(half.x * 0.12,-half.y * 0.5),Vector2(half.x * 0.32,-half.y * 0.2),Vector2(half.x * 0.55,-half.y * 0.35),Vector2(half.x * 0.62,half.y * 0.8)])
+		draw_colored_polygon(stump,bark.darkened(0.3))
+		var inner := PackedVector2Array()
+		for p in stump: inner.append(p * 0.9)
+		draw_colored_polygon(inner,bark)
+		draw_circle(Vector2(0,half.y * 0.25),24,Color("#1d120a"))
+		draw_circle(Vector2(0,half.y * 0.25),10,Color(1.0,0.6,0.25,0.35))
+		for index in 5:
+			draw_circle(Vector2(-half.x * 0.5 + index * half.x * 0.25,half.y * 0.75),12,Color("#3f6b33"))

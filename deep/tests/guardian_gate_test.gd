@@ -44,14 +44,20 @@ func _run() -> void:
 	scene._build_floor(); await process_frame
 	_expect(scene.get_node("HUD").get_node_or_null("GuardianBanner") != null,"No guardian banner on entering the gate room")
 	var boss: SlasherEnemy = null
-	for node in get_nodes_in_group("slasher_enemy"):
-		if node.boss: boss = node
+	for node in scene.actor_layer.get_children():
+		if node is SlasherEnemy and node.boss: boss = node
 	_expect(boss != null,"No guardian spawned")
+	if boss == null:
+		scene.queue_free(); await process_frame
+		for failure in failures: push_error(failure)
+		quit(1); return
 	# Reinforcements are still alive when the guardian dies.
 	scene._spawn_enemy(scene.player.global_position + Vector2(200,0),"wolf_vanguard","wolf_vanguard")
 	scene._spawn_enemy(scene.player.global_position + Vector2(-200,0),"wolf_charger","wolf_charger")
 	_expect(scene.enemies_remaining >= 3,"Expected the pack plus the guardian")
-	boss.health = 1; boss.receive_hit(5)
+	boss.health = 1
+	if boss is SlasherColossus: boss.heart.open_for(3.0); boss.heart.receive_attack({"damage":5},scene.player)
+	else: boss.receive_hit(5)
 	await process_frame
 	_expect(scene.enemies_remaining == 0 and scene.exit_open,"The guardian's death did not open the gate (foes left %d)" % scene.enemies_remaining)
 	_expect(get_nodes_in_group("slasher_enemy").is_empty(),"The guardian's pack did not scatter")

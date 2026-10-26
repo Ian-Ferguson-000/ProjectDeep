@@ -14,14 +14,16 @@ func _run() -> void:
 	var old := {}
 	for entry in legacy.rooms: old[String(entry.id)] = entry
 	var rooms := MapLibrary.rooms("forest")
-	_expect(rooms.size() == old.size(),"Expected %d forest room scenes, found %d" % [old.size(),rooms.size()])
+	_expect(rooms.size() >= old.size(),"Expected at least the %d converted forest rooms, found %d" % [old.size(),rooms.size()])
+	var converted := 0
 	for room in rooms:
 		var before: Dictionary = old.get(String(room.id),{})
-		_expect(not before.is_empty(),"%s has no original room" % room.id)
 		if before.is_empty(): continue
+		converted += 1
 		_expect(Array(room.map) == Array(before.map),"%s reads back differently from its text map" % room.id)
 		_expect(Array(room.roles) == Array(before.roles) and String(room.name) == String(before.name),"%s lost its name or roles" % room.id)
 		_expect(String(room.scene).begins_with("res://maps/forest/rooms/"),"%s has no scene path" % room.id)
+	_expect(converted == old.size(),"Some converted rooms are missing (%d of %d)" % [converted,old.size()])
 	_expect(ForestRoomLibrary.validate().is_empty(),"Forest rooms fail validation: %s" % "; ".join(ForestRoomLibrary.validate()))
 
 	# Each scene has the artist's layers, and no warnings.

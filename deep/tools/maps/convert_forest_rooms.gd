@@ -17,8 +17,8 @@ const PIECES := {
 	Vector2(400,48):Vector2i(0,1), Vector2(472,16):Vector2i(1,1), Vector2(544,48):Vector2i(2,1), Vector2(524,36):Vector2i(3,1), Vector2(420,36):Vector2i(4,1),
 	Vector2(400,96):Vector2i(0,2), Vector2(416,96):Vector2i(1,2), Vector2(544,96):Vector2i(2,2),
 }
-const MARKER_KINDS := {"e":"enemy","E":"elite","$":"loot","*":"treasure","M":"merchant","X":"gate","P":"player_start","F":"campfire","C":"chest","R":"rock","T":"big_tree","r":"mossy_rock","p":"pebbles","m":"mushrooms","b":"bush"}
-const ROLE_BITS := {"start":1,"combat":2,"elite":4,"treasure":8,"shop":16,"rest":32,"boss":64}
+const MARKER_KINDS := {"O":"colossus","e":"enemy","E":"elite","$":"loot","*":"treasure","M":"merchant","X":"gate","P":"player_start","F":"campfire","C":"chest","R":"rock","T":"big_tree","r":"mossy_rock","p":"pebbles","m":"mushrooms","b":"bush"}
+const ROLE_BITS := {"start":1,"combat":2,"elite":4,"treasure":8,"shop":16,"rest":32,"boss":64,"guardian":128}
 
 func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute("res://maps/forest/rooms")
