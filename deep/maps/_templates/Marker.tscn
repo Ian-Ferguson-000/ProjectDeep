@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="1_lg3yp"]
+
+[node name="Marker" type="Node2D" unique_id=372763751]
+script = ExtResource("1_lg3yp")

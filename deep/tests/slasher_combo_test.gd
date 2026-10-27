@@ -1,5 +1,8 @@
 extends SceneTree
 
+## Dash, special and block are switched off in progression.json; this checks them anyway.
+func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
+
 const COMBOS:=preload("res://scripts/slasher/slasher_combo_runtime.gd")
 const CODEX:=preload("res://scripts/slasher/slasher_codex_menu.gd")
 

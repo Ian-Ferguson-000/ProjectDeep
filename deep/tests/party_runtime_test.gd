@@ -1,8 +1,14 @@
 extends SceneTree
 
+## Dash, special and block are switched off in progression.json; this checks them anyway.
+func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
+
 const SLASHER_FOREST:=preload("res://scenes/slasher/SlasherForest.tscn")
 func _initialize()->void:call_deferred("_run")
 func _run()->void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party rules so they keep working if parties come back.
+	GameBalance.set_party_size_override(4)
 	var failures:Array[String]=[];var state:=RunState.new();state.campaign.tutorial_phase=CampaignState.TUTORIAL_COMPLETE;state.campaign.ensure_roster();var party:=state.campaign.default_party("forest")
 	_expect(party.size()==2,"Forest did not provide a two-member party",failures);state.campaign.begin_expedition(party,"forest");state.active_character_id=party[0];state.set_class(state.campaign.character(party[0]).class_id);state.start_new_run(null,"forest")
 	var scene:=SLASHER_FOREST.instantiate();scene.setup(null,state);root.add_child(scene);await process_frame;await process_frame

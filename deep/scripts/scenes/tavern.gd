@@ -24,6 +24,9 @@ var pending_story_lines: Array = []
 var pending_story_context := ""
 
 @onready var world:Node2D=$TavernWorld
+var expansions:TavernExpansions
+var camera_bounds:=Rect2()
+var camera_view:=Rect2()
 @onready var actors_root:Node2D=$TavernWorld/Actors
 @onready var activity_anchors:Node2D=$TavernWorld/ActivityAnchors
 @onready var navigation_region:NavigationRegion2D=$TavernWorld/NavigationRegion2D
@@ -240,7 +243,7 @@ func _on_keeper_interaction(target:Node)->void:
 		_on_living_actor_interaction(actor.actor_kind,actor.actor_id)
 	elif target is TavernProp:
 		var prop:=target as TavernProp
-		var pages := {"weapon_rack":"Armory","notice_board":"Expeditions","supply_crates":"Merchants","bar":"Facilities"}
+		var pages := {"weapon_rack":"Armory","notice_board":"Expeditions","supply_crates":"Merchants","bar":"Facilities","lodgings_board":"Lodgings","lodgings_room":"Lodgings","lodgings_plot":"Lodgings","training_post":"Training"}
 		if pages.has(prop.prop_id) and _open_hearth(pages[prop.prop_id]): return
 		var text_value:=prop.interact(keeper)
 		if not text_value.is_empty():_show_dialogue("The Hearth",text_value)
@@ -252,7 +255,7 @@ func _on_keeper_prompt(text_value:String)->void:
 
 func _build_toolbar()->void:
 	toolbar=HBoxContainer.new();toolbar.name="TavernToolbar";toolbar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE);toolbar.offset_left=190;toolbar.offset_right=-190;toolbar.offset_top=-70;toolbar.offset_bottom=-10;toolbar.alignment=BoxContainer.ALIGNMENT_CENTER;toolbar.add_theme_constant_override("separation",8);ui_root.add_child(toolbar)
-	var entries := [["Calendar","calendar",Callable(self,"_open_hearth").bind("Calendar")],["Company Ledger","ledger",Callable(self,"_open_hearth").bind("Company")],["Armory","armory",Callable(self,"_open_hearth").bind("Armory")],["Merchants","merchants",Callable(self,"_open_hearth").bind("Merchants")],["Expedition","expedition",Callable(self,"_open_hearth").bind("Expeditions")]]
+	var entries := [["Calendar","calendar",Callable(self,"_open_hearth").bind("Calendar")],["Company","roster",Callable(self,"_open_hearth").bind("Company")],["Facilities","hearth",Callable(self,"_open_hearth").bind("Facilities")],["Expedition","expedition",Callable(self,"_open_hearth").bind("Expeditions")]]
 	for entry in entries:
 		var title:=String(entry[0]);var button:=Button.new();button.name="%sToolbarButton"%title.replace(" ","");button.text=title;button.icon=TAVERN_THEME.icon(String(entry[1]));button.expand_icon=true;button.icon_alignment=HORIZONTAL_ALIGNMENT_LEFT;button.size_flags_horizontal=Control.SIZE_EXPAND_FILL;button.pressed.connect(entry[2]);TAVERN_THEME.apply_button(button,title=="Expedition",14,Vector2(190 if title=="Expedition" else 150,56));toolbar.add_child(button);toolbar_buttons[title]=button
 	for index in toolbar.get_child_count():
@@ -274,6 +277,10 @@ func _open_calendar()->void:
 
 func _build_recruitment_dialogue()->void:
 	recruitment_dialogue=RECRUITMENT_DIALOGUE.new();recruitment_dialogue.contest_requested.connect(_open_visitor_contest);recruitment_dialogue.recruit_requested.connect(_recruit_candidate);recruitment_dialogue.assessment_requested.connect(_assess_candidate);recruitment_dialogue.conversation_closed.connect(_restore_hub_focus);ui_root.add_child(recruitment_dialogue)
+
+func _show_recruitment(candidate:CandidateRecord)->void:
+	recruitment_dialogue.allowed_classes.assign(run_state.campaign.unlocked_classes)
+	recruitment_dialogue.open(candidate)
 
 func _open_visitor_contest(candidate_id:String,contest_id:String)->void:
 	if active_contest!=null or not VisitorContestRules.CONTESTS.has(contest_id):return
@@ -302,7 +309,7 @@ func _return_from_visitor_contest()->void:
 	active_contest.hide();active_contest.set_process_input(false);active_contest.queue_free();active_contest=null
 	var candidate:=run_state.campaign.candidate_pool.get(contest_candidate_id) as CandidateRecord
 	contest_candidate_id=""
-	if candidate!=null:recruitment_dialogue.open(candidate)
+	if candidate!=null:_show_recruitment(candidate)
 	else:_restore_hub_focus()
 
 func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
@@ -311,7 +318,7 @@ func _assess_candidate(candidate_id:String,action:String,stat_id:String)->void:
 	elif action=="appraise":result=run_state.campaign.appraise_candidate(candidate_id,stat_id)
 	else:result=run_state.campaign.inspect_candidate(candidate_id,action)
 	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Assessment failed.")));return
-	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord;if candidate!=null:recruitment_dialogue.open(candidate)
+	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord;if candidate!=null:_show_recruitment(candidate)
 	_save_tavern_progress()
 	_refresh_ui()
 
@@ -319,7 +326,7 @@ func _open_recruited_summary(character_id:String)->void:
 	var member:=run_state.campaign.character(character_id)
 	if member==null:return
 	if tavern_dialogue_service==null or actor_dialogue==null:
-		_show_dialogue(member.display_name,"%s · Level %d · %s · %s · HP %d/%d"%[member.class_id.capitalize(),member.level,member.gear_id.replace("_"," ").capitalize(),member.trait_name,member.current_health,member.max_health])
+		_show_dialogue(member.display_name,"%s%s · %s · %s · HP %d/%d"%[member.class_id.capitalize(),(" · Level %d"%member.level) if GameBalance.leveling_enabled() else "",member.gear_id.replace("_"," ").capitalize(),member.trait_name,member.current_health,member.max_health])
 		return
 	var packet:=tavern_dialogue_service.play("roster_default",{"campaign":run_state.campaign,"run_state":run_state,"member":member})
 	var lines:Array=packet.get("lines",[])
@@ -338,7 +345,7 @@ func _open_candidate(candidate_id:String)->void:
 	if candidate!=null:
 		if activity_controller!=null:activity_controller.set_paused(true)
 		if keeper!=null:keeper.set_modal_paused(true)
-		recruitment_dialogue.open(candidate)
+		_show_recruitment(candidate)
 
 func _recruit_candidate(candidate_id:String)->void:
 	var candidate:=run_state.campaign.candidate_pool.get(candidate_id) as CandidateRecord
@@ -347,7 +354,8 @@ func _recruit_candidate(candidate_id:String)->void:
 		if not requirement_message.is_empty():
 			recruitment_dialogue.show_capacity_error(requirement_message)
 			return
-	var result:=run_state.campaign.recruit_candidate(candidate_id)
+	var chosen_class:=recruitment_dialogue.selected_class_id if recruitment_dialogue.candidate_id==candidate_id else ""
+	var result:=run_state.campaign.recruit_candidate(candidate_id,chosen_class)
 	if not bool(result.get("ok",false)):recruitment_dialogue.show_capacity_error(String(result.get("error","Recruitment failed.")));return
 	AudioCue.play_from(self,"reward",false)
 	recruitment_dialogue.close();message=String(result.get("message","Recruitment complete."));_select_recruited_character()
@@ -661,7 +669,7 @@ func _add_ledger_heading(text_value:String,color:Color,target:VBoxContainer)->vo
 func _add_recruit_ledger_row(member:CharacterRecord)->void:
 	var panel:=PanelContainer.new();panel.add_theme_stylebox_override("panel",_panel_style(Color(0.045,0.055,0.07,0.92),Color(0.28,0.48,0.64),7));company_list.add_child(panel);var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);panel.add_child(row)
 	var portrait:=TextureRect.new();portrait.custom_minimum_size=Vector2(72,86);portrait.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;portrait.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;var roster_path:="res://assets/roster_portraits/%s_%d.png"%[member.class_id,member.portrait_variant];portrait.texture=load(roster_path) if ResourceLoader.exists(roster_path) else load("res://assets/ui/class_cards/%s.png"%("phantom" if member.class_id=="rogue" else member.class_id));row.add_child(portrait)
-	var copy:=Label.new();copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL;copy.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;copy.text="%s\n%s · Level %d · %s\n%s\n%d expeditions · %d victories · deepest floor %d"%[member.display_name,member.class_id.capitalize(),member.level,member.trait_name,member.trait_description,member.expeditions,member.victories,member.deepest_floor];row.add_child(copy)
+	var copy:=Label.new();copy.size_flags_horizontal=Control.SIZE_EXPAND_FILL;copy.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;copy.text="%s\n%s%s · %s\n%s\n%d expeditions · %d victories · deepest floor %d"%[member.display_name,member.class_id.capitalize(),(" · Level %d"%member.level) if GameBalance.leveling_enabled() else "",member.trait_name,member.trait_description,member.expeditions,member.victories,member.deepest_floor];row.add_child(copy)
 	var status:=Label.new();status.text=member.status.to_upper();status.add_theme_color_override("font_color",Color(0.55,0.9,0.62) if member.status==CharacterRecord.STATUS_AVAILABLE else Color(0.94,0.72,0.34));row.add_child(status)
 
 func _add_upgrade_ledger_row(branch:String,target:VBoxContainer)->void:
@@ -975,11 +983,12 @@ func _layout_scene() -> void:
 		var top_inset:=viewport_size.y*0.085
 		var bottom_inset:=viewport_size.y*0.095
 		var available_height:=viewport_size.y-top_inset-bottom_inset
-		var layout_size := Vector2(2160,1160) if run_state != null and run_state.campaign.establishment_tier > 0 else WORLD_SIZE
-		var world_scale:=minf((viewport_size.x-32.0)/layout_size.x,available_height/layout_size.y)
-		var rendered_size:=layout_size*world_scale
+		# The main hall always fits the screen at this scale; the camera then follows
+		# the keeper into the Lodgings wing and Training Yard.
+		var world_scale:=minf((viewport_size.x-32.0)/WORLD_SIZE.x,available_height/WORLD_SIZE.y)
 		world.scale=Vector2.ONE*world_scale
-		world.position=Vector2((viewport_size.x-rendered_size.x)/2.0,top_inset+(available_height-rendered_size.y)/2.0)-WORLD_ORIGIN*world_scale
+		camera_view=Rect2(0.0,top_inset,viewport_size.x,available_height)
+		_update_camera(true)
 	var available:=get_viewport_rect().size-Vector2(36,36)
 	for modal in [armory_backdrop,expedition_backdrop,results_backdrop,company_backdrop,calendar_backdrop,options_backdrop]:
 		if modal==null:continue
@@ -1047,17 +1056,36 @@ func _hearth_changed() -> void:
 	_refresh_wings()
 	if activity_controller != null: activity_controller.populate_from_campaign(run_state)
 
+## Builds the Lodgings wing and Training Yard around the main hall (TavernExpansions).
 func _refresh_wings() -> void:
 	if world == null or run_state == null: return
 	var previous := world.get_node_or_null("Expansions")
 	if previous != null: previous.free()
-	var wings := Node2D.new()
-	wings.name = "Expansions"
-	world.add_child(wings)
-	var paths := ["res://scenes/tavern/LodgingWing.tscn","res://scenes/tavern/ServicesWing.tscn","res://scenes/tavern/GreatHall.tscn"]
-	for i in run_state.campaign.establishment_tier:
-		var wing = load(paths[i]).instantiate()
-		wing.position = Vector2(1470,170+i*315)
-		wings.add_child(wing)
-		wing.station_requested.connect(_open_hearth)
+	expansions = TavernExpansions.new()
+	world.add_child(expansions)
+	expansions.build(world,run_state.campaign)
+	camera_bounds = expansions.camera_bounds()
 	_layout_scene()
+
+## Keeps the keeper in view, sliding smoothly and never showing past the open areas.
+func _update_camera(snap: bool) -> void:
+	if world == null or camera_view.size == Vector2.ZERO: return
+	var scale_value := world.scale.x
+	var bounds := camera_bounds if camera_bounds.size != Vector2.ZERO else Rect2(WORLD_ORIGIN,WORLD_SIZE)
+	var hall := Rect2(WORLD_ORIGIN,WORLD_SIZE)
+	var focus := hall.get_center()
+	# Allow a screen's width around the hall so it can sit centred, as it always has.
+	var hall_view := camera_view.size / maxf(0.001,scale_value)
+	bounds = bounds.merge(Rect2(hall.get_center() - hall_view * 0.5,hall_view))
+	if keeper != null and not arrivals_running and not departure_running: focus = keeper.position
+	var target := camera_view.get_center() - focus * scale_value
+	for axis in 2:
+		var view_start := camera_view.position[axis]
+		var view_size := camera_view.size[axis]
+		var span := bounds.size[axis] * scale_value
+		if span <= view_size: target[axis] = view_start + (view_size - span) * 0.5 - bounds.position[axis] * scale_value
+		else: target[axis] = clampf(target[axis],view_start + view_size - bounds.end[axis] * scale_value,view_start - bounds.position[axis] * scale_value)
+	world.position = target if snap else world.position.lerp(target,0.18)
+
+func _process(_delta: float) -> void:
+	_update_camera(false)

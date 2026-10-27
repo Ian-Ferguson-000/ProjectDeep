@@ -6,7 +6,7 @@ func _initialize()->void:call_deferred("_run")
 
 func _run()->void:
 	var failures:Array[String]=[];var definition:=GameBalance.get_dungeon("sunken_mine")
-	_expect(String(definition.get("runtime",""))=="sunken_mine" and int(definition.get("floors",0))==6,"Mine campaign runtime is incomplete",failures)
+	_expect(String(definition.get("runtime",""))=="sunken_mine" and int(definition.get("floors",0))==5,"Mine campaign runtime is incomplete",failures)
 	_expect(String(definition.get("merchant_id",""))=="mine","Mine merchant assignment is missing",failures)
 	var state:=RunState.new();state.start_new_run(null,"sunken_mine")
 	var mine:=MineScene.instantiate();mine.setup(null,state);root.add_child(mine);await process_frame

@@ -28,6 +28,7 @@ signal defeated
 
 const PROJECTILE:=preload("res://scripts/slasher/slasher_projectile.gd")
 const ITEM_RUNTIME:=preload("res://scripts/slasher/slasher_item_runtime.gd")
+const ITEM_PROCS:=preload("res://scripts/slasher/slasher_item_procs.gd")
 const COMBO_RUNTIME:=preload("res://scripts/slasher/slasher_combo_runtime.gd")
 var run_state:RunState
 var pathfinder:SlasherGridPathfinder
@@ -71,6 +72,7 @@ var warrior_dash_resource_gain:=0
 var warrior_dash_resource_awarded:=false
 var warrior_dash_landing_invulnerability:=0.0
 var item_runtime:SlasherItemRuntime
+var item_procs:SlasherItemProcs
 var active_action_slot:="basic"
 var consumable_aegis:=0
 var consumable_speed_time:=0.0
@@ -151,6 +153,7 @@ func _ready()->void:
 	_ensure_input_actions_exist()
 	add_to_group("slasher_player")
 	item_runtime=ITEM_RUNTIME.new();item_runtime.name="SlasherItemRuntime";add_child(item_runtime);item_runtime.setup(run_state,self)
+	item_procs=ITEM_PROCS.new();item_procs.setup(self);add_child(item_procs)
 	if combo_runtime==null:combo_runtime=COMBO_RUNTIME.new();_configure_combos()
 	var shape:=CollisionShape2D.new();shape.name="PlayerHitbox";var circle:=CircleShape2D.new();circle.radius=float(GameBalance.get_slasher_class_tuning(class_id).get("collision_radius",18.0));shape.shape=circle;add_child(shape);_refresh_presentation()
 
@@ -216,6 +219,8 @@ func _notification(what:int)->void:
 
 func use_action(slot:String,input_source:String="system")->Dictionary:
 	var result:={"started":false,"slot":slot,"class_id":class_id,"input_source":input_source,"targets_hit":0,"projectiles_deflected":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
+	# Actions switched off in progression.json "enabled_actions" do nothing.
+	if not GameBalance.action_enabled(slot):result.failure="disabled";return result
 	if float(cooldowns.get(slot,0.0))>0.0:result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
 	var tuning:Dictionary=_ability_tuning(slot)
 	var default_cost:=2 if slot=="special" else (int(run_state.get_class_resource_rules(class_id).get("movement_cost",1)) if slot=="movement" else 0)
@@ -264,6 +269,8 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	if result.has("combo_id"):AudioCue.play_from(self,"combo")
 	result.resource_spent=resource_cost
 	cooldowns[slot]=float(result.get("cooldown_override",tuning.get("cooldown",0.4 if slot=="basic" else 3.0)))*(item_runtime.cooldown_multiplier() if item_runtime else 1.0)
+	if slot=="basic" and item_runtime:cooldowns[slot]=float(cooldowns[slot])/item_runtime.attack_speed_multiplier()
+	_after_item_action(slot)
 	resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());_play_action_animation(_action_animation_state(slot),float(cooldowns[slot]));animation_lock=minf(float(tuning.get("animation_lock",0.32)),float(cooldowns[slot]));ability_resolved.emit(result);return result
 
 func _play_ability_sound(slot:String)->void:
@@ -488,7 +495,7 @@ func _spawn_projectile(data:Dictionary,gain_on_hit:bool,direction_override:Vecto
 		if is_instance_valid(pyromancy):pyromancy.on_direct_hit(hit_target,data)
 		elif is_instance_valid(mage_kit):mage_kit.on_direct_hit(hit_target,data)
 		elif is_instance_valid(warrior_kit):warrior_kit.on_direct_hit(hit_target,data)
-		if item_runtime and not bool(data.get("mage_secondary",false)) and hit_target.is_in_group("slasher_enemy") and _combo_proc_allowed(combo_cast_id,hit_target):item_runtime.handle_event({"trigger":"hit","target":hit_target,"attack":data}))
+		if item_runtime and not bool(data.get("mage_secondary",false)) and hit_target.is_in_group("slasher_enemy") and _combo_proc_allowed(combo_cast_id,hit_target):on_item_enemy_hit(hit_target,data))
 	if bool(data.get("force_prism",false)):
 		projectile.impact_resolved.connect(func(impact_position:Vector2,_impact_data:Dictionary):_spawn_force_prism_bolts(impact_position,data,combo_cast_id),CONNECT_ONE_SHOT)
 	var echo_multiplier:float=float(data.get("echo_damage_multiplier",0.0))
@@ -542,8 +549,7 @@ func _melee_attack(data:Dictionary)->int:
 		if node is Node2D and node.has_method("receive_attack"):
 			var offset:Vector2=node.global_position-global_position
 			if offset.length()<=reach and aim_direction.dot(offset.normalized())>=threshold:
-				node.call("receive_attack",data,self)
-				_apply_echo_hit(node,data)
+				_strike(node,data)
 				if node.is_in_group("slasher_enemy"):hits+=1
 	return hits
 
@@ -556,8 +562,7 @@ func _line_attack(start:Vector2,end:Vector2,radius:float,data:Dictionary)->int:
 		var progress:float=0.0 if segment_length_squared<=0.001 else clampf((damageable.global_position-start).dot(segment)/segment_length_squared,0.0,1.0)
 		var closest:Vector2=start+segment*progress
 		if closest.distance_to(damageable.global_position)<=radius:
-			damageable.call("receive_attack",data,self)
-			_apply_echo_hit(damageable,data)
+			_strike(damageable,data)
 			if damageable.is_in_group("slasher_enemy"):hits+=1
 	return hits
 
@@ -565,8 +570,7 @@ func _area_attack(center:Vector2,radius:float,data:Dictionary)->int:
 	var hits:=0
 	for node in get_tree().get_nodes_in_group("slasher_damageable"):
 		if node is Node2D and node.has_method("receive_attack") and center.distance_to(node.global_position)<=radius:
-			node.call("receive_attack",data,self)
-			_apply_echo_hit(node,data)
+			_strike(node,data)
 			if node.is_in_group("slasher_enemy"):hits+=1
 	return hits
 
@@ -602,6 +606,10 @@ func _configured_attack(tuning:Dictionary,damage_type:String)->Dictionary:
 		if tuning.has(key):data[key]=tuning[key]
 	if tuning.has("projectile_range"):data.range=tuning.projectile_range
 	if tuning.has("projectile_speed"):data.speed=tuning.projectile_speed
+	if item_runtime and item_runtime.conversion("range_pixels")>0.0:
+		var bonus:float=item_runtime.conversion("range_pixels")
+		if data.has("range"):data.range=float(data.range)+bonus
+		if data.has("reach"):data.reach=float(data.reach)+bonus*0.35
 	return item_runtime.transform_attack(data,active_action_slot) if item_runtime else data
 
 func apply_consumable(effects:Dictionary)->void:
@@ -680,6 +688,38 @@ func _ability_tuning(slot:String)->Dictionary:
 	if uses_warrior_kit() and is_instance_valid(warrior_kit):return warrior_kit.tuning(slot)
 	if uses_mage_kit() and is_instance_valid(mage_kit):return mage_kit.tuning(slot)
 	return run_state.get_effective_slasher_ability_tuning(slot) if run_state!=null else GameBalance.get_slasher_ability_tuning(class_id,slot)
+## Every melee, line and area hit goes through here so items see it.
+func _strike(node:Node,data:Dictionary)->void:
+	var attack:Dictionary=data
+	var enemy:bool=node.is_in_group("slasher_enemy")
+	if enemy and item_runtime:attack=item_runtime.adjust_for_target(data,node)
+	var was_dead:bool="dead" in node and bool(node.get("dead"))
+	node.call("receive_attack",attack,self)
+	_apply_echo_hit(node,attack)
+	if enemy:on_item_enemy_hit(node,attack,was_dead)
+
+## Item reactions to an enemy being struck: hit-trigger relics, then procs.
+func on_item_enemy_hit(target:Node,attack:Dictionary,was_dead:bool=false)->void:
+	if item_runtime==null or bool(attack.get("item_proc",false)) or not is_instance_valid(target):return
+	var outcome:Dictionary=item_runtime.handle_event({"trigger":"hit","target":target,"attack":attack})
+	_apply_item_outcome(outcome)
+	if is_instance_valid(item_procs) and target is Node2D:
+		item_procs.on_hit(target,attack)
+		if not was_dead and "dead" in target and bool(target.get("dead")):item_procs.on_kill(target,attack)
+
+func _after_item_action(slot:String)->void:
+	if item_runtime==null:return
+	_apply_item_outcome(item_runtime.handle_event({"trigger":"action_complete","slot":slot}))
+	if is_instance_valid(item_procs):item_procs.on_action(slot,_scaled_damage(_ability_tuning("basic" if slot!="special" else "special")))
+
+func _apply_item_outcome(outcome:Dictionary)->void:
+	if int(outcome.get("healing",0))>0:heal(int(outcome.healing))
+	if float(outcome.get("cooldown_reduction",0.0))>0.0:reduce_cooldowns(float(outcome.cooldown_reduction))
+	if int(outcome.get("resource_change",0))>0:_award_resource(int(outcome.resource_change));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
+
+func reduce_cooldowns(seconds:float)->void:
+	for key in cooldowns.keys():cooldowns[key]=maxf(0.0,float(cooldowns[key])-seconds)
+
 func _apply_echo_hit(target:Node,data:Dictionary)->void:
 	var multiplier:float=float(data.get("echo_damage_multiplier",0.0))
 	if multiplier<=0.0:return

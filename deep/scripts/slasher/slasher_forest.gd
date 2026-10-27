@@ -51,6 +51,7 @@ var merchant_offer_nodes:Array[Area2D]=[]
 var message_label:Label
 var combo_label:Label
 var objective_label:Label
+var clock_label:Label
 var health_bar:ProgressBar
 var resource_bar:ProgressBar
 var health_value_label:Label
@@ -312,8 +313,17 @@ func _spawn_enemies()->void:
 		if visual_id.is_empty():
 			var spec:=_normal_enemy_spec(spawn_index,wolf_counts);visual_id=String(spec.visual_id);behavior_id=String(spec.behavior_id)
 		_spawn_enemy(_world(spawn),visual_id,behavior_id,bool(spawn_record.get("is_boss",false)),bool(spawn_record.get("is_mini_boss",false)));spawn_index+=1
+		if behavior_id=="sporeling":_spawn_sporeling_cluster(_world(spawn))
 	exit_open=enemies_remaining==0
 	if exit_open:_reveal_secret_door()
+
+## Sporelings sleep in clusters: extra caps around the first one.
+func _spawn_sporeling_cluster(center:Vector2)->void:
+	var tuning:=GameBalance.get_slasher_enemy_tuning("sporeling")
+	var count:=int(tuning.get("group_size_from_floor_3" if run_state.current_floor>=3 else "group_size",3))-1
+	for index in count:
+		var angle:=TAU*float(index)/float(maxi(1,count))+0.6
+		_spawn_enemy(sanitize_player_position(center+Vector2(cos(angle),sin(angle))*38.0),"sporeling","sporeling")
 
 func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 	var wolves:Array[String]=["wolf_vanguard","wolf_lurker","wolf_charger","wolf_hunter","wolf_howler"]
@@ -327,7 +337,10 @@ func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 		if wolf_id in ["wolf_hunter","wolf_howler"] and int(wolf_counts.get(wolf_id,0))>=1:wolf_id="wolf_vanguard" if (spawn_index%2)==0 else "wolf_charger"
 		wolf_counts[wolf_id]=int(wolf_counts.get(wolf_id,0))+1;return {"visual_id":wolf_id,"behavior_id":wolf_id}
 	var other_enemies:Array[String]=[];other_enemies.assign(DungeonRuntimeProfile.get_profile(run_state.active_dungeon_id).get("slasher_enemies",["thornback_boar","spore_beast","briar_guardian","ice_mage"]))
-	return {"visual_id":other_enemies[(spawn_index+run_state.current_floor-1)%other_enemies.size()],"behavior_id":""}
+	# Cycle through the dungeon's list room by room, starting at a floor-based offset.
+	var other_index:int=int(wolf_counts.get("_others",0));wolf_counts["_others"]=other_index+1
+	var enemy_id:String=other_enemies[(other_index+run_state.current_floor-1)%other_enemies.size()]
+	return {"visual_id":enemy_id,"behavior_id":enemy_id if enemy_id in SlasherEnemySceneLibrary.FOREST_IDS else ""}
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
 	var enemy:=_instantiate_enemy(visual_id);enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1
@@ -368,6 +381,7 @@ func _process(delta:float)->void:
 	var codex_open:bool=codex!=null and codex.visible
 	var modal_open:bool=(merchant_shop_panel!=null and merchant_shop_panel.visible) or (relic_modal!=null and relic_modal.visible)
 	player.input_locked=modal_open or codex_open
+	_tick_run_clock(delta,modal_open or codex_open)
 	if Input.is_action_just_pressed("character_menu") and not modal_open:
 		_open_codex("keyboard" if Input.is_physical_key_pressed(KEY_M) else "controller");return
 	if Input.is_action_just_pressed("cycle_party") and not modal_open and not codex_open and run_state.get_active_party_ids().size()>1:
@@ -419,6 +433,9 @@ func _process(delta:float)->void:
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	run_state.record_enemy_defeat(enemy.visual_id);enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
 	if player.item_runtime:player.item_runtime.handle_event({"trigger":"boss_kill" if enemy.boss else ("elite_kill" if enemy.elite else "enemy_kill"),"enemy":enemy})
+	for unlock in run_state.note_kill(String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)):
+		AudioCue.play_from(self,"reward",false);_show_message("Unlocked: %s · %s"%[String(unlock.name),String(unlock.text)],4.0)
+	_roll_enemy_drop(enemy)
 	if enemies_remaining==0:
 		AudioCue.play_from(self,"reward",false)
 		exit_open=true;_reveal_secret_door();_show_message("Encounter cleared · the way onward opens.")
@@ -529,7 +546,7 @@ func _use_potion()->bool:
 	var consumables:=run_state.get_consumables();var index:=consumables.find("healing_potion")
 	if index<0:_show_message("No healing potion available.");return false
 	AudioCue.play_from(player,"potion")
-	run_state.remove_consumable_at(index);player.heal(6+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
+	run_state.remove_consumable_at(index);run_state.note_potion();player.heal(6+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
 	return true
 
 func _use_consumable_slot(index:int)->bool:
@@ -538,6 +555,7 @@ func _use_consumable_slot(index:int)->bool:
 	var consumable_id:String=consumables[index];var record:Dictionary=GameBalance.get_consumable(consumable_id);var effects:Dictionary=Dictionary(record.get("effects",{}))
 	run_state.remove_consumable_at(index);player.apply_consumable(effects)
 	if String(effects.get("item_trigger",""))=="potion" and player.item_runtime:player.item_runtime.handle_event({"trigger":"potion_use"})
+	if int(effects.get("heal",0))>0:run_state.note_potion()
 	_show_message("Used %s from slot %d."%[String(record.get("name",consumable_id.capitalize())),index+1]);_refresh_hud()
 	return true
 func _collect_loot(loot:Area2D)->void:
@@ -547,6 +565,13 @@ func _collect_loot(loot:Area2D)->void:
 			if run_state.add_consumable("healing_potion"):AudioCue.play_from(loot,"pickup");_show_message("Healing potion collected.")
 			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
 		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
+		"relic":
+			var choices:Array[String]=run_state.generate_slasher_chest_choices(run_state.current_floor,"enemy_relic_%d"%Time.get_ticks_usec())
+			if choices.is_empty():_show_message("The relic crumbles to dust.")
+			else:
+				var logs:=run_state.add_inventory_item(choices[0],run_state.current_floor);AudioCue.play_from(loot,"reward")
+				if player.item_runtime:player.item_runtime.refresh()
+				_show_message("Relic found: %s. %s"%[String(GameBalance.get_item(choices[0]).get("name",choices[0]))," ".join(logs)],4.0)
 		_:
 			AudioCue.play_from(loot,"coins")
 			var rewards:=GameBalance.get_slasher_balance("rewards");var raw_amount:int=int(loot.get_meta("amount",int(rewards.get("loot_gold_base",5))+run_state.current_floor));var amount:=run_state.apply_reward_bonus(raw_amount,"gold");run_state.gold+=amount;_show_message("Collected %d gold."%amount)
@@ -578,6 +603,54 @@ func _claim_relic(item_id:String)->void:
 	player.setup(run_state);relic_modal.finish();relic_choice_source="";_refresh_hud()
 	_show_message(" ".join(logs))
 
+## Enemy drops (data/enemy_drops.json): low chances to begin with, raised by
+## drop luck from unlocks. At most one drop per enemy, rarest rolled first.
+static var _drop_table:Dictionary={}
+static func drop_table()->Dictionary:
+	if _drop_table.is_empty():
+		var parsed:Variant=JSON.parse_string(FileAccess.get_file_as_string("res://data/enemy_drops.json"))
+		_drop_table=Dictionary(parsed) if parsed is Dictionary else {}
+	return _drop_table
+
+## Which drop, if any, a kill produces for this roll source. Empty = nothing.
+static func roll_drop(enemy_key:String,elite:bool,boss:bool,luck:float,rng:RandomNumberGenerator)->String:
+	var table:=drop_table();var multipliers:Dictionary=table.get("enemy_multipliers",{})
+	var scale:float=float(multipliers.get(enemy_key,multipliers.get("default",1.0)))
+	if elite:scale*=float(multipliers.get("elite",1.0))
+	if boss:scale*=float(multipliers.get("boss",0.0))
+	scale*=minf(luck,float(table.get("luck_cap",2.5)))
+	var chances:Dictionary=table.get("chances",{})
+	for kind in chances:
+		if rng.randf()<float(chances[kind])*scale:return String(kind)
+	return ""
+
+func _roll_enemy_drop(enemy:SlasherEnemy)->void:
+	if _is_tutorial_expedition() or not is_instance_valid(enemy):return
+	var key:=String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)
+	var kind:=roll_drop(key,enemy.elite or enemy.mini_boss,enemy.boss,Unlocks.drop_luck(run_state.campaign),drop_rng())
+	if kind.is_empty():return
+	var spot:=enemy.global_position
+	match kind:
+		"gold":
+			var amount_rules:Dictionary=drop_table().get("gold_amount",{})
+			var amount:=randi_range(int(amount_rules.get("min",1)),int(amount_rules.get("max",3)))+int(run_state.current_floor*float(amount_rules.get("per_floor",0.5)))
+			_spawn_gold_drop(spot,amount)
+		"healing_potion":_spawn_pickup_drop("potion",spot)
+		"key":_spawn_pickup_drop("key",spot)
+		"relic":_spawn_relic_drop(spot)
+
+var _drop_rng:RandomNumberGenerator
+func drop_rng()->RandomNumberGenerator:
+	if _drop_rng==null:_drop_rng=RandomNumberGenerator.new();_drop_rng.randomize()
+	return _drop_rng
+
+## A rare glowing relic: walk over it to take a random item your class can use.
+func _spawn_relic_drop(world_position:Vector2)->void:
+	var area:=Area2D.new();area.name="EnemyRelicDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape)
+	var gem:=Polygon2D.new();gem.polygon=PackedVector2Array([Vector2(0,-22),Vector2(9,-10),Vector2(0,2),Vector2(-9,-10)]);gem.color=Color("#d38cff");area.add_child(gem)
+	var shine:=Polygon2D.new();shine.polygon=PackedVector2Array([Vector2(0,-19),Vector2(4,-12),Vector2(0,-6),Vector2(-3,-12)]);shine.color=Color("#f6e2ff");area.add_child(shine)
+	area.add_child(_glow(Color("#c77dff"),20));area.set_meta("kind","relic");actor_layer.add_child(area);loot_nodes.append(area)
+
 func _spawn_pickup_drop(kind:String,world_position:Vector2)->void:
 	var area:=Area2D.new();area.name="Chest%sDrop"%kind.capitalize();area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),16));area.set_meta("kind",kind);actor_layer.add_child(area);loot_nodes.append(area)
 
@@ -588,6 +661,24 @@ func _nearby_chest()->SlasherBreakableProp:
 		if is_instance_valid(chest) and not chest.is_open and not chest.destroyed and player.global_position.distance_to(chest.global_position)<=interaction_radius:return chest
 	return null
 
+## The clock runs while you play: not during menus, relic choices, shops, the
+## tutorial, or after the guardian has fallen.
+func _tick_run_clock(delta:float,menu_open:bool)->void:
+	var stopped:bool=menu_open or _is_tutorial_expedition() or player.health<=0 or (bool(layout.get("is_boss_floor",false)) and exit_open)
+	if not stopped:run_state.tick_run_clock(delta)
+	_refresh_clock_label()
+
+func _refresh_clock_label()->void:
+	if clock_label==null or run_state.campaign==null:return
+	var now:=run_state.dungeon_clock();var class_id:=run_state.clear_class_id()
+	var best:Dictionary=ClearRecords.best(run_state.campaign,run_state.active_dungeon_id,class_id)
+	var text:="%s"%ClearRecords.format_time(maxf(0.0,now)) if now>0.0 else "0:00.0"
+	if not best.is_empty():
+		var target:=float(best.time)
+		text+="   ·   %s best %s"%[class_id.capitalize(),ClearRecords.format_time(target)]
+		clock_label.add_theme_color_override("font_color",Color("#f0e2b8") if now<=target else Color("#e89a7a"))
+	clock_label.text=text
+
 func _build_hud()->void:
 	var canvas:=CanvasLayer.new();canvas.name="HUD";canvas.layer=10;add_child(canvas)
 	_build_party_strip(canvas)
@@ -596,6 +687,8 @@ func _build_hud()->void:
 	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;status.add_child(objective_label)
 	combo_label=_label(Vector2.ZERO,Vector2(360,22),14);combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_color_override("font_color",Color("#e5bf68"));status.add_child(combo_label)
 	_build_resource_hud(canvas)
+	clock_label=Label.new();clock_label.name="RunClock";clock_label.set_anchors_preset(Control.PRESET_CENTER_TOP);clock_label.offset_left=-220;clock_label.offset_right=220;clock_label.offset_top=100;clock_label.offset_bottom=124;clock_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;clock_label.add_theme_font_size_override("font_size",15);clock_label.add_theme_color_override("font_color",Color("#f0e2b8"));clock_label.add_theme_color_override("font_outline_color",Color("#10120e"));clock_label.add_theme_constant_override("outline_size",5);canvas.add_child(clock_label)
+	clock_label.visible=run_state.campaign!=null and not _is_tutorial_expedition()
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)
@@ -615,7 +708,9 @@ func _refresh_hud()->void:
 func _build_party_strip(canvas:CanvasLayer)->void:
 	var panel:=PanelContainer.new();panel.name="PartyStripPanel";panel.position=Vector2(18,12);panel.custom_minimum_size=Vector2(300,84);panel.add_theme_stylebox_override("panel",_panel_style(Color("#101713e8"),Color("#80602d")));canvas.add_child(panel)
 	var body:=VBoxContainer.new();body.add_theme_constant_override("separation",0);panel.add_child(body);party_strip=HBoxContainer.new();party_strip.name="PartyStrip";party_strip.add_theme_constant_override("separation",2);body.add_child(party_strip)
-	var hint:=Label.new();hint.text="TAB / LB  ·  SWAP";hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;hint.add_theme_font_size_override("font_size",10);hint.add_theme_color_override("font_color",Color("c9aa6a"));body.add_child(hint);_rebuild_party_strip()
+	var hint:=Label.new();hint.text="TAB / LB  ·  SWAP";hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;hint.add_theme_font_size_override("font_size",10);hint.add_theme_color_override("font_color",Color("c9aa6a"));body.add_child(hint)
+	# Swapping only matters with more than one hero; the portrait still shows health.
+	hint.visible=GameBalance.max_party_size()>1;_rebuild_party_strip()
 
 func _rebuild_party_strip()->void:
 	if party_strip==null:return

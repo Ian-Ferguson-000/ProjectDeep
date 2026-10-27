@@ -14,6 +14,9 @@ func company() -> CampaignState:
 	return c
 
 func run() -> void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party rules so they keep working if parties come back.
+	GameBalance.set_party_size_override(4)
 	var counts: Dictionary = {}
 	for id in HearthCatalog.data().items:
 		var item := HearthCatalog.item(id)
@@ -63,7 +66,7 @@ func run() -> void:
 	var paid_gold:=expansion.banked_gold
 	check(not HearthFacilities.purchase(expansion,"roster_services").ok and expansion.banked_gold==paid_gold,"Duplicate construction charged")
 	HearthCalendar.advance(expansion,3,false)
-	check(expansion.establishment_tier==1 and expansion.get_roster_capacity()==10,"Expansion did not complete")
+	check(expansion.establishment_tier==1 and expansion.get_room_limit()==10,"Expansion did not complete")
 	var members:=expansion.living_roster()
 	expansion.supplies=30
 	for member in members: member.level=10; member.max_health=100; member.current_health=100

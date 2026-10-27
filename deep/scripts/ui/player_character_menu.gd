@@ -143,7 +143,8 @@ func _make_progression_section(run_state: RunState) -> PanelContainer:
 	body.add_theme_constant_override("separation", 12)
 	panel.add_child(body)
 	body.add_child(_make_section_title("CLASS PROGRESSION"))
-	body.add_child(_make_wrapped_label("%s · Level %d\n%s" % [run_state.selected_class_name, run_state.get_level(), run_state.get_profile_summary()], 18, Color(1.0, 0.86, 0.58)))
+	var level_part := " · Level %d" % run_state.get_level() if GameBalance.leveling_enabled() else ""
+	body.add_child(_make_wrapped_label("%s%s\n%s" % [run_state.selected_class_name, level_part, run_state.get_profile_summary()], 18, Color(1.0, 0.86, 0.58)))
 	body.add_child(_make_wrapped_label(run_state.get_progression_summary(), 16, Color(0.58, 0.87, 0.95)))
 	var class_data := GameBalance.get_base_class(run_state.selected_class_id)
 	var actions: Dictionary = class_data.get("actions", {})
@@ -212,8 +213,9 @@ func _make_header(run_state: RunState, portrait: Texture2D, gear_name: String) -
 	title_row.add_theme_constant_override("separation", 10)
 	details.add_child(title_row)
 	title_row.add_child(_make_label(run_state.selected_class_name, 30, Color(1.0, 0.87, 0.57), HORIZONTAL_ALIGNMENT_LEFT))
-	title_row.add_child(_make_label("Level %d" % run_state.get_level(), 15, Color(0.95, 0.78, 0.44), HORIZONTAL_ALIGNMENT_LEFT))
-	title_row.add_child(_make_label(_xp_header_text(run_state), 15, Color(0.95, 0.78, 0.44), HORIZONTAL_ALIGNMENT_LEFT))
+	if GameBalance.leveling_enabled():
+		title_row.add_child(_make_label("Level %d" % run_state.get_level(), 15, Color(0.95, 0.78, 0.44), HORIZONTAL_ALIGNMENT_LEFT))
+		title_row.add_child(_make_label(_xp_header_text(run_state), 15, Color(0.95, 0.78, 0.44), HORIZONTAL_ALIGNMENT_LEFT))
 
 	var xp_bar := ProgressBar.new()
 	xp_bar.custom_minimum_size = Vector2(0, 12)
@@ -222,6 +224,7 @@ func _make_header(run_state: RunState, portrait: Texture2D, gear_name: String) -
 	xp_bar.value = float(_xp_current_value(run_state))
 	xp_bar.add_theme_stylebox_override("background", _flat_style(Color(0.08, 0.055, 0.035, 0.96), 3, Color(0.35, 0.23, 0.11)))
 	xp_bar.add_theme_stylebox_override("fill", _flat_style(Color(0.72, 0.46, 0.17, 0.96), 3, Color(1.0, 0.78, 0.36)))
+	xp_bar.visible = GameBalance.leveling_enabled()
 	details.add_child(xp_bar)
 
 	var resource_row := HBoxContainer.new()
@@ -354,6 +357,10 @@ func _make_info_panel(run_state: RunState) -> PanelContainer:
 	var next_level_text: String = "Max"
 	if run_state.get_xp_to_next_level() > 0:
 		next_level_text = "%d XP" % run_state.get_xp_to_next_level()
+	if not GameBalance.leveling_enabled():
+		body.add_child(_make_info_row("Upgrades", "Items only"))
+		body.add_child(_make_info_row("Items", str(run_state.inventory_items.size())))
+		return panel
 	body.add_child(_make_info_row("Level", str(run_state.get_level())))
 	body.add_child(_make_info_row("XP", _xp_header_text(run_state)))
 	body.add_child(_make_info_row("Next Level", next_level_text))
@@ -553,7 +560,8 @@ func _modifier_text(item: Dictionary) -> String:
 	for key in modifiers.keys():
 		var value: int = int(modifiers[key])
 		var prefix: String = "+" if value >= 0 else ""
-		parts.append("%s%s %s" % [prefix, value, _modifier_label(String(key))])
+		var percent: String = "%" if String(key) in ["attack_speed", "move_speed"] else ""
+		parts.append("%s%s%s %s" % [prefix, value, percent, _modifier_label(String(key))])
 	if parts.is_empty():
 		return "No visible effect"
 	return ", ".join(parts)
@@ -610,6 +618,10 @@ func _modifier_label(stat_id: String) -> String:
 			return "Potion Heal"
 		"movement":
 			return "Move"
+		"attack_speed":
+			return "Attack Speed"
+		"move_speed":
+			return "Move Speed"
 		"block_bonus":
 			return "Block"
 		"gold_bonus_percent":

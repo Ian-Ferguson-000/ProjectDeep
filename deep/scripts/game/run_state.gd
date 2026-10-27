@@ -63,6 +63,10 @@ var consumable_items: Array[String] = []
 var pending_shop_consumables: Array[String] = []
 var enemy_defeat_counts:Dictionary={}
 var slasher_endless_mode:=false
+## Run clock when no expedition is active (quick play and tests).
+var local_run_seconds:=0.0
+var local_dungeon_seconds:=0.0
+var local_run_stats:Dictionary={}
 var slasher_campaign_boss_cleared:=false
 var slasher_merchant_interlude:=false
 var campaign: CampaignState = CampaignState.new()
@@ -219,6 +223,7 @@ func set_class(class_id: String) -> void:
 
 func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	selected_gear = gear
+	local_run_seconds = 0.0; local_dungeon_seconds = 0.0; last_clear = {}; local_run_stats = {}
 	if selected_gear != null:
 		selected_gear_by_class[selected_class_id] = selected_gear
 	active_dungeon_id = dungeon_id
@@ -269,6 +274,7 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 		field_run = FieldDungeonGenerator.generate(get_current_floor_seed(), int(room_count.get("min", 10)), int(room_count.get("max", 12)))
 	run_outcome = "%s opens before you. The tavern falls quiet behind you." % String(dungeon.get("name", active_dungeon_id.capitalize()))
 	_sync_crypt_unlock()
+	if campaign != null and campaign.expedition.active and not campaign.expedition.tutorial_run: _note_unlocks(Unlocks.check(campaign,run_stats(),{"type":"reach","dungeon":dungeon_id}))
 
 static func dungeon_available(dungeon_id: String) -> bool:
 	return not GameBalance.get_dungeon(dungeon_id).is_empty() and not String(GameBalance.get_dungeon(dungeon_id).get("runtime", "")).is_empty()
@@ -282,13 +288,79 @@ func advance_floor() -> bool:
 	_tick_inventory_floor_durations()
 	return true
 
+## Advances the run clock. Called by dungeon scenes while gameplay is running.
+func tick_run_clock(delta: float) -> void:
+	if campaign != null and campaign.expedition.active:
+		campaign.expedition.run_seconds += delta; campaign.expedition.dungeon_seconds += delta
+	else:
+		local_run_seconds += delta; local_dungeon_seconds += delta
+
+func dungeon_clock() -> float:
+	return campaign.expedition.dungeon_seconds if campaign != null and campaign.expedition.active else local_dungeon_seconds
+
+func run_clock() -> float:
+	return campaign.expedition.run_seconds if campaign != null and campaign.expedition.active else local_run_seconds
+
+## This expedition's stats (kills, potions, clears) for bounties and unlocks.
+func run_stats() -> Dictionary:
+	if campaign != null and campaign.expedition.active: return campaign.expedition.run_stats
+	return local_run_stats
+
+func _tutorial_run() -> bool:
+	return campaign != null and campaign.expedition.active and campaign.expedition.tutorial_run
+
+## Counts a kill toward bounties and unlocks. Returns unlocks it earned.
+func note_kill(enemy_id: String) -> Array:
+	if _tutorial_run(): return []
+	var family := Unlocks.family(enemy_id)
+	var stats := run_stats()
+	var kills: Dictionary = stats.get("kills",{}); kills[family] = int(kills.get(family,0)) + 1; stats["kills"] = kills
+	stats["kills_total"] = int(stats.get("kills_total",0)) + 1
+	if campaign == null: return []
+	var life: Dictionary = campaign.lifetime_stats.get("kills",{}); life[family] = int(life.get(family,0)) + 1; campaign.lifetime_stats["kills"] = life
+	campaign.lifetime_stats["kills_total"] = int(campaign.lifetime_stats.get("kills_total",0)) + 1
+	return _note_unlocks(Unlocks.check(campaign,stats,{"type":"kill","family":family}))
+
+func note_potion() -> void:
+	var stats := run_stats()
+	stats["potions"] = int(stats.get("potions",0)) + 1
+
+func _note_unlocks(earned: Array) -> Array:
+	if earned.is_empty(): return earned
+	var stats := run_stats()
+	var names: Array = stats.get("unlocked",[])
+	for unlock in earned: names.append(String(unlock.name))
+	stats["unlocked"] = names
+	return earned
+
+## The class whose best time this run counts toward.
+func clear_class_id() -> String:
+	var member: CharacterRecord = campaign.character(active_character_id) if campaign != null and not active_character_id.is_empty() else null
+	return member.class_id if member != null else selected_class_id
+
+## Result of the latest guardian defeat (see ClearRecords.record_clear), for result screens.
+var last_clear: Dictionary = {}
+
 func record_active_dungeon_completion() -> Array[String]:
 	var logs: Array[String] = []
 	completed_dungeons[active_dungeon_id] = true
+	last_clear = {}
+	if campaign != null and not (campaign.expedition.active and campaign.expedition.tutorial_run):
+		var member: CharacterRecord = campaign.character(active_character_id) if not active_character_id.is_empty() else null
+		last_clear = ClearRecords.record_clear(campaign,active_dungeon_id,clear_class_id(),member.display_name if member != null else "Adventurer",dungeon_clock())
+		logs.append(String(last_clear.message))
+		var held: Array = []
+		for entry in get_inventory_items(): held.append(String(entry.get("id","")))
+		var clear := {"dungeon":active_dungeon_id,"seconds":dungeon_clock(),"class_id":clear_class_id(),"potions":int(run_stats().get("potions",0)),"holding":held}
+		var stats := run_stats()
+		var clears: Array = stats.get("clears",[]); clears.append(clear); stats["clears"] = clears
+		campaign.lifetime_stats["clears"] = int(campaign.lifetime_stats.get("clears",0)) + 1
+		var event := clear.duplicate(); event["type"] = "clear"
+		for unlock in _note_unlocks(Unlocks.check(campaign,stats,event)): logs.append("Unlocked: %s. %s" % [String(unlock.name),String(unlock.text)])
 	if active_dungeon_id == "forest": mark_forest_cleared()
 	if campaign != null and campaign.expedition.active:
 		campaign.expedition.carried_gold = gold
-		logs = campaign.record_dungeon_clear(active_dungeon_id)
+		logs.append_array(campaign.record_dungeon_clear(active_dungeon_id))
 	return logs
 
 func transition_to_dungeon(dungeon_id: String) -> bool:
@@ -298,6 +370,8 @@ func transition_to_dungeon(dungeon_id: String) -> bool:
 	_sync_active_profile_to_character()
 	active_dungeon_id = dungeon_id
 	current_floor = 1
+	campaign.expedition.dungeon_seconds = 0.0
+	_note_unlocks(Unlocks.check(campaign,run_stats(),{"type":"reach","dungeon":dungeon_id}))
 	var slasher_config: Dictionary = Dictionary(dungeon.get("slasher", {}))
 	max_floors = int(dungeon.get("floors", 1))
 	class_resource = 0
@@ -686,6 +760,8 @@ func get_merchant_offers(merchant_id: String, location: String) -> Array[Diction
 			continue
 		var offer: Dictionary = value.duplicate(true)
 		var offer_id := String(offer.get("offer_id", ""))
+		if String(offer.get("kind", "")) == "item" and not _item_offer_allowed(String(offer.get("item_id", ""))):
+			continue
 		var offer_location := String(offer.get("location", "both"))
 		var location_matches := offer_location == "both" or offer_location == location or (location == "tavern" and offer_location == "favor")
 		if not location_matches:
@@ -784,7 +860,7 @@ func get_profile_summary() -> String:
 func gain_xp(amount: int, reason: String) -> Array[String]:
 	_ensure_profiles()
 	var logs: Array[String] = []
-	if amount <= 0:
+	if amount <= 0 or not GameBalance.leveling_enabled():
 		return logs
 	var profile: Dictionary = _active_profile()
 	var member := get_active_character()
@@ -936,6 +1012,7 @@ func consume_pending_level_logs() -> Array[String]:
 	return logs
 
 func has_pending_progression_choice() -> bool:
+	if not GameBalance.leveling_enabled(): return false
 	var pending: Array = _profile_array(_active_profile(), "pending_progression_choices")
 	return not pending.is_empty()
 
@@ -1018,7 +1095,7 @@ func get_progression_flag_value(flag_id: String) -> int:
 func reconcile_slasher_progression()->Array[String]:
 	_ensure_profiles();var logs:Array[String]=[];var profile:Dictionary=_active_profile();var pending:Array=_profile_array(profile,"pending_slasher_progression_choices")
 	if not pending.is_empty():return logs
-	var level:int=int(profile.get("level",1));var class_id:String=String(profile.get("class_id",selected_class_id))
+	var level:int=GameBalance.effective_level(int(profile.get("level",1)));var class_id:String=String(profile.get("class_id",selected_class_id))
 	for milestone:int in [3,5,7,9,10,11,13,15,17,19,20]:
 		if milestone>level:break
 		if milestone in [10,15,20]:
@@ -1034,6 +1111,7 @@ func reconcile_slasher_progression()->Array[String]:
 	hero_profiles[_profile_key()]=profile;return logs
 
 func has_pending_slasher_progression_choice()->bool:
+	if not GameBalance.leveling_enabled():return false
 	return not _profile_array(_active_profile(),"pending_slasher_progression_choices").is_empty()
 
 func get_pending_slasher_progression_choice()->Dictionary:
@@ -1178,7 +1256,7 @@ func _active_profile() -> Dictionary:
 
 func _recalculate_profile(profile: Dictionary) -> void:
 	var class_id: String = String(profile["class_id"])
-	var level: int = int(profile["level"])
+	var level: int = GameBalance.effective_level(int(profile["level"]))
 	var base_stats_value: Variant = profile.get("base_stats", {})
 	var base_stats: Dictionary = base_stats_value if base_stats_value is Dictionary else {}
 	var stats: Dictionary = base_stats.duplicate(true)
@@ -1320,7 +1398,7 @@ func _enqueue_progression_choices(profile: Dictionary, level: int) -> Array[Stri
 
 func _enqueue_missing_progression_choices(profile: Dictionary) -> Array[String]:
 	var logs: Array[String] = []
-	var level: int = int(profile.get("level", 1))
+	var level: int = GameBalance.effective_level(int(profile.get("level", 1)))
 	for gained_level in range(2, level + 1):
 		logs.append_array(_enqueue_progression_choices(profile, gained_level))
 	return logs
@@ -1518,17 +1596,24 @@ func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
 		if not order.has(String(rarity)) or order.find(String(rarity))>maximum_index:result[rarity]=0
 	return result
 
+## Pickup items the active hero could actually use: in the drop pool and allowed
+## for their class group (pickup_items.json any_class / melee_only / ranged_only).
+func _item_offer_allowed(item_id: String) -> bool:
+	if GameBalance.item_field(item_id, "name") == null: return true
+	if Unlocks.is_item_locked(campaign, item_id): return false
+	return bool(GameBalance.item_field(item_id, "drops", true)) and GameBalance.item_usable_by_class(item_id, selected_class_id)
+
 func _item_ids_for_rarity(items: Dictionary, rarity: String) -> Array[String]:
 	var ids: Array[String] = []
 	for item_id in items.keys():
 		var item_value: Variant = items[item_id]
-		if item_value is Dictionary and not GameBalance.is_favor_exclusive_item(String(item_id)) and String(item_value.get("rarity", "common")) == rarity:
+		if item_value is Dictionary and _item_offer_allowed(String(item_id)) and not GameBalance.is_favor_exclusive_item(String(item_id)) and String(item_value.get("rarity", "common")) == rarity:
 			ids.append(String(item_id))
 	return ids
 
 func _all_item_ids(items: Dictionary) -> Array[String]:
 	var ids: Array[String] = []
 	for item_id in items.keys():
-		if not GameBalance.is_favor_exclusive_item(String(item_id)):
+		if _item_offer_allowed(String(item_id)) and not GameBalance.is_favor_exclusive_item(String(item_id)):
 			ids.append(String(item_id))
 	return ids

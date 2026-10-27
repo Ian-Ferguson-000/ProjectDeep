@@ -1,0 +1,219 @@
+{
+  "how_to_edit": [
+    "Goals that permanently unlock things. Items listed in an unlock's reward stay out of chests, shops and drops until it is earned.",
+    "condition types: kills (lifetime kills of a family: sporeling, bandit, wolf, beast, any), kills_in_run (in one expedition), clear (defeat a dungeon's guardian; optional class, max_seconds, max_potions, holding an item id), clears (total clears), deaths (adventurers lost), bounties (bounties completed), reach (enter a dungeon).",
+    "reward: items (list of item ids), drop_luck (adds to the drop luck multiplier, 0.15 = +15%), bounty_slots (extra bounties on the board).",
+    "hint is what the Hearth shows before it is earned; name and text after."
+  ],
+  "unlocks": [
+    {
+      "id": "forest_guardian",
+      "name": "Through the Thicket",
+      "hint": "Defeat the forest's guardian.",
+      "text": "Emberwind Edge and the Conductor's Rod can now be found.",
+      "condition": {
+        "type": "clear",
+        "dungeon": "forest"
+      },
+      "reward": {
+        "items": [
+          "emberwind_edge",
+          "conductors_rod"
+        ]
+      }
+    },
+    {
+      "id": "spore_harvest",
+      "name": "Spore Harvest",
+      "hint": "Slay 30 Sporelings.",
+      "text": "The Bursting Spore Sac can now be found.",
+      "condition": {
+        "type": "kills",
+        "family": "sporeling",
+        "count": 30
+      },
+      "reward": {
+        "items": [
+          "bursting_spore_sac"
+        ]
+      }
+    },
+    {
+      "id": "bandit_hunter",
+      "name": "Bandit Hunter",
+      "hint": "Bring down 25 Kobold bandits.",
+      "text": "Drop luck +15%: bandits' pockets are deeper than they look.",
+      "condition": {
+        "type": "kills",
+        "family": "bandit",
+        "count": 25
+      },
+      "reward": {
+        "drop_luck": 0.15
+      }
+    },
+    {
+      "id": "swift_forest",
+      "name": "Quick Through the Woods",
+      "hint": "Clear the forest in under 12 minutes.",
+      "text": "The Quicksilver Locket can now be found.",
+      "condition": {
+        "type": "clear",
+        "dungeon": "forest",
+        "max_seconds": 720
+      },
+      "reward": {
+        "items": [
+          "quicksilver_locket"
+        ]
+      }
+    },
+    {
+      "id": "no_potions",
+      "name": "Iron Stomach",
+      "hint": "Clear the forest without drinking a potion.",
+      "text": "The Rimefrost Chain can now be found.",
+      "condition": {
+        "type": "clear",
+        "dungeon": "forest",
+        "max_potions": 0
+      },
+      "reward": {
+        "items": [
+          "rimefrost_chain"
+        ]
+      }
+    },
+    {
+      "id": "ember_mastery",
+      "name": "Ember Mastery",
+      "hint": "Clear the forest while holding Emberwind Edge.",
+      "text": "The Tempest Brand can now be found.",
+      "condition": {
+        "type": "clear",
+        "dungeon": "forest",
+        "holding": "emberwind_edge"
+      },
+      "reward": {
+        "items": [
+          "tempest_brand"
+        ]
+      }
+    },
+    {
+      "id": "massacre",
+      "name": "Storm of Blades",
+      "hint": "Slay 40 enemies in one expedition.",
+      "text": "The Thunderheart Amulet can now be found.",
+      "condition": {
+        "type": "kills_in_run",
+        "family": "any",
+        "count": 40
+      },
+      "reward": {
+        "items": [
+          "thunderheart_amulet"
+        ]
+      }
+    },
+    {
+      "id": "mage_clear",
+      "name": "Pyre and Page",
+      "hint": "Clear the forest as a Mage.",
+      "text": "The Pyre Lantern can now be found.",
+      "condition": {
+        "type": "clear",
+        "dungeon": "forest",
+        "class": "mage"
+      },
+      "reward": {
+        "items": [
+          "pyre_lantern"
+        ]
+      }
+    },
+    {
+      "id": "warrior_clear",
+      "name": "Steel and Storm",
+      "hint": "Clear the forest as a Warrior.",
+      "text": "The Stormcall Pommel can now be found.",
+      "condition": {
+        "type": "clear",
+        "dungeon": "forest",
+        "class": "warrior"
+      },
+      "reward": {
+        "items": [
+          "stormcall_pommel"
+        ]
+      }
+    },
+    {
+      "id": "remembered",
+      "name": "Lessons in Loss",
+      "hint": "Lose 3 adventurers.",
+      "text": "Drop luck +10%: the Hearth learns to scavenge.",
+      "condition": {
+        "type": "deaths",
+        "count": 3
+      },
+      "reward": {
+        "drop_luck": 0.1
+      }
+    },
+    {
+      "id": "crypt_reached",
+      "name": "Below the Roots",
+      "hint": "Reach the Stone Crypt.",
+      "text": "The Cinder Brand can now be found.",
+      "condition": {
+        "type": "reach",
+        "dungeon": "crypt"
+      },
+      "reward": {
+        "items": [
+          "cinder_brand"
+        ]
+      }
+    },
+    {
+      "id": "contractor",
+      "name": "Trusted Contractor",
+      "hint": "Complete 3 bounties.",
+      "text": "A third bounty is posted on the board.",
+      "condition": {
+        "type": "bounties",
+        "count": 3
+      },
+      "reward": {
+        "bounty_slots": 1
+      }
+    },
+    {
+      "id": "veteran_contractor",
+      "name": "Name on the Board",
+      "hint": "Complete 10 bounties.",
+      "text": "Drop luck +15%.",
+      "condition": {
+        "type": "bounties",
+        "count": 10
+      },
+      "reward": {
+        "drop_luck": 0.15
+      }
+    },
+    {
+      "id": "seasoned",
+      "name": "Seasoned Company",
+      "hint": "Defeat 10 dungeon guardians.",
+      "text": "Drop luck +10%.",
+      "condition": {
+        "type": "clears",
+        "count": 10
+      },
+      "reward": {
+        "drop_luck": 0.1
+      }
+    }
+  ]
+}

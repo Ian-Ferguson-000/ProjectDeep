@@ -163,7 +163,7 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 		if outcome == "victory":
 			member.victories += 1
 			c.successful_levels += member.level
-			if e.deployment_type == "automated":
+			if e.deployment_type == "automated" and GameBalance.leveling_enabled():
 				var earned_xp := VisitorContestRules.scale_xp(50*e.floor,member.learning_potential)
 				member.xp += earned_xp
 				member.progression["total_xp"] = int(member.progression.get("total_xp",member.xp-earned_xp)) + earned_xp
@@ -207,8 +207,22 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 	if outcome != "death":
 		for id in e.carried_relics:
 			if not c.banked_relics.has(id): c.banked_relics.append(id)
+	# Deaths, bounties and the unlocks they earn.
+	if not lost.is_empty():
+		c.lifetime_stats["deaths"] = int(c.lifetime_stats.get("deaths",0)) + lost.size()
+		var death_names: Array = Array(e.run_stats.get("unlocked",[]))
+		for unlock in Unlocks.check(c,e.run_stats,{"type":"death"}): death_names.append(String(unlock.name))
+		e.run_stats["unlocked"] = death_names
+	var completed_bounties := BountyBoard.settle(c,e.run_stats,outcome,gross)
+	if not completed_bounties.is_empty():
+		var names: Array = Array(e.run_stats.get("unlocked",[]))
+		for unlock in Unlocks.check(c,e.run_stats,{"type":"bounty"}): names.append(String(unlock.name))
+		e.run_stats["unlocked"] = names
+	BountyBoard.refresh(c)
 	var divine_result := DIVINE.record_expedition_outcome(c,e,outcome)
 	var report := {"expedition_id":e.expedition_id,"outcome":outcome,"headline":"%s: %s" % [e.dungeon_id.capitalize(),outcome.capitalize()],"dungeon":e.dungeon_id,"deployment_type":e.deployment_type,"depth":e.floor,"gold":gross,"share":share,"net":gross-share,"essence":essence,"contribution":contribution,"returned":returned,"retired":retired,"lost":lost,"items":rewards,"events":extra.get("events",[]),"divine":divine_result}
+	report["bounties"] = completed_bounties.map(func(bounty): return "%s (+%s)" % [String(bounty.text),BountyBoard.reward_text(bounty.reward)])
+	report["unlocks"] = Array(e.run_stats.get("unlocked",[])).duplicate()
 	c.return_reports.append(report)
 	var queued: Array = c.pending_settlement_summary.get("reports",[]).duplicate(true)
 	queued.append(report.duplicate(true))

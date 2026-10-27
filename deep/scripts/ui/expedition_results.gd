@@ -26,7 +26,7 @@ func _ready() -> void:
 	crest = CREST.new(); crest.custom_minimum_size = Vector2(140, 112); header.add_child(crest)
 	var heading := VBoxContainer.new(); heading.alignment = BoxContainer.ALIGNMENT_CENTER; heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL; header.add_child(heading)
 	heading.add_child(_label("THE HEARTH  /  EXPEDITION REPORT", 12, UI.MUTED))
-	title_label = _label("Dungeon Cleared", 36, UI.HIGHLIGHT_GOLD); title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; title_label.max_lines_visible = 2; heading.add_child(title_label)
+	title_label = _label("Guardian Defeated", 36, UI.HIGHLIGHT_GOLD); title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; title_label.max_lines_visible = 2; heading.add_child(title_label)
 	subtitle = _label("", 16, UI.IVORY); subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; subtitle.max_lines_visible = 2; heading.add_child(subtitle)
 	var rewards := HBoxContainer.new(); rewards.add_theme_constant_override("separation", 12); body.add_child(rewards)
 	for caption in ["GOLD RECOVERED", "COMPANY SHARE", "BANKED AT THE HEARTH"]:
@@ -74,11 +74,18 @@ func present(summary: Dictionary, state: RunState, fallback: String) -> void:
 				var key := "%s:%s" % [field, hero_name]
 				if not seen.has(key): _hero_card(String(hero_name), field, state); seen.append(key)
 		if int(report.get("essence", 0)) > 0: lines.append("[color=#c9d9b0]Relic essence recovered: +%d[/color]" % int(report.essence))
+		for bounty_text in Array(report.get("bounties", [])): lines.append("[color=#ffd36a]Bounty complete:[/color] %s" % String(bounty_text))
+		for unlock_name in Array(report.get("unlocks", [])): lines.append("[color=#e08af0]Unlocked:[/color] %s" % String(unlock_name))
 		var items: Array = report.get("items", [])
 		if not items.is_empty(): lines.append("Recovered items: %s" % ", ".join(items.map(func(item): return str(item))))
 		lines.append("")
 	crest.victorious = victorious; crest.elapsed = 0.0
-	title_label.text = "Dungeon Cleared" if victorious else ("The Fallen Remembered" if all_dead else "Return to the Hearth")
+	title_label.text = "Guardian Defeated" if victorious else ("The Fallen Remembered" if all_dead else "Return to the Hearth")
+	var clear: Dictionary = Dictionary(summary.get("clear", {}))
+	if victorious and not clear.is_empty():
+		if bool(clear.get("best_overall", false)) and not bool(clear.get("first_clear", false)): title_label.text = "New Record!"
+		elif bool(clear.get("best_for_class", false)) and not bool(clear.get("first_for_class", false)): title_label.text = "New %s Best!" % String(clear.class_id).capitalize()
+		lines.push_front("[b][color=#ffd36a]CLEAR TIME  %s[/color][/b]\n%s\n" % [ClearRecords.format_time(float(clear.time)), String(clear.get("message", ""))])
 	title_label.add_theme_color_override("font_color", UI.HIGHLIGHT_GOLD if victorious else UI.IVORY)
 	var headline := String(summary.get("headline", fallback if not fallback.is_empty() else "Welcome home, adventurers."))
 	subtitle.text = headline
@@ -86,6 +93,7 @@ func present(summary: Dictionary, state: RunState, fallback: String) -> void:
 		var dungeon_id := String(reports[0].dungeon)
 		subtitle.text = String(GameBalance.get_dungeon(dungeon_id).get("name", dungeon_id.capitalize()))
 		if reports[0].has("depth"): subtitle.text += "  ·  Depth %d" % int(reports[0].depth)
+	if victorious and not clear.is_empty(): subtitle.text += "  ·  %s" % ClearRecords.format_time(float(clear.time))
 	if reports.is_empty(): lines.append(headline)
 	if not String(summary.get("slasher_progression", "")).is_empty(): lines.append("[b][color=#ffd36a]SLASHER PATH[/color][/b]\n%s\n" % String(summary.slasher_progression))
 	var changes: Array = summary.get("changes", [])
@@ -107,7 +115,7 @@ func _hero_card(hero_name: String, status: String, state: RunState) -> void:
 	portrait.texture = load(path) if not path.is_empty() and ResourceLoader.exists(path) else UI.icon("roster"); row.add_child(portrait)
 	var copy := VBoxContainer.new(); copy.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_child(copy)
 	copy.add_child(_label(hero_name, 17, UI.IVORY))
-	copy.add_child(_label("%s · Lv %d" % [member.class_id.capitalize(), member.level] if member != null else "Adventurer", 12, UI.MUTED))
+	copy.add_child(_label((("%s · Lv %d" % [member.class_id.capitalize(), member.level]) if GameBalance.leveling_enabled() else member.class_id.capitalize()) if member != null else "Adventurer", 12, UI.MUTED))
 	copy.add_child(_label("RETURNED" if status == "returned" else status.to_upper(), 10, Color("#c9d9b0") if status != "lost" else Color("#e49c8e")))
 
 func _process(delta: float) -> void:

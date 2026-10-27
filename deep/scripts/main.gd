@@ -279,16 +279,31 @@ func complete_slasher_dungeon_floor() -> void:
 	if run_state.current_floor < campaign_floors:_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 	else:
 		var completion_logs := run_state.record_active_dungeon_completion()
-		if _continue_connected_expedition(completion_logs): return
-		return_to_tavern("victory","The party clears %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(completion_logs)])
+		_guardian_crossroads(completion_logs,"The party defeats the guardian of %s and returns with %d gold.\n%s" % [String(dungeon.get("name", run_state.active_dungeon_id.capitalize())), run_state.gold, " ".join(completion_logs)])
 
 func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])->void:
 	if cycle_boss:
 		favor_logs.append_array(run_state.record_active_dungeon_completion())
-		if _continue_connected_expedition(favor_logs): return
-		return_to_tavern("victory","You conquer the Forest after floor %d with %d gold.\n%s\n%s" % [run_state.current_floor, run_state.gold, " ".join(favor_logs), run_state.get_slasher_progression_summary()])
+		_guardian_crossroads(favor_logs,"The forest's guardian falls on floor %d. You return with %d gold.\n%s\n%s" % [run_state.current_floor, run_state.gold, " ".join(favor_logs), run_state.get_slasher_progression_summary()])
 		return
 	_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
+
+## After a guardian falls: show what the adventurer is carrying and let the
+## player return to the Hearth or press on to the next dungeon on the route.
+func _guardian_crossroads(completion_logs:Array[String], return_message:String) -> void:
+	if campaign == null or campaign.expedition.tutorial_run:
+		if _continue_connected_expedition(completion_logs): return
+		return_to_tavern("victory",return_message); return
+	var next_id:=NarrativeContent.next_route_stage(run_state.active_dungeon_id)
+	var allow:=not next_id.is_empty() and run_state.is_dungeon_unlocked(next_id) and run_state.dungeon_available(next_id)
+	var next_name:=String(GameBalance.get_dungeon(next_id).get("name",next_id.capitalize())) if not next_id.is_empty() else ""
+	var layer:=CanvasLayer.new();layer.name="GuardianCrossroadsLayer";layer.layer=125;add_child(layer)
+	var screen:=GuardianCrossroads.new().setup(run_state,next_name,allow)
+	screen.decided.connect(func(go_on:bool):
+		layer.queue_free()
+		if go_on and _continue_connected_expedition(completion_logs): return
+		return_to_tavern("victory",return_message),CONNECT_ONE_SHOT)
+	layer.add_child(screen)
 
 func _continue_connected_expedition(completion_logs:Array[String]=[]) -> bool:
 	var completed_id:=run_state.active_dungeon_id
@@ -330,8 +345,7 @@ func complete_slasher_farmstead() -> void:
 	var favor_logs := run_state.record_dungeon_floor_clear("farmstead", depth, true)
 	run_state.gain_xp(int(Dictionary(GameBalance.get_dungeon("ashen_farmstead").get("slasher", {})).get("boss_xp", 150)), "Ashen Farmstead Slasher clear")
 	favor_logs.append_array(run_state.record_active_dungeon_completion())
-	if _continue_connected_expedition(favor_logs):return
-	return_to_tavern("victory", "The Harvest Wretch falls. You clear %d rooms and return with %d gold. Orin Cinder has joined the tavern.\n%s" % [depth, run_state.gold, " ".join(favor_logs)])
+	_guardian_crossroads(favor_logs, "The Harvest Wretch falls. You clear %d rooms and return with %d gold. Orin Cinder has joined the tavern.\n%s" % [depth, run_state.gold, " ".join(favor_logs)])
 
 func return_to_tavern(outcome: String, message: String) -> void:
 	var previous_loop := int(campaign.keeper_memory.get("loop_number",0))
@@ -350,6 +364,7 @@ func return_to_tavern(outcome: String, message: String) -> void:
 		"gold": run_state.gold,
 		"slasher_progression":run_state.get_slasher_progression_summary(),
 		"changes": changes,
+		"clear": run_state.last_clear.duplicate(true) if outcome == "victory" else {},
 	}
 	run_state.finish_run(outcome, message)
 	if previous_loop != int(campaign.keeper_memory.get("loop_number",0)):

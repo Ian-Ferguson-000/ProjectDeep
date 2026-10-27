@@ -1,0 +1,49 @@
+{
+  "how_to_edit": [
+    "Rooms, training and furnishings for the Hearth. Every number here can be tuned freely.",
+    "Rooms: the Hearth starts with starting_rooms. Each establishment tier (data/hearth_campaign.json tiers 'capacity') sets how many rooms can fit; build the rest with gold.",
+    "room_build_cost: the next room costs base + per_room x rooms already built.",
+    "qualities: from humblest to finest. slots = how many furnishings fit. training_bonus = extra % chance on every training session for whoever sleeps there. upgrade_cost = gold to raise a room to this quality. min_tier = establishment tier needed (0 = Roadside Hearth).",
+    "training: one session per adventurer per day. cost = base_cost + cost_per_point_above_10 x (stat - 10). chance starts at base_chance and falls by chance_drop_per_point_above_10 for each point above 10. A failed session adds a practice point; each practice point adds practice_bonus to that stat's next attempt and they reset on success. stat_cap is the highest a stat can be trained to.",
+    "learning_bonus: extra % chance by an adventurer's learning pace (shown after a tavern contest).",
+    "furnishings: id = lowercase_with_underscores. stats = extra % training chance for those attributes when placed in the trainee's room. suits = classes it is themed for (shown to the player). min_quality = the room quality needed to fit it.",
+    "Future idea: furnishings can grant other room bonuses (recovery, morale, starting items). Add new fields here and read them in scripts/game/hearth_lodging.gd."
+  ],
+  "starting_rooms": 4,
+  "room_build_cost": {"base": 40, "per_room": 15},
+  "qualities": [
+    {"id": "cot", "name": "Straw Cot", "slots": 1, "training_bonus": 0, "upgrade_cost": 0, "min_tier": 0, "description": "A straw mattress, a hook for a cloak, and a shutter that rattles."},
+    {"id": "bunk", "name": "Snug Bunk", "slots": 2, "training_bonus": 4, "upgrade_cost": 45, "min_tier": 0, "description": "A proper frame bed, a wool blanket and a chest at its foot."},
+    {"id": "chamber", "name": "Hearth Chamber", "slots": 3, "training_bonus": 8, "upgrade_cost": 120, "min_tier": 1, "description": "Warm floorboards, a writing desk and a window over the yard."},
+    {"id": "suite", "name": "Lantern Suite", "slots": 4, "training_bonus": 12, "upgrade_cost": 280, "min_tier": 2, "description": "A canopy bed, a private hearth and room to practise in."}
+  ],
+  "training": {
+    "base_cost": 14,
+    "cost_per_point_above_10": 4,
+    "base_chance": 70,
+    "chance_drop_per_point_above_10": 7,
+    "min_chance": 10,
+    "max_chance": 95,
+    "practice_bonus": 15,
+    "stat_cap": 18,
+    "learning_bonus": {"deliberate": -5, "steady": 0, "quick_learner": 10}
+  },
+  "furnishings": {
+    "training_dummy": {"name": "Training Dummy", "description": "Straw, sackcloth and a painted grin that has seen a thousand swings.", "cost": 30, "stats": {"str": 12}, "suits": ["warrior", "tank"], "min_quality": "cot"},
+    "iron_dumbbells": {"name": "Iron Dumbbells", "description": "Two lumps of pig iron on a bar, polished by calloused hands.", "cost": 26, "stats": {"str": 6, "con": 8}, "suits": ["warrior", "tank"], "min_quality": "cot"},
+    "weapon_rack": {"name": "Weapon Rack", "description": "Practice blades, staves and a shield with more dents than paint.", "cost": 40, "stats": {"str": 6, "dex": 6}, "suits": ["warrior", "rogue"], "min_quality": "bunk"},
+    "armor_stand": {"name": "Armour Stand", "description": "A full harness to wear around the room until it feels like skin.", "cost": 44, "stats": {"con": 12}, "suits": ["tank", "warrior"], "min_quality": "bunk"},
+    "archery_target": {"name": "Archery Target", "description": "A straw butt pinned with feathers, hung where the window light falls.", "cost": 32, "stats": {"dex": 12}, "suits": ["rogue"], "min_quality": "cot"},
+    "lockpick_board": {"name": "Lockpick Board", "description": "A plank studded with old locks, each one a puzzle with a click at the end.", "cost": 28, "stats": {"dex": 8, "int": 4}, "suits": ["rogue"], "min_quality": "cot"},
+    "crystal_ball": {"name": "Crystal Ball", "description": "Cloudy glass that clears, now and then, for anyone patient enough to look.", "cost": 46, "stats": {"int": 12, "wis": 4}, "suits": ["mage", "summoner"], "min_quality": "bunk"},
+    "spellbook_stack": {"name": "Stack of Spellbooks", "description": "Borrowed, annotated and never quite returned to the Hearth library.", "cost": 30, "stats": {"int": 10}, "suits": ["mage"], "min_quality": "cot"},
+    "prayer_altar": {"name": "Prayer Altar", "description": "A small shrine with a candle that the keeper quietly keeps lit.", "cost": 34, "stats": {"wis": 12}, "suits": ["healer"], "min_quality": "cot"},
+    "herb_garden": {"name": "Window Herb Garden", "description": "Thyme, yarrow and feverfew in clay pots along the sill.", "cost": 24, "stats": {"wis": 8, "con": 4}, "suits": ["healer", "summoner"], "min_quality": "cot"},
+    "bonded_perch": {"name": "Beast Perch", "description": "A perch, a basket and a water bowl for whatever follows them home.", "cost": 36, "stats": {"cha": 10, "wis": 4}, "suits": ["summoner"], "min_quality": "bunk"},
+    "tall_mirror": {"name": "Tall Mirror", "description": "For rehearsing speeches, oaths and the occasional dramatic entrance.", "cost": 28, "stats": {"cha": 12}, "suits": ["summoner", "healer"], "min_quality": "cot"},
+    "lute": {"name": "Well-loved Lute", "description": "Three good strings and one that is mostly enthusiasm.", "cost": 22, "stats": {"cha": 8, "dex": 4}, "suits": ["rogue", "summoner"], "min_quality": "cot"},
+    "war_table": {"name": "War Table", "description": "Maps of the Briarway weighted down with tankards and carved markers.", "cost": 50, "stats": {"int": 6, "wis": 6}, "suits": ["warrior", "mage"], "min_quality": "chamber"},
+    "hearthstone_brazier": {"name": "Hearthstone Brazier", "description": "Coals that hold the Hearth's warmth through the longest night.", "cost": 60, "stats": {"con": 6, "wis": 6, "str": 4}, "suits": ["tank", "healer"], "min_quality": "chamber"},
+    "starglass_orrery": {"name": "Starglass Orrery", "description": "Brass rings that turn with the heavens and hum when a spell is near.", "cost": 90, "stats": {"int": 14, "wis": 8}, "suits": ["mage", "summoner"], "min_quality": "suite"}
+  }
+}

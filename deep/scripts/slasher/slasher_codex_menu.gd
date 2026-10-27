@@ -67,7 +67,7 @@ func _build_stats()->void:
 	var stats:Dictionary=run_state.get_stats()
 	var runtime:SlasherItemRuntime=player.item_runtime
 	var speed_value:float=player.speed*(runtime.conversion("speed_multiplier",1.0) if runtime else 1.0);var cooldown_reduction:float=runtime.conversion("cooldown_reduction")*100.0 if runtime else 0.0;var mitigation:float=runtime.conversion("damage_reduction")*100.0 if runtime else 0.0;var precision:int=int(runtime.conversion("precision_hits",6.0)) if runtime else 6
-	profile.text="[font_size=26]%s · Level %d[/font_size]\n%s\nVitality %d/%d    %s %d/%d\nSTR %d  DEX %d  CON %d  INT %d  WIS %d  CHA %d\nAttack %d    Spell %d    Speed %.0f\nCooldown reduction %.1f%% · Mitigation %.1f%% · Precision every %d hits\nGear: %s"%[run_state.selected_class_name,run_state.get_level(),run_state.get_profile_summary(),player.health,player.max_health,run_state.get_class_resource_name(),run_state.class_resource,run_state.get_class_resource_max(),stats.str,stats.dex,stats.con,stats.int,stats.wis,stats.cha,player.attack_power,player.spell_power,speed_value,cooldown_reduction,mitigation,precision,run_state.selected_gear.display_name if run_state.selected_gear else "None"];header.add_child(profile)
+	profile.text="[font_size=26]%s%s[/font_size]\n%s\nVitality %d/%d    %s %d/%d\nSTR %d  DEX %d  CON %d  INT %d  WIS %d  CHA %d\nAttack %d    Spell %d    Speed %.0f\nCooldown reduction %.1f%% · Mitigation %.1f%% · Precision every %d hits\nGear: %s"%[run_state.selected_class_name,(" · Level %d"%run_state.get_level()) if GameBalance.leveling_enabled() else "",run_state.get_profile_summary(),player.health,player.max_health,run_state.get_class_resource_name(),run_state.class_resource,run_state.get_class_resource_max(),stats.str,stats.dex,stats.con,stats.int,stats.wis,stats.cha,player.attack_power,player.spell_power,speed_value,cooldown_reduction,mitigation,precision,run_state.selected_gear.display_name if run_state.selected_gear else "None"];header.add_child(profile)
 	var actions:Dictionary=GameBalance.get_class_data(run_state.selected_class_id).get("actions",{})
 	for slot in ["basic","movement","special","defensive"]:
 		var tuning:=run_state.get_effective_slasher_ability_tuning(slot);var action:Dictionary=actions.get(slot,{})
@@ -79,6 +79,8 @@ func _build_stats()->void:
 			content.add_child(_text_panel("[font_size=19][b]%s[/b][/font_size]\n[color=#f4d178]%s[/color]\n%s"%[String(combo.get("name","Combo")),"  →  ".join(combo.get("step_labels",[])),String(combo.get("description",""))]))
 
 func _build_progression()->void:
+	if not GameBalance.leveling_enabled():
+		content.add_child(_text_panel("[font_size=25][b]Upgrades come from items[/b][/font_size]\nLevelling is switched off for now. Open chests, claim treasure pedestals and trade with merchants to grow stronger. Your current items are listed under Items."));return
 	content.add_child(_text_panel("[font_size=25][b]%s[/b][/font_size]\n%s\nShared level %d · Choose a permanent Slasher specialization."%[run_state.get_slasher_specialization_name(),run_state.get_slasher_progression_summary(),run_state.get_level()]))
 	var selected:Array=run_state.get_slasher_selected_choices()
 	for level:int in [3,5,7,9,10,11,13,15,17,19,20]:

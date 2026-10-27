@@ -4,11 +4,13 @@ class_name GameBalance
 const PROGRESSION_PATH := "res://data/progression.json"
 const COMBAT_PATH := "res://data/combat_balance.json"
 const ENEMY_PATH := "res://data/enemy_balance.json"
-const ITEMS_PATH := "res://data/items.json"
+## Every pickup item (chests, pedestals, starter relics, merchants), grouped by
+## which classes can use it. See the how_to_edit notes at the top of the file.
+const PICKUP_ITEMS_PATH := "res://data/pickup_items.json"
+const ITEM_GROUPS := ["any_class","melee_only","ranged_only"]
 const LOOT_TABLES_PATH := "res://data/loot_tables.json"
 const CLASS_PROGRESSION_PATH := "res://data/class_progression.json"
 const CLASSES_PATH := "res://data/classes.json"
-const ITEM_EFFECTS_PATH := "res://data/item_effects.json"
 const MERCHANTS_PATH := "res://data/merchants.json"
 const CONSUMABLES_PATH := "res://data/consumables.json"
 const DUNGEONS_PATH := "res://data/dungeons.json"
@@ -16,7 +18,6 @@ const FIELD_ROOMS_PATH := "res://data/field_rooms.json"
 const SLASHER_BALANCE_PATH := "res://data/slasher_balance.json"
 const SLASHER_JOURNAL_PATH := "res://data/slasher_journal.json"
 const SLASHER_PROGRESSION_PATH := "res://data/slasher_progression.json"
-const SLASHER_ITEM_EFFECTS_PATH := "res://data/slasher_item_effects.json"
 
 static var _progression: Dictionary = {}
 static var _combat: Dictionary = {}
@@ -35,6 +36,8 @@ static var _slasher_journal: Dictionary = {}
 static var _slasher_progression: Dictionary = {}
 static var _debug_unlock_all_dungeons := false
 static var _slasher_item_effects: Dictionary = {}
+static var _class_groups: Dictionary = {}
+static var _leveling_override: Variant = null
 static var _loaded := false
 
 static func get_progression() -> Dictionary:
@@ -261,19 +264,51 @@ static func get_slasher_item_effects(item_id:String)->Dictionary:
 			"defense":conversions["damage_reduction"]=minf(0.30,value*0.035)
 			"threshold":conversions["flat_prevention"]=value
 			"initiative_modifier":conversions["cooldown_reduction"]=minf(0.35,value*0.025)
-			"movement":conversions["speed_multiplier"]=1.0+value*0.05;conversions["mobility_multiplier"]=1.0+value*0.05
+			"movement":conversions["speed_multiplier"]=float(conversions.get("speed_multiplier",1.0))*(1.0+value*0.05);conversions["mobility_multiplier"]=1.0+value*0.05
 			"accuracy":conversions["precision_hits"]=maxi(2,7-int(value))
 			"penetration":conversions["elite_damage_multiplier"]=1.0+value*0.08
 			"evasion":conversions["defense_window_bonus"]=value*0.06
 			"range":conversions["range_pixels"]=value*48.0
+			"move_speed":conversions["speed_multiplier"]=float(conversions.get("speed_multiplier",1.0))*(1.0+value/100.0)
+			"attack_speed":conversions["attack_speed"]=value
 			_:conversions[key]=value
 	var authored_conversions:Dictionary=Dictionary(record.get("conversions",{}));authored_conversions.merge(conversions,true);record["conversions"]=authored_conversions
 	if not record.has("rules"):
 		var summary:Array[String]=[]
-		for conversion_key:Variant in conversions:summary.append("%s %s"%[String(conversion_key).replace("_"," ").capitalize(),str(conversions[conversion_key])])
-		record["rules"]="Slasher: %s."%(", ".join(summary) if not summary.is_empty() else "activates a deterministic combat effect on its listed trigger")
+		for conversion_key:Variant in conversions:
+			var phrase:String=_conversion_phrase(String(conversion_key),float(conversions[conversion_key]))
+			if not phrase.is_empty():summary.append(phrase)
+		record["rules"]="Slasher: %s."%("; ".join(summary) if not summary.is_empty() else "a subtle charm with no combat effect")
 	record["trigger"]=String(record.get("trigger","passive"));record["internal_cooldown"]=float(record.get("internal_cooldown",0.0))
 	return record
+
+## Plain-English text for an item stat in real-time combat.
+static func _conversion_phrase(key:String,value:float)->String:
+	var pct:=func(v:float)->String:return ("%d%%" % int(round(v*100.0))) if absf(v*100.0-round(v*100.0))<0.05 else ("%.1f%%" % (v*100.0))
+	match key:
+		"attack_power":return "+%d attack damage" % int(value)
+		"spell_power":return "+%d spell damage" % int(value)
+		"spell_potency":return "+%d spell potency" % int(value)
+		"damage_reduction":return "take %s less damage" % pct.call(value)
+		"flat_prevention":return "ignore %d damage from every hit" % int(value)
+		"cooldown_reduction":return "abilities recharge %s faster" % pct.call(value)
+		"speed_multiplier":return "move %s faster" % pct.call(value-1.0)
+		"mobility_multiplier","defense_window_bonus":return ""
+		"precision_hits":return "every %s attack lands a precision hit (+25%% damage)" % _ordinal(int(value))
+		"elite_damage_multiplier":return "+%s damage to elites and bosses" % pct.call(value-1.0)
+		"range_pixels":return "longer reach and spell range"
+		"attack_speed":return "basic attacks %d%% faster" % int(value)
+		"potion_heal_bonus":return "potions heal %d more" % int(value)
+		"max_health":return "+%d max health" % int(value)
+		"gold_bonus_percent":return "+%d%% gold found" % int(value)
+		"xp_bonus_percent":return ""
+		"armor_class":return "+%d armor" % int(value)
+	return "%s %+d" % [key.replace("_"," ").capitalize(),int(value)]
+
+static func _ordinal(n:int)->String:
+	var suffix:="th"
+	if n%100<11 or n%100>13:suffix={1:"st",2:"nd",3:"rd"}.get(n%10,"th")
+	return "%d%s" % [n,suffix]
 
 static func get_slasher_item_rules_text(item_id:String)->String:return String(get_slasher_item_effects(item_id).get("rules",""))
 static func get_slasher_item_stat_conversions(item_id:String)->Dictionary:return Dictionary(get_slasher_item_effects(item_id).get("conversions",{})).duplicate(true)
@@ -572,11 +607,10 @@ static func _load_all() -> void:
 	_progression = _load_json(PROGRESSION_PATH)
 	_combat = _load_json(COMBAT_PATH)
 	_enemies = _load_json(ENEMY_PATH)
-	_items = _load_json(ITEMS_PATH)
+	_load_pickup_items(_load_json(PICKUP_ITEMS_PATH))
 	_loot_tables = _load_json(LOOT_TABLES_PATH)
 	_class_progression = _load_json(CLASS_PROGRESSION_PATH)
 	_classes = _load_json(CLASSES_PATH)
-	_item_effects = _load_json(ITEM_EFFECTS_PATH)
 	_merchants = _load_json(MERCHANTS_PATH)
 	_consumables = _load_json(CONSUMABLES_PATH)
 	_dungeons = _load_json(DUNGEONS_PATH)
@@ -584,7 +618,116 @@ static func _load_all() -> void:
 	_slasher_balance = _load_json(SLASHER_BALANCE_PATH)
 	_slasher_journal = _load_json(SLASHER_JOURNAL_PATH)
 	_slasher_progression = _load_json(SLASHER_PROGRESSION_PATH)
-	_slasher_item_effects = _load_json(SLASHER_ITEM_EFFECTS_PATH)
+
+## Unpacks pickup_items.json into the shapes the rest of the game reads: the item
+## catalog (stats, durations, descriptions), the real-time combat rules, and the
+## older turn-based rules. Each item records which group it came from.
+static func _load_pickup_items(source: Dictionary) -> void:
+	var catalog: Dictionary = {}
+	var combat: Dictionary = {}
+	for group in ITEM_GROUPS:
+		var entries: Variant = source.get(group, {})
+		if not (entries is Dictionary): continue
+		for item_id in entries:
+			var authored: Dictionary = Dictionary(entries[item_id])
+			var item := {
+				"name": String(authored.get("name", item_id)),
+				"rarity": String(authored.get("rarity", "common")),
+				"duration_type": String(authored.get("lasts", "dungeon_bound")),
+				"description": String(authored.get("description", "")),
+				"modifiers": Dictionary(authored.get("stats", {})).duplicate(true),
+				"tags": Array(authored.get("tags", [])).duplicate(),
+				"icon_key": String(authored.get("icon", "")),
+				"usable_by": group,
+				"drops": bool(authored.get("drops", true)),
+			}
+			if authored.has("floors"): item["duration_floors"] = int(authored.floors)
+			var turn_based: Dictionary = Dictionary(authored.get("turn_based", {}))
+			if turn_based.has("rules_text"): item["rules_text"] = String(turn_based.rules_text)
+			# Items made only for real-time combat show their combat rules instead.
+			if not item.has("rules_text") and authored.get("combat") is Dictionary and String(Dictionary(authored.combat).get("rules", "")) != "":
+				item["rules_text"] = String(authored.combat.rules).trim_prefix("Slasher: ")
+			if turn_based.has("effects"): item["effects"] = Array(turn_based.effects).duplicate(true)
+			catalog[String(item_id)] = item
+			if authored.get("combat") is Dictionary: combat[String(item_id)] = Dictionary(authored.combat).duplicate(true)
+	_items = {"rarities": Dictionary(source.get("rarities", {})).duplicate(true), "items": catalog}
+	_item_effects = {}
+	_slasher_item_effects = Dictionary(source.get("drop_settings", {})).duplicate(true)
+	_slasher_item_effects["items"] = combat
+	_class_groups = Dictionary(source.get("class_groups", {})).duplicate(true)
+
+## "melee" or "ranged" for a class, from pickup_items.json class_groups.
+static func get_class_item_group(class_id: String) -> String:
+	_load_all()
+	class_id = normalize_class_id(class_id)
+	for group in _class_groups:
+		if Array(_class_groups[group]).has(class_id): return String(group)
+	return ""
+
+## Whether a class can use a pickup item. Unknown items (such as Hearth equipment
+## effects) are never restricted here.
+## Reads one field of a catalog item without copying the whole catalog.
+static func item_field(item_id: String, key: String, fallback: Variant = null) -> Variant:
+	_load_all()
+	var item: Variant = Dictionary(_items.get("items", {})).get(item_id, {})
+	return Dictionary(item).get(key, fallback) if item is Dictionary else fallback
+
+static func item_usable_by_class(item_id: String, class_id: String) -> bool:
+	match String(item_field(item_id, "usable_by", "any_class")):
+		"melee_only": return get_class_item_group(class_id) == "melee"
+		"ranged_only": return get_class_item_group(class_id) == "ranged"
+	return true
+
+## Items that may appear in chests, on pedestals, and in merchant stock for a class.
+static func get_droppable_item_ids(class_id: String = "") -> Array[String]:
+	var result: Array[String] = []
+	var items := get_items()
+	for item_id in items:
+		if not bool(Dictionary(items[item_id]).get("drops", true)): continue
+		if not class_id.is_empty() and not item_usable_by_class(String(item_id), class_id): continue
+		result.append(String(item_id))
+	return result
+
+## Levelling can be switched off in progression.json ("leveling_enabled"). While
+## off, no XP or levels are gained and everyone fights at level 1, so items are
+## the only upgrades. Stored levels are kept, so switching it back on restores them.
+static func leveling_enabled() -> bool:
+	if _leveling_override != null: return bool(_leveling_override)
+	_load_all()
+	return bool(_progression.get("leveling_enabled", true))
+
+static var _party_size_override: Variant = null
+static var _actions_override: Variant = null
+const ALL_ACTIONS := ["basic","movement","special","defensive"]
+
+## Whether a combat action (basic, movement, special, defensive) is switched on
+## in progression.json "enabled_actions". Missing list = everything on.
+static func action_enabled(slot: String) -> bool:
+	if _actions_override != null: return Array(_actions_override).has(slot)
+	_load_all()
+	return Array(_progression.get("enabled_actions",ALL_ACTIONS)).has(slot)
+
+## Tests and tools can force the action list; pass null to use the data file.
+static func set_actions_override(value: Variant) -> void:
+	_actions_override = value
+
+## Adventurers per run, from progression.json "max_party_size" (1 = solo runs).
+static func max_party_size() -> int:
+	if _party_size_override != null: return int(_party_size_override)
+	_load_all()
+	return maxi(1,int(_progression.get("max_party_size",4)))
+
+## Tests can force a party size; pass null to use the data file.
+static func set_party_size_override(value: Variant) -> void:
+	_party_size_override = value
+
+## Tests and tools can force levelling on or off; pass null to use the data file.
+static func set_leveling_override(value: Variant) -> void:
+	_leveling_override = value
+
+## The level used for stats, health and upgrade unlocks.
+static func effective_level(level: int) -> int:
+	return maxi(1, level) if leveling_enabled() else 1
 
 static func _load_json(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

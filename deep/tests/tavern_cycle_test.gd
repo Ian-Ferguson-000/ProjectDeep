@@ -3,6 +3,9 @@ extends SceneTree
 func _initialize()->void:call_deferred("_run")
 
 func _run()->void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party rules so they keep working if parties come back.
+	GameBalance.set_party_size_override(4)
 	var failures:Array[String]=[]
 	var campaign:=CampaignState.new();campaign.apply_post_tutorial_state("victory")
 	_expect(campaign.calendar_day==1 and campaign.get_calendar_date()=={"absolute_day":1,"weekday":"Monday","season":"Spring","season_day":1,"year":1},"Calendar did not begin on Monday, Spring 1, Year 1",failures)
@@ -40,7 +43,7 @@ func _run()->void:
 	campaign.calendar_day=28;_expect(campaign.get_calendar_date().season=="Spring" and campaign.get_calendar_date().season_day==28,"Spring boundary is incorrect",failures)
 	campaign.calendar_day=29;_expect(campaign.get_calendar_date().season=="Summer" and campaign.get_calendar_date().season_day==1,"Summer boundary is incorrect",failures)
 	campaign.calendar_day=113;_expect(campaign.get_calendar_date().year==2 and campaign.get_calendar_date().season=="Spring","Year boundary is incorrect",failures)
-	campaign.tavern_upgrades.roster_services=3;campaign.establishment_tier=3;_expect(campaign.get_roster_capacity()==18,"Establishment-tier room capacity formula is incorrect",failures)
+	campaign.tavern_upgrades.roster_services=3;campaign.establishment_tier=3;_expect(campaign.get_room_limit()==18,"Establishment-tier room capacity formula is incorrect",failures)
 	campaign.candidate_pool.clear();campaign._generate_candidate_wave();_expect(campaign.candidate_pool.size()>=4 and campaign.candidate_pool.size()<=7,"Room rank candidate-count formula is incorrect",failures)
 	var defeat:=CampaignState.new();defeat.apply_post_tutorial_state("death");for candidate in defeat.get_candidates():defeat.recruit_candidate(candidate.id)
 	var defeat_party:=defeat.default_party("forest");var defeat_launch:=defeat.launch_expedition(defeat_party, "forest");defeat.expedition.carried_gold=99;defeat.settle_expedition(int(defeat_launch.expedition_id),"death",{"headline":"The company is lost."})

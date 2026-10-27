@@ -1,5 +1,8 @@
 extends SceneTree
 
+## Dash, special and block are switched off in progression.json; this checks them anyway.
+func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
+
 const EXPECTED_CLASSES := ["warrior", "mage", "healer", "tank", "rogue", "summoner"]
 const EXPECTED_SLOTS := ["basic", "special", "defensive", "movement"]
 

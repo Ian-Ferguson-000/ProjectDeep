@@ -43,8 +43,10 @@ func _run() -> void:
 	state.floor_seed = 83492791 - state.current_floor * 997
 	scene.run_state = state
 	root.add_child(scene)
-	assert(scene.ground_layer.get_child(0).texture == ART.SHEET, "Forest runtime still uses old grass")
-	assert(scene.ground_layer.get_child_count() > scene.layout.cells.size(), "Forest runtime is missing dirt paths")
+	var painted: Node = scene.ground_layer.get_node_or_null("Ground")
+	assert(painted is TileMapLayer and painted.tile_set == preload("res://maps/forest/tiles/forest_ground.tres"), "Forest rooms are not drawn from maps/forest")
+	var trail: Node = scene.ground_layer.get_node_or_null("Paths")
+	assert(trail is TileMapLayer and not trail.get_used_cells().is_empty(), "Forest runtime is missing dirt paths")
 	assert(scene.wall_generator.render_collisions, "Terrain disabled gameplay walls")
 	if "--capture" in OS.get_cmdline_user_args():
 		scene.process_mode = Node.PROCESS_MODE_DISABLED
