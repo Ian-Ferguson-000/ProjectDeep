@@ -85,7 +85,10 @@ saved with the expedition, so a resumed run keeps its floors and stock):
 - One of each; bought slots stay sold for that floor only.
 - Stock follows chest rules: usable by your class, in the drop pool, and unlocked.
 
-**Consumables are switched off for now** (`"sell_consumables": false`): no potions
-or other consumables in the trader or the tavern supplier, loot caches give gold
-instead, potion drops become gold, and relics that only boost potions are kept out.
-Set it to `true` to bring them back.
+**Potions are found, never bought.** Buying them makes a bad loop, so
+`"sell_consumables": false` keeps potions and other consumables out of every shop:
+the dungeon trader, the tavern supplier and the Hearth's provisions. With
+`"potion_drops": true` they still turn up in runs: enemy drops (see
+`enemy_drops.json`), loot caches after a room is cleared, and the Hearth's starting
+supplies upgrade. Potion relics are in the drop pool too. Drink one with Q; the
+HUD's potion pocket (bottom left) shows how many you carry.

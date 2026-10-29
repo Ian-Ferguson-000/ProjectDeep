@@ -5,7 +5,8 @@
     "bonus_slots: extra slots that only sometimes appear, each with its own chance, holding a higher-tier relic picked by tier_weights.",
     "prices: gold per rarity. Deliberately steep: gold-find relics (gold_bonus_percent) are how players afford the good slots.",
     "Relics on offer follow the same rules as chests: usable by the adventurer's class, in the drop pool, and unlocked.",
-    "sell_consumables: false keeps potions and other consumables out of every shop (dungeon trader and tavern supplier), loot caches and enemy drops."
+    "sell_consumables: false keeps potions and other consumables out of every shop: the dungeon trader, the tavern supplier and the Hearth's provisions. Buying potions makes a bad loop, so they have to be found.",
+    "potion_drops: true lets healing potions drop from enemies and appear in loot caches during runs, and lets potion relics into the drop pool."
   ],
   "common_slots": 3,
   "bonus_slots": [
@@ -29,5 +30,6 @@
     "very_rare": 380,
     "legendary": 600
   },
-  "sell_consumables": false
+  "sell_consumables": false,
+  "potion_drops": true
 }

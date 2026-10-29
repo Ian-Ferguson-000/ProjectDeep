@@ -377,7 +377,7 @@ func _spawn_loot() -> void:
 	loot_nodes.clear()
 	if not exit_open: return
 	var taken: Array = Array(Dictionary(room.get("slasher",{})).get("loot_taken",[]))
-	var kinds := ["gold","potion","key"] if RunState.consumables_for_sale() else ["gold","gold","key"]
+	var kinds := ["gold","potion","key"] if RunState.potions_drop() else ["gold","gold","key"]
 	for index in Array(layout.loot_spawns).size():
 		var cell: Vector2i = layout.loot_spawns[index]
 		if taken.has(cell): continue

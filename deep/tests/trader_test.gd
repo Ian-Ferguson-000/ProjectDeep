@@ -24,10 +24,14 @@ func _run() -> void:
 	var ids := offers.map(func(o): return String(o.item_id))
 	for id in ids: _expect(ids.count(id) == 1,"Trader offered %s twice" % id)
 
-	# Potion relics stay out while consumables are off.
+	# Potions drop in runs, so potion relics are in the pool (the trader never sells potions themselves).
+	var potion_relic_seen := false
 	for sample in 200:
 		state.floor_seed = 77 + sample * 13
-		for offer in state.get_merchant_offers("forest","dungeon"): _expect(not String(offer.item_id) in ["healers_brooch","menders_sachet","apothecarys_cup"],"Potion relic %s offered with consumables off" % offer.item_id)
+		for offer in state.get_merchant_offers("forest","dungeon"):
+			_expect(String(offer.kind) != "consumable","Trader sold consumable %s" % offer.offer_id)
+			if String(offer.item_id) in ["healers_brooch","menders_sachet","apothecarys_cup"]: potion_relic_seen = true
+	_expect(potion_relic_seen,"Potion relics never offered although potions drop")
 	state.floor_seed = 1001 + 37
 	offers = state.get_merchant_offers("forest","dungeon")
 
@@ -83,7 +87,9 @@ func _run() -> void:
 	_expect(state.trader_sold.is_empty(),"Purchases carried into a new run")
 
 	# No consumables for now: tavern supplier, loot and drops.
-	_expect(not RunState.consumables_for_sale(),"Consumables should be switched off")
+	_expect(not RunState.consumables_for_sale(),"Consumables should not be for sale")
+	_expect(RunState.potions_drop(),"Potions should still drop in runs")
+	_expect(not bool(HearthArmory.buy_consumable(state.campaign,"healing_potion").get("ok",true)),"The Hearth still sells potions")
 	for offer in state.get_merchant_offers("tavern","tavern"): _expect(String(offer.kind) != "consumable","Tavern supplier still sells %s" % offer.offer_id)
 
 	# The shop panel shows the trader's stock.

@@ -772,6 +772,10 @@ static func trader_settings() -> Dictionary:
 static func consumables_for_sale() -> bool:
 	return bool(trader_settings().get("sell_consumables",true))
 
+## Potions found in runs (enemy drops, loot caches). Separate from selling them.
+static func potions_drop() -> bool:
+	return bool(trader_settings().get("potion_drops",true))
+
 ## The dungeon trader's stock: rolled from the floor's seed, so it is the same
 ## while you stay on a floor and fresh on every new floor and run. Common slots
 ## always appear; bonus slots sometimes appear with a higher-tier relic.
@@ -1691,8 +1695,8 @@ func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
 func _item_offer_allowed(item_id: String) -> bool:
 	if GameBalance.item_field(item_id, "name") == null: return true
 	if Unlocks.is_item_locked(campaign, item_id): return false
-	# Potion relics are pointless while consumables are switched off.
-	if not consumables_for_sale() and _is_potion_only(item_id): return false
+	# Potion relics are pointless when potions can't be found.
+	if not potions_drop() and _is_potion_only(item_id): return false
 	return bool(GameBalance.item_field(item_id, "drops", true)) and GameBalance.item_usable_by_class(item_id, selected_class_id)
 
 func _item_ids_for_rarity(items: Dictionary, rarity: String) -> Array[String]:

@@ -1228,8 +1228,10 @@ func merchant_page() -> void:
 			title_node.reparent(title_row)
 			(title_node as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		content.add_child(label("%d in storage" % int(campaign.consumable_stock.get(id,0)),12,THEME.MUTED))
-		var buy_provision := button(content,"Buy · %dg" % (8 if id=="healing_potion" else 18),func(): act(HearthArmory.buy_consumable(campaign,id)))
-		buy_provision.custom_minimum_size = Vector2(120,36)
+		# Provisions are found on expeditions, not bought (data/trader.json sell_consumables).
+		if RunState.consumables_for_sale():
+			var buy_provision := button(content,"Buy · %dg" % (8 if id=="healing_potion" else 18),func(): act(HearthArmory.buy_consumable(campaign,id)))
+			buy_provision.custom_minimum_size = Vector2(120,36)
 	_heading("Equipment","Dungeon-only relics must be recovered by an expedition")
 	var gear := _grid(3)
 	var listed := 0

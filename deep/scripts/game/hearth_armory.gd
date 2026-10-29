@@ -72,6 +72,7 @@ static func provision(c: CampaignState, character_id: String, consumable_id: Str
 
 static func buy_consumable(c: CampaignState, id: String) -> Dictionary:
 	if not HearthCatalog.data().consumables.has(id): return fail("Unknown provision.")
+	if not RunState.consumables_for_sale(): return fail("Potions can't be bought; find them on expeditions.")
 	var price := 8 if id == "healing_potion" else 18
 	if c.banked_gold < price: return fail("Not enough gold.")
 	c.banked_gold -= price
