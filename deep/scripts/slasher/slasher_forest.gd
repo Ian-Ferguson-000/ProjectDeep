@@ -368,7 +368,7 @@ func _spawn_loot()->void:
 	loot_nodes.clear();var loot_index:=0
 	for spawn_value:Variant in layout.loot_spawns:
 		var spawn:Vector2i=spawn_value;var area:=Area2D.new();area.name="ForestCache";area.position=_world(spawn);var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape)
-		var kind:=String(["gold","potion","key"][loot_index%3]);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),18));actor_layer.add_child(area);loot_nodes.append(area);area.set_meta("kind",kind);loot_index+=1
+		var kind:=String((["gold","potion","key"] if RunState.consumables_for_sale() else ["gold","gold","key"])[loot_index%3]);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),18));actor_layer.add_child(area);loot_nodes.append(area);area.set_meta("kind",kind);loot_index+=1
 
 func _process(delta:float)->void:
 	if not is_instance_valid(player):return
@@ -629,6 +629,7 @@ func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	var key:=String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)
 	var kind:=roll_drop(key,enemy.elite or enemy.mini_boss,enemy.boss,Unlocks.drop_luck(run_state.campaign),drop_rng())
 	if kind.is_empty():return
+	if kind=="healing_potion" and not RunState.consumables_for_sale():kind="gold"
 	var spot:=enemy.global_position
 	match kind:
 		"gold":

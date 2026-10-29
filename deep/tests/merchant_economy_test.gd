@@ -15,12 +15,15 @@ func _run() -> void:
 	_expect(GameBalance.get_merchant_stock_for_rarity("legendary") == 1, "legendary stock quantity should be 1", failures)
 	var state := RunState.new()
 	state.gold = 100
-	var purchase := state.purchase_merchant_offer("tavern", "tavern_potion", "tavern")
+	# Consumables are switched off for now (data/trader.json), so the supplier sells keys and relics.
+	_expect(not state.get_merchant_offers("tavern","tavern").any(func(o): return String(o.kind) == "consumable"), "tavern still sells consumables", failures)
+	_expect(state.purchase_merchant_offer("tavern", "tavern_potion", "tavern")[0].contains("locked"), "a switched-off potion could be bought", failures)
+	var purchase := state.purchase_merchant_offer("tavern", "tavern_key", "tavern")
 	_expect(purchase[0].contains("Purchased"), "tavern supply purchase failed", failures)
 	state.purchase_merchant_offer("tavern", "quickstep_charm", "tavern")
 	var gear := GearData.create("test", "Test Gear", 2, false, 0, "", "", "warrior", "none")
 	state.start_new_run(gear, "forest")
-	_expect(state.get_consumables().count("healing_potion") == 1, "tavern consumable did not transfer to next run", failures)
+	_expect(state.keys >= 1, "tavern key did not transfer to next run", failures)
 	_expect(_has_item(state, "quickstep_charm"), "tavern item did not transfer to next run", failures)
 	for depth in range(1, 6):
 		state.record_dungeon_floor_clear("forest", depth, depth == 5)
@@ -35,10 +38,11 @@ func _run() -> void:
 	_expect(int(state.get_merchant_progress("forest").get("available_favor", 0)) == favor_before - 55, "Favor was not spent independently of lifetime Favor", failures)
 	_expect(state.purchase_merchant_offer("forest", "heartwood_crown", "tavern")[0].contains("already"), "Favor-exclusive reward could be purchased twice", failures)
 	_expect(GameBalance.is_favor_exclusive_item("heartwood_crown"), "Favor-exclusive item was not marked outside ordinary loot", failures)
-	state.gold = 100
-	var dungeon_purchase := state.purchase_merchant_offer("forest", "ironroot_ring", "dungeon")
+	state.gold = 1000
+	var trader_offer: Dictionary = state.get_merchant_offers("forest","dungeon")[0]
+	var dungeon_purchase := state.purchase_merchant_offer("forest", String(trader_offer.offer_id), "dungeon")
 	_expect(dungeon_purchase[0].contains("Purchased"), "in-dungeon purchase failed", failures)
-	_expect(_has_item(state, "ironroot_ring"), "in-dungeon item was not granted immediately", failures)
+	_expect(_has_item(state, String(trader_offer.item_id)), "in-dungeon item was not granted immediately", failures)
 
 	var stock_state := RunState.new()
 	stock_state.gold = 1000

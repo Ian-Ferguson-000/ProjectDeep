@@ -69,3 +69,23 @@ The tutorial skips this screen.
 - `SlasherForest.roll_drop / _roll_enemy_drop`: enemy drops.
 - `scripts/ui/guardian_crossroads.gd` and `main.gd _guardian_crossroads`: the choice screen.
 - Test: `tests/game_loops_test.gd`.
+
+## The dungeon trader (`data/trader.json`)
+
+The trader in camp rooms and behind hidden merchant doors rolls new stock for
+**every floor of every run** (the run's floor seed is now random each run and
+saved with the expedition, so a resumed run keeps its floors and stock):
+
+- **Slots 1–3:** always common relics.
+- **Slots 4 and 5:** appear 45% and 20% of the time, each holding an uncommon,
+  rare, very rare or legendary relic (weights 50/30/15/5).
+- **Prices are steep on purpose:** common 60, uncommon 140, rare 240, very rare 380,
+  legendary 600. Gold-find relics (Scavenger's Token, Lucky Coin, Gilded Beetle...)
+  are how you afford the good slots.
+- One of each; bought slots stay sold for that floor only.
+- Stock follows chest rules: usable by your class, in the drop pool, and unlocked.
+
+**Consumables are switched off for now** (`"sell_consumables": false`): no potions
+or other consumables in the trader or the tavern supplier, loot caches give gold
+instead, potion drops become gold, and relics that only boost potions are kept out.
+Set it to `true` to bring them back.

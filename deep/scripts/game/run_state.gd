@@ -59,6 +59,13 @@ var pending_shop_potions: int = 0
 var pending_shop_keys: int = 0
 var purchased_favor_offers: Dictionary = {}
 var merchant_offer_stock: Dictionary = {}
+## Dungeon trader slots bought this run (offer ids include the floor seed).
+## Kept in the run stats so a resumed expedition remembers them.
+var trader_sold: Dictionary:
+	get:
+		var stats := run_stats()
+		if not stats.has("trader_sold"): stats["trader_sold"] = {}
+		return stats["trader_sold"]
 var consumable_items: Array[String] = []
 var pending_shop_consumables: Array[String] = []
 var enemy_defeat_counts:Dictionary={}
@@ -267,7 +274,11 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	current_floor = 1
 	slasher_endless_mode=false;slasher_campaign_boss_cleared=false
 	class_resource = 0
-	floor_seed += 37
+	# A fresh seed every run: floors, chests and the trader differ run to run,
+	# even straight after launching the game. Saved with the expedition so a
+	# resumed run keeps its floors.
+	floor_seed = randi_range(1,2000000000)
+	if campaign != null and campaign.expedition.active: campaign.expedition.floor_seed = floor_seed
 	field_run.clear()
 	if String(dungeon.get("dungeon_type", "mystery")) == "field":
 		var room_count: Dictionary = dungeon.get("room_count", {"min":10,"max":12})
@@ -376,6 +387,7 @@ func transition_to_dungeon(dungeon_id: String) -> bool:
 	max_floors = int(dungeon.get("floors", 1))
 	class_resource = 0
 	floor_seed += 37
+	campaign.expedition.floor_seed = floor_seed
 	pending_chest_choices.clear()
 	starter_reward_claimed = false
 	slasher_endless_mode = false
@@ -748,7 +760,58 @@ func record_dungeon_floor_clear(dungeon_id: String, depth: int, boss_clear: bool
 		logs.append("+%d %s Favor." % [favor_gain, String(GameBalance.get_merchant(merchant_id).get("name", merchant_id.capitalize()))])
 	return logs
 
+## Dungeon trader settings (data/trader.json).
+static var _trader_settings: Dictionary = {}
+static func trader_settings() -> Dictionary:
+	if _trader_settings.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/trader.json"))
+		_trader_settings = Dictionary(parsed) if parsed is Dictionary else {}
+	return _trader_settings
+
+## False while potions and other consumables are switched off (trader.json).
+static func consumables_for_sale() -> bool:
+	return bool(trader_settings().get("sell_consumables",true))
+
+## The dungeon trader's stock: rolled from the floor's seed, so it is the same
+## while you stay on a floor and fresh on every new floor and run. Common slots
+## always appear; bonus slots sometimes appear with a higher-tier relic.
+func trader_offers(merchant_id: String) -> Array[Dictionary]:
+	var settings := trader_settings()
+	var seed_value := hash("%s:%d:%d:%s" % [merchant_id,get_current_floor_seed(),current_floor,active_dungeon_id])
+	var rng := RandomNumberGenerator.new(); rng.seed = seed_value
+	var slots: Array[String] = []
+	for index in int(settings.get("common_slots",3)): slots.append("common")
+	var weights: Dictionary = settings.get("tier_weights",{"uncommon":1})
+	for bonus in Array(settings.get("bonus_slots",[])):
+		if rng.randf() < float(Dictionary(bonus).get("chance",0.0)):
+			var total := 0.0
+			for key in weights: total += float(weights[key])
+			var roll := rng.randf() * total
+			var tier := String(weights.keys().back())
+			for key in weights:
+				roll -= float(weights[key])
+				if roll <= 0.0: tier = String(key); break
+			slots.append(tier)
+	var items := GameBalance.get_items()
+	var prices: Dictionary = settings.get("prices",{})
+	var used := {}
+	var result: Array[Dictionary] = []
+	for index in slots.size():
+		var pool: Array[String] = _item_ids_for_rarity(items,slots[index]).filter(func(id): return not used.has(id))
+		if pool.is_empty(): continue
+		pool.sort()
+		var item_id: String = pool[rng.randi_range(0,pool.size() - 1)]
+		used[item_id] = true
+		var item := GameBalance.get_item(item_id)
+		var offer_id := "trader:%d:%d" % [seed_value,index]
+		var sold := trader_sold.has(offer_id)
+		result.append({"offer_id":offer_id,"kind":"item","item_id":item_id,"gold":int(prices.get(slots[index],100)),"favor":0,"min_rank":0,"unlocked":true,"claimed":false,
+			"name":String(item.get("name",item_id)),"description":String(item.get("description","")),"rules_text":_sentence(GameBalance.get_slasher_item_rules_text(item_id).trim_prefix("Slasher: ")),"rarity":String(item.get("rarity",slots[index])),
+			"max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":index + 1,"bonus_slot":index >= int(settings.get("common_slots",3))})
+	return result
+
 func get_merchant_offers(merchant_id: String, location: String) -> Array[Dictionary]:
+	if location == "dungeon": return trader_offers(merchant_id)
 	var merchant := GameBalance.get_merchant(merchant_id)
 	var rank := get_merchant_rank(merchant_id)
 	var result: Array[Dictionary] = []
@@ -761,6 +824,8 @@ func get_merchant_offers(merchant_id: String, location: String) -> Array[Diction
 		var offer: Dictionary = value.duplicate(true)
 		var offer_id := String(offer.get("offer_id", ""))
 		if String(offer.get("kind", "")) == "item" and not _item_offer_allowed(String(offer.get("item_id", ""))):
+			continue
+		if String(offer.get("kind", "")) == "consumable" and not consumables_for_sale():
 			continue
 		var offer_location := String(offer.get("location", "both"))
 		var location_matches := offer_location == "both" or offer_location == location or (location == "tavern" and offer_location == "favor")
@@ -797,6 +862,7 @@ func get_merchant_offers(merchant_id: String, location: String) -> Array[Diction
 
 func purchase_merchant_offer(merchant_id: String, offer_id: String, location: String) -> Array[String]:
 	var logs: Array[String] = []
+	if location == "dungeon": return _buy_from_trader(merchant_id,offer_id)
 	if location == "tavern" and not is_merchant_recruited(merchant_id):
 		return ["That merchant has not joined the tavern yet."]
 	var chosen: Dictionary = {}
@@ -845,6 +911,30 @@ func purchase_merchant_offer(merchant_id: String, offer_id: String, location: St
 	var stock_key := _merchant_stock_key(merchant_id, offer_id)
 	merchant_offer_stock[stock_key] = maxi(0, int(chosen.get("stock_remaining", 1)) - 1)
 	logs.push_front("Purchased %s for %d %s." % [String(chosen.get("name", offer_id)), favor_cost if favor_cost > 0 else gold_cost, "Favor" if favor_cost > 0 else "gold"])
+	return logs
+
+static var _potion_only_cache: Dictionary = {}
+## Relics whose only effect is on potions.
+static func _is_potion_only(item_id: String) -> bool:
+	if not _potion_only_cache.has(item_id):
+		var stats: Dictionary = GameBalance.item_field(item_id, "modifiers", {})
+		_potion_only_cache[item_id] = String(GameBalance.get_slasher_item_effects(item_id).get("trigger","")) == "potion_use" or (not stats.is_empty() and stats.keys().all(func(key): return String(key) == "potion_heal_bonus"))
+	return bool(_potion_only_cache[item_id])
+
+static func _sentence(text: String) -> String:
+	return text if text.is_empty() else text[0].to_upper() + text.substr(1)
+
+func _buy_from_trader(merchant_id: String, offer_id: String) -> Array[String]:
+	var chosen: Dictionary = {}
+	for offer in trader_offers(merchant_id):
+		if String(offer.offer_id) == offer_id: chosen = offer
+	if chosen.is_empty(): return ["The trader has packed that away."]
+	if bool(chosen.sold): return ["That offer is sold out."]
+	if gold < int(chosen.gold): return ["Not enough gold."]
+	gold -= int(chosen.gold)
+	trader_sold[offer_id] = true
+	var logs: Array[String] = ["Purchased %s for %d gold." % [String(chosen.name),int(chosen.gold)]]
+	logs.append_array(add_inventory_item(String(chosen.item_id),current_floor))
 	return logs
 
 func _merchant_stock_key(merchant_id: String, offer_id: String) -> String:
@@ -1601,6 +1691,8 @@ func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
 func _item_offer_allowed(item_id: String) -> bool:
 	if GameBalance.item_field(item_id, "name") == null: return true
 	if Unlocks.is_item_locked(campaign, item_id): return false
+	# Potion relics are pointless while consumables are switched off.
+	if not consumables_for_sale() and _is_potion_only(item_id): return false
 	return bool(GameBalance.item_field(item_id, "drops", true)) and GameBalance.item_usable_by_class(item_id, selected_class_id)
 
 func _item_ids_for_rarity(items: Dictionary, rarity: String) -> Array[String]:

@@ -142,6 +142,7 @@ func _resume_saved_expedition()->void:
 	var living:=campaign.expedition.living_party_ids()
 	if living.is_empty():campaign.resolve_expedition("death");_select_first_available_character();show_tavern("The saved expedition had no survivors. The memorial has been updated.");return
 	run_state.active_dungeon_id=campaign.expedition.dungeon_id;run_state.current_floor=campaign.expedition.floor;run_state.gold=campaign.expedition.carried_gold
+	if campaign.expedition.floor_seed>0:run_state.floor_seed=campaign.expedition.floor_seed
 	var dungeon:=GameBalance.get_dungeon(run_state.active_dungeon_id);run_state.max_floors=int(dungeon.get("floors",1))
 	run_state.select_active_character(living[0]);run_state.apply_tutorial_health_cap();_load_active_dungeon()
 

@@ -1,0 +1,33 @@
+{
+  "how_to_edit": [
+    "Stock for the trader you meet in dungeons (camp rooms and hidden merchant doors). It is rolled fresh for every floor of every run.",
+    "common_slots: always this many common relics.",
+    "bonus_slots: extra slots that only sometimes appear, each with its own chance, holding a higher-tier relic picked by tier_weights.",
+    "prices: gold per rarity. Deliberately steep: gold-find relics (gold_bonus_percent) are how players afford the good slots.",
+    "Relics on offer follow the same rules as chests: usable by the adventurer's class, in the drop pool, and unlocked.",
+    "sell_consumables: false keeps potions and other consumables out of every shop (dungeon trader and tavern supplier), loot caches and enemy drops."
+  ],
+  "common_slots": 3,
+  "bonus_slots": [
+    {
+      "chance": 0.45
+    },
+    {
+      "chance": 0.2
+    }
+  ],
+  "tier_weights": {
+    "uncommon": 50,
+    "rare": 30,
+    "very_rare": 15,
+    "legendary": 5
+  },
+  "prices": {
+    "common": 60,
+    "uncommon": 140,
+    "rare": 240,
+    "very_rare": 380,
+    "legendary": 600
+  },
+  "sell_consumables": false
+}
