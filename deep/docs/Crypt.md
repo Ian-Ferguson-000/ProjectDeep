@@ -34,7 +34,7 @@ floor, floor 5 the guardian floor.
   mini boss at 55% health: `crypt_lord.gate_health_scale`). Killing it scatters
   the rest of the room and opens the stairs.
 - **Elite rooms** have a **Tomb Guard champion** (bigger, elite health).
-- **Floor 5:** the **Charnel King** in the Charnel Throne (below).
+- **Floor 5:** **Big Skelly Boi** in the Charnel Throne (below).
 
 Set in `dungeons.json → crypt.slasher`: `gate_guardian`, `elite_room_guardian`,
 `colossus`.
@@ -79,11 +79,11 @@ enemy_visuals.<id>`; remove `art`/`tint`/`desaturate` once real art exists in
 | Tomb Guard | Moon Court Huntress | grey |
 | Revenant | Skeleton | pale green |
 
-Also wanted: the **Charnel King** (body, soul gem and hand textures; see below),
+Also wanted: **Big Skelly Boi** (body, soul gem and hand textures; see below),
 proper crypt floor tiles (the current ones are cut from the stone sheet), and
 optionally a brazier to replace the campfire in crypt camps.
 
-## The Charnel King (floor 5)
+## Big Skelly Boi (floor 5)
 
 A giant crowned skeleton sunk to the chest in the middle of a 53x29 arena,
 fought like the Heartwood Colossus: it never moves, every attack is
@@ -102,7 +102,7 @@ ring. Its body can't be hurt.
   calls revenants and grave rats.
 - When it falls, the dead in the room crumble, the stairs open, and a heap of
   bones is left where it stood.
-- Health bar along the bottom of the screen.
+- Health bar centred across the top of the screen, with notches at the phase thresholds.
 - Tuning: `slasher_balance.json → enemies.charnel_king`.
 - **Art:** set `body_texture`, `heart_texture` (the soul gem) and
   `fist_texture` (an open hand) on the King, exactly as for the Colossus (see
@@ -124,7 +124,7 @@ floor**, not just floor 3; floor 5 is still the Heartwood Colossus. Set with
   elite guardians, arena zoom.
 - `scripts/slasher/slasher_crypt_creature.gd`: grave rat, ghoul, gravedigger,
   tomb guard, revenant.
-- `scripts/slasher/slasher_charnel_king.gd`: the Charnel King (extends
+- `scripts/slasher/slasher_charnel_king.gd`: Big Skelly Boi (extends
   `slasher_colossus.gd`).
 - `ForestRoomLibrary.use_dungeon()`: which dungeon's rooms are in use.
 - Test: `tests/crypt_rooms_test.gd`.

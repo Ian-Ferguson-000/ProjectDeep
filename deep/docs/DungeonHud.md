@@ -13,11 +13,12 @@ Binding of Isaac style: almost nothing on screen.
   when you're hit; the last one beats when you're down to one heart.
 - **Above the hearts:** coins and keys.
   Class resource pips (diamonds) only appear when specials are enabled again.
-- **Top centre:** the run clock and your best time; combo progress under it.
-- **Top right:** the floor map.
+- **Top centre:** the boss's health bar when there is one (any boss, gate or elite
+  guardian, or colossus), centred, with its name; combo progress under it.
+- **Top right:** the floor map, with the run clock and your best time just below it.
 - **Floor banner:** "VERDANT FOREST / Floor 2 of 5" fades in when each floor
   starts, noting a guardian or elite floor.
-- Guardian intro, boss bar (bottom), messages (bottom centre) are unchanged.
+- Guardian intro and messages (bottom centre) are unchanged.
 
 The ornate bottom-right frame, the top objective panel and the party strip (shown
 only if parties return, `max_party_size` > 1) are gone. The old health/resource

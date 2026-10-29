@@ -90,7 +90,7 @@ one, select the **Markers** node, then **Instantiate Child Scene** (chain icon) 
 | Chest | Locked chest (needs a key) | Blocks movement |
 | Rock / Big tree | Breakable obstacles | Block movement until broken |
 | Mossy rock, Pebbles, Mushrooms, Bush | Small decorations | Don't block. You can paint these in Detail instead |
-| Colossus | A giant guardian's body (fills 7×5 cells): the Heartwood Colossus in the forest, the Charnel King in the crypt | Guardian rooms only; see docs/HeartwoodColossus.md and docs/Crypt.md |
+| Colossus | A giant guardian's body (fills 7×5 cells): the Heartwood Colossus in the forest, Big Skelly Boi in the crypt | Guardian rooms only; see docs/HeartwoodColossus.md and docs/Crypt.md |
 
 ---
 

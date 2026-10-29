@@ -16,9 +16,10 @@ class_name SlasherColossus
 ## Art: set body_texture / heart_texture / fist_texture to replace the
 ## placeholder drawing (see docs/HeartwoodColossus.md).
 ##
-## Other dungeons' colossi extend this (the crypt's Charnel King, in
+## Other dungeons' colossi extend this (the crypt's Big Skelly Boi, in
 ## slasher_charnel_king.gd): they set colossus_id and override the patterns and
-## drawing, and share the body, weak points, phases, telegraphs and boss bar.
+## drawing, and share the body, weak points, phases, telegraphs and boss bar
+## (SlasherBossBar, top centre of the screen).
 
 signal phase_changed(phase: int)
 
@@ -76,7 +77,7 @@ func _ready() -> void:
 	telegraph_layer = TelegraphLayer.new(); telegraph_layer.colossus = self; telegraph_layer.name = "Telegraphs"
 	telegraph_layer.top_level = true; telegraph_layer.z_index = -1
 	add_child(telegraph_layer)
-	boss_bar = BossBar.new(); boss_bar.colossus = self; boss_bar.name = "BossBar"
+	boss_bar = SlasherBossBar.new().setup(self,String(GameBalance.get_slasher_journal_entry(colossus_id).get("name","The Guardian")),[_t("phase_two",0.66),_t("phase_three",0.33)])
 	add_child(boss_bar)
 
 ## The weak point that opens after most patterns, just outside the body's south edge.
@@ -364,21 +365,3 @@ class TelegraphLayer extends Node2D:
 					draw_circle(at,radius * progress,Color(0.9,0.85,0.7,0.3))
 					draw_arc(at,radius,0,TAU,36,Color(0.95,0.9,0.75,0.9),3.0)
 					draw_circle(at,5.0,Color(0.95,0.9,0.75,0.9))
-
-## Big retro health bar across the top of the screen.
-class BossBar extends CanvasLayer:
-	var colossus: SlasherColossus
-	var fill: ColorRect
-	var name_label: Label
-	func _ready() -> void:
-		layer = 11
-		var root := Control.new(); root.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM); root.offset_left = -400; root.offset_right = 260; root.offset_top = -64; root.offset_bottom = -22; root.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(root)
-		name_label = Label.new(); name_label.text = String(GameBalance.get_slasher_journal_entry(colossus.colossus_id).get("name","The Guardian")).to_upper(); name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; name_label.size = Vector2(660,20)
-		name_label.add_theme_font_size_override("font_size",15); name_label.add_theme_color_override("font_color",Color("#f0c552")); name_label.add_theme_color_override("font_outline_color",Color.BLACK); name_label.add_theme_constant_override("outline_size",5); root.add_child(name_label)
-		var back := ColorRect.new(); back.color = Color(0.05,0.03,0.02,0.9); back.position = Vector2(0,22); back.size = Vector2(660,16); root.add_child(back)
-		fill = ColorRect.new(); fill.color = Color("#c0392b"); fill.position = Vector2(2,24); fill.size = Vector2(656,12); root.add_child(fill)
-		for mark in [0.66,0.33]:
-			var notch := ColorRect.new(); notch.color = Color(1,0.85,0.4,0.9); notch.position = Vector2(2 + 656 * mark - 1,20); notch.size = Vector2(2,20); root.add_child(notch)
-	func _process(_delta: float) -> void:
-		if not is_instance_valid(colossus): return
-		fill.size.x = 656.0 * clampf(float(colossus.health) / maxf(1.0,float(colossus.max_health)),0.0,1.0)

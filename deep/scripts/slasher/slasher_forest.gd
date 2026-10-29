@@ -316,6 +316,19 @@ func _spawn_enemies()->void:
 		_spawn_enemy(_world(spawn),visual_id,behavior_id,bool(spawn_record.get("is_boss",false)),bool(spawn_record.get("is_mini_boss",false)));spawn_index+=1
 		if behavior_id=="sporeling":_spawn_sporeling_cluster(_world(spawn))
 	exit_open=enemies_remaining==0
+	_attach_boss_bar()
+
+## One big health bar, top centre, for the room's boss (or, failing that, its
+## guardian). Colossi bring their own.
+func _attach_boss_bar()->void:
+	var pick:SlasherEnemy=null
+	for node in actor_layer.get_children():
+		if not node is SlasherEnemy or node is SlasherColossus or node.dead:continue
+		if node.boss and (pick==null or not pick.boss):pick=node
+		elif node.mini_boss and pick==null:pick=node
+	if pick==null or pick.get_node_or_null("BossBar")!=null:return
+	var entry:Dictionary=GameBalance.get_slasher_journal_entry(pick.visual_id)
+	pick.add_child(SlasherBossBar.new().setup(pick,String(entry.get("name",pick.visual_id.capitalize())),[],Color("#c0392b") if pick.boss else Color("#d8743a")))
 	if exit_open:_reveal_secret_door()
 
 ## Sporelings sleep in clusters: extra caps around the first one.
@@ -692,9 +705,9 @@ func _build_hud()->void:
 	_build_resource_hud(canvas)
 	# Kept for the room/floor text other code and tests read; the floor banner shows it now.
 	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.name="Objective";objective_label.visible=false;canvas.add_child(objective_label)
-	clock_label=Label.new();clock_label.name="RunClock";clock_label.set_anchors_preset(Control.PRESET_CENTER_TOP);clock_label.offset_left=-220;clock_label.offset_right=220;clock_label.offset_top=14;clock_label.offset_bottom=36;clock_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;clock_label.add_theme_font_size_override("font_size",16);clock_label.add_theme_color_override("font_color",Color("#f0e2b8"));clock_label.add_theme_color_override("font_outline_color",Color("#0b0808"));clock_label.add_theme_constant_override("outline_size",7);canvas.add_child(clock_label)
+	clock_label=Label.new();clock_label.name="RunClock";clock_label.set_anchors_preset(Control.PRESET_CENTER_TOP);clock_label.set_anchors_preset(Control.PRESET_TOP_RIGHT);clock_label.offset_left=-340;clock_label.offset_right=-22;clock_label.offset_top=148;clock_label.offset_bottom=170;clock_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;clock_label.add_theme_font_size_override("font_size",16);clock_label.add_theme_color_override("font_color",Color("#f0e2b8"));clock_label.add_theme_color_override("font_outline_color",Color("#0b0808"));clock_label.add_theme_constant_override("outline_size",7);canvas.add_child(clock_label)
 	clock_label.visible=run_state.campaign!=null and not _is_tutorial_expedition()
-	combo_label=Label.new();combo_label.name="Combo";combo_label.set_anchors_preset(Control.PRESET_CENTER_TOP);combo_label.offset_left=-220;combo_label.offset_right=220;combo_label.offset_top=38;combo_label.offset_bottom=60;combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_font_size_override("font_size",15);combo_label.add_theme_color_override("font_color",Color("#e5bf68"));combo_label.add_theme_color_override("font_outline_color",Color("#0b0808"));combo_label.add_theme_constant_override("outline_size",6);canvas.add_child(combo_label)
+	combo_label=Label.new();combo_label.name="Combo";combo_label.set_anchors_preset(Control.PRESET_CENTER_TOP);combo_label.offset_left=-220;combo_label.offset_right=220;combo_label.offset_top=64;combo_label.offset_bottom=86;combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_font_size_override("font_size",15);combo_label.add_theme_color_override("font_color",Color("#e5bf68"));combo_label.add_theme_color_override("font_outline_color",Color("#0b0808"));combo_label.add_theme_constant_override("outline_size",6);canvas.add_child(combo_label)
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));message_label.add_theme_color_override("font_outline_color",Color("#0b0808"));message_label.add_theme_constant_override("outline_size",6);canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)

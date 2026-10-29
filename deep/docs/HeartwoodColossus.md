@@ -26,7 +26,7 @@ ring that runs down like a timer. Hit it then.
 - Damage per hit is capped (as for every boss), so it takes several windows.
 - When it falls, any sporelings scatter, the Root Gate opens, and a split stump
   is left where it stood.
-- Health bar across the bottom of the screen, with notches at the phase thresholds.
+- Health bar centred across the top of the screen, with notches at the phase thresholds.
 
 All numbers are in `data/slasher_balance.json` → `enemies.heartwood_colossus`
 (health, damage, every telegraph and window length, bullet counts and speeds).
@@ -53,7 +53,7 @@ room for the gate room on guardian floors whenever one exists.
 
 ## Other colossi
 
-The crypt's guardian, the **Charnel King**, is built on the same code
+The crypt's guardian, **Big Skelly Boi**, is built on the same code
 (`slasher_charnel_king.gd` extends `slasher_colossus.gd`); see docs/Crypt.md.
 A dungeon picks its colossus with `dungeons.json → <dungeon>.slasher.colossus`.
 

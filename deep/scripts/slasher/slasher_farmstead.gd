@@ -213,6 +213,7 @@ func _refresh_hud()->void:
 
 func _build_hud()->void:
 	super._build_hud()
+	if clock_label!=null:clock_label.offset_top=188;clock_label.offset_bottom=210
 	var map:=FIELD_MINIMAP.new();map.name="FieldMinimap";map.set_anchors_preset(Control.PRESET_TOP_RIGHT);map.offset_left=-242;map.offset_right=-22;map.offset_top=20;map.offset_bottom=180;map.setup(run_state);get_node("HUD").add_child(map)
 
 func _complete_farmstead()->void:

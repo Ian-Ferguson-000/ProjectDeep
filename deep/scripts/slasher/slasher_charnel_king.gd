@@ -1,7 +1,7 @@
 extends SlasherColossus
 class_name SlasherCharnelKing
 
-## The Charnel King: the Stone Crypt's guardian. A giant crowned skeleton sunk
+## Big Skelly Boi: the Stone Crypt's guardian. A giant crowned skeleton sunk
 ## to the chest in the floor of the Charnel Throne, fought old-school
 ## bullet-hell style like the Heartwood Colossus. It never moves; each attack has
 ## a clear warning, and afterwards a weak point opens for a few seconds.

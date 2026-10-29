@@ -103,7 +103,7 @@ func _draw_fist(t: float) -> void:
 		# Moss glowing with exposed sap where the fist split on impact.
 		draw_circle(Vector2(radius * 0.2,-radius * 0.05),radius * 0.3,Color(1.0,0.6,0.2,0.85 + sin(t * 10.0) * 0.15))
 
-## The Charnel King's soul gem, set in its ribs.
+## Big Skelly Boi's soul gem, set in its ribs.
 func _draw_gem(t: float) -> void:
 	var cage := Color(0.72,0.68,0.6)
 	for side in [-1,1]:

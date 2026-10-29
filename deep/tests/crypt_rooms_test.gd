@@ -2,7 +2,7 @@ extends SceneTree
 
 ## The Stone Crypt as rooms: painted 1.5x rooms, stone walls, gate guardians on
 ## every floor (and the forest's reflecting Elite Guardian on every forest
-## floor), the new crypt foes, and the Charnel King.
+## floor), the new crypt foes, and Big Skelly Boi.
 
 func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
 
@@ -60,6 +60,9 @@ func _run() -> void:
 	var gate_foes: Array = _foes(forest).filter(func(e): return e.mini_boss and e.behavior_id == "elite_guardian")
 	_expect(gate_foes.size() == 1,"Forest floor 1 gate room has no reflecting Elite Guardian")
 	_expect(bool(forest.layout.is_guarded) and not forest.exit_open,"Forest floor 1 gate is not guarded")
+	if gate_foes.size() == 1: _expect_top_bar(gate_foes[0],"Briar Guardian")
+	var minimap: Control = forest.get_node_or_null("HUD/ForestRoomMap")
+	_expect(minimap != null and forest.clock_label.anchor_left == 1.0 and forest.clock_label.offset_top >= minimap.offset_bottom,"The clock is not just below the minimap")
 	if gate_foes.size() == 1:
 		var guardian: SlasherEnemy = gate_foes[0]
 		guardian.receive_hit(1)
@@ -135,17 +138,18 @@ func _run() -> void:
 	_expect(_foes(crypt).any(func(e): return e.mini_boss and e.behavior_id == "tomb_guard"),"Crypt elite room has no Tomb Guard champion")
 	crypt.queue_free(); await _frames(2)
 
-	# ---- floor 5: the Charnel King
+	# ---- floor 5: Big Skelly Boi
 	crypt = await _scene(CRYPT,"crypt",5)
 	await _enter_role(crypt,"boss")
 	_expect(String(crypt.layout.template_id) == "charnel_throne","Crypt guardian floor did not use the Charnel Throne")
 	var kings: Array = crypt.actor_layer.get_children().filter(func(n): return n is SlasherCharnelKing)
-	_expect(kings.size() == 1,"The Charnel King is missing")
+	_expect(kings.size() == 1,"Big Skelly Boi is missing")
 	if kings.size() == 1:
 		var king: SlasherCharnelKing = kings[0]
-		_expect(king.arena.has_area() and king.arena.size.x > 2000.0,"The Charnel King was not given its arena")
+		_expect(king.arena.has_area() and king.arena.size.x > 2000.0,"Big Skelly Boi was not given its arena")
 		_expect(crypt.player.camera.zoom.x < 1.0,"The camera did not pull back in the guardian arena")
 		_expect(not king.is_in_group("slasher_damageable"),"The King's body can be hit")
+		_expect_top_bar(king,"Big Skelly Boi")
 		king.set_physics_process(false)
 		# Grave Sweep: the lane hurts, the hand opens at the end.
 		king.cycle_count = 0; king.pattern = ""; king._start_next_pattern()
@@ -210,6 +214,16 @@ func _run() -> void:
 	else:
 		for failure in failures: printerr("FAIL: " + failure)
 		quit(1)
+
+## The boss bar: present, centred across the top of the screen, named.
+func _expect_top_bar(boss: Node, title: String) -> void:
+	var bar := boss.get_node_or_null("BossBar") as SlasherBossBar
+	_expect(bar != null,"%s has no boss bar" % title)
+	if bar == null: return
+	var root := bar.get_node("Bar") as Control
+	_expect(is_equal_approx(root.anchor_left,0.5) and is_equal_approx(root.anchor_right,0.5) and is_equal_approx(root.offset_left,-root.offset_right),"%s boss bar is not centred" % title)
+	_expect(root.anchor_top == 0.0 and root.offset_top < 40.0,"%s boss bar is not at the top" % title)
+	_expect((bar.get_node("Bar/Name") as Label).text == title.to_upper(),"%s boss bar is named %s" % [title,(bar.get_node("Bar/Name") as Label).text])
 
 func get_nodes_count(group: String) -> int:
 	return get_nodes_in_group(group).size()

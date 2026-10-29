@@ -3,7 +3,7 @@ extends "res://scripts/slasher/slasher_forest_rooms.gd"
 ## The Stone Crypt. Plays as rooms like the forest (maps/crypt/rooms/, 1.5x the
 ## forest's size), with stone walls, iron bars on the doors, stairs down at the
 ## gate, crypt hazards in fighting rooms and its own foes. The guardian floor's
-## gate room holds the Charnel King (slasher_charnel_king.gd).
+## gate room holds Big Skelly Boi (slasher_charnel_king.gd).
 ##
 ## Merchant interludes still use the old single generated floor, so the code
 ## for that (the "legacy" functions below) stays.
@@ -155,6 +155,7 @@ func _spawn_enemies()->void:
 		if use_authored_layout and not String(record.get("behavior_id","")).is_empty():spec.behavior_id=String(record.behavior_id)
 		_spawn_enemy(_world(spawn),String(spec.visual_id),String(spec.behavior_id),is_boss,is_elite);spawn_index+=1
 	exit_open=enemies_remaining==0
+	_attach_boss_bar()
 
 ## Rooms: plain foes come from the crypt's roster, growing with depth.
 func _normal_enemy_spec(spawn_index:int,_wolf_counts:Dictionary)->Dictionary:
@@ -232,7 +233,7 @@ class IronBars extends Node2D:
 		var bar_b:=Vector2(24,-14) if not vertical else Vector2(-12,24)
 		draw_line(bar_a,bar_b,iron,6.0);draw_line(bar_a+Vector2(0,24) if not vertical else bar_a+Vector2(24,0),bar_b+Vector2(0,24) if not vertical else bar_b+Vector2(24,0),iron,6.0)
 
-## What's left of the Charnel King: a heap of bones and a cracked crown.
+## What's left of Big Skelly Boi: a heap of bones and a cracked crown.
 class BoneHeap extends Node2D:
 	func _draw()->void:
 		var half:=Vector2(ForestRoomLibrary.COLOSSUS_SIZE)*24.0
