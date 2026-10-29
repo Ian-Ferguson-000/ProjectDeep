@@ -86,6 +86,10 @@ func _settings()->Node:
 	return local_settings
 var movement_debuff_time:=0.0
 var next_attack_multiplier:=1.0
+## Short boosts from active items (War Horn): extra damage and attack speed.
+var active_buff_time:=0.0
+var active_buff_damage:=1.0
+var active_buff_haste:=1.0
 var mage_combo_effects: Node2D
 var combo_runtime
 var resolving_combo:Dictionary={}
@@ -169,6 +173,9 @@ func _refresh_presentation()->void:
 func _physics_process(delta:float)->void:
 	if combo_runtime!=null and combo_runtime.tick(delta):combo_updated.emit({"type":"progress","progress":combo_runtime.feedback()})
 	warrior_slash_chain_time=maxf(0.0,warrior_slash_chain_time-delta)
+	if active_buff_time>0.0:
+		active_buff_time=maxf(0.0,active_buff_time-delta)
+		if active_buff_time<=0.0:active_buff_damage=1.0;active_buff_haste=1.0
 	if warrior_slash_chain_time<=0.0:warrior_slash_chain=0
 	resource_suppression_time=maxf(0.0,resource_suppression_time-delta)
 	if run_state!=null and resource_suppression_time<=0.0 and run_state.class_resource<run_state.get_class_resource_max():
@@ -198,7 +205,8 @@ func _physics_process(delta:float)->void:
 	if animation_lock<=0.0:_play_animation("run" if direction.length()>0.1 else "idle")
 	if Input.is_action_just_pressed("slasher_controller_basic"):use_action("basic", "controller")
 	if Input.is_action_just_pressed("slasher_mobility"):use_action("movement", "controller")
-	if Input.is_action_just_pressed("slasher_special"):use_action("special", "keyboard" if Input.is_physical_key_pressed(KEY_SPACE) else "controller")
+	# Space uses the active item when one is held (the dungeon scene handles it); otherwise the special.
+	if Input.is_action_just_pressed("slasher_special") and ActiveItems.held(run_state).is_empty():use_action("special", "keyboard" if Input.is_physical_key_pressed(KEY_SPACE) else "controller")
 	if Input.is_action_just_pressed("slasher_defend"):use_action("defensive", "controller")
 	if basic_mouse_held and not Input.is_key_pressed(KEY_SHIFT) and float(cooldowns.get("basic",0.0))<=0.0:
 		var held_result:Dictionary=use_action("basic", "mouse")
@@ -270,6 +278,7 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	result.resource_spent=resource_cost
 	cooldowns[slot]=float(result.get("cooldown_override",tuning.get("cooldown",0.4 if slot=="basic" else 3.0)))*(item_runtime.cooldown_multiplier() if item_runtime else 1.0)
 	if slot=="basic" and item_runtime:cooldowns[slot]=float(cooldowns[slot])/item_runtime.attack_speed_multiplier()
+	if slot=="basic" and active_buff_time>0.0:cooldowns[slot]=float(cooldowns[slot])/maxf(0.1,active_buff_haste)
 	_after_item_action(slot)
 	resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());_play_action_animation(_action_animation_state(slot),float(cooldowns[slot]));animation_lock=minf(float(tuning.get("animation_lock",0.32)),float(cooldowns[slot]));ability_resolved.emit(result);return result
 
@@ -586,6 +595,7 @@ func _deflect_projectiles(reach:float,arc_degrees:float)->int:
 	return count
 
 func _attack_data(damage:int,damage_type:String,extra:Dictionary={})->Dictionary:
+	if active_buff_time>0.0 and active_buff_damage>1.0:damage=maxi(1,int(round(float(damage)*active_buff_damage)))
 	var data:={"damage":damage,"damage_type":damage_type,"knockback":0.0,"status":"","status_duration":0.0}
 	for key in extra:data[key]=extra[key]
 	return data

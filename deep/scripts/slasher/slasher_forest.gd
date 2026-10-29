@@ -402,6 +402,7 @@ func _process(delta:float)->void:
 		_cycle_party_member();return
 	# Modal controls consume Escape themselves. Never let the same keypress fall through to abandon.
 	if modal_open or codex_open:return
+	_process_active_item(delta)
 	var interaction_used:=false;var nearby_chest:SlasherBreakableProp=_nearby_chest()
 	if nearby_chest!=null:
 		var keyless:=bool(nearby_chest.get_meta("no_key",false))
@@ -735,6 +736,26 @@ func _refresh_hud()->void:
 	gold_value_label.text=str(run_state.gold);key_value_label.text=str(run_state.keys);potion_value_label.text=str(potions)
 	_refresh_dungeon_hud()
 
+## The active item slot: timer items recharge while you play; Space uses a charged item.
+func _process_active_item(delta:float)->void:
+	if _is_tutorial_expedition():return
+	ActiveItems.tick(run_state,delta)
+	if Input.is_action_just_pressed("slasher_special") and not player.input_locked and player.health>0:use_active_item()
+	_refresh_active_hud()
+
+func use_active_item()->bool:
+	var id:=ActiveItems.held(run_state)
+	if id.is_empty():return false
+	if not ActiveItems.is_ready(run_state):
+		_show_message("%s is still charging."%String(ActiveItems.item(id).get("name","The item")),0.8);AudioCue.play_from(self,"block");return false
+	if not SlasherActiveEffects.use(player,id):return false
+	ActiveItems.spend(run_state);_refresh_active_hud();return true
+
+func _refresh_active_hud()->void:
+	if dungeon_hud==null:return
+	var id:=ActiveItems.held(run_state)
+	dungeon_hud.show_active(id,ActiveItems.charge(run_state),ActiveItems.max_charge(id),ActiveItems.uses_timer(id))
+
 func _refresh_dungeon_hud()->void:
 	if dungeon_hud==null or not is_instance_valid(player):return
 	var potions:=run_state.get_consumables().count("healing_potion")
@@ -743,6 +764,7 @@ func _refresh_dungeon_hud()->void:
 	var picked:Array=[]
 	for entry in run_state.inventory_items:picked.append(entry)
 	dungeon_hud.show_items(picked)
+	_refresh_active_hud()
 	dungeon_hud.show_resource_pips(run_state.class_resource,run_state.get_class_resource_max(),_class_resource_color(),GameBalance.action_enabled("special"))
 	gold_value_label.text="%02d"%run_state.gold;key_value_label.text="%02d"%run_state.keys;potion_value_label.text=str(potions)
 

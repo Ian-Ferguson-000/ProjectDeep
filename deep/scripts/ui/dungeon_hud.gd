@@ -23,6 +23,7 @@ const ITEM_SLOT := 38.0
 const ITEMS_PER_ROW := 5
 const MAX_ITEM_SLOTS := 20
 const POTION_SLOT := 52.0
+const ACTIVE_SLOT := 64.0
 
 ## 7x6 pixel heart. Each "X" is one pixel, drawn PIXEL screen pixels wide.
 const HEART := [
@@ -66,6 +67,8 @@ var gold_label: Label
 var key_label: Label
 var potion_label: Label
 var potion_slot: Panel
+## The active item slot (Space), bottom-left corner.
+var active_slot: ActiveSlot
 var _potion_icon: TextureRect
 var _banner: Control
 
@@ -82,6 +85,8 @@ func _init() -> void:
 	gold_label = _add_counter(GOLD_ICON,"Gold")
 	key_label = _add_counter(KEY_ICON,"Keys")
 	_build_potion_slot()
+	active_slot = ActiveSlot.new(); active_slot.name = "ActiveSlot"; active_slot.size = Vector2.ONE * ACTIVE_SLOT
+	add_child(active_slot)
 	_items.name = "Items"
 	_items.columns = ITEMS_PER_ROW
 	_items.add_theme_constant_override("h_separation",4)
@@ -206,12 +211,13 @@ func _hearts_top() -> float:
 
 ## Hearts start to the right of the potion pocket.
 func _hearts_left() -> float:
-	return MARGIN.x + POTION_SLOT + 12.0
+	return MARGIN.x + ACTIVE_SLOT + 10.0 + POTION_SLOT + 12.0
 
 func _layout_counters() -> void:
 	var bottom := size.y - MARGIN.y + 2.0
-	potion_slot.position = Vector2(MARGIN.x,bottom - POTION_SLOT)
-	var top := minf(_hearts_top() - (16.0 if show_resource else 0.0),potion_slot.position.y - 4.0) - 32.0
+	active_slot.position = Vector2(MARGIN.x,bottom - ACTIVE_SLOT)
+	potion_slot.position = Vector2(MARGIN.x + ACTIVE_SLOT + 10.0,bottom - POTION_SLOT)
+	var top := minf(_hearts_top() - (16.0 if show_resource else 0.0),active_slot.position.y - 4.0) - 32.0
 	_counters.position = Vector2(MARGIN.x - 2.0,top)
 
 func _process(delta: float) -> void:
@@ -267,6 +273,15 @@ func _draw_heart(at: Vector2, filled: float, beat: float) -> void:
 			if _flash > 0.0 and color != EMPTY: color = color.lerp(Color.WHITE,_flash / 0.35 * 0.8)
 			draw_rect(Rect2(origin + Vector2(x,y) * pixel,Vector2.ONE * pixel),color)
 
+## The active item: its icon, charge (pips for room items, a filling bar for
+## timer items) and whether it's ready. Empty shows a faint slot.
+func show_active(item_id: String, charge: float, maximum: float, timer: bool) -> void:
+	active_slot.show_item(item_id,charge,maximum,timer)
+
+## Isaac-style pickup text: the item's name big, what it does underneath.
+func show_pickup(title: String, text: String) -> void:
+	show_floor_banner(title,text)
+
 ## "VERDANT FOREST" / "Floor 2 of 5": slides in at the top centre, then fades.
 func show_floor_banner(title: String, subtitle: String) -> void:
 	if is_instance_valid(_banner): _banner.queue_free()
@@ -274,13 +289,15 @@ func show_floor_banner(title: String, subtitle: String) -> void:
 	_banner.name = "FloorBanner"
 	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_banner.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_banner.offset_left = -320; _banner.offset_right = 320; _banner.offset_top = 150; _banner.offset_bottom = 230
+	_banner.offset_left = -360; _banner.offset_right = 360; _banner.offset_top = 150; _banner.offset_bottom = 250
 	_banner.add_theme_constant_override("separation",0)
 	add_child(_banner)
 	for part in [[title,38,TEXT],[subtitle,20,Color("#c9b78f")]]:
 		var label := Label.new()
 		label.text = String(part[0])
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.custom_minimum_size = Vector2(720,0)
 		label.add_theme_font_size_override("font_size",int(part[1]))
 		label.add_theme_color_override("font_color",part[2])
 		label.add_theme_color_override("font_outline_color",OUTLINE)
@@ -369,3 +386,77 @@ func _item_slot(entry: Dictionary) -> Control:
 static func item_icon(icon_key: String) -> Texture2D:
 	var path := SPELL_ICON if icon_key == "spell" else UI_ICONS + String(ITEM_ICONS.get(icon_key,ITEM_ICONS.special))
 	return load(path) if ResourceLoader.exists(path) else null
+
+
+## The active item slot: a gold-framed box with the item's icon, a charge meter
+## down its right side and the key that uses it. Glows when ready.
+class ActiveSlot extends Control:
+	var item_id := ""
+	var charge := 0.0
+	var maximum := 1.0
+	var timer := false
+	var icon := TextureRect.new()
+	var time := 0.0
+	var ready_flash := 0.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_PASS
+		icon.position = Vector2(8,8); icon.size = Vector2(40,40)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(icon)
+		var key := Label.new(); key.text = "SPACE"; key.position = Vector2(4,-16)
+		key.add_theme_font_size_override("font_size",11); key.add_theme_color_override("font_color",Color("#f4ecd8"))
+		key.add_theme_color_override("font_outline_color",Color("#0b0808")); key.add_theme_constant_override("outline_size",4)
+		key.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(key)
+
+	func is_ready() -> bool:
+		return not item_id.is_empty() and charge >= maximum - 0.001
+
+	func show_item(id: String, value: float, top: float, uses_timer: bool) -> void:
+		var was_ready := is_ready()
+		if id != item_id:
+			item_id = id
+			var record := ActiveItems.item(id)
+			tooltip_text = "%s\n%s" % [String(record.get("name","")),String(record.get("description",""))] if not id.is_empty() else "Active item slot (Space)\nFind active items in treasure rooms."
+		charge = value; maximum = maxf(0.001,top); timer = uses_timer
+		if is_ready() and not was_ready and not id.is_empty(): ready_flash = 0.5
+		queue_redraw()
+
+	func _process(delta: float) -> void:
+		time += delta
+		ready_flash = maxf(0.0,ready_flash - delta)
+		if is_ready() or ready_flash > 0.0: queue_redraw()
+
+	func _draw() -> void:
+		var box := Rect2(Vector2.ZERO,size)
+		var gold := Color("#d4a63a"); var dark := Color("#7a5514")
+		draw_rect(box.grow(3.0),Color("#140b04"))
+		draw_rect(box.grow(1.5),dark)
+		draw_rect(box,Color("#e3d3ad") if not item_id.is_empty() else Color(0.89,0.83,0.68,0.35))
+		draw_rect(box,gold,false,2.0)
+		if item_id.is_empty():
+			draw_string(ThemeDB.fallback_font,Vector2(0,size.y * 0.58),"—",HORIZONTAL_ALIGNMENT_CENTER,size.x,20,Color(0.3,0.25,0.2,0.6))
+			return
+		# Charge meter down the right edge.
+		var meter := Rect2(size.x - 11.0,5.0,7.0,size.y - 10.0)
+		draw_rect(meter.grow(1.0),Color("#140b04"))
+		var fill_colour := Color("#f6c945") if is_ready() else Color("#6fa8dc")
+		if timer:
+			var filled := clampf(charge / maximum,0.0,1.0)
+			draw_rect(Rect2(meter.position.x,meter.end.y - meter.size.y * filled,meter.size.x,meter.size.y * filled),fill_colour)
+		else:
+			var pips := int(round(maximum))
+			var gap := 2.0
+			var pip_h := (meter.size.y - gap * (pips - 1)) / pips
+			for index in pips:
+				var y := meter.end.y - (index + 1) * pip_h - index * gap
+				draw_rect(Rect2(meter.position.x,y,meter.size.x,pip_h),fill_colour if index < int(round(charge)) else Color("#3a3036"))
+		SlasherActiveEffects.draw_icon(self,item_id,Vector2((size.x - 12.0) * 0.5 + 2.0,size.y * 0.5),40.0,not is_ready())
+		if is_ready():
+			var pulse := 0.5 + sin(time * 5.0) * 0.3
+			draw_rect(box.grow(4.0),Color(1.0,0.85,0.35,pulse),false,3.0)
+		if ready_flash > 0.0: draw_rect(box,Color(1,1,1,ready_flash))

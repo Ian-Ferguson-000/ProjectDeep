@@ -30,6 +30,9 @@ var transition_cooldown := 0.0
 var treasure_area: Area2D
 var campfire_position := Vector2(-99999,-99999)
 var rooms_active := false
+var active_pedestal: Node2D
+## Walking away re-arms the pedestal, so a swap doesn't immediately swap back.
+var _pedestal_armed := true
 
 func uses_room_layout() -> bool:
 	if run_state == null or use_authored_layout or run_state.slasher_merchant_interlude or _is_tutorial_expedition(): return false
@@ -309,7 +312,10 @@ func _build_landmarks() -> void:
 		actor_layer.add_child(camp)
 		if pathfinder != null: pathfinder.set_cell_blocked(fire,true)
 	var pedestal := Vector2i(layout.treasure)
-	if room_role == "treasure" and pedestal.x >= 0 and not bool(room.get("reward_claimed",false)):
+	active_pedestal = null
+	if room_role == "treasure" and pedestal.x >= 0 and not _treasure_active().is_empty():
+		_build_active_pedestal(_world(pedestal))
+	elif room_role == "treasure" and pedestal.x >= 0 and not bool(room.get("reward_claimed",false)) and not bool(Dictionary(room.get("slasher",{})).get("active_room",false)):
 		treasure_area = Area2D.new(); treasure_area.name = "TreasurePedestal"; treasure_area.position = _world(pedestal)
 		var shape := CollisionShape2D.new(); var circle := CircleShape2D.new(); circle.radius = 24; shape.shape = circle; treasure_area.add_child(shape)
 		treasure_area.add_child(_glow(Color("#d67ee8"),30))
@@ -426,6 +432,9 @@ func _mark_room_cleared(fought: bool) -> void:
 	room["cleared"] = true
 	run_state.update_field_room(room_id,{"cleared":true})
 	if fought:
+		# Clearing a fight charges the active item by one pip.
+		ActiveItems.add_room_charge(run_state,1)
+		_refresh_active_hud()
 		# TUNING: a small purse for every room fought through, on top of enemy rewards.
 		var amount := run_state.apply_reward_bonus(int(Dictionary(Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{})).get("room_count",{})).get("room_clear_gold",3)),"gold")
 		run_state.gold += amount
@@ -538,6 +547,7 @@ func _process(delta: float) -> void:
 	if player.input_locked or (relic_modal != null and relic_modal.visible): return
 	if treasure_area != null and is_instance_valid(treasure_area) and player.global_position.distance_to(treasure_area.global_position) < 40: _open_treasure()
 	if room_role == "rest" and player.global_position.distance_to(campfire_position) < 70: _offer_rest()
+	if is_instance_valid(active_pedestal): _check_active_pedestal()
 	_check_doors()
 
 func _check_doors() -> void:
@@ -574,6 +584,72 @@ func rest_at_campfire() -> bool:
 	_store_active_slasher_state(); _refresh_hud()
 	_show_message("%s rests by the fire and recovers." % run_state.get_active_character().display_name if run_state.get_active_character() != null else "You rest by the fire and recover.")
 	return true
+
+# ---------------------------------------------------------------- active item pedestals
+
+## Which active item this treasure room's pedestal holds ("" for a relic room,
+## or once taken). Decided the first time the room is built, then remembered,
+## including the item you leave behind when you swap.
+## TUNING: treasure_chance in data/active_items.json.
+func _treasure_active() -> String:
+	if room_role != "treasure" or _is_tutorial_expedition(): return ""
+	var state: Dictionary = Dictionary(room.get("slasher",{}))
+	if not state.has("active_pedestal"):
+		var id := ""
+		var held := ActiveItems.held(run_state)
+		var pool: Array[String] = ActiveItems.ids_for_class(run_state.selected_class_id).filter(func(item_id): return item_id != held)
+		var stats := run_state.run_stats()
+		var rng := RandomNumberGenerator.new(); rng.seed = hash("%s:%d:active" % [String(run_state.field_run.get("forest_floor_key","")),room_id])
+		var first_offer := held.is_empty() and not bool(stats.get("active_offered",false))
+		if not pool.is_empty() and (first_offer or rng.randf() < float(ActiveItems.data().get("treasure_chance",0.35))):
+			id = pool[rng.randi_range(0,pool.size() - 1)]
+			stats["active_offered"] = true
+		state["active_pedestal"] = id
+		state["active_room"] = not id.is_empty()
+		room["slasher"] = state
+		run_state.update_field_room(room_id,{"slasher":state})
+	return String(state.get("active_pedestal",""))
+
+func _build_active_pedestal(at: Vector2) -> void:
+	var pedestal := ActivePedestal.new(); pedestal.name = "ActivePedestal"; pedestal.position = at
+	pedestal.item_id = _treasure_active()
+	pedestal.add_child(_glow(Color("#f3d366"),30))
+	actor_layer.add_child(pedestal)
+	active_pedestal = pedestal
+
+func _check_active_pedestal() -> void:
+	var distance := player.global_position.distance_to(active_pedestal.global_position)
+	if distance > 64.0:
+		_pedestal_armed = true
+		return
+	var id := String(active_pedestal.get("item_id"))
+	if id.is_empty() or not _pedestal_armed or distance > 44.0: return
+	var held := ActiveItems.held(run_state)
+	if held.is_empty():
+		take_active_item()
+		return
+	_show_message("Press E to swap %s for %s." % [String(ActiveItems.item(held).get("name",held)),String(ActiveItems.item(id).get("name",id))],0.15)
+	if Input.is_action_just_pressed("interact"):
+		player.basic_mouse_held = false
+		take_active_item()
+
+## Takes the pedestal's item into the active slot; whatever was held is left on the pedestal.
+func take_active_item() -> String:
+	if not is_instance_valid(active_pedestal): return ""
+	var id := String(active_pedestal.get("item_id"))
+	if id.is_empty(): return ""
+	var old := ActiveItems.give(run_state,id)
+	var state: Dictionary = Dictionary(room.get("slasher",{})); state["active_pedestal"] = old; room["slasher"] = state
+	room["reward_claimed"] = true
+	run_state.update_field_room(room_id,{"slasher":state,"reward_claimed":true})
+	active_pedestal.set("item_id",old)
+	active_pedestal.queue_redraw()
+	_pedestal_armed = false
+	AudioCue.play_from(self,"reward",false)
+	var record := ActiveItems.item(id)
+	if dungeon_hud != null: dungeon_hud.show_pickup(String(record.get("name",id)).to_upper(),String(record.get("description","")))
+	_refresh_active_hud()
+	return old
 
 func _open_treasure() -> void:
 	if relic_modal == null or relic_modal.visible: return
@@ -634,6 +710,38 @@ func _refresh_hud() -> void:
 
 
 # ---------------------------------------------------------------- guardian warnings
+
+## A stone pedestal with an active item floating over it.
+class ActivePedestal extends Node2D:
+	var item_id := "":
+		set(value):
+			item_id = value
+			_refresh()
+	var icon: Sprite2D
+	var label: Label
+	var _time := 0.0
+	func _ready() -> void:
+		icon = Sprite2D.new(); icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST; add_child(icon)
+		label = Label.new(); label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.size = Vector2(160,20); label.position = Vector2(-80,14)
+		label.add_theme_font_size_override("font_size",12); label.add_theme_color_override("font_color",Color("#f6d77a"))
+		label.add_theme_color_override("font_outline_color",Color(0,0,0,0.9)); label.add_theme_constant_override("outline_size",4)
+		add_child(label)
+		_refresh()
+	func _refresh() -> void:
+		if icon == null or label == null: return
+		var record := ActiveItems.item(item_id)
+		label.text = String(record.get("name","")) if not item_id.is_empty() else ""
+	func _process(delta: float) -> void:
+		_time += delta
+		if icon != null: icon.position = Vector2(0,-38 + sin(_time * 3.0) * 4.0)
+		queue_redraw()
+	func _draw() -> void:
+		draw_rect(Rect2(-18,-14,36,22),Color("#3d3a44")); draw_rect(Rect2(-22,4,44,8),Color("#2a2730"))
+		draw_rect(Rect2(-18,-14,36,4),Color("#77707f"))
+		if not item_id.is_empty():
+			var float_at := Vector2(0,-38 + sin(_time * 3.0) * 4.0)
+			draw_circle(float_at,22.0,Color(1.0,0.9,0.5,0.18))
+			SlasherActiveEffects.draw_icon(self,item_id,float_at,34.0)
 
 ## Isaac-style intro when you walk into the guardian's room.
 func _show_guardian_banner() -> void:

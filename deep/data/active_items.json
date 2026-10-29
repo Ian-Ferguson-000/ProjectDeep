@@ -1,0 +1,19 @@
+{
+  "how_to_edit": [
+    "Active items: one slot, used with Space (the special button). Isaac-style.",
+    "charge: \"rooms\" refills one pip per room you clear (rooms = how many pips); \"timer\" refills over seconds.",
+    "Picking one up gives it fully charged. Picking up another swaps: the old one is left on the pedestal.",
+    "classes: which adventurers can find it. Only warrior items exist so far.",
+    "icon: attack, defense, move, mode, special, spell, gold, potion (the relic icon set).",
+    "effect: the numbers for what it does; see scripts/slasher/slasher_active_effects.gd for each kind.",
+    "treasure_chance: how often a treasure room holds an active item instead of a relic. The first treasure room of a run always does while your slot is empty."
+  ],
+  "treasure_chance": 0.35,
+  "items": {
+    "shadow_step": {"name": "Shadow Step", "description": "Dash a short way in the direction you're moving, untouchable while you do.", "charge": "timer", "seconds": 3.5, "classes": ["warrior"], "icon": "move", "effect": {"kind": "dash", "distance": 190, "duration": 0.14, "invulnerable": 0.35}},
+    "whirlwind": {"name": "Whirlwind", "description": "Spin with your blade out, hitting everything around you three times as hard and throwing it back.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "attack", "effect": {"kind": "spin", "radius": 125, "damage_multiplier": 3.0, "knockback": 280}},
+    "earthsplitter": {"name": "Earthsplitter", "description": "Slam your sword down: a crack tears along the ground ahead, hurting and stunning everything in its path.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "special", "effect": {"kind": "line", "length": 380, "width": 54, "damage_multiplier": 2.5, "stun": 0.9}},
+    "war_horn": {"name": "War Horn", "description": "A battle cry: for 6 seconds you hit 50% harder and swing 40% faster, and nearby foes are knocked back.", "charge": "rooms", "rooms": 3, "classes": ["warrior"], "icon": "mode", "effect": {"kind": "rally", "seconds": 6.0, "damage_multiplier": 1.5, "haste": 1.4, "push_radius": 150, "push": 240}},
+    "iron_skin": {"name": "Iron Skin", "description": "Harden like iron: soak up the next two hearts of damage within 10 seconds.", "charge": "rooms", "rooms": 3, "classes": ["warrior"], "icon": "defense", "effect": {"kind": "ward", "amount": 8, "seconds": 10.0}}
+  }
+}

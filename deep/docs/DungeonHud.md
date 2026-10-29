@@ -6,7 +6,7 @@ Binding of Isaac style: almost nothing on screen.
   last). The slot border is the rarity colour, temporary relics show floors left
   in the corner, and hovering a slot shows its name and effect. A new relic pops
   in. Icons are the category icons for now (`icon` in `pickup_items.json`).
-- **Bottom-left corner:** the potion pocket: potion icon, how many you carry, and
+- **Bottom-left corner:** the active item slot (Space; see docs/ActiveItems.md), then the potion pocket: potion icon, how many you carry, and
   the key to drink one (Q). Greyed out when empty.
 - **Bottom left:** pixel hearts along the bottom edge, right of the potion pocket. One heart = 4 health (`data/slasher_balance.json` →
   `hud.health_per_heart`), filled in quarters, six to a row. They flash and shake
