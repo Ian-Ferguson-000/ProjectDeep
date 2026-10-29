@@ -14,7 +14,9 @@ Binding of Isaac style: almost nothing on screen.
 - **Above the hearts:** coins and keys.
   Class resource pips (diamonds) only appear when specials are enabled again.
 - **Top centre:** the boss's health bar when there is one (any boss, gate or elite
-  guardian, or colossus), centred, with its name; combo progress under it.
+  guardian, or colossus), centred, with its name. Gold laurel wreaths and frame
+  for bosses, silver for mini bosses; a pale trail shows the damage just dealt.
+  Drawn in `scripts/ui/boss_bar.gd`. Combo progress under it.
 - **Top right:** the floor map, with the run clock and your best time just below it.
 - **Floor banner:** "VERDANT FOREST / Floor 2 of 5" fades in when each floor
   starts, noting a guardian or elite floor.
