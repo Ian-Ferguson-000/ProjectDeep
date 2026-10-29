@@ -725,13 +725,13 @@ func _refresh_hud()->void:
 func _refresh_dungeon_hud()->void:
 	if dungeon_hud==null or not is_instance_valid(player):return
 	var potions:=run_state.get_consumables().count("healing_potion")
-	dungeon_hud.show_state(player.health,player.max_health,run_state.gold,run_state.keys,potions,RunState.consumables_for_sale() or potions>0)
+	dungeon_hud.show_state(player.health,player.max_health,run_state.gold,run_state.keys,potions)
 	# Specials are off for now, so the resource pips only show when they come back.
 	var picked:Array=[]
 	for entry in run_state.inventory_items:picked.append(entry)
 	dungeon_hud.show_items(picked)
 	dungeon_hud.show_resource_pips(run_state.class_resource,run_state.get_class_resource_max(),_class_resource_color(),GameBalance.action_enabled("special"))
-	gold_value_label.text="%02d"%run_state.gold;key_value_label.text="%02d"%run_state.keys;potion_value_label.text="%02d"%potions
+	gold_value_label.text="%02d"%run_state.gold;key_value_label.text="%02d"%run_state.keys;potion_value_label.text=str(potions)
 
 func _build_party_strip(canvas:CanvasLayer)->void:
 	var panel:=PanelContainer.new();panel.name="PartyStripPanel";panel.position=Vector2(18,12);panel.custom_minimum_size=Vector2(300,84);panel.add_theme_stylebox_override("panel",_panel_style(Color("#101713e8"),Color("#80602d")));canvas.add_child(panel)

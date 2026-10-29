@@ -20,8 +20,9 @@ const ITEM_ICONS := {
 }
 const SPELL_ICON := "res://assets/pixel_art/spellnode.png"
 const ITEM_SLOT := 38.0
-const ITEMS_PER_ROW := 8
-const MAX_ITEM_SLOTS := 24
+const ITEMS_PER_ROW := 5
+const MAX_ITEM_SLOTS := 20
+const POTION_SLOT := 52.0
 
 ## 7x6 pixel heart. Each "X" is one pixel, drawn PIXEL screen pixels wide.
 const HEART := [
@@ -64,7 +65,8 @@ var item_slots: Array[Control] = []
 var gold_label: Label
 var key_label: Label
 var potion_label: Label
-var _potion_row: Control
+var potion_slot: Panel
+var _potion_icon: TextureRect
 var _banner: Control
 
 func _init() -> void:
@@ -79,8 +81,7 @@ func _init() -> void:
 	add_child(_counters)
 	gold_label = _add_counter(GOLD_ICON,"Gold")
 	key_label = _add_counter(KEY_ICON,"Keys")
-	potion_label = _add_counter(POTION_ICON,"Potions")
-	_potion_row = potion_label.get_parent()
+	_build_potion_slot()
 	_items.name = "Items"
 	_items.columns = ITEMS_PER_ROW
 	_items.add_theme_constant_override("h_separation",4)
@@ -95,6 +96,52 @@ func set_items_top(top: float) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED: _layout_counters()
+
+## The potion pocket in the bottom-left corner: always there, greyed out when
+## empty, with the key that drinks one (Q).
+func _build_potion_slot() -> void:
+	potion_slot = Panel.new()
+	potion_slot.name = "PotionSlot"
+	potion_slot.size = Vector2.ONE * POTION_SLOT
+	potion_slot.mouse_filter = Control.MOUSE_FILTER_PASS
+	potion_slot.tooltip_text = "Healing potion\nPress Q (left stick on a controller) to drink one."
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#e3d3ad")
+	style.border_color = Color("#8a1414")
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(5)
+	style.shadow_color = Color(0,0,0,0.55)
+	style.shadow_size = 2
+	potion_slot.add_theme_stylebox_override("panel",style)
+	add_child(potion_slot)
+	_potion_icon = TextureRect.new()
+	_potion_icon.texture = POTION_ICON
+	_potion_icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_potion_icon.offset_left = 7; _potion_icon.offset_top = 6; _potion_icon.offset_right = -7; _potion_icon.offset_bottom = -8
+	_potion_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_potion_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_potion_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	potion_slot.add_child(_potion_icon)
+	var key := _slot_label("Q",13)
+	key.name = "Key"
+	key.position = Vector2(4,-2)
+	potion_slot.add_child(key)
+	potion_label = _slot_label("0",17)
+	potion_label.name = "Potions"
+	potion_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	potion_label.offset_left = -26; potion_label.offset_top = -24; potion_label.offset_right = -3; potion_label.offset_bottom = 2
+	potion_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	potion_slot.add_child(potion_label)
+
+func _slot_label(text_value: String, font_size: int) -> Label:
+	var label := Label.new()
+	label.text = text_value
+	label.add_theme_font_size_override("font_size",font_size)
+	label.add_theme_color_override("font_color",TEXT)
+	label.add_theme_color_override("font_outline_color",OUTLINE)
+	label.add_theme_constant_override("outline_size",5)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
 
 func _add_counter(icon_texture: Texture2D, tooltip: String) -> Label:
 	var row := HBoxContainer.new()
@@ -122,7 +169,7 @@ func _add_counter(icon_texture: Texture2D, tooltip: String) -> Label:
 	return label
 
 ## Update everything shown. Hearts flash and shake when health drops.
-func show_state(current_health: int, maximum_health: int, gold: int, keys: int, potions: int, show_potions: bool) -> void:
+func show_state(current_health: int, maximum_health: int, gold: int, keys: int, potions: int) -> void:
 	if current_health < health and health > 0:
 		_flash = 0.35
 		_shake = 0.3
@@ -130,8 +177,9 @@ func show_state(current_health: int, maximum_health: int, gold: int, keys: int, 
 	max_health = maxi(1,maximum_health)
 	gold_label.text = "%02d" % gold
 	key_label.text = "%02d" % keys
-	potion_label.text = "%02d" % potions
-	_potion_row.visible = show_potions
+	potion_label.text = str(potions)
+	_potion_icon.modulate = Color.WHITE if potions > 0 else Color(0.3,0.3,0.3,0.55)
+	potion_label.visible = potions > 0
 	_layout_counters()
 	queue_redraw()
 
@@ -156,8 +204,14 @@ func _hearts_height() -> float:
 func _hearts_top() -> float:
 	return size.y - MARGIN.y - _hearts_height() + HEART_GAP
 
+## Hearts start to the right of the potion pocket.
+func _hearts_left() -> float:
+	return MARGIN.x + POTION_SLOT + 12.0
+
 func _layout_counters() -> void:
-	var top := _hearts_top() - (16.0 if show_resource else 0.0) - 34.0
+	var bottom := size.y - MARGIN.y + 2.0
+	potion_slot.position = Vector2(MARGIN.x,bottom - POTION_SLOT)
+	var top := minf(_hearts_top() - (16.0 if show_resource else 0.0),potion_slot.position.y - 4.0) - 32.0
 	_counters.position = Vector2(MARGIN.x - 2.0,top)
 
 func _process(delta: float) -> void:
@@ -177,7 +231,7 @@ func _draw() -> void:
 	for index in count:
 		var row := index / HEARTS_PER_ROW
 		var column := index % HEARTS_PER_ROW
-		var at := Vector2(MARGIN.x,_hearts_top()) + offset + Vector2(column * (HEART_SIZE.x + HEART_GAP),row * (HEART_SIZE.y + HEART_GAP))
+		var at := Vector2(_hearts_left(),_hearts_top()) + offset + Vector2(column * (HEART_SIZE.x + HEART_GAP),row * (HEART_SIZE.y + HEART_GAP))
 		var filled := clampf(float(health - index * health_per_heart) / float(health_per_heart),0.0,1.0)
 		# The heart holding your last health beats when you're nearly dead.
 		var beat := 1.0
@@ -187,7 +241,7 @@ func _draw() -> void:
 	if show_resource:
 		var pip_top := _hearts_top() - 16.0
 		for index in resource_max:
-			var center := Vector2(MARGIN.x + 6.0 + index * 16.0,pip_top + 5.0)
+			var center := Vector2(_hearts_left() + 6.0 + index * 16.0,pip_top + 5.0)
 			var points := PackedVector2Array([center + Vector2(0,-6),center + Vector2(6,0),center + Vector2(0,6),center + Vector2(-6,0)])
 			draw_colored_polygon(points,OUTLINE)
 			var inner := PackedVector2Array([center + Vector2(0,-4),center + Vector2(4,0),center + Vector2(0,4),center + Vector2(-4,0)])
