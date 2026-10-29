@@ -55,7 +55,7 @@ func _build_floor() -> void:
 	if new_floor: player.reset_combo_progress()
 	_spawn_enemies(); _spawn_loot(); _build_hud(); _refresh_hud(); _entry_fade()
 	if new_floor and player.item_runtime: player.item_runtime.floor_entered()
-	if new_floor: _show_message("%s · floor %d" % [String(layout.room_name),run_state.current_floor],3.0)
+	if new_floor: _show_floor_banner()
 	if room_role == "boss" and not bool(room.get("cleared",false)) and (bool(layout.get("is_boss_floor",false)) or bool(layout.get("is_elite_floor",false))): _show_guardian_banner()
 	if new_floor and run_state.current_floor == 1 and not run_state.starter_reward_claimed: call_deferred("_offer_starter_relic")
 	transition_cooldown = 0.5
@@ -542,7 +542,7 @@ func _build_hud() -> void:
 	super._build_hud()
 	if not rooms_active: return
 	var map := ROOM_MINIMAP.new(); map.name = "ForestRoomMap"
-	map.set_anchors_preset(Control.PRESET_TOP_RIGHT); map.offset_left = -214; map.offset_right = -18; map.offset_top = 18; map.offset_bottom = 152
+	map.set_anchors_preset(Control.PRESET_TOP_RIGHT); map.offset_left = -200; map.offset_right = -22; map.offset_top = 20; map.offset_bottom = 140
 	map.setup(run_state); get_node("HUD").add_child(map)
 
 func _refresh_hud() -> void:

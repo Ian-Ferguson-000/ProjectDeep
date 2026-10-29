@@ -151,8 +151,8 @@ func _run() -> void:
 		_expect(scene.player.camera!=null and scene.player.camera.zoom.x>=1.0 and scene.player.camera.zoom.x<=1.5,"%s Slasher camera did not apply configured zoom"%class_id,failures)
 		_expect(scene.player.camera.drag_horizontal_enabled and scene.player.camera.drag_vertical_enabled,"%s Slasher camera is missing its player movement dead zone"%class_id,failures)
 		_expect(is_equal_approx(scene.player.camera.drag_left_margin,0.25) and is_equal_approx(scene.player.camera.drag_right_margin,0.25) and is_equal_approx(scene.player.camera.drag_top_margin,0.25) and is_equal_approx(scene.player.camera.drag_bottom_margin,0.25),"%s Slasher camera dead zone does not preserve quarter-screen margins"%class_id,failures)
-		var resource_hud:Control=scene.find_child("ResourceHUD",true,false) as Control
-		_expect(resource_hud!=null and resource_hud.anchor_left==1.0 and resource_hud.anchor_top==1.0,"%s HUD is not anchored to the bottom-right"%class_id,failures)
+		var dungeon_hud:DungeonHud=scene.dungeon_hud
+		_expect(dungeon_hud!=null and dungeon_hud.heart_count()>0 and dungeon_hud.health==scene.player.health,"%s HUD is not showing the player's hearts"%class_id,failures)
 		_expect(scene.health_bar!=null and scene.resource_bar!=null and scene.gold_value_label!=null and scene.key_value_label!=null and scene.potion_value_label!=null,"%s HUD is missing live health or resource controls"%class_id,failures)
 		var found_breakable:=false;var first_breakable:SlasherBreakableProp
 		for damageable in scene.get_tree().get_nodes_in_group("slasher_damageable"):

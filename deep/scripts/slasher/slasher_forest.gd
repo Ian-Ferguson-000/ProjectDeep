@@ -8,7 +8,7 @@ const MERCHANT_PANEL:=preload("res://scripts/ui/merchant_shop_panel.gd")
 const CODEX:=preload("res://scripts/slasher/slasher_codex_menu.gd")
 const BREAKABLE_PROP:=preload("res://scripts/slasher/slasher_breakable_prop.gd")
 const RELIC_MODAL:=preload("res://scripts/slasher/slasher_relic_choice_modal.gd")
-const RESOURCE_HUD_FRAME:=preload("res://assets/slasher/ui/slasher_resource_hud_frame.png")
+const DUNGEON_HUD:=preload("res://scripts/ui/dungeon_hud.gd")
 const GOLD_UI_ICON:=preload("res://assets/slasher/ui/resource_gold.svg")
 const KEY_UI_ICON:=preload("res://assets/slasher/ui/resource_key.svg")
 const POTION_UI_ICON:=preload("res://assets/slasher/ui/resource_potion.svg")
@@ -59,6 +59,7 @@ var resource_value_label:Label
 var gold_value_label:Label
 var key_value_label:Label
 var potion_value_label:Label
+var dungeon_hud:DungeonHud
 var merchant_shop_panel:MerchantShopPanel
 var codex:SlasherCodexMenu
 var relic_modal:SlasherRelicChoiceModal
@@ -131,7 +132,7 @@ func _build_floor()->void:
 	layout=authored_layout if not authored_layout.is_empty() else SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor,run_state.active_dungeon_id)
 	if run_state.slasher_merchant_interlude:layout=_merchant_interlude_layout()
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
-	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();player.reset_combo_progress();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
+	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();player.reset_combo_progress();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade();_show_floor_banner()
 	if player.item_runtime:player.item_runtime.floor_entered()
 	if not run_state.slasher_merchant_interlude and run_state.current_floor==1 and not run_state.starter_reward_claimed and (not _is_tutorial_expedition() or run_state.campaign.expedition.tutorial_controls_complete):call_deferred("_offer_starter_relic")
 
@@ -684,19 +685,30 @@ func _refresh_clock_label()->void:
 
 func _build_hud()->void:
 	var canvas:=CanvasLayer.new();canvas.name="HUD";canvas.layer=10;add_child(canvas)
-	_build_party_strip(canvas)
-	var panel:=PanelContainer.new();panel.set_anchors_preset(Control.PRESET_TOP_WIDE);panel.offset_left=340;panel.offset_top=18;panel.offset_right=-340;panel.offset_bottom=98;panel.add_theme_stylebox_override("panel",_panel_style(Color("#101c18e8"),Color("#557c54")));canvas.add_child(panel)
-	var status:=VBoxContainer.new();status.add_theme_constant_override("separation",2);panel.add_child(status)
-	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;status.add_child(objective_label)
-	combo_label=_label(Vector2.ZERO,Vector2(360,22),14);combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_color_override("font_color",Color("#e5bf68"));status.add_child(combo_label)
+	# Isaac-style: hearts, coins and keys top left, the map top right, nothing else
+	# until it matters. See scripts/ui/dungeon_hud.gd.
+	dungeon_hud=DUNGEON_HUD.new();canvas.add_child(dungeon_hud)
+	if GameBalance.max_party_size()>1:_build_party_strip(canvas)
 	_build_resource_hud(canvas)
-	clock_label=Label.new();clock_label.name="RunClock";clock_label.set_anchors_preset(Control.PRESET_CENTER_TOP);clock_label.offset_left=-220;clock_label.offset_right=220;clock_label.offset_top=100;clock_label.offset_bottom=124;clock_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;clock_label.add_theme_font_size_override("font_size",15);clock_label.add_theme_color_override("font_color",Color("#f0e2b8"));clock_label.add_theme_color_override("font_outline_color",Color("#10120e"));clock_label.add_theme_constant_override("outline_size",5);canvas.add_child(clock_label)
+	# Kept for the room/floor text other code and tests read; the floor banner shows it now.
+	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.name="Objective";objective_label.visible=false;canvas.add_child(objective_label)
+	clock_label=Label.new();clock_label.name="RunClock";clock_label.set_anchors_preset(Control.PRESET_CENTER_TOP);clock_label.offset_left=-220;clock_label.offset_right=220;clock_label.offset_top=14;clock_label.offset_bottom=36;clock_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;clock_label.add_theme_font_size_override("font_size",16);clock_label.add_theme_color_override("font_color",Color("#f0e2b8"));clock_label.add_theme_color_override("font_outline_color",Color("#0b0808"));clock_label.add_theme_constant_override("outline_size",7);canvas.add_child(clock_label)
 	clock_label.visible=run_state.campaign!=null and not _is_tutorial_expedition()
-	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));canvas.add_child(message_label)
+	combo_label=Label.new();combo_label.name="Combo";combo_label.set_anchors_preset(Control.PRESET_CENTER_TOP);combo_label.offset_left=-220;combo_label.offset_right=220;combo_label.offset_top=38;combo_label.offset_bottom=60;combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_font_size_override("font_size",15);combo_label.add_theme_color_override("font_color",Color("#e5bf68"));combo_label.add_theme_color_override("font_outline_color",Color("#0b0808"));combo_label.add_theme_constant_override("outline_size",6);canvas.add_child(combo_label)
+	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));message_label.add_theme_color_override("font_outline_color",Color("#0b0808"));message_label.add_theme_constant_override("outline_size",6);canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)
 	relic_modal=RELIC_MODAL.new();relic_modal.name="SlasherRelicChoice";relic_modal.relic_selected.connect(_claim_relic);canvas.add_child(relic_modal)
 	if _is_tutorial_expedition() and not run_state.campaign.expedition.tutorial_controls_complete:_build_control_tutorial()
+
+## "VERDANT FOREST" / "Floor 2 of 5" across the top when a floor begins.
+func _show_floor_banner()->void:
+	if dungeon_hud==null or _is_tutorial_expedition() or run_state.slasher_merchant_interlude:return
+	var dungeon_name:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Dungeon"))
+	var depth:="Endless · Cycle %d · Floor %d"%[run_state.get_slasher_cycle_number(),run_state.current_floor] if run_state.slasher_endless_mode else "Floor %d of %d"%[run_state.current_floor,run_state.max_floors]
+	if bool(layout.get("is_boss_floor",false)):depth+="  ·  the guardian waits"
+	elif bool(layout.get("is_elite_floor",false)):depth+="  ·  an elite guards the gate"
+	dungeon_hud.show_floor_banner(dungeon_name.to_upper(),depth)
 
 func _refresh_hud()->void:
 	if not is_instance_valid(player) or objective_label==null:return
@@ -706,7 +718,17 @@ func _refresh_hud()->void:
 	var dungeon_name:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Dungeon"));objective_label.text="%s  ·  %s  ·  %s"%[dungeon_name.to_upper(),depth_text,encounter_text]
 	health_bar.max_value=maxi(1,player.max_health);health_bar.value=player.health;health_value_label.text="%d / %d"%[player.health,player.max_health]
 	resource_bar.max_value=maxi(1,run_state.get_class_resource_max());resource_bar.value=run_state.class_resource;resource_value_label.text="%s  %d / %d"%[run_state.get_class_resource_name(),run_state.class_resource,run_state.get_class_resource_max()]
-	gold_value_label.text=str(run_state.gold);key_value_label.text=str(run_state.keys);potion_value_label.text=str(run_state.get_consumables().count("healing_potion"))
+	var potions:=run_state.get_consumables().count("healing_potion")
+	gold_value_label.text=str(run_state.gold);key_value_label.text=str(run_state.keys);potion_value_label.text=str(potions)
+	_refresh_dungeon_hud()
+
+func _refresh_dungeon_hud()->void:
+	if dungeon_hud==null or not is_instance_valid(player):return
+	var potions:=run_state.get_consumables().count("healing_potion")
+	dungeon_hud.show_state(player.health,player.max_health,run_state.gold,run_state.keys,potions,RunState.consumables_for_sale() or potions>0)
+	# Specials are off for now, so the resource pips only show when they come back.
+	dungeon_hud.show_resource_pips(run_state.class_resource,run_state.get_class_resource_max(),_class_resource_color(),GameBalance.action_enabled("special"))
+	gold_value_label.text="%02d"%run_state.gold;key_value_label.text="%02d"%run_state.keys;potion_value_label.text="%02d"%potions
 
 func _build_party_strip(canvas:CanvasLayer)->void:
 	var panel:=PanelContainer.new();panel.name="PartyStripPanel";panel.position=Vector2(18,12);panel.custom_minimum_size=Vector2(300,84);panel.add_theme_stylebox_override("panel",_panel_style(Color("#101713e8"),Color("#80602d")));canvas.add_child(panel)
@@ -735,19 +757,14 @@ func _flash_fallen_portrait(character_id:String)->void:
 	if not is_instance_valid(portrait):_rebuild_party_strip();return
 	portrait.update_state(0,maxi(1,portrait.maximum),false);var tween:=create_tween();tween.tween_property(portrait,"modulate",Color(1.0,0.22,0.18,0.9),0.16);tween.tween_interval(0.35);tween.tween_property(portrait,"modulate:a",0.0,0.28);tween.tween_callback(_rebuild_party_strip)
 
+## The old bars, kept hidden: other code reads and writes them. What the player
+## sees is DungeonHud.
 func _build_resource_hud(canvas:CanvasLayer)->void:
-	var hud:=Control.new();hud.name="ResourceHUD";hud.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT);hud.position=Vector2(-358,-385);hud.size=Vector2(340,367);hud.mouse_filter=Control.MOUSE_FILTER_IGNORE;canvas.add_child(hud)
-	var frame:=TextureRect.new();frame.name="Ornament";frame.texture=RESOURCE_HUD_FRAME;frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);frame.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;frame.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;frame.mouse_filter=Control.MOUSE_FILTER_IGNORE;hud.add_child(frame)
-	gold_value_label=_add_resource_counter(hud,GOLD_UI_ICON,Vector2(253,39),"Gold")
-	key_value_label=_add_resource_counter(hud,KEY_UI_ICON,Vector2(253,114),"Keys")
-	potion_value_label=_add_resource_counter(hud,POTION_UI_ICON,Vector2(253,186),"Potions")
-	health_bar=_add_hud_bar(hud,Vector2(66,270),Vector2(198,24),Color("#bd1724"),Color("#ff5960"))
-	resource_bar=_add_hud_bar(hud,Vector2(66,321),Vector2(198,24),_class_resource_color(),Color("#6ec8ff"))
-	health_value_label=_bar_value_label(hud,Vector2(66,266),Vector2(198,32));resource_value_label=_bar_value_label(hud,Vector2(66,317),Vector2(198,32))
-
-func _add_resource_counter(parent:Control,texture:Texture2D,position_value:Vector2,tooltip:String)->Label:
-	var icon:=TextureRect.new();icon.texture=texture;icon.position=position_value;icon.size=Vector2(48,48);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.tooltip_text=tooltip;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.z_index=5;parent.add_child(icon)
-	var value:=_label(position_value+Vector2(-70,8),Vector2(66,32),18);value.size=Vector2(66,32);value.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;value.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;value.add_theme_color_override("font_outline_color",Color("#080b10"));value.add_theme_constant_override("outline_size",5);parent.add_child(value);return value
+	var hud:=Control.new();hud.name="ResourceHUD";hud.set_anchors_preset(Control.PRESET_TOP_LEFT);hud.visible=false;hud.mouse_filter=Control.MOUSE_FILTER_IGNORE;canvas.add_child(hud)
+	health_bar=_add_hud_bar(hud,Vector2.ZERO,Vector2(198,24),Color("#bd1724"),Color("#ff5960"))
+	resource_bar=_add_hud_bar(hud,Vector2(0,30),Vector2(198,24),_class_resource_color(),Color("#6ec8ff"))
+	health_value_label=_bar_value_label(hud,Vector2.ZERO,Vector2(198,32));resource_value_label=_bar_value_label(hud,Vector2(0,30),Vector2(198,32))
+	gold_value_label=dungeon_hud.gold_label;key_value_label=dungeon_hud.key_label;potion_value_label=dungeon_hud.potion_label
 
 func _add_hud_bar(parent:Control,position_value:Vector2,size_value:Vector2,fill_color:Color,highlight:Color)->ProgressBar:
 	var bar:=ProgressBar.new();bar.position=position_value;bar.size=size_value;bar.show_percentage=false;bar.mouse_filter=Control.MOUSE_FILTER_IGNORE

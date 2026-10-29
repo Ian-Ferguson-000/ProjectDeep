@@ -213,7 +213,7 @@ func _refresh_hud()->void:
 
 func _build_hud()->void:
 	super._build_hud()
-	var map:=FIELD_MINIMAP.new();map.name="FieldMinimap";map.position=Vector2(18,82);map.size=Vector2(220,160);map.setup(run_state);get_node("HUD").add_child(map)
+	var map:=FIELD_MINIMAP.new();map.name="FieldMinimap";map.set_anchors_preset(Control.PRESET_TOP_RIGHT);map.offset_left=-242;map.offset_right=-22;map.offset_top=20;map.offset_bottom=180;map.setup(run_state);get_node("HUD").add_child(map)
 
 func _complete_farmstead()->void:
 	_snapshot_room();_close_codex()

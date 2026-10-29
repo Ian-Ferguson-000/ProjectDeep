@@ -16,6 +16,7 @@
 	  {"id":"vengeful_spiral","name":"Vengeful Spiral","description":"Parry, Charge, and Cleave twice in a vengeful spiral.","steps":["confirm:parry_success","action:movement","action:special"],"step_labels":["Successful Parry","Charge","Cleave"],"window":2.5,"priority":40,"effect":{"damage_multiplier":1.25,"arc_degrees":360,"echo_damage_multiplier":0.60,"echo_delay":0.18,"resource_refund":1}}
 	]
   },
+  "hud": {"health_per_heart": 4},
   "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28, "hollow_chance": 0.4}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
   "classes": {
 	"warrior": {
