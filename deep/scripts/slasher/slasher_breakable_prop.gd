@@ -21,12 +21,14 @@ func setup(kind:String,grid_cell:Vector2i)->void:
 	health=maxi(1,int(tuning.get("health",6)));maximum_health=health
 
 func _ready()->void:
-	add_to_group("slasher_damageable");collision=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=float(tuning.get("collision_radius",17.0));collision.shape=circle;add_child(collision)
+	# Chests can't be smashed: they're opened (with a key, or freely if hidden).
+	if prop_kind!="chest":add_to_group("slasher_damageable")
+	collision=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=float(tuning.get("collision_radius",17.0));collision.shape=circle;add_child(collision)
 	sprite=SlasherForestArt.make_sprite(prop_kind);sprite.position=Vector2(0,-8);add_child(sprite)
 	if prop_kind=="chest":add_to_group("slasher_chest")
 
 func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
-	if destroyed or is_open:return 0
+	if destroyed or is_open or prop_kind=="chest":return 0
 	var amount:int=maxi(1,int(attack.get("damage",1)));health=maxi(0,health-amount)
 	if is_instance_valid(attacker):attacker.add_impact_shake(2.5*float(attack.get("screen_shake_multiplier",1.0)),0.11)
 	if sprite!=null:

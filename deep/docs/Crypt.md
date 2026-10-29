@@ -112,7 +112,13 @@ ring. Its body can't be hurt.
 
 The forest's **reflecting Elite Guardian** (the briar guardian that answers
 every hit with a ring of thorns) now holds the **gate room on every forest
-floor**, not just floor 3; floor 5 is still the Heartwood Colossus. Set with
+floor**, not just floor 3; floor 5 is still the Heartwood Colossus. It no
+longer appears anywhere else: forest elite rooms hold a Kobold Cutthroat
+champion instead (`forest.slasher.elite_room_guardian`), and it's out of the
+forest's ordinary foes.
+
+Chests can't be destroyed by attacks any more; they only open (with a key, or
+freely for hidden ones). Set with
 `dungeons.json → forest.slasher.gate_guardian.every_floor`.
 
 ## Code

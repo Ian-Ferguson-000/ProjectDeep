@@ -71,6 +71,16 @@ func _run() -> void:
 		guardian.receive_hit(5)
 		await _frames(2)
 		_expect(forest.exit_open,"Killing the forest gate guardian did not open the gate")
+	# Briar guardians only hold the gate: none in fighting or elite rooms.
+	for role in ["combat","elite"]:
+		await _enter_role(forest,role)
+		_expect(not _foes(forest).any(func(e): return e.visual_id == "briar_guardian"),"A briar guardian spawned in a forest %s room" % role)
+	_expect(_foes(forest).any(func(e): return e.mini_boss and e.behavior_id == "bandit_cutthroat"),"Forest elite room has no cutthroat champion")
+	# Chests can't be smashed.
+	var chest := SlasherBreakableProp.new(); chest.setup("chest",Vector2i(2,2)); forest.actor_layer.add_child(chest)
+	await _frames(1)
+	_expect(not chest.is_in_group("slasher_damageable") and chest.receive_attack({"damage":999}) == 0 and not chest.destroyed,"A chest can be destroyed")
+	_expect(chest.open_chest(),"A chest no longer opens")
 	forest.queue_free(); await _frames(2)
 
 	# ---- crypt floor 1: stone rooms, the Crypt Lord at the stairs
