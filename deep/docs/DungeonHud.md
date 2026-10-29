@@ -2,10 +2,14 @@
 
 Binding of Isaac style: almost nothing on screen.
 
-- **Top left:** pixel hearts. One heart = 4 health (`data/slasher_balance.json` →
+- **Top left:** every relic picked up this run, eight to a row (up to 24, newest
+  last). The slot border is the rarity colour, temporary relics show floors left
+  in the corner, and hovering a slot shows its name and effect. A new relic pops
+  in. Icons are the category icons for now (`icon` in `pickup_items.json`).
+- **Bottom left:** pixel hearts along the bottom edge. One heart = 4 health (`data/slasher_balance.json` →
   `hud.health_per_heart`), filled in quarters, six to a row. They flash and shake
   when you're hit; the last one beats when you're down to one heart.
-- **Under the hearts:** coins and keys. Potions only appear while consumables are
+- **Above the hearts:** coins and keys. Potions only appear while consumables are
   switched on (`data/trader.json` → `sell_consumables`) or you're carrying one.
   Class resource pips (diamonds) only appear when specials are enabled again.
 - **Top centre:** the run clock and your best time; combo progress under it.

@@ -1,16 +1,27 @@
 extends Control
 class_name DungeonHud
 
-## The in-dungeon HUD, Binding of Isaac style: a row of pixel hearts in the top
-## left, coin and key counts under it, nothing else on screen until it matters.
-## Numbers live in data/slasher_balance.json -> "hud".
+## The in-dungeon HUD, Binding of Isaac style: the relics picked up this run in
+## the top left, pixel hearts with coin and key counts in the bottom left, nothing
+## else on screen until it matters. Numbers live in data/slasher_balance.json -> "hud".
 ##
 ## The dungeon scene calls `show_state()` whenever health, gold or keys change,
-## and `show_floor_banner()` when a new floor starts.
+## `show_items()` with the run's relics, and `show_floor_banner()` when a floor starts.
 
 const GOLD_ICON := preload("res://assets/slasher/ui/resource_gold.svg")
 const KEY_ICON := preload("res://assets/slasher/ui/resource_key.svg")
 const POTION_ICON := preload("res://assets/slasher/ui/resource_potion.svg")
+const UI_ICONS := "res://assets/Humble Gift - Paper UI System v1.1/Sprites/Content/"
+## Relics carry a category icon ("icon" in pickup_items.json); art per relic can
+## replace these later.
+const ITEM_ICONS := {
+	"attack":"2 Icons/2.png", "defense":"2 Icons/12.png", "potion":"1 Items/15.png", "health":"1 Items/15.png",
+	"move":"2 Icons/1.png", "movement":"2 Icons/1.png", "gold":"1 Items/1.png", "mode":"2 Icons/7.png", "special":"2 Icons/10.png",
+}
+const SPELL_ICON := "res://assets/pixel_art/spellnode.png"
+const ITEM_SLOT := 38.0
+const ITEMS_PER_ROW := 8
+const MAX_ITEM_SLOTS := 24
 
 ## 7x6 pixel heart. Each "X" is one pixel, drawn PIXEL screen pixels wide.
 const HEART := [
@@ -45,7 +56,11 @@ var show_resource := false
 var _flash := 0.0
 var _shake := 0.0
 var _time := 0.0
-var _counters := VBoxContainer.new()
+var _counters := HBoxContainer.new()
+var _items := GridContainer.new()
+var _item_signature := ""
+var _items_shown_once := false
+var item_slots: Array[Control] = []
 var gold_label: Label
 var key_label: Label
 var potion_label: Label
@@ -59,13 +74,27 @@ func _init() -> void:
 	var tuning: Dictionary = GameBalance.get_slasher_balance("hud")
 	health_per_heart = maxi(1,int(tuning.get("health_per_heart",4)))
 	_counters.name = "Counters"
-	_counters.add_theme_constant_override("separation",0)
+	_counters.add_theme_constant_override("separation",18)
 	_counters.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_counters)
 	gold_label = _add_counter(GOLD_ICON,"Gold")
 	key_label = _add_counter(KEY_ICON,"Keys")
 	potion_label = _add_counter(POTION_ICON,"Potions")
 	_potion_row = potion_label.get_parent()
+	_items.name = "Items"
+	_items.columns = ITEMS_PER_ROW
+	_items.add_theme_constant_override("h_separation",4)
+	_items.add_theme_constant_override("v_separation",4)
+	_items.position = MARGIN - Vector2(6,6)
+	_items.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_items)
+
+## Pushes the relic row down, e.g. below the party strip when parties are on.
+func set_items_top(top: float) -> void:
+	_items.position.y = top
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED: _layout_counters()
 
 func _add_counter(icon_texture: Texture2D, tooltip: String) -> Label:
 	var row := HBoxContainer.new()
@@ -123,8 +152,12 @@ func heart_rows() -> int:
 func _hearts_height() -> float:
 	return heart_rows() * (HEART_SIZE.y + HEART_GAP)
 
+## Hearts sit on the bottom edge; pips and the coin/key row stack above them.
+func _hearts_top() -> float:
+	return size.y - MARGIN.y - _hearts_height() + HEART_GAP
+
 func _layout_counters() -> void:
-	var top := MARGIN.y + _hearts_height() + (14.0 if show_resource else 0.0) + 6.0
+	var top := _hearts_top() - (16.0 if show_resource else 0.0) - 34.0
 	_counters.position = Vector2(MARGIN.x - 2.0,top)
 
 func _process(delta: float) -> void:
@@ -144,7 +177,7 @@ func _draw() -> void:
 	for index in count:
 		var row := index / HEARTS_PER_ROW
 		var column := index % HEARTS_PER_ROW
-		var at := MARGIN + offset + Vector2(column * (HEART_SIZE.x + HEART_GAP),row * (HEART_SIZE.y + HEART_GAP))
+		var at := Vector2(MARGIN.x,_hearts_top()) + offset + Vector2(column * (HEART_SIZE.x + HEART_GAP),row * (HEART_SIZE.y + HEART_GAP))
 		var filled := clampf(float(health - index * health_per_heart) / float(health_per_heart),0.0,1.0)
 		# The heart holding your last health beats when you're nearly dead.
 		var beat := 1.0
@@ -152,7 +185,7 @@ func _draw() -> void:
 		if is_last and _low_health(): beat = 1.0 + 0.12 * maxf(0.0,sin(_time * 9.0))
 		_draw_heart(at,filled,beat)
 	if show_resource:
-		var pip_top := MARGIN.y + _hearts_height() + 1.0
+		var pip_top := _hearts_top() - 16.0
 		for index in resource_max:
 			var center := Vector2(MARGIN.x + 6.0 + index * 16.0,pip_top + 5.0)
 			var points := PackedVector2Array([center + Vector2(0,-6),center + Vector2(6,0),center + Vector2(0,6),center + Vector2(-6,0)])
@@ -209,3 +242,76 @@ func show_floor_banner(title: String, subtitle: String) -> void:
 	tween.tween_interval(1.9)
 	tween.tween_property(banner,"modulate:a",0.0,0.6)
 	tween.tween_callback(banner.queue_free)
+
+## The relics this run has picked up, newest last. Each entry is an inventory
+## entry from RunState ({id, duration_type, remaining_floors}). Hover a slot for
+## its name and effect.
+func show_items(entries: Array) -> void:
+	var parts: PackedStringArray = []
+	for entry in entries: parts.append("%s:%d" % [String(Dictionary(entry).get("id","")),int(Dictionary(entry).get("remaining_floors",0))])
+	var signature := ",".join(parts)
+	if signature == _item_signature and _items_shown_once: return
+	var previous_count := item_slots.size()
+	var animate := _items_shown_once
+	_items_shown_once = true
+	_item_signature = signature
+	for child in _items.get_children(): child.free()
+	item_slots.clear()
+	var shown := entries.slice(maxi(0,entries.size() - MAX_ITEM_SLOTS)) if entries.size() > MAX_ITEM_SLOTS else entries
+	for entry_value in shown:
+		var slot := _item_slot(Dictionary(entry_value))
+		_items.add_child(slot)
+		item_slots.append(slot)
+	# A newly picked-up relic pops in.
+	if animate and item_slots.size() > previous_count:
+		var newest: Control = item_slots[item_slots.size() - 1]
+		newest.pivot_offset = Vector2.ONE * ITEM_SLOT * 0.5
+		newest.scale = Vector2.ONE * 1.6
+		create_tween().tween_property(newest,"scale",Vector2.ONE,0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _item_slot(entry: Dictionary) -> Control:
+	var item_id := String(entry.get("id",""))
+	var item: Dictionary = GameBalance.get_item(item_id)
+	var rarity := String(item.get("rarity","common"))
+	var accent := Color(String(Dictionary(GameBalance.get_item_rarities().get(rarity,{})).get("color","#c9c2aa")))
+	var slot := Panel.new()
+	slot.name = "Item_%s" % item_id
+	slot.custom_minimum_size = Vector2.ONE * ITEM_SLOT
+	# PASS keeps the hover tooltip without swallowing clicks meant for the game.
+	slot.mouse_filter = Control.MOUSE_FILTER_PASS
+	slot.tooltip_text = "%s\n%s" % [String(item.get("name",item_id)),GameBalance.get_slasher_item_rules_text(item_id).trim_prefix("Slasher:").strip_edges()]
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#e3d3ad")
+	style.border_color = accent.darkened(0.15)
+	style.set_border_width_all(3)
+	style.shadow_color = Color(0,0,0,0.55)
+	style.shadow_size = 2
+	style.set_corner_radius_all(4)
+	slot.add_theme_stylebox_override("panel",style)
+	var icon := TextureRect.new()
+	icon.texture = item_icon(String(item.get("icon_key","special")))
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	icon.offset_left = 5; icon.offset_top = 5; icon.offset_right = -5; icon.offset_bottom = -5
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.add_child(icon)
+	# Temporary relics show how many floors they have left.
+	if String(entry.get("duration_type","")) == "temporary":
+		var left := Label.new()
+		left.text = str(int(entry.get("remaining_floors",0)))
+		left.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+		left.offset_left = -14; left.offset_top = -18; left.offset_right = -1; left.offset_bottom = 1
+		left.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		left.add_theme_font_size_override("font_size",12)
+		left.add_theme_color_override("font_color",TEXT)
+		left.add_theme_color_override("font_outline_color",OUTLINE)
+		left.add_theme_constant_override("outline_size",4)
+		left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(left)
+	return slot
+
+static func item_icon(icon_key: String) -> Texture2D:
+	var path := SPELL_ICON if icon_key == "spell" else UI_ICONS + String(ITEM_ICONS.get(icon_key,ITEM_ICONS.special))
+	return load(path) if ResourceLoader.exists(path) else null

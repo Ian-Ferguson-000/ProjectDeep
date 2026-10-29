@@ -688,7 +688,7 @@ func _build_hud()->void:
 	# Isaac-style: hearts, coins and keys top left, the map top right, nothing else
 	# until it matters. See scripts/ui/dungeon_hud.gd.
 	dungeon_hud=DUNGEON_HUD.new();canvas.add_child(dungeon_hud)
-	if GameBalance.max_party_size()>1:_build_party_strip(canvas)
+	if GameBalance.max_party_size()>1:_build_party_strip(canvas);dungeon_hud.set_items_top(108)
 	_build_resource_hud(canvas)
 	# Kept for the room/floor text other code and tests read; the floor banner shows it now.
 	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.name="Objective";objective_label.visible=false;canvas.add_child(objective_label)
@@ -727,6 +727,9 @@ func _refresh_dungeon_hud()->void:
 	var potions:=run_state.get_consumables().count("healing_potion")
 	dungeon_hud.show_state(player.health,player.max_health,run_state.gold,run_state.keys,potions,RunState.consumables_for_sale() or potions>0)
 	# Specials are off for now, so the resource pips only show when they come back.
+	var picked:Array=[]
+	for entry in run_state.inventory_items:picked.append(entry)
+	dungeon_hud.show_items(picked)
 	dungeon_hud.show_resource_pips(run_state.class_resource,run_state.get_class_resource_max(),_class_resource_color(),GameBalance.action_enabled("special"))
 	gold_value_label.text="%02d"%run_state.gold;key_value_label.text="%02d"%run_state.keys;potion_value_label.text="%02d"%potions
 
