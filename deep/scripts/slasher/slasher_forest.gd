@@ -390,10 +390,12 @@ func _process(delta:float)->void:
 	if modal_open or codex_open:return
 	var interaction_used:=false;var nearby_chest:SlasherBreakableProp=_nearby_chest()
 	if nearby_chest!=null:
-		_show_message("Locked chest · find a key." if run_state.keys<=0 else "Chest ready · press E to unlock and open.",0.15)
+		var keyless:=bool(nearby_chest.get_meta("no_key",false))
+		_show_message("A hidden chest · press E to open." if keyless else ("Locked chest · find a key." if run_state.keys<=0 else "Chest ready · press E to unlock and open."),0.15)
 		if Input.is_action_just_pressed("interact"):
 			interaction_used=true;player.basic_mouse_held=false
-			if run_state.keys<=0:_show_message("The chest is locked. Find a key.")
+			if keyless:nearby_chest.open_chest();_show_message("The hidden chest creaks open.")
+			elif run_state.keys<=0:_show_message("The chest is locked. Find a key.")
 			else:run_state.keys-=1;nearby_chest.open_chest();_show_message("The key turns. The chest opens.")
 	for loot in loot_nodes.duplicate():
 		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<30:_collect_loot(loot);loot_nodes.erase(loot)

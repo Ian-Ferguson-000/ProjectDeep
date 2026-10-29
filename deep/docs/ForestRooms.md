@@ -27,6 +27,11 @@ endless depth.
    - doors are barred by brambles until every foe in the room is down
    - in the gate room, killing the guardian (the boss, or the elite guardian on elite
      floors) ends the fight: its remaining pack scatters and the Root Gate opens
+   - **hollow trees:** in a room with breakable big trees, there's a 40% chance one of
+     them is hollow, drawn a shade darker than the rest. Breaking it reveals a chest
+     that needs no key. Decided once per room per floor; an unopened chest stays put if
+     you leave and come back. Chance: `breakable_props.tree_large.hollow_chance` in
+     `data/slasher_balance.json`
    - the way to the gate room is flagged like Isaac's boss door: a horned skull and a
      red glow over the door (a gate glyph on ordinary floors), labelled "Guardian" even
      while barred; the map shows the gate room with a skull once you're next to it; and

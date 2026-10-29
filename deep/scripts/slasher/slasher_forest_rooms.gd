@@ -395,6 +395,10 @@ func _collect_loot(loot: Area2D) -> void:
 func _on_prop_broken(prop: SlasherBreakableProp, kind: String, cell: Vector2i) -> void:
 	super._on_prop_broken(prop,kind,cell)
 	if rooms_active: _remember("destroyed_props",cell)
+	if rooms_active and kind == "tree_large" and cell == _hollow_cell():
+		_spawn_hidden_chest(cell)
+		AudioCue.play_from(self,"reward",false)
+		_show_message("Something glints inside the hollow trunk…",3.0)
 
 func _on_chest_opened(chest: SlasherBreakableProp, cell: Vector2i) -> void:
 	if not rooms_active:
@@ -405,6 +409,51 @@ func _on_chest_opened(chest: SlasherBreakableProp, cell: Vector2i) -> void:
 	relic_choice_source = "chest"
 	var cycle: int = maxi(0,run_state.get_slasher_cycle_number()-1) if run_state.slasher_endless_mode else 0
 	relic_modal.open(run_state,run_state.generate_slasher_chest_choices(run_state.current_floor,"room_%d_chest_%d_%d" % [room_id,cell.x,cell.y],cycle),true)
+
+# ---------------------------------------------------------------- hollow trees
+
+## Rooms with breakable trees may hide a chest inside one of them, a shade
+## darker than the rest. Decided once per room per floor and remembered.
+## TUNING: breakable_props.tree_large.hollow_chance in slasher_balance.json.
+func _build_solid_props() -> void:
+	super._build_solid_props()
+	if not rooms_active: return
+	var hollow := _hollow_cell()
+	if hollow.x < 0: return
+	var standing := false
+	for node in actor_layer.get_children():
+		if node is SlasherBreakableProp and node.prop_kind == "tree_large" and node.cell == hollow:
+			standing = true
+			node.set_meta("hollow",true)
+			node.modulate = Color(0.66,0.6,0.58)
+	if not standing and not bool(Dictionary(room.get("slasher",{})).get("hollow_opened",false)): _spawn_hidden_chest(hollow)
+
+func _hollow_cell() -> Vector2i:
+	var state: Dictionary = Dictionary(room.get("slasher",{}))
+	if not state.has("hollow_tree"):
+		var cell := Vector2i(-1,-1)
+		var trees: Array = Array(layout.solid_props).filter(func(prop): return String(prop.kind) == "tree_large")
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash("%s:%d:hollow" % [String(run_state.field_run.get("forest_floor_key","")),room_id])
+		var chance := float(Dictionary(GameBalance.get_slasher_balance("breakable_props").get("tree_large",{})).get("hollow_chance",0.4))
+		if not trees.is_empty() and rng.randf() < chance: cell = Vector2i(trees[rng.randi_range(0,trees.size() - 1)].cell)
+		state["hollow_tree"] = cell
+		room["slasher"] = state
+		run_state.update_field_room(room_id,{"slasher":state})
+	return Vector2i(state.hollow_tree)
+
+## A chest that needs no key: finding it is the reward.
+func _spawn_hidden_chest(cell: Vector2i) -> void:
+	var chest: SlasherBreakableProp = BREAKABLE_PROP.new(); chest.name = "HiddenChest"
+	chest.setup("chest",cell); chest.position = _world(cell)
+	chest.set_meta("no_key",true)
+	chest.opened.connect(func(_chest, at):
+		var state: Dictionary = Dictionary(room.get("slasher",{})); state["hollow_opened"] = true; room["slasher"] = state
+		run_state.update_field_room(room_id,{"slasher":state}))
+	chest.opened.connect(_on_chest_opened)
+	actor_layer.add_child(chest)
+	chest.add_child(_glow(Color("#f3d366"),20))
+	if pathfinder != null: pathfinder.set_cell_blocked(cell,true)
 
 func _remember(key: String, cell: Vector2i) -> void:
 	var state: Dictionary = Dictionary(room.get("slasher",{}))
