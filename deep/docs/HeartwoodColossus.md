@@ -1,7 +1,7 @@
 # The Heartwood Colossus (forest guardian)
 
-Every dungeon is now **5 floors**: the elite guardian holds floor 3 and the
-guardian floor 5 (`data/dungeons.json`: `floors`, `cycle_length`,
+Every dungeon is now **5 floors**: the elite guardian holds the gate room on
+floors 1 to 4 (every floor, not just floor 3) and the guardian floor 5 (`data/dungeons.json`: `floors`, `cycle_length`,
 `elite_floor_in_cycle`). On the forest's guardian floor, the Root Gate room is
 the **Heartwood Throne** arena and the guardian is the Heartwood Colossus.
 
@@ -50,6 +50,12 @@ In a room scene, add a **Colossus** marker (it shows the 7×5 block it fills) an
 tick the **guardian** role. A guardian room also needs a **Gate down** marker for
 after the fight, and room around the body on all sides. The game picks a guardian
 room for the gate room on guardian floors whenever one exists.
+
+## Other colossi
+
+The crypt's guardian, the **Charnel King**, is built on the same code
+(`slasher_charnel_king.gd` extends `slasher_colossus.gd`); see docs/Crypt.md.
+A dungeon picks its colossus with `dungeons.json → <dungeon>.slasher.colossus`.
 
 ## Code
 

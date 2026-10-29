@@ -12,11 +12,17 @@ class_name SlasherForestCreature
 ##                      knives; a fan of three from floor 3.
 ##
 ## Numbers live in data/slasher_balance.json under enemies.<id>.
+##
+## Other dungeons reuse these behaviours under their own names: an enemy with
+## "behaves_like": "bandit_cutthroat" in its tuning fights like a cutthroat
+## (the crypt's ghoul, gravedigger and grave rats; see slasher_crypt_creature.gd).
 
 const IDS := ["sporeling","bandit_cutthroat","bandit_knifethrower"]
 const ART := ForestCreatureArt.CREATURES
 
 var creature_floor := 1
+## Which behaviour this creature uses: its own id, or tuning "behaves_like".
+var kind := ""
 var strafe_sign := 1.0
 var throws := 0
 var hop_origin := Vector2.ZERO
@@ -29,6 +35,7 @@ func configure(floor_number:int,is_boss:bool=false,enemy_visual_id:String="spore
 	visual_id = id
 	behavior_tuning = GameBalance.get_slasher_enemy_tuning(id)
 	visual_tuning = GameBalance.get_slasher_enemy_visual_tuning(id)
+	kind = String(behavior_tuning.get("behaves_like",id))
 	elite = false
 	max_health = int(behavior_tuning.get("health_base",10)) + floor_number * int(behavior_tuning.get("health_per_floor",2))
 	health = max_health
@@ -37,8 +44,14 @@ func configure(floor_number:int,is_boss:bool=false,enemy_visual_id:String="spore
 	attack_range = float(behavior_tuning.get("attack_range",30.0))
 	attack_knockback = float(behavior_tuning.get("knockback",90.0))
 	reward = int(behavior_tuning.get("reward",2))
+	if is_mini_boss:
+		# Champion version (crypt elite rooms): the same multipliers as other elites.
+		var elite_tuning := GameBalance.get_slasher_enemy_tuning("forest_elite")
+		max_health = maxi(1,int(round(max_health * float(elite_tuning.get("mini_boss_health_multiplier",2.5))))); health = max_health
+		damage = maxi(1,int(round(damage * float(elite_tuning.get("mini_boss_damage_multiplier",1.5)))))
+		reward = int(elite_tuning.get("mini_boss_reward",12))
 	strafe_sign = 1.0 if randf() < 0.5 else -1.0
-	if behavior_id == "sporeling": ai_state = "dormant"
+	if kind == "sporeling": ai_state = "dormant"
 
 func _ready() -> void:
 	var art_id: String = ART.get(behavior_id,"")
@@ -48,14 +61,18 @@ func _ready() -> void:
 		sprite = AnimatedSprite2D.new()
 		sprite.name = "AnimatedSprite2D"
 		add_child(sprite)
-	sprite.sprite_frames = ForestCreatureArt.frames_for(art_id)
+	# Forest creatures are cut from shared sheets; others use their enemy frames (or borrowed "art").
+	sprite.sprite_frames = ForestCreatureArt.frames_for(art_id) if not art_id.is_empty() else SlasherSpriteLibrary.enemy_frames(behavior_id)
 	super._ready()
+	if mini_boss: scale_value *= 1.25
 	sprite.scale = Vector2.ONE * scale_value
-	sprite.position = Vector2(0.0,ForestCreatureArt.feet_offset(art_id,scale_value))
-	if visual_tuning.has("tint"): sprite.modulate = Color(String(visual_tuning.tint))
+	if not art_id.is_empty(): sprite.position = Vector2(0.0,ForestCreatureArt.feet_offset(art_id,scale_value))
 	var shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if shape and shape.shape is CircleShape2D: (shape.shape as CircleShape2D).radius = float(behavior_tuning.get("collision_radius",14.0))
-	if behavior_id == "sporeling": sprite.play("dormant")
+	if kind == "sporeling":
+		# Creatures without a dormant pose (grave rats) hide under a bone pile until woken.
+		if sprite.sprite_frames != null and sprite.sprite_frames.has_animation("dormant"): sprite.play("dormant")
+		else: sprite.visible = false
 
 func _physics_process(delta: float) -> void:
 	retarget_timer -= delta
@@ -67,7 +84,7 @@ func _physics_process(delta: float) -> void:
 	for timer in ["attack_cooldown","animation_lock","hit_stun_timer","status_time","special_cooldown","state_timer"]:
 		set(timer,maxf(0.0,float(get(timer)) - delta))
 	if status_time <= 0.0: movement_slow = 1.0
-	if behavior_id == "sporeling" and ai_state in ["dormant","waking"]:
+	if kind == "sporeling" and ai_state in ["dormant","waking"]:
 		_process_sporeling_sleep()
 		return
 	if activation_delay > 0.0 or hit_stun_timer > 0.0 or (status_time > 0.0 and movement_slow <= 0.05):
@@ -75,11 +92,14 @@ func _physics_process(delta: float) -> void:
 		if animation_lock <= 0.0: _play_animation("idle")
 		queue_redraw()
 		return
-	match behavior_id:
+	_process_kind(delta)
+	queue_redraw()
+
+func _process_kind(delta: float) -> void:
+	match kind:
 		"sporeling": _process_sporeling(delta)
 		"bandit_cutthroat": _process_cutthroat(delta)
 		"bandit_knifethrower": _process_knifethrower()
-	queue_redraw()
 
 # ------------------------------------------------------------------ sporelings
 
@@ -97,12 +117,14 @@ func wake() -> void:
 	if ai_state != "dormant": return
 	ai_state = "waking"
 	state_timer = float(behavior_tuning.get("wake_time",0.65))
+	if sprite: sprite.visible = true
 	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("wake"): sprite.play("wake")
+	elif sprite: _play_animation("run",true)
 	AudioCue.play_from(self,"enemy_attack")
 	var radius := float(behavior_tuning.get("wake_chain_radius",130.0))
 	for node in get_tree().get_nodes_in_group("slasher_enemy"):
 		var other := node as SlasherForestCreature
-		if is_instance_valid(other) and other != self and other.behavior_id == "sporeling" and other.ai_state == "dormant" and other.global_position.distance_to(global_position) <= radius:
+		if is_instance_valid(other) and other != self and other.behavior_id == behavior_id and other.ai_state == "dormant" and other.global_position.distance_to(global_position) <= radius:
 			other.call_deferred("wake")
 
 func _process_sporeling(delta: float) -> void:
@@ -174,7 +196,7 @@ func _process_cutthroat(delta: float) -> void:
 func _process_knifethrower() -> void:
 	var distance := global_position.distance_to(target.global_position)
 	var preferred := float(behavior_tuning.get("preferred_range",230.0))
-	if ai_state == "throw_windup":
+	if ai_state == "throw_windup" and is_instance_valid(target):
 		velocity = Vector2.ZERO
 		_face_target()
 		if state_timer <= 0.0:
@@ -202,7 +224,7 @@ func _throw_knives(count: int) -> void:
 	var aim := global_position.direction_to(target.global_position + target.velocity * 0.25)
 	for index in count:
 		var offset := (float(index) - float(count - 1) * 0.5) * 0.22
-		var config := {"projectile_speed":float(behavior_tuning.get("knife_speed",330.0)),"projectile_range":float(behavior_tuning.get("knife_range",430.0)),"hit_radius":12.0,"color":"#dfe6ee","visual_type":"knife"}
+		var config := {"projectile_speed":float(behavior_tuning.get("knife_speed",330.0)),"projectile_range":float(behavior_tuning.get("knife_range",430.0)),"hit_radius":12.0,"color":String(behavior_tuning.get("projectile_color","#dfe6ee")),"visual_type":String(behavior_tuning.get("projectile_visual","knife"))}
 		var knife := HOSTILE_PROJECTILE.new().setup(self,target,global_position + aim * 18.0,aim.rotated(offset),damage,config)
 		get_parent().add_child(knife)
 	AudioCue.play_from(self,"sword_swing")
@@ -215,12 +237,15 @@ func _clear_shot() -> bool:
 	return hit.is_empty() or hit.get("collider") == target
 
 func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlayer=null,stun_duration:float=-1.0,shake_multiplier:float=1.0,sound_event:String="impact")->int:
-	if behavior_id == "sporeling" and ai_state == "dormant": wake()
+	if kind == "sporeling" and ai_state == "dormant": wake()
 	return super.receive_hit(amount,knockback,attacker,stun_duration,shake_multiplier,sound_event)
 
 func _draw() -> void:
-	if behavior_id == "sporeling" and ai_state == "dormant":
-		return  # Dormant caps look like ordinary forest mushrooms: no health bar.
+	if kind == "sporeling" and ai_state == "dormant":
+		# Dormant caps look like ordinary forest mushrooms: no health bar. Hidden
+		# creatures (grave rats) lie under a pile of bones.
+		if sprite != null and not sprite.visible: _draw_bone_pile()
+		return
 	# Lift the shared health bar above the head of taller sprites.
 	var lift := float(visual_tuning.get("bar_lift",0.0))
 	draw_set_transform(Vector2(0,-lift))
@@ -230,3 +255,11 @@ func _draw() -> void:
 		draw_arc(Vector2.ZERO,16.0,0.0,TAU,20,Color(0.85,0.82,0.62,0.7),2.0)
 	if ai_state == "throw_windup":
 		draw_line(Vector2.ZERO,to_local(target.global_position).limit_length(60.0),Color(0.95,0.95,1.0,0.6),2.0)
+
+func _draw_bone_pile() -> void:
+	var bone := Color("#b9b1a0"); var dark := Color("#3c3740")
+	draw_set_transform(Vector2(0,4),0.0,Vector2(1.0,0.45)); draw_circle(Vector2.ZERO,16,Color(0,0,0,0.3)); draw_set_transform(Vector2.ZERO)
+	for spec in [[Vector2(-9,-2),0.4],[Vector2(6,-4),-0.6],[Vector2(-2,3),1.2],[Vector2(9,3),0.1]]:
+		var tip := Vector2.RIGHT.rotated(float(spec[1])) * 8.0
+		draw_line(Vector2(spec[0]) - tip,Vector2(spec[0]) + tip,dark,5.0); draw_line(Vector2(spec[0]) - tip,Vector2(spec[0]) + tip,bone,3.0)
+	draw_circle(Vector2(0,-6),6,bone); draw_circle(Vector2(-2,-7),1.5,dark); draw_circle(Vector2(2,-7),1.5,dark)

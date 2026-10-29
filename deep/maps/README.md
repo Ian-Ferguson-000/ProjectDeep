@@ -13,8 +13,10 @@ maps/
   crypt/  hell/  farmstead/  mine/  foundry/  grove/  archive/
 ```
 
-Only the **forest** plays from rooms today. The other folders are ready for
-art: each has its own README saying what it has and what it still needs.
+The **forest** and the **crypt** play from rooms. The other folders are ready
+for art: each has its own README saying what it has and what it still needs.
+Crypt rooms are 1.5x the forest's size (41x23, large 53x29) and are walled in
+stone instead of trees; see `maps/crypt/README.md`.
 
 ---
 
@@ -30,8 +32,8 @@ art: each has its own README saying what it has and what it still needs.
    - **Roles**: tick every kind of room this map can be used for (see below).
    - **Weight**: how often it's picked compared with other rooms of the same role
      (1 = normal, 0.5 = half as often).
-   - **Size Cells**: width × height in 48px cells. Must be odd numbers: 27×15 is
-     standard, 35×19 is large.
+   - **Size Cells**: width × height in 48px cells. Must be odd numbers. Forest:
+     27×15 standard, 35×19 large. Crypt: 41×23 standard, 53×29 large.
 3. **Paint the layers** (below).
 4. **Place markers** (below).
 5. **Check the warning triangle.** If anything is wrong (a door you can't reach,
@@ -88,7 +90,7 @@ one, select the **Markers** node, then **Instantiate Child Scene** (chain icon) 
 | Chest | Locked chest (needs a key) | Blocks movement |
 | Rock / Big tree | Breakable obstacles | Block movement until broken |
 | Mossy rock, Pebbles, Mushrooms, Bush | Small decorations | Don't block. You can paint these in Detail instead |
-| Colossus | A giant guardian's body (fills 7×5 cells) | Guardian rooms only; see docs/HeartwoodColossus.md |
+| Colossus | A giant guardian's body (fills 7×5 cells): the Heartwood Colossus in the forest, the Charnel King in the crypt | Guardian rooms only; see docs/HeartwoodColossus.md and docs/Crypt.md |
 
 ---
 
@@ -137,5 +139,7 @@ The forest's sheets are cut on a 32px grid (`forest_ground.png`) and a 16px grid
 - `scripts/slasher/forest_room_library.gd`: room rules and validation, unchanged
   in behaviour.
 - `tools/maps/`: one-time scripts that built the tilesets and converted the old
-  text rooms. Don't re-run them once the artist has started; they overwrite.
-- Test: `tests/map_rooms_test.gd`.
+  text rooms (`convert_forest_rooms.gd`), and built the crypt's tiles and rooms
+  (`make_crypt_sheet.py`, `crypt_room_designs.py`, `build_crypt_rooms.gd`).
+  Don't re-run them once the artist has started; they overwrite.
+- Tests: `tests/map_rooms_test.gd`, `tests/crypt_rooms_test.gd`.

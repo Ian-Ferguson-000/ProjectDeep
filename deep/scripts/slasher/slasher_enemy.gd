@@ -97,11 +97,23 @@ func _ready()->void:
 	if sprite==null:sprite=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";add_child(sprite)
 	if sprite.sprite_frames==null:sprite.sprite_frames=SlasherSpriteLibrary.enemy_frames(visual_id)
 	sprite.position=Vector2(float(visual_tuning.get("sprite_offset_x",0.0)),float(visual_tuning.get("sprite_offset_y",-18.0)));sprite.scale=Vector2.ONE*float(visual_tuning.get("sprite_scale",1.05 if boss else 0.7))
+	# Borrowed sprites are recoloured so they read as a different creature (hit flashes use modulate, so this stays).
+	if visual_tuning.has("tint"):sprite.self_modulate=Color(String(visual_tuning.tint))
+	if visual_tuning.has("desaturate"):
+		var grey:=ShaderMaterial.new();grey.shader=desaturate_shader();grey.set_shader_parameter("amount",float(visual_tuning.desaturate));sprite.material=grey
 	if is_wolf():
 		sprite.modulate=Color.WHITE
 		role_label=Label.new();role_label.text=String(behavior_tuning.get("name",behavior_id.capitalize())).to_upper();role_label.position=Vector2(-48,-53);role_label.size=Vector2(96,18);role_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;role_label.add_theme_font_size_override("font_size",10);role_label.add_theme_color_override("font_color",Color(String(behavior_tuning.get("color","#ffffff"))));role_label.add_theme_color_override("font_outline_color",Color.BLACK);role_label.add_theme_constant_override("outline_size",3);add_child(role_label)
 	if behavior_id=="wolf_lurker":sprite.modulate.a=0.38;role_label.modulate.a=0.38
 	_play_animation("idle")
+
+static var _desaturate_shader:Shader
+## Greys a borrowed sprite out before tint and hit flashes apply ("desaturate" 0..1 in enemy_visuals).
+static func desaturate_shader()->Shader:
+	if _desaturate_shader==null:
+		_desaturate_shader=Shader.new()
+		_desaturate_shader.code="shader_type canvas_item; uniform float amount=0.8; void fragment(){vec4 c=texture(TEXTURE,UV);float g=dot(c.rgb,vec3(0.3,0.59,0.11));COLOR=vec4(mix(c.rgb,vec3(g),amount),c.a)*COLOR;}"
+	return _desaturate_shader
 
 func _physics_process(delta:float)->void:
 	retarget_timer-=delta

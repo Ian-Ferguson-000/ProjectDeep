@@ -15,6 +15,10 @@ class_name SlasherColossus
 ## Numbers: data/slasher_balance.json enemies.heartwood_colossus.
 ## Art: set body_texture / heart_texture / fist_texture to replace the
 ## placeholder drawing (see docs/HeartwoodColossus.md).
+##
+## Other dungeons' colossi extend this (the crypt's Charnel King, in
+## slasher_charnel_king.gd): they set colossus_id and override the patterns and
+## drawing, and share the body, weak points, phases, telegraphs and boss bar.
 
 signal phase_changed(phase: int)
 
@@ -28,6 +32,11 @@ const PROJECTILE_CAP := 170
 @export var heart_texture: Texture2D
 @export var fist_texture: Texture2D
 
+## Which colossus: its tuning (slasher_balance.json enemies.<id>) and journal name.
+var colossus_id := "heartwood_colossus"
+## The room's walkable area in world space, set by the room scene. Patterns that
+## sweep the whole arena use it.
+var arena := Rect2()
 var half := Vector2(BODY_CELLS) * CELL * 0.5
 var phase := 1
 var state := "intro"
@@ -46,10 +55,10 @@ var boss_bar: CanvasLayer
 var _shake_glow := 0.0
 
 func configure(floor_number:int,is_boss:bool=true,enemy_visual_id:String="heartwood_colossus",is_mini_boss:bool=false,enemy_behavior_id:String="heartwood_colossus")->void:
-	super.configure(floor_number,true,"heartwood_colossus",false,"heartwood_colossus")
-	behavior_id = "heartwood_colossus"; visual_id = "heartwood_colossus"
+	super.configure(floor_number,true,colossus_id,false,colossus_id)
+	behavior_id = colossus_id; visual_id = colossus_id
 	tuning = GameBalance.get_slasher_enemy_tuning("forest_boss")
-	behavior_tuning = GameBalance.get_slasher_enemy_tuning("heartwood_colossus")
+	behavior_tuning = GameBalance.get_slasher_enemy_tuning(colossus_id)
 	max_health = int(behavior_tuning.get("health_base",380)) + floor_number * int(behavior_tuning.get("health_per_floor",30))
 	health = max_health
 	damage = int(behavior_tuning.get("damage_base",3)) + int(floor_number * float(behavior_tuning.get("damage_per_floor",0.6)))
@@ -63,14 +72,21 @@ func _ready() -> void:
 	remove_from_group("slasher_damageable"); remove_from_group("slasher_enemy")
 	if sprite: sprite.visible = false
 	z_index = 0
-	heart = WEAK_POINT.new().setup(self,"heart",30.0,heart_texture)
-	heart.position = Vector2(0,half.y + 26.0)
-	add_child(heart)
+	_build_weak_points()
 	telegraph_layer = TelegraphLayer.new(); telegraph_layer.colossus = self; telegraph_layer.name = "Telegraphs"
 	telegraph_layer.top_level = true; telegraph_layer.z_index = -1
 	add_child(telegraph_layer)
 	boss_bar = BossBar.new(); boss_bar.colossus = self; boss_bar.name = "BossBar"
 	add_child(boss_bar)
+
+## The weak point that opens after most patterns, just outside the body's south edge.
+func _build_weak_points() -> void:
+	heart = WEAK_POINT.new().setup(self,"heart",30.0,heart_texture)
+	heart.position = Vector2(0,half.y + 26.0)
+	add_child(heart)
+
+func arena_rect() -> Rect2:
+	return arena if arena.has_area() else Rect2(global_position - Vector2(640,380),Vector2(1280,760))
 
 func _t(key: String, fallback: float) -> float:
 	return float(behavior_tuning.get(key,fallback))
@@ -191,7 +207,7 @@ func _end_window() -> void:
 		return
 	state = "rest"
 	timer = _t("rest",0.9)
-	if phase >= 3 and cycle_count % 2 == 0: reinforcement_requested.emit(["sporeling","sporeling"],global_position + Vector2(0,half.y + 90.0))
+	if phase >= 3 and cycle_count % 2 == 0: reinforcement_requested.emit(Array(behavior_tuning.get("reinforcements",["sporeling","sporeling"])),global_position + Vector2(0,half.y + 90.0))
 
 func _fire(direction: Vector2, projectile_speed: float, visual: String, colour: Color, from: Vector2 = Vector2.INF) -> void:
 	if get_tree().get_nodes_in_group("colossus_projectile").size() >= PROJECTILE_CAP: return
@@ -325,6 +341,29 @@ class TelegraphLayer extends Node2D:
 						draw_arc(at,r,0,TAU,48,Color(0.75,0.9,0.4,0.6 * (1.0 - r / 260.0)),3.0)
 				"eyes":
 					draw_arc(at,colossus.half.x * (1.4 - progress * 0.3),0,TAU,48,Color(1,0.3,0.15,0.35 + progress * 0.5),4.0)
+				"lane":
+					# A band across the arena that a giant hand will sweep along.
+					var lane: Rect2 = telegraph.rect
+					var d := float(telegraph.get("dir",1.0))
+					draw_rect(lane,Color(0.85,0.15,0.2,0.12 + progress * 0.14))
+					var stripes := int(lane.size.x / 48.0)
+					for index in stripes:
+						var x := lane.position.x + fmod(index * 48.0 + progress * 60.0 * d + lane.size.x,lane.size.x)
+						draw_line(Vector2(x,lane.position.y),Vector2(x + 20.0,lane.end.y),Color(1,0.3,0.3,0.25),3.0)
+					draw_rect(lane,Color(1,0.3,0.3,0.85),false,3.0)
+					var arrow_at := Vector2(lane.position.x + 40.0 if d > 0.0 else lane.end.x - 40.0,lane.get_center().y)
+					draw_colored_polygon(PackedVector2Array([arrow_at + Vector2(16 * d,0),arrow_at + Vector2(-8 * d,-14),arrow_at + Vector2(-8 * d,14)]),Color(1,0.35,0.3,0.9))
+				"wail":
+					# Soul rings drawn in toward the mouth.
+					for ring in 3:
+						var r := (1.0 - fmod(progress * 2.0 + ring / 3.0,1.0)) * 300.0
+						draw_arc(at,r,0,TAU,48,Color(0.5,0.9,1.0,0.55 * (1.0 - r / 300.0) + 0.1),3.0)
+				"rain":
+					var radius: float = telegraph.radius
+					draw_circle(at,radius,Color(0.8,0.75,0.65,0.14))
+					draw_circle(at,radius * progress,Color(0.9,0.85,0.7,0.3))
+					draw_arc(at,radius,0,TAU,36,Color(0.95,0.9,0.75,0.9),3.0)
+					draw_circle(at,5.0,Color(0.95,0.9,0.75,0.9))
 
 ## Big retro health bar across the top of the screen.
 class BossBar extends CanvasLayer:
@@ -334,7 +373,7 @@ class BossBar extends CanvasLayer:
 	func _ready() -> void:
 		layer = 11
 		var root := Control.new(); root.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM); root.offset_left = -400; root.offset_right = 260; root.offset_top = -64; root.offset_bottom = -22; root.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(root)
-		name_label = Label.new(); name_label.text = String(GameBalance.get_slasher_journal_entry("heartwood_colossus").get("name","The Heartwood Colossus")).to_upper(); name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; name_label.size = Vector2(660,20)
+		name_label = Label.new(); name_label.text = String(GameBalance.get_slasher_journal_entry(colossus.colossus_id).get("name","The Guardian")).to_upper(); name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; name_label.size = Vector2(660,20)
 		name_label.add_theme_font_size_override("font_size",15); name_label.add_theme_color_override("font_color",Color("#f0c552")); name_label.add_theme_color_override("font_outline_color",Color.BLACK); name_label.add_theme_constant_override("outline_size",5); root.add_child(name_label)
 		var back := ColorRect.new(); back.color = Color(0.05,0.03,0.02,0.9); back.position = Vector2(0,22); back.size = Vector2(660,16); root.add_child(back)
 		fill = ColorRect.new(); fill.color = Color("#c0392b"); fill.position = Vector2(2,24); fill.size = Vector2(656,12); root.add_child(fill)

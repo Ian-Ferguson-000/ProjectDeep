@@ -17,6 +17,8 @@ func configure(floor_number:int,is_boss:bool=false,enemy_visual_id:String="skele
 	behavior_tuning=GameBalance.get_slasher_enemy_tuning(behavior_id)
 	visual_id=enemy_visual_id;visual_tuning=GameBalance.get_slasher_enemy_visual_tuning(visual_id)
 	max_health=int(behavior_tuning.get("health_base",220 if is_boss else 22))+floor_number*int(behavior_tuning.get("health_per_floor",16 if is_boss else 3));health=max_health
+	# As a gate guardian (mini boss) the Crypt Lord is a lighter fight than as a boss.
+	if is_mini_boss and not is_boss:max_health=maxi(1,int(round(max_health*float(behavior_tuning.get("gate_health_scale",1.0)))));health=max_health
 	damage=int(behavior_tuning.get("damage_base",6 if is_boss else 2))+floor_number*int(behavior_tuning.get("damage_per_floor",1));speed=float(behavior_tuning.get("speed",72.0));attack_range=float(behavior_tuning.get("preferred_range",245.0));reward=int(behavior_tuning.get("reward",28 if is_boss else 5));projectile_cap=int(behavior_tuning.get("projectile_cap",72));boss=is_boss;mini_boss=is_mini_boss;elite=is_mini_boss
 
 func _physics_process(delta:float)->void:

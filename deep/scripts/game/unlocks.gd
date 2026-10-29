@@ -6,7 +6,7 @@ class_name Unlocks
 ## CampaignState.unlocks_earned {id: day} and survive Hearth loops.
 
 const PATH := "res://data/unlocks.json"
-const FAMILIES := {"sporeling":"sporeling","bandit_cutthroat":"bandit","bandit_knifethrower":"bandit"}
+const FAMILIES := {"sporeling":"sporeling","bandit_cutthroat":"bandit","bandit_knifethrower":"bandit","skeleton":"undead","skeletal_archer":"undead","grave_acolyte":"undead","soul_wisp":"undead","crypt_lord":"undead","ghoul":"undead","gravedigger":"undead","tomb_guard":"undead","revenant":"undead","charnel_king":"undead"}
 
 static var _data: Dictionary = {}
 

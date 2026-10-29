@@ -8,6 +8,10 @@ const HELL_SCRIPT:=preload("res://scripts/slasher/slasher_hell_enemy.gd")
 const FOREST_SCRIPT:=preload("res://scripts/slasher/slasher_forest_creature.gd")
 const FOREST_IDS:=["sporeling","bandit_cutthroat","bandit_knifethrower"]
 const COLOSSUS_SCRIPT:=preload("res://scripts/slasher/slasher_colossus.gd")
+const CHARNEL_KING_SCRIPT:=preload("res://scripts/slasher/slasher_charnel_king.gd")
+const CRYPT_CREATURE_SCRIPT:=preload("res://scripts/slasher/slasher_crypt_creature.gd")
+## Crypt foes that borrow other enemies' sprites; built at runtime, no prefab.
+const CRYPT_CREATURE_IDS:=["grave_rat","ghoul","gravedigger","tomb_guard","revenant"]
 const CRYPT_IDS:=["skeletal_archer","necromancer","soul_wisp","crypt_boss"]
 const HELL_IDS:=["infernal_caster","rift_stalker","hellcharger","cinder_bomber","fire_spirit","infernal_legate","balor"]
 
@@ -15,6 +19,8 @@ static func create(visual_id:String)->SlasherEnemy:
 	# Built from shared sprite sheets at runtime; no prefab needed.
 	if visual_id in FOREST_IDS:return FOREST_SCRIPT.new() as SlasherEnemy
 	if visual_id=="heartwood_colossus":return COLOSSUS_SCRIPT.new() as SlasherEnemy
+	if visual_id=="charnel_king":return CHARNEL_KING_SCRIPT.new() as SlasherEnemy
+	if visual_id in CRYPT_CREATURE_IDS:return CRYPT_CREATURE_SCRIPT.new() as SlasherEnemy
 	var prefab_path:=PREFAB_ROOT+visual_id+".tscn"
 	if ResourceLoader.exists(prefab_path):
 		var prefab:=load(prefab_path) as PackedScene

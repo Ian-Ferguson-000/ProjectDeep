@@ -9,6 +9,7 @@ class_name MapMarker
 
 const CELL := 48.0
 ## Kind -> [map symbol, label, colour]. The symbol is the room's internal code.
+## Labels name what each marker becomes in the forest / in the crypt.
 const KINDS := {
 	"enemy":["e","Enemy","#e05a4f"],
 	"elite":["E","Elite/Boss","#ff9e3d"],
@@ -17,14 +18,14 @@ const KINDS := {
 	"merchant":["M","Merchant","#6fd0a0"],
 	"gate":["X","Gate down","#c6a0ff"],
 	"player_start":["P","Start","#ffffff"],
-	"campfire":["F","Campfire","#ff7a2e"],
+	"campfire":["F","Campfire / brazier","#ff7a2e"],
 	"chest":["C","Chest","#b8814a"],
-	"rock":["R","Rock","#a9a9a9"],
-	"big_tree":["T","Big tree","#4f8f45"],
-	"mossy_rock":["r","Mossy rock","#8fb18a"],
-	"pebbles":["p","Pebbles","#cfcfc4"],
-	"mushrooms":["m","Mushrooms","#e86a7a"],
-	"bush":["b","Bush","#6fa34f"],
+	"rock":["R","Rock / rubble","#a9a9a9"],
+	"big_tree":["T","Big tree / coffin","#4f8f45"],
+	"mossy_rock":["r","Mossy rock / rubble","#8fb18a"],
+	"pebbles":["p","Pebbles / bones","#cfcfc4"],
+	"mushrooms":["m","Mushrooms / candles","#e86a7a"],
+	"bush":["b","Bush / urn","#6fa34f"],
 	"colossus":["O","Colossus (7x5)","#c0392b"],
 }
 

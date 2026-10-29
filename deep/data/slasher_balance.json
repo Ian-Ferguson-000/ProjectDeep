@@ -17,7 +17,7 @@
 	]
   },
   "hud": {"health_per_heart": 4},
-  "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28, "hollow_chance": 0.4}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
+  "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28, "hollow_chance": 0.4}, "coffin": {"health": 10, "collision_radius": 17, "break_duration": 0.26, "hollow_chance": 0.4}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
   "classes": {
 	"warrior": {
 	  "speed": 285, "collision_radius": 18, "sprite_scale": 1.58, "sprite_offset_y": -30,
@@ -76,7 +76,13 @@
 	"skeletal_archer": {"health_base":16,"health_per_floor":3,"damage_base":2,"damage_per_floor":1,"speed":76,"preferred_range":255,"retreat_range":145,"telegraph":0.68,"cooldown":1.75,"spread_floor":4,"reward":5,"projectile_cap":72},
 	"grave_acolyte": {"health_base":22,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":61,"preferred_range":225,"telegraph":0.92,"cooldown":2.55,"reward":7,"projectile_cap":72},
 	"soul_wisp": {"health_base":13,"health_per_floor":3,"damage_base":2,"damage_per_floor":1,"speed":104,"preferred_range":190,"cooldown":1.6,"burst_cooldown":5.2,"reward":6,"projectile_cap":72},
-	"crypt_lord": {"health_base":190,"health_per_floor":20,"damage_base":5,"damage_per_floor":1,"speed":54,"preferred_range":210,"reward":30,"projectile_cap":72,"phase_two":0.70,"phase_three":0.35},
+	"crypt_lord": {"gate_health_scale":0.55,"health_base":190,"health_per_floor":20,"damage_base":5,"damage_per_floor":1,"speed":54,"preferred_range":210,"reward":30,"projectile_cap":72,"phase_two":0.70,"phase_three":0.35},
+	"grave_rat": {"behaves_like":"sporeling","health_base":7,"health_per_floor":2,"damage_base":2,"damage_per_floor":0.5,"speed":150,"speed_per_floor":3,"attack_range":24,"knockback":60,"reward":1,"collision_radius":11,"wake_radius":150,"wake_chain_radius":140,"wake_time":0.35,"hop_distance":60,"hop_speed":360,"hop_windup":0.22,"recovery":0.45,"cooldown":0.95},
+	"ghoul": {"behaves_like":"bandit_cutthroat","health_base":22,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":92,"speed_per_floor":2,"attack_range":30,"knockback":150,"reward":4,"collision_radius":14,"circle_range":130,"lunge_range":210,"lunge_windup":0.5,"lunge_distance":200,"lunge_speed":500,"damage_multiplier":1.4,"recovery":0.8},
+	"gravedigger": {"behaves_like":"bandit_knifethrower","health_base":16,"health_per_floor":3,"damage_base":2,"damage_per_floor":1,"speed":76,"speed_per_floor":2,"attack_range":30,"knockback":80,"reward":4,"collision_radius":13,"preferred_range":250,"retreat_range":140,"telegraph":0.5,"cooldown":2.0,"knife_speed":290,"knife_range":460,"fan_floor":3,"projectile_visual":"bone","projectile_color":"#d9d0bd"},
+	"tomb_guard": {"behaves_like":"shieldbearer","health_base":30,"health_per_floor":6,"damage_base":4,"damage_per_floor":1,"speed":58,"speed_per_floor":1,"attack_range":34,"knockback":200,"reward":6,"collision_radius":16,"turn_rate":2.0,"shield_arc_degrees":110,"bash_range":120,"bash_windup":0.55,"bash_distance":110,"bash_speed":420,"bash_damage_multiplier":1.4,"bash_recovery":1.3,"cooldown":2.6},
+	"revenant": {"behaves_like":"revenant","health_base":18,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":70,"speed_per_floor":2,"attack_range":30,"knockback":110,"reward":4,"collision_radius":13,"swing_windup":0.35,"cooldown":1.2,"rise_time":3.5,"rise_health":0.5},
+	"charnel_king": {"health_base":460,"health_per_floor":30,"damage_base":4,"damage_per_floor":0.6,"reward":55,"phase_two":0.66,"phase_three":0.33,"phase_two_speed":1.15,"phase_three_speed":1.3,"roar":1.4,"rest":1.0,"sweep_telegraph":1.2,"sweep_duration":0.9,"lane_height":120,"sweep_damage_multiplier":1.4,"hand_window":2.6,"wail_telegraph":1.0,"wail_bullets":28,"wail_gap":4,"wail_speed":140,"wail_wave_gap":0.75,"gem_window":2.6,"rain_telegraph":1.0,"rain_count":7,"rain_spread":230,"rain_radius":58,"rain_stagger":0.16,"rain_shards":6,"rain_shard_speed":160,"rain_damage_multiplier":1.2,"bullet_damage_multiplier":0.5,"reinforcements":["revenant","grave_rat","grave_rat"]},
 	"infernal_caster":{"health_base":18,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":74,"preferred_range":245,"reward":7,"projectile_cap":96},
 	"rift_stalker":{"health_base":16,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":92,"preferred_range":175,"teleport_windup":1.0,"teleport_recovery":1.5,"reward":7,"projectile_cap":96},
 	"hellcharger":{"health_base":27,"health_per_floor":5,"damage_base":4,"damage_per_floor":1,"speed":88,"reward":8,"projectile_cap":96},
@@ -117,6 +123,12 @@
 	,"soul_wisp": {"sprite_offset_x":0,"sprite_offset_y":-17,"sprite_scale":0.67}
 	,"crypt_boss": {"sprite_offset_x":0,"sprite_offset_y":-25,"sprite_scale":1.08}
 	,"skeleton": {"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.48}
+	,"grave_rat": {"art":"ash_rat","desaturate":0.9,"tint":"#c4bdcc","sprite_offset_x":0,"sprite_offset_y":-12,"sprite_scale":0.5}
+	,"ghoul": {"art":"drowned_foreman","tint":"#c3d0ad","sprite_offset_x":0,"sprite_offset_y":-22,"sprite_scale":0.74,"bar_lift":6}
+	,"gravedigger": {"art":"blighted_farmhand","desaturate":0.55,"tint":"#c9c3d4","sprite_offset_x":0,"sprite_offset_y":-22,"sprite_scale":0.72,"bar_lift":6}
+	,"tomb_guard": {"art":"moon_court_huntress","tint":"#a8a5b4","sprite_offset_x":0,"sprite_offset_y":-24,"sprite_scale":0.8,"bar_lift":8}
+	,"charnel_king": {"sprite_offset_x":0,"sprite_offset_y":0,"sprite_scale":1.0}
+	,"revenant": {"art":"skeleton","tint":"#c9f2c4","sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.52}
 	,"infernal_caster":{"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.72}
 	,"rift_stalker":{"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.72}
 	,"hellcharger":{"sprite_offset_x":0,"sprite_offset_y":-14,"sprite_scale":0.78}
