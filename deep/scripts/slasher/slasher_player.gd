@@ -306,6 +306,7 @@ func _action_animation_state(slot:String)->String:
 	if uses_mage_kit() and slot in ["movement","defensive"]:return "idle"
 	if class_id!="warrior":return slot
 	if slot=="special" or slot=="defensive":return slot
+	if slot=="basic" and not uses_warrior_kit():return "slash"
 	return "attack"
 
 func _basic(result:Dictionary)->Dictionary:
@@ -415,12 +416,10 @@ func _process_warrior_dash(delta:float)->void:
 		warrior_dash_active=false;invulnerable=maxf(invulnerable,warrior_dash_landing_invulnerability);warrior_dash_hit_ids.clear()
 
 func _dash_slash_segment(start:Vector2,end:Vector2,radius:float)->void:
-	var segment:=end-start;var segment_length_squared:=segment.length_squared()
 	for node_value:Variant in get_tree().get_nodes_in_group("slasher_damageable"):
 		var damageable:Node2D=node_value as Node2D
 		if not is_instance_valid(damageable) or not damageable.has_method("receive_attack") or warrior_dash_hit_ids.has(damageable.get_instance_id()):continue
-		var progress:=0.0 if segment_length_squared<=0.001 else clampf((damageable.global_position-start).dot(segment)/segment_length_squared,0.0,1.0)
-		if (start+segment*progress).distance_to(damageable.global_position)>radius:continue
+		if SlasherHitGeometry.sweep(start,end,damageable,radius)==INF:continue
 		warrior_dash_hit_ids[damageable.get_instance_id()]=true;damageable.call("receive_attack",warrior_dash_attack,self);_apply_echo_hit(damageable,warrior_dash_attack)
 		if damageable.is_in_group("slasher_enemy") and not warrior_dash_resource_awarded:
 			warrior_dash_resource_awarded=true;_award_resource(warrior_dash_resource_gain);resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());_record_combo_confirmation("movement_hit")
@@ -444,8 +443,10 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 	if is_instance_valid(warrior_kit) and warrior_kit.has_method("modify_incoming_damage"):amount=warrior_kit.modify_incoming_damage(amount)
 	for child in get_children():
 		var active_weapon_id:=String(child.get_meta("fighter_active_weapon_id",""))
+		var active_runtime_id:=String(child.get_meta("active_item_runtime_id",""))
 		var duplicates_equipped:=is_instance_valid(warrior_kit) and String(warrior_kit.get("weapon_id"))==active_weapon_id
-		if child!=warrior_kit and child.has_method("modify_incoming_damage") and not active_weapon_id.is_empty() and not duplicates_equipped:amount=child.modify_incoming_damage(amount)
+		if child!=warrior_kit and not active_runtime_id.is_empty() and child.has_method("modify_incoming_damage_from"):amount=child.call("modify_incoming_damage_from",amount,attacker)
+		elif child!=warrior_kit and child.has_method("modify_incoming_damage") and (not active_weapon_id.is_empty() or not active_runtime_id.is_empty()) and not duplicates_equipped:amount=child.modify_incoming_damage(amount)
 	var tuning:=_ability_tuning("special" if defense_kind=="retribution_ready" else "defensive")
 	if invulnerable>0.0:
 		if defense_kind=="evade":
@@ -498,6 +499,9 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 	if final>0:AudioCue.play_from(self,"player_hurt")
 	if health<=0:AudioCue.play_from(self,"death",false)
 	if final>0:add_impact_shake(minf(9.0+float(final)*0.75,12.0),0.24)
+	if final>0:
+		for child in get_children():
+			if not String(child.get_meta("active_item_runtime_id","")).is_empty() and child.has_method("on_owner_damaged"):child.call("on_owner_damaged",final)
 	move_and_collide(knockback*(0.25 if prevented>0 else 1.0));_enforce_field_bounds()
 	if defense_kind=="recover" and final>0:heal(int(ceil(final*float(tuning.get("recover_fraction",0.5)))))
 	if defense_kind=="retribution_ready" and retribution_stored>0:_area_attack(global_position,float(tuning.get("release_radius",80.0)),_attack_data(retribution_stored,"physical",{"knockback":float(tuning.get("release_knockback",30.0))}));retribution_stored=0
@@ -560,28 +564,30 @@ func reset_combo_progress()->void:
 
 func _standard_weapon_visual(origin: Vector2, direction: Vector2, reach: float, degrees: float, line: bool=false) -> void:
 	if uses_warrior_kit() or not is_instance_valid(weapon_trails):return
-	weapon_trails.play_strike(origin,direction,reach,degrees,line)
+	weapon_trails.play_strike(origin,direction,reach,degrees,line,class_id=="warrior" and active_action_slot=="basic" and not line)
+
+func combat_hurtbox()->Dictionary:
+	return SlasherHitGeometry.sprite_body(sprite,global_position,18.0,true)
 
 func _melee_attack(data:Dictionary)->int:
-	_standard_weapon_visual(global_position,aim_direction,float(data.get("reach",64)),float(data.get("arc_degrees",70)))
-	var hits:=0;var reach:=float(data.get("reach",64.0));var threshold:=cos(deg_to_rad(float(data.get("arc_degrees",70.0))*0.5))
+	# Snapshot once: on-hit effects can move actors, but cannot move this strike.
+	var origin:=global_position;var direction:=aim_direction.normalized()
+	_standard_weapon_visual(origin,direction,float(data.get("reach",64)),float(data.get("arc_degrees",70)))
+	var hits:=0;var reach:=float(data.get("reach",64.0))
 	for node in get_tree().get_nodes_in_group("slasher_damageable"):
 		if node is Node2D and node.has_method("receive_attack"):
-			var offset:Vector2=node.global_position-global_position
-			if offset.length()<=reach and aim_direction.dot(offset.normalized())>=threshold:
+			if SlasherHitGeometry.overlaps_sector(origin,direction,reach,float(data.get("arc_degrees",70.0)),node):
 				_strike(node,data)
 				if node.is_in_group("slasher_enemy"):hits+=1
 	return hits
 
 func _line_attack(start:Vector2,end:Vector2,radius:float,data:Dictionary)->int:
 	_standard_weapon_visual(start,start.direction_to(end),start.distance_to(end),radius,true)
-	var hits:int=0;var segment:Vector2=end-start;var segment_length_squared:float=segment.length_squared()
+	var hits:int=0
 	for node_value:Variant in get_tree().get_nodes_in_group("slasher_damageable"):
 		var damageable:Node2D=node_value as Node2D
 		if not is_instance_valid(damageable) or not damageable.has_method("receive_attack"):continue
-		var progress:float=0.0 if segment_length_squared<=0.001 else clampf((damageable.global_position-start).dot(segment)/segment_length_squared,0.0,1.0)
-		var closest:Vector2=start+segment*progress
-		if closest.distance_to(damageable.global_position)<=radius:
+		if SlasherHitGeometry.sweep(start,end,damageable,radius)!=INF:
 			_strike(damageable,data)
 			if damageable.is_in_group("slasher_enemy"):hits+=1
 	return hits
@@ -589,7 +595,7 @@ func _line_attack(start:Vector2,end:Vector2,radius:float,data:Dictionary)->int:
 func _area_attack(center:Vector2,radius:float,data:Dictionary)->int:
 	var hits:=0
 	for node in get_tree().get_nodes_in_group("slasher_damageable"):
-		if node is Node2D and node.has_method("receive_attack") and center.distance_to(node.global_position)<=radius:
+		if node is Node2D and node.has_method("receive_attack") and SlasherHitGeometry.overlaps_circle(center,radius,node):
 			_strike(node,data)
 			if node.is_in_group("slasher_enemy"):hits+=1
 	return hits
@@ -722,12 +728,16 @@ func _strike(node:Node,data:Dictionary)->void:
 func adjust_active_weapon_attack(target:Node2D,attack:Dictionary)->Dictionary:
 	var result:=attack
 	for child in get_children():
-		if not String(child.get_meta("fighter_active_weapon_id","")).is_empty() and child.has_method("adjust_external_attack"):result=child.call("adjust_external_attack",target,result)
+		if (not String(child.get_meta("fighter_active_weapon_id","")).is_empty() or not String(child.get_meta("active_item_runtime_id","")).is_empty()) and child.has_method("adjust_external_attack"):result=child.call("adjust_external_attack",target,result)
 	return result
 
 func notify_active_weapon_hit(target:SlasherEnemy,attack:Dictionary,was_dead:bool)->void:
 	for child in get_children():
-		if not String(child.get_meta("fighter_active_weapon_id","")).is_empty() and child.has_method("on_external_hit"):child.call("on_external_hit",target,attack,was_dead)
+		if (not String(child.get_meta("fighter_active_weapon_id","")).is_empty() or not String(child.get_meta("active_item_runtime_id","")).is_empty()) and child.has_method("on_external_hit"):child.call("on_external_hit",target,attack,was_dead)
+
+func notify_active_projectile_miss(attack:Dictionary)->void:
+	for child in get_children():
+		if not String(child.get_meta("active_item_runtime_id","")).is_empty() and child.has_method("on_projectile_miss"):child.call("on_projectile_miss",attack)
 
 ## Item reactions to an enemy being struck: hit-trigger relics, then procs.
 func on_item_enemy_hit(target:Node,attack:Dictionary,was_dead:bool=false)->void:
@@ -796,6 +806,9 @@ func _play_animation(state:String)->void:
 
 func _play_action_animation(state:String,cooldown:float)->void:
 	if sprite==null or sprite.sprite_frames==null:return
+	if state=="slash":
+		cooldown=minf(0.18,cooldown)
+		if is_instance_valid(weapon_trails):weapon_trails.sync_fighter_duration(cooldown)
 	var animation:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,state,facing_name)
 	if animation.is_empty():return
 	var frame_count:int=sprite.sprite_frames.get_frame_count(animation)

@@ -14,6 +14,7 @@ func _company() -> CampaignState:
 	return c
 
 func _run() -> void:
+	var game_settings:Node=root.get_node("GameSettings");game_settings.values["dev_mode"]=false
 	_expect(Unlocks.validate().is_empty(),"Unlock data invalid: %s" % "; ".join(Unlocks.validate()))
 
 	# Drops: low to begin with, raised by luck, capped, none from bosses.
@@ -44,6 +45,35 @@ func _run() -> void:
 		if not FOREST_SCRIPT.roll_fighter_active_item(false,true,rng).is_empty():boss_weapon_hits+=1
 	_expect(boss_weapon_hits/20000.0>0.62 and boss_weapon_hits/20000.0<0.68,"Boss fighter active-item rate should be high (~65%%)")
 	_expect(FOREST_SCRIPT.roll_fighter_active_item(false,false,rng).is_empty(),"Ordinary enemies must not roll fighter active items")
+	var mage_items:Dictionary={}
+	for i in 20000:
+		var mage_id:=FOREST_SCRIPT.roll_class_active_item("mage",true,false,rng)
+		if not mage_id.is_empty():mage_items[mage_id]=true
+	_expect(mage_items.size()==25,"Mage elite drops must include ten Mage and fifteen neutral active items")
+	_expect(FOREST_SCRIPT.roll_class_active_item("mage",false,false,rng).is_empty(),"Ordinary enemies must not roll Mage active items")
+	var rogue_neutral:Dictionary={}
+	for i in 20000:
+		var neutral_id:=FOREST_SCRIPT.roll_class_active_item("rogue",true,false,rng)
+		if not neutral_id.is_empty():rogue_neutral[neutral_id]=true
+	_expect(rogue_neutral.size()==15,"A class without an authored pool must still receive all fifteen neutral items")
+	# Dev Mode makes testing drops practical: ordinary foes can produce active
+	# choices, while elite and boss active drops are guaranteed.
+	game_settings.values["dev_mode"]=true
+	var dev_hits:=0
+	for i in 10000:if FOREST_SCRIPT.roll_drop("wolf_vanguard",false,false,1.0,rng)!="":dev_hits+=1
+	_expect(dev_hits/10000.0>base_rate*2.0,"Dev Mode did not substantially increase ordinary loot drops")
+	var dev_elite_items:=0
+	for i in 10000:if not FOREST_SCRIPT.roll_class_active_item("mage",true,false,rng).is_empty():dev_elite_items+=1
+	_expect(dev_elite_items==10000,"Dev Mode elites must always drop an active item")
+	for i in 100:_expect(not FOREST_SCRIPT.roll_class_active_item("mage",false,true,rng).is_empty(),"Dev Mode bosses must always drop an active item")
+	var dev_normal_items:=0
+	for i in 10000:if not FOREST_SCRIPT.roll_class_active_item("mage",false,false,rng).is_empty():dev_normal_items+=1
+	_expect(dev_normal_items/10000.0>0.22 and dev_normal_items/10000.0<0.28,"Dev Mode ordinary-enemy active-item rate should be about 25%%")
+	var dev_choices:=FOREST_SCRIPT.active_item_drop_choices("mage","michaels_orb",rng)
+	var unique_dev_choices:Dictionary={};for id in dev_choices:unique_dev_choices[id]=true
+	_expect(dev_choices.size()==3 and unique_dev_choices.size()==3 and dev_choices[0]=="michaels_orb","Dev active-item drop did not produce three unique choices while preserving the rolled item")
+	_expect(dev_choices.all(func(id:String)->bool:return ActiveItems.ids_for_class("mage").has(id)),"Dev active-item choice included an item unavailable to the current class")
+	game_settings.values["dev_mode"]=false
 
 	# Locked items stay out of chests until their unlock is earned.
 	var c := _company()

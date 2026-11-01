@@ -20,14 +20,14 @@
   "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28, "hollow_chance": 0.4}, "coffin": {"health": 10, "collision_radius": 17, "break_duration": 0.26, "hollow_chance": 0.4}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
   "classes": {
 	"warrior": {
-	  "speed": 285, "collision_radius": 18, "sprite_scale": 1.58, "sprite_offset_y": -30,
+	  "speed": 285, "collision_radius": 18, "sprite_scale": 1.42, "sprite_offset_y": -27,
 	  "basic": {"cooldown": 0.18, "combo_finisher_cooldown": 0.90, "combo_reset_window": 0.70, "resource_cost": 0, "resource_gain": 2, "power_stat": "attack_power", "damage_coefficient": 3.0, "flat_damage": 0, "reach": 118, "arc_degrees": 92, "knockback": 10, "deflect_reach": 82, "deflect_arc_degrees": 56, "animation_lock": 0.32},
 	  "movement": {"cooldown": 0.2, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 2.0, "flat_damage": 0, "movement_distance": 355, "dash_speed": 1120, "landing_invulnerability": 0.08, "destination_clearance": 22, "path_radius": 36, "invulnerability": 0.38, "reach": 58, "arc_degrees": 75, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 4.0, "flat_damage": 0, "reach": 208, "arc_degrees": 140, "knockback": 30, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 3.5, "resource_cost": 0, "resource_gain": 0, "effect_duration": 0.65, "mitigation": 1.0, "counter_coefficient": 1.0, "counter_flat_damage": 0, "counter_knockback": 35, "animation_lock": 0.32}
 	},
 	"mage": {
-	  "speed": 185, "collision_radius": 18, "sprite_scale": 0.85, "sprite_offset_y": -28,
+	  "speed": 185, "collision_radius": 18, "sprite_scale": 0.65, "sprite_offset_y": -21,
 	  "basic": {"cooldown": 0.22, "resource_cost": 0, "resource_gain": 1, "power_stat": "spell_power", "damage_coefficient": 13.0, "flat_damage": 0, "projectile_range": 360, "projectile_speed": 620, "hit_radius": 24, "area_radius": 62, "piercing": false, "visual": "aether", "focus_min_distance": 140, "animation_lock": 0.32},
 	  "movement": {"cooldown": 0.5, "resource_cost": 0, "resource_gain": 0, "movement_distance": 380, "destination_clearance": 22, "invulnerability": 0.28, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.8, "resource_cost": 1, "resource_gain": 0, "power_stat": "spell_power", "damage_coefficient": 4.0, "flat_damage": 0, "projectile_range": 480, "projectile_speed": 760, "hit_radius": 30, "area_radius": 88, "piercing": true, "visual": "fireball", "visual_scale": 1.7, "animation_lock": 0.32},

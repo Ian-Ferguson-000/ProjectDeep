@@ -32,6 +32,15 @@ static func _warrior_player_frames() -> SpriteFrames:
 	var source:=load("res://assets/sprite_packs/Player/player_frames.tres") as SpriteFrames
 	if source==null:return null
 	var frames:=source.duplicate(true) as SpriteFrames
+	# The source's first two contact frames contain a fixed, oversized white
+	# crescent. Use its clean sword follow-through poses for the standard slash;
+	# the world-space effect supplies the single authoritative contact silhouette.
+	for direction:String in DIRECTIONS:
+		var animation:=StringName("slash_%s"%direction)
+		var original:=StringName("attack2_%s"%direction)
+		frames.add_animation(animation);frames.set_animation_loop(animation,false)
+		frames.set_animation_speed(animation,5.0/0.18)
+		for index in range(3,8):frames.add_frame(animation,source.get_frame_texture(original,index))
 	_append_directional_strips(frames,"defensive","res://assets/sprite_packs/Player/PARRY/parry_%s.png")
 	_append_directional_strips(frames,"special","res://assets/sprite_packs/Player/SPECIAL/special_%s.png")
 	_generated_cache[CACHE_KEY]=frames

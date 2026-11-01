@@ -64,6 +64,7 @@ var merchant_shop_panel:MerchantShopPanel
 var codex:SlasherCodexMenu
 var relic_modal:SlasherRelicChoiceModal
 var relic_choice_source:=""
+var active_drop_origin:=Vector2.ZERO
 var tutorial_canvas:CanvasLayer
 var tutorial_sequence:ForestTutorialSequence
 var tutorial_reward_spawned:=false
@@ -298,6 +299,7 @@ func _build_vignette()->void:
 func _spawn_player()->void:
 	player=PLAYER_SCRIPT.new();player.name="SlasherPlayer";player.position_sanitizer=sanitize_player_position;player.pathfinder=pathfinder;player.setup(run_state);actor_layer.add_child(player);player.global_position=_world(layout.start);player.health_changed.connect(_on_health_changed);player.resource_changed.connect(_on_resource_changed);player.ability_resolved.connect(_on_ability_resolved);player.combo_updated.connect(_on_combo_updated);player.defeated.connect(_on_player_defeated)
 	_restore_active_slasher_state()
+	SlasherActiveEffects.ensure_runtime(player,ActiveItems.held(run_state))
 	player.add_to_group("slasher_party_target")
 	if player.item_runtime:player.item_runtime.effect_activated.connect(_show_message)
 	var camera:=Camera2D.new();camera.position_smoothing_enabled=true;camera.position_smoothing_speed=7
@@ -583,17 +585,11 @@ func _collect_loot(loot:Area2D)->void:
 			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
 		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
 		"active_item":
-			var item_id:=String(loot.get_meta("item_id",""));var entry:=ActiveItems.item(item_id)
-			if entry.is_empty():_show_message("The active item crumbles to dust.")
-			else:
-				var replaced:=ActiveItems.give(run_state,item_id);AudioCue.play_from(loot,"reward")
-				var suffix:=""
-				if not replaced.is_empty():
-					var away:Vector2=player.aim_direction.normalized() if not player.aim_direction.is_zero_approx() else Vector2.DOWN
-					_spawn_fighter_active_drop(loot.global_position-away*46.0,replaced);suffix=" · left %s behind"%String(ActiveItems.item(replaced).get("name",replaced))
-				_show_message("Active item acquired: %s%s."%[String(entry.name),suffix],4.0)
-				if dungeon_hud!=null:dungeon_hud.show_pickup(String(entry.name).to_upper(),String(entry.get("description","")))
-				_refresh_active_hud()
+			var item_id:=String(loot.get_meta("item_id",""));var choices:Array[String]=[];choices.assign(Array(loot.get_meta("choices",[])));var exact_pickup:=bool(loot.get_meta("exact_active_item",false))
+			if GameSettingsService.dev_mode_enabled() and not exact_pickup and relic_modal!=null:
+				if choices.size()<3:choices=active_item_drop_choices(run_state.selected_class_id,item_id,drop_rng())
+				relic_choice_source="active_item_drop";active_drop_origin=loot.global_position;AudioCue.play_from(loot,"reward");relic_modal.open_active_items(run_state,choices);_show_message("Choose one of three active items.",2.0)
+			else:_acquire_active_item(item_id,loot.global_position,loot)
 		"relic":
 			var choices:Array[String]=run_state.generate_slasher_chest_choices(run_state.current_floor,"enemy_relic_%d"%Time.get_ticks_usec())
 			if choices.is_empty():_show_message("The relic crumbles to dust.")
@@ -606,6 +602,19 @@ func _collect_loot(loot:Area2D)->void:
 			var rewards:=GameBalance.get_slasher_balance("rewards");var raw_amount:int=int(loot.get_meta("amount",int(rewards.get("loot_gold_base",5))+run_state.current_floor));var amount:=run_state.apply_reward_bonus(raw_amount,"gold");run_state.gold+=amount;_show_message("Collected %d gold."%amount)
 	var tween:=create_tween();tween.set_parallel(true);tween.tween_property(loot,"global_position",player.global_position-Vector2(0,28),0.22).set_trans(Tween.TRANS_QUAD);tween.tween_property(loot,"scale",Vector2(1.35,1.35),0.16);tween.tween_property(loot,"modulate:a",0.0,0.22);tween.chain().tween_callback(loot.queue_free)
 	if bool(loot.get_meta("tutorial_reward",false)) and tutorial_sequence!=null:tutorial_sequence.observe_reward()
+
+func _acquire_active_item(item_id:String,origin:Vector2,audio_source:Node=null)->void:
+	var entry:=ActiveItems.item(item_id)
+	if entry.is_empty():_show_message("The active item crumbles to dust.");return
+	var replaced:=ActiveItems.give(run_state,item_id);SlasherActiveEffects.ensure_runtime(player,item_id);AudioCue.play_from(audio_source if is_instance_valid(audio_source) else self,"reward")
+	var suffix:=""
+	if not replaced.is_empty():
+		var away:Vector2=player.aim_direction.normalized() if not player.aim_direction.is_zero_approx() else Vector2.DOWN
+		# A swapped-out item is an exact retrieval, not another Dev Mode choice.
+		_spawn_active_item_drop(origin-away*46.0,replaced,[],true);suffix=" · left %s behind"%String(ActiveItems.item(replaced).get("name",replaced))
+	_show_message("Active item acquired: %s%s."%[String(entry.name),suffix],4.0)
+	if dungeon_hud!=null:dungeon_hud.show_pickup(String(entry.name).to_upper(),String(entry.get("description","")))
+	_refresh_active_hud()
 
 func _on_prop_broken(_prop:SlasherBreakableProp,kind:String,cell:Vector2i)->void:
 	if pathfinder!=null:pathfinder.set_cell_blocked(cell,false)
@@ -625,6 +634,8 @@ func _offer_starter_relic()->void:
 	relic_choice_source="starter";var choices:Array[String]=run_state.generate_slasher_chest_choices(1,"starter",0);relic_modal.open(run_state,choices,true)
 
 func _claim_relic(item_id:String)->void:
+	if relic_choice_source=="active_item_drop":
+		_acquire_active_item(item_id,active_drop_origin);relic_modal.finish();relic_choice_source="";active_drop_origin=Vector2.ZERO;return
 	var inventory_count:=run_state.inventory_items.size()
 	var logs:Array[String]=run_state.choose_starter_item(item_id) if relic_choice_source=="starter" else run_state.choose_chest_item(item_id)
 	AudioCue.play_from(self,"reward" if run_state.inventory_items.size()>inventory_count else "ui_error",false)
@@ -648,6 +659,7 @@ static func roll_drop(enemy_key:String,elite:bool,boss:bool,luck:float,rng:Rando
 	if elite:scale*=float(multipliers.get("elite",1.0))
 	if boss:scale*=float(multipliers.get("boss",0.0))
 	scale*=minf(luck,float(table.get("luck_cap",2.5)))
+	if GameSettingsService.dev_mode_enabled():scale*=GameSettingsService.DEV_DROP_MULTIPLIER
 	var chances:Dictionary=table.get("chances",{})
 	for kind in chances:
 		if rng.randf()<float(chances[kind])*scale:return String(kind)
@@ -655,18 +667,42 @@ static func roll_drop(enemy_key:String,elite:bool,boss:bool,luck:float,rng:Rando
 
 ## Elites and bosses can drop the fighter's authored weapons directly into the
 ## dungeon active-item loop. Bosses use the higher configured chance.
-static func roll_fighter_active_item(is_elite:bool,is_boss:bool,rng:RandomNumberGenerator)->String:
-	if not is_elite and not is_boss:return ""
-	var rules:Dictionary=drop_table().get("fighter_active_item",{})
-	var pool:Array=rules.get("item_ids",[])
+static func roll_class_active_item(class_id:String,is_elite:bool,is_boss:bool,rng:RandomNumberGenerator)->String:
+	var dev_mode:=GameSettingsService.dev_mode_enabled()
+	if not is_elite and not is_boss and not dev_mode:return ""
+	var rules:Dictionary=drop_table().get("active_item_drops",{})
+	var pools:Dictionary=rules.get("class_pools",{})
+	var pool:Array=Array(pools.get(class_id,[])).duplicate();pool.append_array(Array(pools.get("neutral",[])))
 	var chance:=float(rules.get("boss_chance",0.65) if is_boss else rules.get("elite_chance",0.35))
+	if dev_mode:chance=GameSettingsService.DEV_BOSS_ACTIVE_CHANCE if is_boss else (GameSettingsService.DEV_ELITE_ACTIVE_CHANCE if is_elite else GameSettingsService.DEV_NORMAL_ACTIVE_CHANCE)
+	if pool.is_empty() or rng.randf()>=chance:return ""
+	return String(pool[rng.randi_range(0,pool.size()-1)])
+
+static func active_item_drop_choices(class_id:String,first_id:String,rng:RandomNumberGenerator,count:int=3)->Array[String]:
+	var rules:Dictionary=drop_table().get("active_item_drops",{});var pools:Dictionary=rules.get("class_pools",{})
+	var candidates:Array=Array(pools.get(class_id,[])).duplicate();candidates.append_array(Array(pools.get("neutral",[])))
+	var choices:Array[String]=[]
+	if not first_id.is_empty() and candidates.has(first_id):choices.append(first_id)
+	while choices.size()<count and not candidates.is_empty():
+		var index:=rng.randi_range(0,candidates.size()-1);var candidate:=String(candidates[index]);candidates.remove_at(index)
+		if not choices.has(candidate):choices.append(candidate)
+	return choices
+
+static func roll_fighter_active_item(is_elite:bool,is_boss:bool,rng:RandomNumberGenerator)->String:
+	var dev_mode:=GameSettingsService.dev_mode_enabled()
+	if not is_elite and not is_boss and not dev_mode:return ""
+	var rules:Dictionary=drop_table().get("active_item_drops",{});var pools:Dictionary=rules.get("class_pools",{});var pool:Array=pools.get("warrior",[])
+	var chance:=float(rules.get("boss_chance",0.65) if is_boss else rules.get("elite_chance",0.35))
+	if dev_mode:chance=GameSettingsService.DEV_BOSS_ACTIVE_CHANCE if is_boss else (GameSettingsService.DEV_ELITE_ACTIVE_CHANCE if is_elite else GameSettingsService.DEV_NORMAL_ACTIVE_CHANCE)
 	if pool.is_empty() or rng.randf()>=chance:return ""
 	return String(pool[rng.randi_range(0,pool.size()-1)])
 
 func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	if _is_tutorial_expedition() or not is_instance_valid(enemy):return
-	var active_item_id:=roll_fighter_active_item(enemy.elite or enemy.mini_boss,enemy.boss,drop_rng())
-	if not active_item_id.is_empty():_spawn_fighter_active_drop(enemy.global_position,active_item_id);return
+	var active_item_id:=roll_class_active_item(run_state.selected_class_id,enemy.elite or enemy.mini_boss,enemy.boss,drop_rng())
+	if not active_item_id.is_empty():
+		var choices:=active_item_drop_choices(run_state.selected_class_id,active_item_id,drop_rng()) if GameSettingsService.dev_mode_enabled() else []
+		_spawn_active_item_drop(enemy.global_position,active_item_id,choices);return
 	var key:=String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)
 	var kind:=roll_drop(key,enemy.elite or enemy.mini_boss,enemy.boss,Unlocks.drop_luck(run_state.campaign),drop_rng())
 	if kind.is_empty():return
@@ -693,11 +729,14 @@ func _spawn_relic_drop(world_position:Vector2)->void:
 	var shine:=Polygon2D.new();shine.polygon=PackedVector2Array([Vector2(0,-19),Vector2(4,-12),Vector2(0,-6),Vector2(-3,-12)]);shine.color=Color("#f6e2ff");area.add_child(shine)
 	area.add_child(_glow(Color("#c77dff"),20));area.set_meta("kind","relic");actor_layer.add_child(area);loot_nodes.append(area)
 
-func _spawn_fighter_active_drop(world_position:Vector2,item_id:String)->void:
-	var area:=Area2D.new();area.name="FighterActiveItemDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=18;shape.shape=circle;area.add_child(shape)
+func _spawn_active_item_drop(world_position:Vector2,item_id:String,choices:Array=[],exact_pickup:bool=false)->void:
+	var area:=Area2D.new();area.name="ActiveItemDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=18;shape.shape=circle;area.add_child(shape)
 	var blade:=Polygon2D.new();blade.polygon=PackedVector2Array([Vector2(-4,-28),Vector2(5,-28),Vector2(8,6),Vector2(0,16),Vector2(-8,6)]);blade.color=Color("#f4d27a");blade.rotation=0.65;area.add_child(blade)
 	var guard:=Polygon2D.new();guard.polygon=PackedVector2Array([Vector2(-13,-1),Vector2(13,-1),Vector2(13,4),Vector2(-13,4)]);guard.color=Color("#8b5bd1");guard.rotation=0.65;area.add_child(guard)
-	area.add_child(_glow(Color("#efb85f"),26));area.set_meta("kind","active_item");area.set_meta("item_id",item_id);actor_layer.add_child(area);loot_nodes.append(area)
+	area.add_child(_glow(Color("#efb85f"),26));area.set_meta("kind","active_item");area.set_meta("item_id",item_id);area.set_meta("choices",choices.duplicate());area.set_meta("exact_active_item",exact_pickup);actor_layer.add_child(area);loot_nodes.append(area)
+
+func _spawn_fighter_active_drop(world_position:Vector2,item_id:String)->void:
+	_spawn_active_item_drop(world_position,item_id)
 
 func _spawn_pickup_drop(kind:String,world_position:Vector2)->void:
 	var area:=Area2D.new();area.name="Chest%sDrop"%kind.capitalize();area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),16));area.set_meta("kind",kind);actor_layer.add_child(area);loot_nodes.append(area)
@@ -732,6 +771,8 @@ func _build_hud()->void:
 	# Isaac-style: hearts, coins and keys top left, the map top right, nothing else
 	# until it matters. See scripts/ui/dungeon_hud.gd.
 	dungeon_hud=DUNGEON_HUD.new();canvas.add_child(dungeon_hud)
+	if GameSettingsService.dev_mode_enabled():
+		var dev_banner:=Label.new();dev_banner.name="DevModeIndicator";dev_banner.text="DEV MODE  ·  5× RECHARGE  ·  BOOSTED DROPS  ·  PICK 1 OF 3";dev_banner.set_anchors_preset(Control.PRESET_CENTER_TOP);dev_banner.offset_left=-320;dev_banner.offset_right=320;dev_banner.offset_top=12;dev_banner.offset_bottom=40;dev_banner.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;dev_banner.add_theme_font_size_override("font_size",15);dev_banner.add_theme_color_override("font_color",Color("#ffe080"));dev_banner.add_theme_color_override("font_outline_color",Color("#160d08"));dev_banner.add_theme_constant_override("outline_size",6);canvas.add_child(dev_banner)
 	if GameBalance.max_party_size()>1:_build_party_strip(canvas);dungeon_hud.set_items_top(108)
 	_build_resource_hud(canvas)
 	# Kept for the room/floor text other code and tests read; the floor banner shows it now.
@@ -779,6 +820,8 @@ func use_active_item()->bool:
 	if not ActiveItems.is_ready(run_state):
 		_show_message("%s is still charging."%String(ActiveItems.item(id).get("name","The item")),0.8);AudioCue.play_from(self,"block");return false
 	if not SlasherActiveEffects.use(player,id):return false
+	if bool(player.get_meta("active_item_skip_spend_once",false)):
+		player.set_meta("active_item_skip_spend_once",false);_refresh_active_hud();return true
 	ActiveItems.spend(run_state);_refresh_active_hud();return true
 
 func _refresh_active_hud()->void:

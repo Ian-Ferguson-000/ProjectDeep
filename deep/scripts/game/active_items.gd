@@ -68,13 +68,15 @@ static func add_room_charge(state: RunState, rooms: int = 1) -> void:
 	var id := held(state)
 	if id.is_empty() or uses_timer(id): return
 	var slot := _slot(state)
-	slot["charge"] = minf(max_charge(id),float(slot.get("charge",0.0)) + rooms)
+	var gain:=float(rooms)*(GameSettingsService.DEV_RECHARGE_MULTIPLIER if GameSettingsService.dev_mode_enabled() else 1.0)
+	slot["charge"] = minf(max_charge(id),float(slot.get("charge",0.0)) + gain)
 
 static func tick(state: RunState, delta: float) -> void:
 	var id := held(state)
 	if id.is_empty() or not uses_timer(id): return
 	var slot := _slot(state)
-	if float(slot.get("charge",0.0)) < max_charge(id): slot["charge"] = minf(max_charge(id),float(slot.get("charge",0.0)) + delta)
+	var gain:=delta*(GameSettingsService.DEV_RECHARGE_MULTIPLIER if GameSettingsService.dev_mode_enabled() else 1.0)
+	if float(slot.get("charge",0.0)) < max_charge(id): slot["charge"] = minf(max_charge(id),float(slot.get("charge",0.0)) + gain)
 
 static func spend(state: RunState) -> void:
 	_slot(state)["charge"] = 0.0

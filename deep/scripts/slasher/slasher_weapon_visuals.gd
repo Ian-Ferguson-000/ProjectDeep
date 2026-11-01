@@ -7,6 +7,34 @@ static func glint(canvas: Node2D, point: Vector2, direction: Vector2, size: floa
 	canvas.draw_colored_polygon(PackedVector2Array([point-direction*size,point-side*size*0.22,point+direction*size,point+side*size*0.22]),Color(1,0.98,0.87,alpha))
 	canvas.draw_line(point-side*size*0.65,point+side*size*0.65,Color(1,0.94,0.7,alpha*0.6),1,true)
 
+## Instantaneous melee resolves the whole sector at once. Show that footprint
+## on impact, then dissolve it in place: never suggest a later travelling hit.
+static func fighter_slash(canvas: Node2D, origin: Vector2, direction: Vector2, reach: float, degrees: float, progress: float) -> void:
+	var alpha := pow(1.0-clampf(progress,0.0,1.0),1.8)
+	var sweep := deg_to_rad(clampf(degrees,0.0,360.0))
+	var start := direction.angle()-sweep*0.5
+	var segments := maxi(24,ceili(degrees/3.0))
+	var edge := PackedVector2Array()
+	var ribbon := PackedVector2Array()
+	var wash := PackedVector2Array([origin])
+	for index in range(segments+1):
+		var t := float(index)/segments
+		var point := origin+Vector2.from_angle(start+sweep*t)*reach
+		edge.append(point);ribbon.append(point);wash.append(point)
+	for index in range(segments,-1,-1):
+		var t := float(index)/segments
+		var width := minf(32.0,reach*0.28)*pow(sin(PI*t),0.65)
+		ribbon.append(origin+Vector2.from_angle(start+sweep*t)*(reach-maxf(0.35,width)))
+	canvas.draw_colored_polygon(wash,Color(0.75,0.87,1.0,alpha*0.09))
+	canvas.draw_polyline(edge,Color(0.30,0.53,0.66,alpha*0.26),7.0,true)
+	canvas.draw_colored_polygon(ribbon,Color(0.77,0.91,1.0,alpha*0.70))
+	canvas.draw_polyline(edge,Color(1.0,0.97,0.85,alpha),2.0,true)
+	# Directional speed cuts connect the body to the contact edge, inside the hit sector.
+	for fraction in [0.23,0.5,0.77]:
+		var radial := Vector2.from_angle(start+sweep*fraction)
+		var tip := origin+radial*(reach-3.0)
+		canvas.draw_colored_polygon(PackedVector2Array([origin+radial*reach*0.24,tip-radial.orthogonal()*2.0,tip+radial.orthogonal()*2.0]),Color(0.9,0.96,1.0,alpha*0.28))
+
 static func slash(canvas: Node2D, origin: Vector2, direction: Vector2, reach: float, degrees: float, tint: Color, progress: float, reverse: bool, heavy: bool, chain: bool=false) -> void:
 	var sweep := deg_to_rad(minf(degrees,360))
 	var sign_value := -1.0 if reverse else 1.0

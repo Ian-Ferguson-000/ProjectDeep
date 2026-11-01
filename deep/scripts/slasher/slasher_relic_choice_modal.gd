@@ -24,6 +24,10 @@ var mandatory:=true
 var previous_pause:=false
 var card_row:HBoxContainer
 var choice_buttons:Array[Button]=[]
+var title_label:Label
+var subtitle_label:Label
+var active_item_mode:=false
+var active_item_choices:Array[String]=[]
 
 func _ready()->void:
 	process_mode=Node.PROCESS_MODE_ALWAYS
@@ -34,15 +38,23 @@ func _ready()->void:
 	var veil:=ColorRect.new();veil.anchor_left=0.12;veil.anchor_right=0.88;veil.anchor_bottom=1.0;veil.color=Color("#0b3b4e42");veil.mouse_filter=Control.MOUSE_FILTER_IGNORE;add_child(veil)
 	var layout:=VBoxContainer.new();layout.anchor_left=0.5;layout.anchor_top=0.5;layout.anchor_right=0.5;layout.anchor_bottom=0.5;layout.offset_left=-500;layout.offset_top=-330;layout.offset_right=500;layout.offset_bottom=330;layout.add_theme_constant_override("separation",8);add_child(layout)
 	var ornament:=Label.new();ornament.text="✦  ───────  ❖  ───────  ✦";ornament.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;ornament.add_theme_font_size_override("font_size",18);ornament.add_theme_color_override("font_color",Color("#75e5eb"));layout.add_child(ornament)
-	var title:=Label.new();title.text="CHOOSE 1 RELIC";title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;title.add_theme_font_size_override("font_size",32);title.add_theme_color_override("font_color",Color("#ecffff"));title.add_theme_color_override("font_shadow_color",Color("#3bdfe0b0"));title.add_theme_constant_override("shadow_offset_x",2);title.add_theme_constant_override("shadow_offset_y",2);layout.add_child(title)
-	var subtitle:=Label.new();subtitle.text="Bind one treasure to this expedition";subtitle.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;subtitle.add_theme_font_size_override("font_size",15);subtitle.add_theme_color_override("font_color",Color("#b8d7da"));layout.add_child(subtitle)
+	title_label=Label.new();title_label.text="CHOOSE 1 RELIC";title_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;title_label.add_theme_font_size_override("font_size",32);title_label.add_theme_color_override("font_color",Color("#ecffff"));title_label.add_theme_color_override("font_shadow_color",Color("#3bdfe0b0"));title_label.add_theme_constant_override("shadow_offset_x",2);title_label.add_theme_constant_override("shadow_offset_y",2);layout.add_child(title_label)
+	subtitle_label=Label.new();subtitle_label.text="Bind one treasure to this expedition";subtitle_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;subtitle_label.add_theme_font_size_override("font_size",15);subtitle_label.add_theme_color_override("font_color",Color("#b8d7da"));layout.add_child(subtitle_label)
 	card_row=HBoxContainer.new();card_row.alignment=BoxContainer.ALIGNMENT_CENTER;card_row.size_flags_vertical=Control.SIZE_EXPAND_FILL;card_row.add_theme_constant_override("separation",14);layout.add_child(card_row)
 	var hint:=Label.new();hint.text="◀  A / D or Arrow Keys     •     Enter / A to claim     ▶";hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;hint.add_theme_font_size_override("font_size",14);hint.add_theme_color_override("font_color",Color("#a8c3c6"));layout.add_child(hint)
 
 func open(state:RunState,choices:Array[String],is_mandatory:bool=true)->void:
+	active_item_mode=false;active_item_choices.clear();title_label.text="CHOOSE 1 RELIC";subtitle_label.text="Bind one treasure to this expedition"
+	_open_choices(state,choices,is_mandatory)
+
+func open_active_items(state:RunState,choices:Array[String])->void:
+	active_item_mode=true;active_item_choices=choices.duplicate();title_label.text="CHOOSE 1 ACTIVE ITEM";subtitle_label.text="Dev drop · the other two items will dissolve"
+	_open_choices(state,choices,true)
+
+func _open_choices(state:RunState,choices:Array[String],is_mandatory:bool)->void:
 	run_state=state;mandatory=is_mandatory;previous_pause=get_tree().paused;choice_buttons.clear()
 	for child:Node in card_row.get_children():child.free()
-	for item_id:String in choices:card_row.add_child(_card(item_id))
+	for item_id:String in choices:card_row.add_child(_active_item_card(item_id) if active_item_mode else _card(item_id))
 	visible=true;modulate=Color.TRANSPARENT;move_to_front();get_tree().paused=true
 	create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).tween_property(self,"modulate",Color.WHITE,0.18)
 	if not choice_buttons.is_empty():choice_buttons[0].grab_focus()
@@ -79,6 +91,26 @@ func _card(item_id:String)->Control:
 	choice_buttons.append(button)
 	return shell
 
+func _active_item_card(item_id:String)->Control:
+	var item:=ActiveItems.item(item_id);var accent:=Color("#e6bb55")
+	var shell:=VBoxContainer.new();shell.custom_minimum_size=Vector2(318,497);shell.add_theme_constant_override("separation",-4)
+	var pointer:=Label.new();pointer.text="▼";pointer.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;pointer.add_theme_font_size_override("font_size",22);pointer.add_theme_color_override("font_color",accent);pointer.modulate.a=0.0;shell.add_child(pointer)
+	var button:=Button.new();button.name="ActiveItem_%s"%item_id;button.custom_minimum_size=Vector2(318,477);button.text="";button.focus_mode=Control.FOCUS_ALL;button.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND
+	button.add_theme_stylebox_override("normal",_card_style(Color.TRANSPARENT,Color.TRANSPARENT,0,0));button.add_theme_stylebox_override("hover",_card_style(Color.TRANSPARENT,Color.TRANSPARENT,0,0));button.add_theme_stylebox_override("focus",_card_style(Color.TRANSPARENT,Color.TRANSPARENT,0,0));button.add_theme_stylebox_override("pressed",_card_style(Color("#05080a24"),Color.TRANSPARENT,0,0));shell.add_child(button)
+	var card_art:=TextureRect.new();card_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);card_art.texture=CARD_BACKGROUND;card_art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;card_art.stretch_mode=TextureRect.STRETCH_SCALE;card_art.mouse_filter=Control.MOUSE_FILTER_IGNORE;button.add_child(card_art)
+	var content:=VBoxContainer.new();content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);content.offset_left=50;content.offset_top=77;content.offset_right=-50;content.offset_bottom=-52;content.mouse_filter=Control.MOUSE_FILTER_IGNORE;content.add_theme_constant_override("separation",8);button.add_child(content)
+	var name_label:=Label.new();name_label.text=String(item.get("name",item_id));name_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;name_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;name_label.custom_minimum_size.y=42;name_label.add_theme_font_size_override("font_size",18);name_label.add_theme_color_override("font_color",IVORY);content.add_child(name_label)
+	var art_center:=CenterContainer.new();art_center.custom_minimum_size.y=128;content.add_child(art_center)
+	var art_frame:=PanelContainer.new();art_frame.custom_minimum_size=Vector2(136,124);art_frame.add_theme_stylebox_override("panel",_panel(Color("#0b1018b8"),accent.darkened(0.25),1,9,5));art_center.add_child(art_frame)
+	var icon:=TextureRect.new();icon.texture=SlasherActiveEffects.icon_texture(item_id);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;art_frame.add_child(icon)
+	var metadata:=HBoxContainer.new();metadata.alignment=BoxContainer.ALIGNMENT_CENTER;metadata.add_theme_constant_override("separation",8);content.add_child(metadata)
+	metadata.add_child(_pill("ACTIVE ITEM",accent));var charge_text:="%.1fs TIMER"%ActiveItems.max_charge(item_id) if ActiveItems.uses_timer(item_id) else "%d ROOM CHARGE"%int(ActiveItems.max_charge(item_id));metadata.add_child(_pill(charge_text,Color("#72cde4")))
+	var divider:=HSeparator.new();divider.add_theme_color_override("separator",Color(accent,0.55));content.add_child(divider)
+	var description:=Label.new();description.text=String(item.get("description",""));description.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;description.size_flags_vertical=Control.SIZE_EXPAND_FILL;description.add_theme_font_size_override("font_size",14);description.add_theme_color_override("font_color",MUTED);content.add_child(description)
+	var prompt:=Label.new();prompt.text="◆  Replaces your current active item and starts fully charged.";prompt.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;prompt.add_theme_font_size_override("font_size",13);prompt.add_theme_color_override("font_color",IVORY);content.add_child(prompt)
+	button.pressed.connect(_claim.bind(item_id));button.focus_entered.connect(_set_card_active.bind(button,card_art,pointer,true));button.focus_exited.connect(_set_card_active.bind(button,card_art,pointer,false));button.mouse_entered.connect(_set_card_active.bind(button,card_art,pointer,true));button.mouse_exited.connect(_set_card_active.bind(button,card_art,pointer,button.has_focus()));choice_buttons.append(button)
+	return shell
+
 func _set_card_active(button:Button,card_art:TextureRect,pointer:Label,active:bool)->void:
 	pointer.modulate.a=1.0 if active else 0.0;card_art.self_modulate=Color(1.12,1.12,1.12,1) if active else Color.WHITE;button.pivot_offset=button.size*0.5
 	create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).set_trans(Tween.TRANS_QUAD).tween_property(button,"scale",Vector2(1.025,1.025) if active else Vector2.ONE,0.1)
@@ -109,7 +141,9 @@ func _scaled_icon(texture:Texture2D,size_value:int)->Texture2D:
 	return ImageTexture.create_from_image(image)
 
 func _claim(item_id:String)->void:
-	if not run_state.pending_chest_choices.has(item_id):return
+	if active_item_mode:
+		if not active_item_choices.has(item_id):return
+	elif not run_state.pending_chest_choices.has(item_id):return
 	relic_selected.emit(item_id)
 
 func _card_style(background:Color,border:Color,width:int,shadow:int)->StyleBoxFlat:

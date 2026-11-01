@@ -3,7 +3,7 @@
     "Chance that a defeated enemy drops something you can pick up. Kept low to begin with; unlocks raise 'drop luck', which multiplies every chance below.",
     "chances: per kill, rolled rarest first; an enemy drops at most one thing. 0.05 = 5%.",
     "enemy_multipliers: scales all chances for some enemies (elites drop more, swarming sporelings less). Keys not listed use 'default'.",
-    "fighter_active_item: separate elite and boss roll for the ten fighter active items. Picking one up fills the active slot and fully charges it.",
+    "active_item_drops: separate elite and boss roll using the current class pool. Picking one up fills the active slot and fully charges it.",
     "gold_amount: coins in a gold drop: min-max, plus per_floor for each floor deeper.",
     "luck_cap: the most drop luck can multiply chances by."
   ],
@@ -21,21 +21,14 @@
     "bandit_cutthroat": 1.3,
     "bandit_knifethrower": 1.3
   },
-  "fighter_active_item": {
+  "active_item_drops": {
     "elite_chance": 0.35,
     "boss_chance": 0.65,
-    "item_ids": [
-      "eldritch_bowstaff",
-      "demon_blade",
-      "storm_trident",
-      "valkyrian_sling",
-      "dragonbone_dagger",
-      "archon_crossbow",
-      "divine_hammer",
-      "grim_reaver",
-      "sentinel_shield",
-      "umbral_bow"
-    ]
+    "class_pools": {
+      "warrior": ["eldritch_bowstaff", "demon_blade", "storm_trident", "valkyrian_sling", "dragonbone_dagger", "archon_crossbow", "divine_hammer", "grim_reaver", "sentinel_shield", "umbral_bow"],
+      "mage": ["michaels_orb", "gulthias_staff", "skyblinder_staff", "dragonstaff_of_ahghairon", "jade_serpent_staff", "arachne_staff", "tome_of_toth", "shangos_shatterer", "solar_scepter", "drumamus_bargain"],
+      "neutral": ["siren_song_lyre", "witherbloom_brooche", "white_dragon_mask", "black_titan_crown", "dissonant_whisper_jar", "mahoragan_adaption_wheel", "pandoras_paradoxical_compass", "vibranium_tattoo", "shadowfell_brand", "blood_ruby_gem", "abyssal_sapphire_gem", "feywild_shawl", "bramble_vine_snare", "heartbreaker_amulet", "war_horn_of_valor"]
+    }
   },
   "gold_amount": {
     "min": 1,

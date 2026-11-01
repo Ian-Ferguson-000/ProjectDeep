@@ -20,6 +20,7 @@ var sling_damage_stacks:=0
 var last_proc_count:=0
 var spawned_beasts:=0
 var repeat_smashes:=0
+var visual_clock:=0.0
 
 func tuning(slot: String) -> Dictionary:
 	var result:=super(slot)
@@ -185,6 +186,7 @@ func _launch_umbral(attack: Dictionary, empowered: bool) -> void:
 
 func _physics_process(delta: float) -> void:
 	super(delta)
+	visual_clock+=delta
 	frenzy_left=maxf(0.0,frenzy_left-delta);rampage_left=maxf(0.0,rampage_left-delta)
 	if rampage_left<=0.0:rampage_stacks=0
 	_tick_statuses(curses,delta);_tick_statuses(wounds,delta);_tick_statuses(pins,delta);_tick_statuses(leashes,delta)
@@ -270,11 +272,47 @@ func draw_foreground(canvas: Node2D) -> void:
 	super(canvas)
 	for missile in missiles:
 		var point:=to_local(Vector2(missile.position));var color:=STORM if missile.kind=="trident" else GOLD if missile.kind in ["sling","archon"] else SHADOW
-		canvas.draw_circle(point,9.0,color);canvas.draw_arc(point,14.0,0,TAU,18,Color(color,0.55),2.0)
+		var heading:=Vector2(missile.get("direction",actor.aim_direction)).normalized()
+		for trail in 4:canvas.draw_circle(point-heading*(trail+1)*9.0,maxf(1.0,6.0-trail),Color(color,0.42-float(trail)*0.08))
+		canvas.draw_circle(point,9.0,color);canvas.draw_arc(point,14.0+sin(visual_clock*9.0)*2.0,0,TAU,18,Color(color,0.7),2.0)
+		if missile.kind=="trident":_draw_lightning(canvas,point,28.0)
+		elif missile.kind=="sling":
+			canvas.draw_arc(point-heading.orthogonal()*8.0,12.0,-1.1,1.1,10,Color(GOLD,0.7),2.0)
+			canvas.draw_arc(point+heading.orthogonal()*8.0,12.0,PI-1.1,PI+1.1,10,Color(GOLD,0.7),2.0)
+		elif missile.kind=="archon":canvas.draw_line(point-heading*34.0,point+heading*14.0,Color("#d9e4ea"),5.0,true)
+		elif missile.kind=="umbral":canvas.draw_polyline(PackedVector2Array([point,point-heading*14.0+heading.orthogonal()*sin(visual_clock*11.0)*7.0,point-heading*30.0]),Color(SHADOW,0.65),5.0,true)
 	if not trident.is_empty() and trident.state=="deployed":
-		var point:=to_local(Vector2(trident.position));canvas.draw_line(point+Vector2(0,25),point-Vector2(0,25),STORM,5);canvas.draw_line(point-Vector2(0,25),point+Vector2(-10,-12),STORM,4);canvas.draw_line(point-Vector2(0,25),point+Vector2(10,-12),STORM,4)
+		var point:=to_local(Vector2(trident.position));canvas.draw_line(point+Vector2(0,25),point-Vector2(0,25),STORM,5);canvas.draw_line(point-Vector2(0,25),point+Vector2(-10,-12),STORM,4);canvas.draw_line(point-Vector2(0,25),point+Vector2(10,-12),STORM,4);_draw_lightning(canvas,point,44.0)
+	for id in curses:
+		var state:Dictionary=curses[id];var enemy:SlasherEnemy=(state.target as WeakRef).get_ref()
+		if is_instance_valid(enemy):
+			var point:=to_local(enemy.global_position);var stacks:=int(state.stacks)
+			canvas.draw_arc(point,22.0+stacks*2.0,visual_clock*2.0,visual_clock*2.0+5.2,24,PURPLE,2.5,true)
+			for i in stacks:canvas.draw_circle(point+Vector2.from_angle(TAU*i/maxf(1.0,stacks)+visual_clock*2.5)*(27.0+stacks),2.5,Color("#70edbd"))
+	for id in wounds:
+		var state:Dictionary=wounds[id];var enemy:SlasherEnemy=(state.target as WeakRef).get_ref()
+		if is_instance_valid(enemy):
+			var point:=to_local(enemy.global_position);var stacks:=int(state.stacks)
+			for i in stacks:canvas.draw_line(point+Vector2(-12+i*4,-13),point+Vector2(-18+i*4,12),Color("#d54c45"),2.5,true)
+	for id in pins:
+		var state:Dictionary=pins[id];var enemy:SlasherEnemy=(state.target as WeakRef).get_ref()
+		if is_instance_valid(enemy):_draw_lightning(canvas,to_local(enemy.global_position),27.0)
 	for id in leashes:
 		var enemy:SlasherEnemy=(leashes[id].target as WeakRef).get_ref()
-		if is_instance_valid(enemy):canvas.draw_dashed_line(Vector2.ZERO,to_local(enemy.global_position),SHADOW,2.5,7.0)
-	if frenzy_left>0:canvas.draw_arc(Vector2.ZERO,42,0,TAU,36,Color("#e44232"),4)
-	if rampage_left>0:canvas.draw_arc(Vector2.ZERO,48,0,TAU*clampf(rampage_left/6.0,0,1),36,Color("#bd3349"),3+rampage_stacks)
+		if is_instance_valid(enemy):
+			var endpoint:=to_local(enemy.global_position);var points:=PackedVector2Array()
+			for i in 12:
+				var ratio:=float(i)/11.0;points.append(Vector2.ZERO.lerp(endpoint,ratio)+endpoint.orthogonal().normalized()*sin(ratio*18.0-visual_clock*8.0)*6.0)
+			canvas.draw_polyline(points,Color(SHADOW,0.8),3.0,true)
+	if frenzy_left>0:
+		canvas.draw_arc(Vector2.ZERO,42+sin(visual_clock*12.0)*4.0,0,TAU,36,Color("#e44232"),4)
+		for i in 6:canvas.draw_line(Vector2.from_angle(TAU*i/6.0+visual_clock*3.0)*32.0,Vector2.from_angle(TAU*i/6.0+visual_clock*3.0)*54.0,Color("#ff8e45"),3.0,true)
+	if rampage_left>0:
+		canvas.draw_arc(Vector2.ZERO,48,visual_clock*2.0,visual_clock*2.0+TAU*clampf(rampage_left/6.0,0,1),36,Color("#bd3349"),3+rampage_stacks)
+		for i in rampage_stacks:canvas.draw_circle(Vector2.from_angle(TAU*i/maxf(1.0,rampage_stacks)-visual_clock)*58.0,3.0,Color("#a66cff"))
+
+func _draw_lightning(canvas:Node2D,center:Vector2,radius:float)->void:
+	for branch in 3:
+		var points:=PackedVector2Array([center]);var ray:=Vector2.from_angle(TAU*branch/3.0+visual_clock*2.4)
+		for step in range(1,5):points.append(center+ray*radius*step/4.0+ray.orthogonal()*sin(step*5.1+visual_clock*18.0+branch)*5.0)
+		canvas.draw_polyline(points,Color(STORM,0.8),2.0,true)

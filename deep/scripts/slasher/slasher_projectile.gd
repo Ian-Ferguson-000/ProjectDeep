@@ -37,21 +37,31 @@ func _ready()->void:
 func _physics_process(delta:float)->void:
 	if impacted:return
 	if not is_instance_valid(source):queue_free();return
-	var movement:=direction*speed*delta
-	var query:=PhysicsRayQueryParameters2D.create(global_position,global_position+movement,1)
-	query.exclude.append(source.get_rid())
-	var collision:=get_world_2d().direct_space_state.intersect_ray(query)
-	if not collision.is_empty() and collision.get("collider") is StaticBody2D:
+	var start:=global_position
+	var movement:=direction*minf(speed*delta,maxf(0.0,max_range-traveled))
+	var end:=start+movement
+	var collision:=SlasherHitGeometry.projectile_wall(self,start,end,1)
+	var wall_time:=start.distance_to(collision.position)/maxf(movement.length(),0.0001) if not collision.is_empty() else INF
+	var contacts:Array[Dictionary]=[]
+	for node in get_tree().get_nodes_in_group("slasher_damageable"):
+		if not node is Node2D or not node.has_method("receive_attack") or hit_ids.has(node.get_instance_id()):continue
+		var contact:=SlasherHitGeometry.sweep(start,end,node,float(attack.get("hit_radius",24.0)))
+		if contact<wall_time:contacts.append({"target":node,"time":contact})
+	contacts.sort_custom(func(a:Dictionary,b:Dictionary)->bool:return float(a.time)<float(b.time))
+	var initial_traveled:=traveled
+	for contact in contacts:
+		if not is_instance_valid(contact.target) or hit_ids.has(contact.target.get_instance_id()):continue
+		global_position=start.lerp(end,float(contact.time));traveled=initial_traveled+movement.length()*float(contact.time)
+		_damage_impact(contact.target)
+		if not piercing:_impact(false);return
+	if wall_time!=INF:
+		global_position=collision.position;traveled=initial_traveled+movement.length()*wall_time
 		var collider:Node2D=collision.get("collider") as Node2D
 		if is_instance_valid(collider) and collider.is_in_group("slasher_damageable"):
-			_damage_impact(collider)
-			if not piercing:_impact(false);return
-		else:_impact(true);return
-	global_position+=movement;traveled+=movement.length()
-	for node in get_tree().get_nodes_in_group("slasher_damageable"):
-		if node is Node2D and not hit_ids.has(node.get_instance_id()) and global_position.distance_to(node.global_position)<=float(attack.get("hit_radius",24.0)):
-			_damage_impact(node)
-			if not piercing:_impact(false);return
+			_damage_impact(collider);_impact(false)
+		else:_impact(true)
+		return
+	global_position=end;traveled=initial_traveled+movement.length()
 	if traveled>=max_range:_impact(true)
 
 func _damage_impact(primary:Node2D=null)->void:
@@ -62,7 +72,7 @@ func _damage_impact(primary:Node2D=null)->void:
 	_spawn_splash_visual(radius)
 	for node_value:Variant in get_tree().get_nodes_in_group("slasher_damageable"):
 		var damageable:Node2D=node_value as Node2D
-		if is_instance_valid(damageable) and global_position.distance_to(damageable.global_position)<=radius:_damage_target(damageable)
+		if is_instance_valid(damageable) and SlasherHitGeometry.overlaps_circle(global_position,radius,damageable):_damage_target(damageable)
 
 func _damage_target(target:Node2D)->void:
 	var target_id:int=target.get_instance_id()
@@ -82,6 +92,7 @@ func _spawn_splash_visual(radius:float)->void:
 func _impact(apply_splash:bool)->void:
 	if impacted:return
 	if apply_splash:_damage_impact()
+	if hit_ids.is_empty() and is_instance_valid(source) and source.has_method("notify_active_projectile_miss"):source.notify_active_projectile_miss(attack)
 	impacted=true;impact_resolved.emit(global_position,attack.duplicate(true));sprite.play("impact")
 
 func _on_animation_finished()->void:

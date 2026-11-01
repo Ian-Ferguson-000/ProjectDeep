@@ -2,7 +2,12 @@ extends RefCounted
 class_name SlasherActiveEffects
 
 const FIGHTER_ARSENAL := preload("res://scripts/slasher/slasher_fighter_arsenal.gd")
+const MAGE_ACTIVE_ARSENAL := preload("res://scripts/slasher/slasher_mage_active_arsenal.gd")
+const NEUTRAL_ACTIVE_ARSENAL := preload("res://scripts/slasher/slasher_neutral_active_arsenal.gd")
 const WARRIOR_KITS := preload("res://scripts/slasher/slasher_warrior_kits.gd")
+const ACTIVE_ITEM_VFX := preload("res://scripts/slasher/slasher_active_item_vfx.gd")
+const ICON_ROOT := "res://assets/slasher/active_item_icons/"
+static var _icon_cache: Dictionary = {}
 
 ## What each active item does when used (data/active_items.json "effect.kind").
 ##
@@ -25,6 +30,8 @@ static func use(player: SlasherPlayer, id: String) -> bool:
 		"rally": _rally(player,effect)
 		"ward": _ward(player,effect)
 		"fighter_weapon": return _fighter_weapon(player,id,effect)
+		"mage_item": return _mage_item(player,id)
+		"neutral_item": return _neutral_item(player,id)
 		_: return false
 	return true
 
@@ -98,13 +105,43 @@ static func _fighter_weapon(player: SlasherPlayer,id:String,effect:Dictionary)->
 	for child in player.get_children():
 		if child.get_meta("fighter_active_weapon_id","")==weapon_id:runtime=child;break
 	if runtime==null:
-		runtime=FIGHTER_ARSENAL.new();runtime.name="Active_%s"%weapon_id.to_pascal_case();runtime.set_meta("fighter_active_weapon_id",weapon_id)
+		runtime=FIGHTER_ARSENAL.new();runtime.name="Active_%s"%weapon_id.to_pascal_case();runtime.set_meta("fighter_active_weapon_id",weapon_id);runtime.set_meta("active_item_runtime_id",weapon_id)
 		var record:=WARRIOR_KITS.data_for(weapon_id)
 		if record.is_empty():return false
 		runtime.call("configure",player,weapon_id,record.actions);player.add_child(runtime)
 	var result:Dictionary=runtime.call("perform",String(effect.get("slot","special")),{"started":true,"targets_hit":0,"projectiles_deflected":0,"failure":""})
 	if not bool(result.get("started",false)):return false
+	_play_authored_vfx(player,id)
 	_flash(player,SpinFlash.new(),{"radius":52.0,"colour":Color("#d8a6ff")})
+	AudioCue.play_from(player,"combo")
+	return true
+
+static func _mage_item(player:SlasherPlayer,id:String)->bool:
+	var runtime:Node
+	for child in player.get_children():
+		if child.get_meta("active_item_runtime_id","")==id:runtime=child;break
+	if runtime==null:
+		runtime=MAGE_ACTIVE_ARSENAL.new();runtime.name="Active_%s"%id.to_pascal_case();runtime.set_meta("active_item_runtime_id",id);player.add_child(runtime);runtime.call("configure",player,id)
+	if not bool(runtime.call("activate")):return false
+	_play_authored_vfx(player,id)
+	if bool(runtime.get("defer_spend_once")):player.set_meta("active_item_skip_spend_once",true)
+	_flash(player,SpinFlash.new(),{"radius":52.0,"colour":Color("#8de8ff")})
+	AudioCue.play_from(player,"combo")
+	return true
+
+static func ensure_runtime(player:SlasherPlayer,id:String)->Node:
+	if not is_instance_valid(player) or id.is_empty():return null
+	var effect:Dictionary=Dictionary(ActiveItems.item(id).get("effect",{}))
+	if String(effect.get("kind",""))!="neutral_item":return null
+	for child in player.get_children():
+		if child.get_meta("active_item_runtime_id","")==id:return child
+	var runtime:=NEUTRAL_ACTIVE_ARSENAL.new();runtime.name="Active_%s"%id.to_pascal_case();runtime.set_meta("active_item_runtime_id",id);player.add_child(runtime);runtime.configure(player,id);return runtime
+
+static func _neutral_item(player:SlasherPlayer,id:String)->bool:
+	var runtime:=ensure_runtime(player,id)
+	if runtime==null or not bool(runtime.call("activate")):return false
+	_play_authored_vfx(player,id)
+	_flash(player,SpinFlash.new(),{"radius":58.0,"colour":Color("#f1d46c")})
 	AudioCue.play_from(player,"combo")
 	return true
 
@@ -114,11 +151,33 @@ static func _flash(player: SlasherPlayer, node: Node2D, values: Dictionary) -> v
 	player.add_child(node)
 	node.global_position = player.global_position
 
+static func _play_authored_vfx(player:SlasherPlayer,id:String)->void:
+	var vfx:Node2D
+	for child in player.get_children():
+		if child.get_meta("active_item_vfx_id","")==id:vfx=child;break
+	if vfx==null:
+		vfx=ACTIVE_ITEM_VFX.new();vfx.name="Vfx_%s"%id.to_pascal_case();vfx.set_meta("active_item_vfx_id",id)
+		player.add_child(vfx);vfx.call("configure",player,id)
+	vfx.call("play_activation",player.aim_direction)
+
 # ------------------------------------------------------------------ icons
 
+static func icon_texture(id:String)->Texture2D:
+	if _icon_cache.has(id):return _icon_cache[id]
+	var path:=ICON_ROOT+id+".png"
+	var texture:Texture2D=load(path) if ResourceLoader.exists(path) else null
+	_icon_cache[id]=texture
+	return texture
+
 ## Draws an item's icon on any canvas (HUD slot, pedestal), centred at `at`,
-## about `size` pixels across. Drawn in code until there's art for them.
+## about `size` pixels across. Authored items use unique pixel art; legacy items
+## retain the compact procedural glyphs below as a graceful fallback.
 static func draw_icon(canvas: CanvasItem, id: String, at: Vector2, size: float, dim: bool = false) -> void:
+	var texture:=icon_texture(id)
+	if texture!=null:
+		var draw_size:=Vector2.ONE*size
+		canvas.draw_texture_rect(texture,Rect2(at-draw_size*0.5,draw_size),false,Color(0.5,0.52,0.56,0.72) if dim else Color.WHITE)
+		return
 	var kind := String(Dictionary(ActiveItems.item(id).get("effect",{})).get("kind",""))
 	var s := size / 32.0
 	var ink := Color("#1c1410")
@@ -169,6 +228,14 @@ static func draw_icon(canvas: CanvasItem, id: String, at: Vector2, size: float, 
 			_sword(canvas,at+Vector2(-3,1)*s,s,Vector2(1,-1).normalized(),steel,gold,ink)
 			_sword(canvas,at+Vector2(3,1)*s,s,Vector2(-1,-1).normalized(),steel,Color("#a56de2") if not dim else Color("#685676"),ink)
 			canvas.draw_circle(at,3.0*s,accent)
+		"mage_item":
+			canvas.draw_circle(at,11.0*s,Color("#6551a8") if not dim else Color("#514b63"))
+			canvas.draw_arc(at,13.0*s,0,TAU,24,Color("#91eaff") if not dim else Color("#657780"),2.0*s)
+			canvas.draw_circle(at-Vector2(3,3)*s,3.0*s,Color("#f8d6ff") if not dim else Color("#8b8190"))
+		"neutral_item":
+			canvas.draw_arc(at,12.0*s,0,TAU,24,Color("#f1d46c") if not dim else Color("#746d4d"),3.0*s)
+			canvas.draw_line(at+Vector2(0,-10)*s,at+Vector2(0,10)*s,Color("#d9f5ff") if not dim else steel,2.0*s)
+			canvas.draw_circle(at,4.0*s,Color("#7d5fc2") if not dim else Color("#5a526b"))
 		_:
 			canvas.draw_circle(at,10.0 * s,gold)
 

@@ -49,3 +49,13 @@ in `scripts/slasher/slasher_active_effects.gd` (`use()`, plus an icon in
 - `slasher_forest_rooms.gd`: room clears charge it; treasure pedestals and swapping.
 - `DungeonHud.ActiveSlot`: the HUD slot.
 - Test: `tests/active_items_test.gd`.
+
+## Dev Mode
+
+The main screen exposes a persistent **Dev Mode** toggle for combat testing. It
+keeps normal mechanics intact while active-item recharge runs at 5× speed and
+ordinary enemy loot rolls are tripled. Ordinary enemies gain a 25% active-item
+drop chance, while elite and boss active-item drops are guaranteed. Picking up one of these enemy drops opens
+a three-card choice of unique, class-valid active items. An item swapped onto the
+ground remains an exact pickup instead of generating another choice. Dev Mode is
+disabled by default.

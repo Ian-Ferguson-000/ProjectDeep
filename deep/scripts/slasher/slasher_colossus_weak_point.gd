@@ -30,6 +30,9 @@ func setup(owner_colossus: SlasherEnemy, part: String, part_radius: float, art: 
 	name = "WeakPoint_" + part
 	return self
 
+func combat_hurtbox()->Dictionary:
+	return SlasherHitGeometry.circle(global_position,radius*maxf(absf(global_scale.x),absf(global_scale.y)))
+
 func _ready() -> void:
 	add_to_group("slasher_enemy"); add_to_group("slasher_damageable")
 	z_index = 5

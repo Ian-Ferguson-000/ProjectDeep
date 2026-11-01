@@ -29,6 +29,7 @@ func _run() -> void:
 	_expect(panel.custom_minimum_size.x*1.5<=1280 and panel.custom_minimum_size.y*1.5<=720,"Options panel must fit the 720p viewport at 150% UI scale",failures)
 	_expect(panel._descendants(panel).any(func(node:Node)->bool:return node is ScrollContainer),"Options must scroll at large UI scales",failures)
 	var settings := panel._settings()
+	_expect(settings.DEFAULTS.has("dev_mode") and not bool(settings.DEFAULTS.dev_mode),"Dev Mode must exist and remain disabled by default",failures)
 	for key in ["ui_scale","screen_shake_intensity","master_volume","music_volume","sfx_volume","master_mute","music_mute","sfx_mute"]:
 		_expect(settings.DEFAULTS.has(key),"Options omit accessibility/audio setting: %s"%key,failures)
 	var labels: Array[String] = []

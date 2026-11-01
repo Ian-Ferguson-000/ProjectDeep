@@ -85,8 +85,8 @@ func slash(origin: Vector2, direction: Vector2, reach: float, degrees: float, at
 		var offset := enemy.global_position-origin
 		var forward := offset.dot(direction)
 		if line:
-			if forward<0 or forward>reach or absf(offset.cross(direction))>degrees:continue
-		elif offset.length()>reach or (not offset.is_zero_approx() and offset.normalized().dot(direction)<cos(deg_to_rad(degrees/2))):continue
+			if SlasherHitGeometry.sweep(origin,origin+direction*reach,enemy,degrees)==INF:continue
+		elif not SlasherHitGeometry.overlaps_sector(origin,direction,reach,degrees,enemy):continue
 		if not clear_line(origin,enemy.global_position):continue
 		var strike: Dictionary=attack.duplicate(true)
 		if enemy.boss or enemy.mini_boss:strike.hit_stun_duration=0.0
@@ -102,6 +102,14 @@ func slash(origin: Vector2, direction: Vector2, reach: float, degrees: float, at
 		hit(enemy,strike,primary);count+=1;last_targets.append(weakref(enemy))
 		if weapon_id=="banner_of_the_vanguard" and strike.get("warrior_resource",false) and primary and not banner.is_empty() and origin.distance_to(banner.center)<=BANNER_RADIUS:
 			var added := minf(0.5,2-float(banner.added));banner.left+=added;banner.added+=added
+	# Colossus parts are damageable Node2Ds, not mobile SlasherEnemies.
+	# Keep them in melee queries without applying movement/stagger behaviour.
+	for part in get_tree().get_nodes_in_group("slasher_damageable"):
+		if not part is SlasherColossusWeakPoint or not actor.get_parent().is_ancestor_of(part):continue
+		if maximum>0 and count>=maximum:break
+		var overlaps:bool=SlasherHitGeometry.sweep(origin,origin+direction*reach,part,degrees)!=INF if line else SlasherHitGeometry.overlaps_sector(origin,direction,reach,degrees,part)
+		if not overlaps or not clear_line(origin,part.global_position):continue
+		hit(part,attack.duplicate(true),primary);count+=1;last_targets.append(weakref(part))
 	last_hits=count
 	return count
 

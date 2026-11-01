@@ -37,34 +37,43 @@ func _ready()->void:
 
 func _physics_process(delta:float)->void:
 	if impacted:return
+	# Resolve the last live portion too, even when one slow frame spans expiry.
+	delta=minf(delta,maxf(0.0,lifetime-age))
+	if delta<=0.0:_finish();return
 	age+=delta
-	if age>=lifetime:_finish();return
 	if movement_pattern in ["curve","orbit"]:direction=direction.rotated(angular_velocity*delta)
 	if sprite!=null:sprite.rotation=direction.angle()
 	if visual_type in ["knife","spore","bone"]:queue_redraw()
-	var movement:=direction*speed*delta
-	var query:=PhysicsRayQueryParameters2D.create(global_position,global_position+movement,collision_mask_value)
-	if is_instance_valid(source):query.exclude.append(source.get_rid())
-	var collision:=get_world_2d().direct_space_state.intersect_ray(query)
-	if not collision.is_empty() and collision.get("collider") is StaticBody2D:_finish();return
-	global_position+=movement;traveled+=movement.length()
+	var start:=global_position
+	var movement:=direction*minf(speed*delta,maxf(0.0,max_range-traveled))
+	var end:=start+movement
+	var collision:=SlasherHitGeometry.projectile_wall(self,start,end,collision_mask_value)
+	var wall_time:=start.distance_to(collision.position)/maxf(movement.length(),0.0001) if not collision.is_empty() else INF
+	var hit:Node2D=null
+	var hit_time:=INF
 	if is_instance_valid(deflected_by):
-		for node_value:Variant in get_tree().get_nodes_in_group("slasher_enemy"):
-			var enemy:SlasherEnemy=node_value as SlasherEnemy
-			if not is_instance_valid(enemy) or deflected_hit_ids.has(enemy.get_instance_id()):continue
-			if global_position.distance_to(enemy.global_position)<=hit_radius:
-				deflected_hit_ids[enemy.get_instance_id()]=true
-				enemy.receive_attack({"damage":damage,"damage_type":"physical","knockback":95.0},deflected_by)
-				_finish();return
-		if traveled>=max_range:_finish()
-		return
-	if is_instance_valid(target) and global_position.distance_to(target.global_position)<=hit_radius:
-		var previous_kind: bool=target._receiving_projectile
-		target._receiving_projectile=true
-		target.receive_damage(damage,direction*95.0,source if is_instance_valid(source) else null)
-		if is_instance_valid(target):target._receiving_projectile=previous_kind
+		for node in get_tree().get_nodes_in_group("slasher_damageable"):
+			if not node is Node2D or not node.has_method("receive_attack") or deflected_hit_ids.has(node.get_instance_id()):continue
+			var contact:=SlasherHitGeometry.sweep(start,end,node,hit_radius)
+			if contact<hit_time:hit_time=contact;hit=node
+	elif is_instance_valid(target):
+		hit_time=SlasherHitGeometry.sweep(start,end,target,hit_radius)
+		hit=target if hit_time!=INF else null
+	if is_instance_valid(hit) and hit_time<wall_time:
+		global_position=start.lerp(end,hit_time);traveled+=movement.length()*hit_time
+		if is_instance_valid(deflected_by):
+			deflected_hit_ids[hit.get_instance_id()]=true
+			hit.call("receive_attack",{"damage":damage,"damage_type":"physical","knockback":95.0},deflected_by)
+		else:
+			var previous_kind:bool=target._receiving_projectile
+			target._receiving_projectile=true
+			target.receive_damage(damage,direction*95.0,source if is_instance_valid(source) else null)
+			if is_instance_valid(target):target._receiving_projectile=previous_kind
 		_finish();return
-	if traveled>=max_range:_finish()
+	if wall_time!=INF:
+		global_position=collision.position;_finish();return
+	global_position=end;traveled+=movement.length()
+	if traveled>=max_range or age>=lifetime:_finish()
 
 func deflect(deflector:SlasherPlayer,outgoing_direction:Vector2)->bool:
 	if impacted or is_instance_valid(deflected_by) or not is_instance_valid(deflector):return false

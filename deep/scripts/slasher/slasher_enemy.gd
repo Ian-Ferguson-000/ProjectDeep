@@ -85,6 +85,9 @@ func _apply_farmstead_tuning()->void:
 		"harvest_wretch":max_health=260;health=max_health;damage=8;speed=52.0;attack_range=78.0;attack_knockback=260.0;reward=28
 	if elite and behavior_id in ["ash_rat","possessed_scarecrow","ember_crow","blighted_farmhand"]:max_health=int(round(max_health*1.65));health=max_health;damage=maxi(1,int(round(damage*1.25)));speed*=1.12;reward+=5
 
+func combat_hurtbox()->Dictionary:
+	return SlasherHitGeometry.sprite_body(sprite,global_position,float(tuning.get("collision_radius",24.0 if boss else 14.0)))
+
 func _ready()->void:
 	add_to_group("slasher_enemy");add_to_group("slasher_damageable")
 	if is_wolf():add_to_group("slasher_wolf")

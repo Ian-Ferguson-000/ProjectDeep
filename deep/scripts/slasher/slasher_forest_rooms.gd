@@ -639,6 +639,7 @@ func take_active_item() -> String:
 	var id := String(active_pedestal.get("item_id"))
 	if id.is_empty(): return ""
 	var old := ActiveItems.give(run_state,id)
+	SlasherActiveEffects.ensure_runtime(player,id)
 	var state: Dictionary = Dictionary(room.get("slasher",{})); state["active_pedestal"] = old; room["slasher"] = state
 	room["reward_claimed"] = true
 	run_state.update_field_room(room_id,{"slasher":state,"reward_claimed":true})

@@ -4,7 +4,10 @@ extends SceneTree
 ## each warrior item does.
 
 const FOREST := preload("res://scenes/slasher/SlasherForest.tscn")
+const ACTIVE_ITEM_VFX := preload("res://scripts/slasher/slasher_active_item_vfx.gd")
 const FIGHTER_ACTIVE_IDS := ["eldritch_bowstaff","demon_blade","storm_trident","valkyrian_sling","dragonbone_dagger","archon_crossbow","divine_hammer","grim_reaver","sentinel_shield","umbral_bow"]
+const MAGE_ACTIVE_IDS := ["michaels_orb","gulthias_staff","skyblinder_staff","dragonstaff_of_ahghairon","jade_serpent_staff","arachne_staff","tome_of_toth","shangos_shatterer","solar_scepter","drumamus_bargain"]
+const NEUTRAL_ACTIVE_IDS := ["siren_song_lyre","witherbloom_brooche","white_dragon_mask","black_titan_crown","dissonant_whisper_jar","mahoragan_adaption_wheel","pandoras_paradoxical_compass","vibranium_tattoo","shadowfell_brand","blood_ruby_gem","abyssal_sapphire_gem","feywild_shawl","bramble_vine_snare","heartbreaker_amulet","war_horn_of_valor"]
 var failures: Array[String] = []
 
 func _initialize() -> void: _run.call_deferred()
@@ -21,6 +24,7 @@ func _dummy(scene, offset: Vector2) -> SlasherEnemy:
 	return foe
 
 func _run() -> void:
+	var game_settings:Node=root.get_node("GameSettings");game_settings.values["dev_mode"]=false
 	# ---- data
 	var warrior := ActiveItems.ids_for_class("warrior")
 	_expect(warrior.size() >= 15,"Expected the five base and ten fighter weapon active items")
@@ -31,6 +35,29 @@ func _run() -> void:
 		_expect(DungeonHud.item_icon(String(record.get("icon",""))) != null,"%s has no icon" % id)
 	for id in FIGHTER_ACTIVE_IDS:
 		_expect(warrior.has(id) and String(ActiveItems.item(id).get("effect",{}).get("kind",""))=="fighter_weapon","%s is not in the active fighter weapon pool"%id)
+	var mage:=ActiveItems.ids_for_class("mage")
+	for id in MAGE_ACTIVE_IDS:
+		_expect(mage.has(id) and String(ActiveItems.item(id).get("effect",{}).get("kind",""))=="mage_item","%s is not in the active Mage item pool"%id)
+	for id in NEUTRAL_ACTIVE_IDS:
+		_expect(warrior.has(id) and mage.has(id) and String(ActiveItems.item(id).get("effect",{}).get("kind",""))=="neutral_item","%s is not available to every class"%id)
+	# Every authored item has its own imported pixel-art source. This catches a
+	# misspelled id/path before a pickup silently falls back to a generic glyph.
+	var authored_ids:=FIGHTER_ACTIVE_IDS+MAGE_ACTIVE_IDS+NEUTRAL_ACTIVE_IDS
+	var icon_paths:Dictionary={}
+	var animation_motifs:Dictionary={}
+	for id in authored_ids:
+		var texture:=SlasherActiveEffects.icon_texture(id)
+		_expect(texture!=null,"%s has no unique active-item pixel art"%id)
+		if texture!=null:
+			_expect(texture.get_width()<=128 and texture.get_height()<=128,"%s icon is larger than the 128px source budget"%id)
+			var path:=texture.resource_path
+			_expect(not icon_paths.has(path),"%s reuses another authored item's icon"%id)
+			icon_paths[path]=id
+		_expect(ACTIVE_ITEM_VFX.LOOKS.has(id),"%s has no authored activation animation"%id)
+		if ACTIVE_ITEM_VFX.LOOKS.has(id):
+			var motif:=String(ACTIVE_ITEM_VFX.LOOKS[id][0])
+			_expect(not animation_motifs.has(motif),"%s reuses the %s activation motif"%[id,motif])
+			animation_motifs[motif]=id
 
 	# ---- slot rules
 	var state := RunState.new()
@@ -46,6 +73,14 @@ func _run() -> void:
 	_expect(not ActiveItems.is_ready(state),"Room clears charged a timer item")
 	ActiveItems.tick(state,10.0); _expect(ActiveItems.is_ready(state),"Timer item didn't recharge over time")
 	_expect(Dictionary(state.run_stats().get("active_item",{})).get("id","") == "shadow_step","The slot isn't kept in the run's stats")
+	# Main-screen Dev Mode accelerates both room-pip and timed recharge without
+	# changing either item's authored maximum charge.
+	game_settings.values["dev_mode"]=true
+	ActiveItems.give(state,"whirlwind");ActiveItems.spend(state);ActiveItems.add_room_charge(state)
+	_expect(ActiveItems.is_ready(state),"Dev Mode did not accelerate room-based active-item recharge")
+	ActiveItems.give(state,"shadow_step");ActiveItems.spend(state);ActiveItems.tick(state,0.7)
+	_expect(ActiveItems.is_ready(state),"Dev Mode did not accelerate timed active-item recharge by 5×")
+	game_settings.values["dev_mode"]=false
 
 	# ---- in a run
 	state = RunState.new()
@@ -53,7 +88,7 @@ func _run() -> void:
 	var scene = FOREST.instantiate(); scene._ensure_designer_controls(); scene.run_state = state; root.add_child(scene)
 	await _frames(4)
 	for node in root.find_children("*","",true,false):
-		if node.get_script() and String(node.get_script().resource_path).contains("relic_choice_modal"): node.queue_free()
+		if node.get_script() and String(node.get_script().resource_path).contains("relic_choice_modal"): node.call("finish")
 	paused = false
 	scene.player.invulnerable = 9999.0
 	var slot: Control = scene.dungeon_hud.active_slot
@@ -127,6 +162,19 @@ func _run() -> void:
 	var dropped:Area2D=scene.loot_nodes.back();scene._collect_loot(dropped)
 	_expect(ActiveItems.held(state)=="grim_reaver" and ActiveItems.is_ready(state),"Fighter world drop did not enter the charged active slot")
 	_expect(scene.loot_nodes.any(func(node):return is_instance_valid(node) and node!=dropped and node.get_meta("kind","")=="active_item" and node.get_meta("item_id","")=="umbral_bow"),"Replacing a dropped active item did not leave the old one behind")
+	# Dev Mode enemy drops pause play and present three cards. Choosing one
+	# equips it fully charged, while the replaced item remains an exact pickup.
+	game_settings.values["dev_mode"]=true
+	ActiveItems.give(state,"sentinel_shield")
+	# Even a drop without precomputed choice metadata must expand on pickup.
+	scene._spawn_active_item_drop(scene.player.global_position,"demon_blade")
+	var dev_drop:Area2D=scene.loot_nodes.back();scene._collect_loot(dev_drop)
+	_expect(scene.relic_modal.visible and scene.relic_modal.active_item_mode and scene.relic_modal.choice_buttons.size()==3,"Dev active-item drop did not open a three-item choice")
+	_expect(ActiveItems.held(state)=="sentinel_shield","Dev item choice replaced the held item before a selection")
+	var selected_dev_item:String=scene.relic_modal.active_item_choices[1];scene._claim_relic(selected_dev_item)
+	_expect(ActiveItems.held(state)==selected_dev_item and ActiveItems.is_ready(state) and not scene.relic_modal.visible,"Selecting a Dev drop choice did not equip and charge it")
+	_expect(scene.loot_nodes.any(func(node):return is_instance_valid(node) and node.get_meta("item_id","")=="sentinel_shield" and bool(node.get_meta("exact_active_item",false))),"The item swapped out from a Dev choice was not marked as an exact pickup")
+	game_settings.values["dev_mode"]=false
 
 	ActiveItems.give(state,"shadow_step")
 	scene.player.invulnerable = 0.0
