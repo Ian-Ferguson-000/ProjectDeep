@@ -353,6 +353,7 @@ func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	var dealt:=receive_hit(amount,push_direction*float(attack.get("knockback",0.0)),attacker,float(attack.get("hit_stun_duration",tuning.get("hit_stun_duration",0.12))),float(attack.get("screen_shake_multiplier",1.0)),sound_event)
 	incoming_type=previous[0];incoming_source=previous[1];incoming_critical=previous[2]
 	if dealt>0 and is_instance_valid(attacker):
+		if attacker.has_method("notify_active_weapon_hit"):attacker.notify_active_weapon_hit(self,attack,was_dead)
 		if String(attack.get("damage_type",""))=="ice" and dead and not was_dead and is_instance_valid(attacker.mage_kit) and attacker.mage_kit.has_method("on_cold_kill"):
 			attacker.mage_kit.on_cold_kill(global_position)
 	if dealt>0 and String(attack.get("damage_type",""))=="fire" and is_inside_tree():

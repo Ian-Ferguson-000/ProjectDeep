@@ -582,6 +582,18 @@ func _collect_loot(loot:Area2D)->void:
 			if run_state.add_consumable("healing_potion"):AudioCue.play_from(loot,"pickup");_show_message("Healing potion collected.")
 			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
 		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
+		"active_item":
+			var item_id:=String(loot.get_meta("item_id",""));var entry:=ActiveItems.item(item_id)
+			if entry.is_empty():_show_message("The active item crumbles to dust.")
+			else:
+				var replaced:=ActiveItems.give(run_state,item_id);AudioCue.play_from(loot,"reward")
+				var suffix:=""
+				if not replaced.is_empty():
+					var away:Vector2=player.aim_direction.normalized() if not player.aim_direction.is_zero_approx() else Vector2.DOWN
+					_spawn_fighter_active_drop(loot.global_position-away*46.0,replaced);suffix=" · left %s behind"%String(ActiveItems.item(replaced).get("name",replaced))
+				_show_message("Active item acquired: %s%s."%[String(entry.name),suffix],4.0)
+				if dungeon_hud!=null:dungeon_hud.show_pickup(String(entry.name).to_upper(),String(entry.get("description","")))
+				_refresh_active_hud()
 		"relic":
 			var choices:Array[String]=run_state.generate_slasher_chest_choices(run_state.current_floor,"enemy_relic_%d"%Time.get_ticks_usec())
 			if choices.is_empty():_show_message("The relic crumbles to dust.")
@@ -641,8 +653,20 @@ static func roll_drop(enemy_key:String,elite:bool,boss:bool,luck:float,rng:Rando
 		if rng.randf()<float(chances[kind])*scale:return String(kind)
 	return ""
 
+## Elites and bosses can drop the fighter's authored weapons directly into the
+## dungeon active-item loop. Bosses use the higher configured chance.
+static func roll_fighter_active_item(is_elite:bool,is_boss:bool,rng:RandomNumberGenerator)->String:
+	if not is_elite and not is_boss:return ""
+	var rules:Dictionary=drop_table().get("fighter_active_item",{})
+	var pool:Array=rules.get("item_ids",[])
+	var chance:=float(rules.get("boss_chance",0.65) if is_boss else rules.get("elite_chance",0.35))
+	if pool.is_empty() or rng.randf()>=chance:return ""
+	return String(pool[rng.randi_range(0,pool.size()-1)])
+
 func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	if _is_tutorial_expedition() or not is_instance_valid(enemy):return
+	var active_item_id:=roll_fighter_active_item(enemy.elite or enemy.mini_boss,enemy.boss,drop_rng())
+	if not active_item_id.is_empty():_spawn_fighter_active_drop(enemy.global_position,active_item_id);return
 	var key:=String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)
 	var kind:=roll_drop(key,enemy.elite or enemy.mini_boss,enemy.boss,Unlocks.drop_luck(run_state.campaign),drop_rng())
 	if kind.is_empty():return
@@ -668,6 +692,12 @@ func _spawn_relic_drop(world_position:Vector2)->void:
 	var gem:=Polygon2D.new();gem.polygon=PackedVector2Array([Vector2(0,-22),Vector2(9,-10),Vector2(0,2),Vector2(-9,-10)]);gem.color=Color("#d38cff");area.add_child(gem)
 	var shine:=Polygon2D.new();shine.polygon=PackedVector2Array([Vector2(0,-19),Vector2(4,-12),Vector2(0,-6),Vector2(-3,-12)]);shine.color=Color("#f6e2ff");area.add_child(shine)
 	area.add_child(_glow(Color("#c77dff"),20));area.set_meta("kind","relic");actor_layer.add_child(area);loot_nodes.append(area)
+
+func _spawn_fighter_active_drop(world_position:Vector2,item_id:String)->void:
+	var area:=Area2D.new();area.name="FighterActiveItemDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=18;shape.shape=circle;area.add_child(shape)
+	var blade:=Polygon2D.new();blade.polygon=PackedVector2Array([Vector2(-4,-28),Vector2(5,-28),Vector2(8,6),Vector2(0,16),Vector2(-8,6)]);blade.color=Color("#f4d27a");blade.rotation=0.65;area.add_child(blade)
+	var guard:=Polygon2D.new();guard.polygon=PackedVector2Array([Vector2(-13,-1),Vector2(13,-1),Vector2(13,4),Vector2(-13,4)]);guard.color=Color("#8b5bd1");guard.rotation=0.65;area.add_child(guard)
+	area.add_child(_glow(Color("#efb85f"),26));area.set_meta("kind","active_item");area.set_meta("item_id",item_id);actor_layer.add_child(area);loot_nodes.append(area)
 
 func _spawn_pickup_drop(kind:String,world_position:Vector2)->void:
 	var area:=Area2D.new();area.name="Chest%sDrop"%kind.capitalize();area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),16));area.set_meta("kind",kind);actor_layer.add_child(area);loot_nodes.append(area)

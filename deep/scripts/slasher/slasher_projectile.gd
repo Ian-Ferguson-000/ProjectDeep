@@ -69,6 +69,7 @@ func _damage_target(target:Node2D)->void:
 	if hit_ids.has(target_id) or not target.has_method("receive_attack"):return
 	hit_ids[target_id]=true
 	var strike:Dictionary=source.item_runtime.adjust_for_target(attack,target) if is_instance_valid(source) and source.item_runtime and target.is_in_group("slasher_enemy") else attack
+	if is_instance_valid(source):strike=source.adjust_active_weapon_attack(target,strike)
 	target.call("receive_attack",strike,source);hit_landed.emit(target,traveled)
 
 func _spawn_splash_visual(radius:float)->void:

@@ -1,6 +1,9 @@
 extends RefCounted
 class_name SlasherActiveEffects
 
+const FIGHTER_ARSENAL := preload("res://scripts/slasher/slasher_fighter_arsenal.gd")
+const WARRIOR_KITS := preload("res://scripts/slasher/slasher_warrior_kits.gd")
+
 ## What each active item does when used (data/active_items.json "effect.kind").
 ##
 ##   dash   Shadow Step     dash along your movement (or aim), invulnerable
@@ -21,6 +24,7 @@ static func use(player: SlasherPlayer, id: String) -> bool:
 		"line": _line(player,effect)
 		"rally": _rally(player,effect)
 		"ward": _ward(player,effect)
+		"fighter_weapon": return _fighter_weapon(player,id,effect)
 		_: return false
 	return true
 
@@ -86,6 +90,24 @@ static func _ward(player: SlasherPlayer, effect: Dictionary) -> void:
 	_flash(player,SpinFlash.new(),{"radius":40.0,"colour":Color(0.75,0.82,0.95)})
 	AudioCue.play_from(player,"block")
 
+## Executes one of the authored fighter weapons through the same runtime used
+## by equipped versions. Reusing the node preserves returning shots, deployed
+## tridents, curses, wounds, rampage and leashes between activations.
+static func _fighter_weapon(player: SlasherPlayer,id:String,effect:Dictionary)->bool:
+	var weapon_id:=String(effect.get("weapon_id",id));var runtime:Node
+	for child in player.get_children():
+		if child.get_meta("fighter_active_weapon_id","")==weapon_id:runtime=child;break
+	if runtime==null:
+		runtime=FIGHTER_ARSENAL.new();runtime.name="Active_%s"%weapon_id.to_pascal_case();runtime.set_meta("fighter_active_weapon_id",weapon_id)
+		var record:=WARRIOR_KITS.data_for(weapon_id)
+		if record.is_empty():return false
+		runtime.call("configure",player,weapon_id,record.actions);player.add_child(runtime)
+	var result:Dictionary=runtime.call("perform",String(effect.get("slot","special")),{"started":true,"targets_hit":0,"projectiles_deflected":0,"failure":""})
+	if not bool(result.get("started",false)):return false
+	_flash(player,SpinFlash.new(),{"radius":52.0,"colour":Color("#d8a6ff")})
+	AudioCue.play_from(player,"combo")
+	return true
+
 static func _flash(player: SlasherPlayer, node: Node2D, values: Dictionary) -> void:
 	for key in values: node.set(key,values[key])
 	node.top_level = true
@@ -141,6 +163,12 @@ static func draw_icon(canvas: CanvasItem, id: String, at: Vector2, size: float, 
 			canvas.draw_polyline(shield_points + PackedVector2Array([shield_points[0]]),ink,2.0 * s)
 			canvas.draw_line(at + Vector2(0,-11) * s,at + Vector2(0,11) * s,steel.lightened(0.2),2.0 * s)
 			for p in [Vector2(-7,-8),Vector2(7,-8),Vector2(-7,-1),Vector2(7,-1)]: canvas.draw_circle(at + p * s,1.6 * s,gold)
+		"fighter_weapon":
+			# Crossed steel and a bright active-item core; the item name distinguishes
+			# the authored weapon while keeping the small HUD glyph readable.
+			_sword(canvas,at+Vector2(-3,1)*s,s,Vector2(1,-1).normalized(),steel,gold,ink)
+			_sword(canvas,at+Vector2(3,1)*s,s,Vector2(-1,-1).normalized(),steel,Color("#a56de2") if not dim else Color("#685676"),ink)
+			canvas.draw_circle(at,3.0*s,accent)
 		_:
 			canvas.draw_circle(at,10.0 * s,gold)
 

@@ -127,7 +127,7 @@ func setup(state:RunState)->void:
 	warrior_kit=null;warrior_combo_effects=null
 	kit_buffs=preload("res://scripts/slasher/slasher_combat_buffs.gd").new();kit_buffs.actor=self;add_child(kit_buffs)
 	if class_id=="warrior" and state.selected_gear!=null and WARRIOR_KITS.has_kit(state.selected_gear.id):
-		warrior_kit=WARRIOR_KITS.KIT.new();warrior_kit.configure(self,state.selected_gear.id,WARRIOR_KITS.DATA[state.selected_gear.id].actions);add_child(warrior_kit)
+		warrior_kit=WARRIOR_KITS.script_for(state.selected_gear.id).new();warrior_kit.configure(self,state.selected_gear.id,WARRIOR_KITS.data_for(state.selected_gear.id).actions);add_child(warrior_kit)
 	if class_id=="warrior":
 		warrior_combo_effects=preload("res://scripts/slasher/slasher_warrior_combo_effects.gd").new();warrior_combo_effects.configure(self,state.selected_gear.id if uses_warrior_kit() else "standard",{});add_child(warrior_combo_effects)
 	if is_instance_valid(mage_kit):
@@ -245,7 +245,13 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	result.started=true
 	var combo_context: Dictionary=mage_combo_effects.capture() if is_instance_valid(mage_combo_effects) else warrior_combo_effects.capture() if is_instance_valid(warrior_combo_effects) else {}
 	active_action_slot=slot
-	if uses_warrior_kit():
+	var active_weapon_handled:=false
+	if slot=="defensive":
+		for child in get_children():
+			if not String(child.get_meta("fighter_active_weapon_id","")).is_empty() and child.has_method("can_active_parry") and child.call("can_active_parry"):
+				result=child.call("perform",slot,result);active_weapon_handled=true;break
+	if active_weapon_handled:pass
+	elif uses_warrior_kit():
 		result=warrior_kit.perform(slot,result)
 	elif uses_mage_kit():
 		result=mage_kit.perform(slot,result)
@@ -435,6 +441,11 @@ func _defensive(result:Dictionary)->Dictionary:
 	return result
 
 func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->void:
+	if is_instance_valid(warrior_kit) and warrior_kit.has_method("modify_incoming_damage"):amount=warrior_kit.modify_incoming_damage(amount)
+	for child in get_children():
+		var active_weapon_id:=String(child.get_meta("fighter_active_weapon_id",""))
+		var duplicates_equipped:=is_instance_valid(warrior_kit) and String(warrior_kit.get("weapon_id"))==active_weapon_id
+		if child!=warrior_kit and child.has_method("modify_incoming_damage") and not active_weapon_id.is_empty() and not duplicates_equipped:amount=child.modify_incoming_damage(amount)
 	var tuning:=_ability_tuning("special" if defense_kind=="retribution_ready" else "defensive")
 	if invulnerable>0.0:
 		if defense_kind=="evade":
@@ -700,13 +711,23 @@ func _ability_tuning(slot:String)->Dictionary:
 	return run_state.get_effective_slasher_ability_tuning(slot) if run_state!=null else GameBalance.get_slasher_ability_tuning(class_id,slot)
 ## Every melee, line and area hit goes through here so items see it.
 func _strike(node:Node,data:Dictionary)->void:
-	var attack:Dictionary=data
+	var attack:Dictionary=adjust_active_weapon_attack(node,data)
 	var enemy:bool=node.is_in_group("slasher_enemy")
 	if enemy and item_runtime:attack=item_runtime.adjust_for_target(data,node)
 	var was_dead:bool="dead" in node and bool(node.get("dead"))
 	node.call("receive_attack",attack,self)
 	_apply_echo_hit(node,attack)
 	if enemy:on_item_enemy_hit(node,attack,was_dead)
+
+func adjust_active_weapon_attack(target:Node2D,attack:Dictionary)->Dictionary:
+	var result:=attack
+	for child in get_children():
+		if not String(child.get_meta("fighter_active_weapon_id","")).is_empty() and child.has_method("adjust_external_attack"):result=child.call("adjust_external_attack",target,result)
+	return result
+
+func notify_active_weapon_hit(target:SlasherEnemy,attack:Dictionary,was_dead:bool)->void:
+	for child in get_children():
+		if not String(child.get_meta("fighter_active_weapon_id","")).is_empty() and child.has_method("on_external_hit"):child.call("on_external_hit",target,attack,was_dead)
 
 ## Item reactions to an enemy being struck: hit-trigger relics, then procs.
 func on_item_enemy_hit(target:Node,attack:Dictionary,was_dead:bool=false)->void:

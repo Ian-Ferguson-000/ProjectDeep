@@ -30,7 +30,10 @@ func _run() -> void:
 	await process_frame
 	_expect(ground.class_picker.item_count==6,"All six classes must be available")
 	_expect(ground.editor.visible and ground.combat_root.process_mode==Node.PROCESS_MODE_DISABLED,"Build editor must pause combat")
-	_expect(ground.loot_checks.size()==64,"All 52 items and 12 Hearth relics must be available")
+	var expected_loot:=GameBalance.get_items().size()
+	for id in HearthCatalog.data().items:
+		if HearthCatalog.item(id).get("slot","")=="relic" and not GameBalance.get_items().has(id):expected_loot+=1
+	_expect(ground.loot_checks.size()==expected_loot,"All combat items and Hearth relics must be available")
 	var kit_count := 0
 	for index in 6:
 		ground.class_picker.select(index);ground._refresh_class()
@@ -39,7 +42,7 @@ func _run() -> void:
 			_expect(ground.state.selected_gear==ground.gear_options[gear_index],"Selected kit was not applied")
 			_expect(not ground.state.campaign.expedition.active,"Training must not start a campaign expedition")
 			kit_count += 1
-	_expect(kit_count==34,"Expected 24 current weapons and five alternatives each for Mage and Warrior")
+	_expect(kit_count==44,"Expected 34 current weapons and five alternatives each for Mage and Warrior")
 	ground.class_picker.select(1);ground._refresh_class();ground.gear_picker.select(4)
 	ground.apply_build();_check_pacing(ground)
 	ground.loot_checks["flameheart_talisman"].button_pressed=true

@@ -4,6 +4,7 @@ extends SceneTree
 ## each warrior item does.
 
 const FOREST := preload("res://scenes/slasher/SlasherForest.tscn")
+const FIGHTER_ACTIVE_IDS := ["eldritch_bowstaff","demon_blade","storm_trident","valkyrian_sling","dragonbone_dagger","archon_crossbow","divine_hammer","grim_reaver","sentinel_shield","umbral_bow"]
 var failures: Array[String] = []
 
 func _initialize() -> void: _run.call_deferred()
@@ -22,12 +23,14 @@ func _dummy(scene, offset: Vector2) -> SlasherEnemy:
 func _run() -> void:
 	# ---- data
 	var warrior := ActiveItems.ids_for_class("warrior")
-	_expect(warrior.size() >= 5,"Expected at least five warrior active items")
+	_expect(warrior.size() >= 15,"Expected the five base and ten fighter weapon active items")
 	for id in warrior:
 		var record := ActiveItems.item(id)
 		_expect(String(record.get("charge","")) in ["rooms","timer"],"%s has no charge type" % id)
 		_expect(not String(record.get("name","")).is_empty() and not String(record.get("description","")).is_empty(),"%s lacks a name or description" % id)
 		_expect(DungeonHud.item_icon(String(record.get("icon",""))) != null,"%s has no icon" % id)
+	for id in FIGHTER_ACTIVE_IDS:
+		_expect(warrior.has(id) and String(ActiveItems.item(id).get("effect",{}).get("kind",""))=="fighter_weapon","%s is not in the active fighter weapon pool"%id)
 
 	# ---- slot rules
 	var state := RunState.new()
@@ -111,6 +114,19 @@ func _run() -> void:
 	ActiveItems.give(state,"iron_skin")
 	scene.use_active_item()
 	_expect(scene.player.kit_buffs.ward_amount() >= 8,"Iron Skin gave no ward")
+
+	# Every authored fighter weapon executes from the same active slot and keeps
+	# a room-local runtime for its persistent mechanics.
+	for id in FIGHTER_ACTIVE_IDS:
+		ActiveItems.give(state,id)
+		_expect(scene.use_active_item(),"%s did not activate from the active-item slot"%id)
+		_expect(scene.player.get_children().any(func(child):return child.get_meta("fighter_active_weapon_id","")==id),"%s created no persistent combat runtime"%id)
+	# Elite/boss world drops are acquired immediately, fully charged, replacing
+	# whatever was held just like a treasure pedestal pickup.
+	scene._spawn_fighter_active_drop(scene.player.global_position,"grim_reaver")
+	var dropped:Area2D=scene.loot_nodes.back();scene._collect_loot(dropped)
+	_expect(ActiveItems.held(state)=="grim_reaver" and ActiveItems.is_ready(state),"Fighter world drop did not enter the charged active slot")
+	_expect(scene.loot_nodes.any(func(node):return is_instance_valid(node) and node!=dropped and node.get_meta("kind","")=="active_item" and node.get_meta("item_id","")=="umbral_bow"),"Replacing a dropped active item did not leave the old one behind")
 
 	ActiveItems.give(state,"shadow_step")
 	scene.player.invulnerable = 0.0

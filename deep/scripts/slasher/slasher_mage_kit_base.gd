@@ -56,6 +56,7 @@ func hit(target: Node2D, attack: Dictionary, primary: bool = false) -> int:
 	if not is_instance_valid(target) or not target.has_method("receive_attack"):return 0
 	var was_dead: bool="dead" in target and bool(target.get("dead"))
 	if actor.item_runtime and target.is_in_group("slasher_enemy"):attack=actor.item_runtime.adjust_for_target(attack,target)
+	attack=actor.adjust_active_weapon_attack(target,attack)
 	var dealt: int=target.receive_attack(attack,actor)
 	if primary:
 		on_direct_hit(target,attack)
