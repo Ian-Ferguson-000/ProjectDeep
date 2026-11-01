@@ -22,8 +22,23 @@ const TX_PROP_REGIONS:Dictionary={
 	"crate":Rect2(161,17,31,31),
 	"bench":Rect2(292,18,60,47),
 	"pillar":Rect2(354,158,33,99),
-	"well":Rect2(353,270,128,80)
+	"well":Rect2(353,270,128,80),
+	# Crypt props (same sheet).
+	"coffin":Rect2(288,158,32,57),
+	"sarcophagus":Rect2(288,87,64,36),
+	"urn":Rect2(165,217,21,34),
+	"urn_b":Rect2(165,348,21,32),
+	"tombstone":Rect2(225,239,30,41),
+	"grave_cross":Rect2(227,303,26,40),
+	"grave_small":Rect2(289,251,30,29),
+	"statue":Rect2(445,20,37,73),
+	"pillar_broken":Rect2(416,194,32,57),
+	"rubble":Rect2(289,486,31,19),
 }
+const TX_STRUCT:=preload("res://assets/pixel_art/TX Struct.png")
+## Stone archway over the stairs down (crypt gate).
+const STAIRS_ARCH:=Rect2(416,128,64,64)
+static var _stairs_texture:Texture2D
 
 static func ground_texture(_cell:Vector2i)->Texture2D:
 	return TX_GRASS
@@ -66,11 +81,36 @@ static func make_sprite(kind:String)->Sprite2D:
 		"bench":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.bench,0.9,Vector2(0,-8))
 		"pillar":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.pillar,0.55,Vector2(0,-18))
 		"well":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.well,0.55,Vector2(0,-12))
+		"coffin":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.coffin,0.82,Vector2(0,-14))
+		"sarcophagus":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.sarcophagus,0.78,Vector2(0,-6))
+		"urn":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.urn,0.85,Vector2(0,-6))
+		"urn_b":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.urn_b,0.85,Vector2(0,-6))
+		"tombstone":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.tombstone,0.78,Vector2(0,-8))
+		"grave_cross":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.grave_cross,0.78,Vector2(0,-8))
+		"grave_small":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.grave_small,0.8,Vector2(0,-4))
+		"statue":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.statue,0.75,Vector2(0,-26))
+		"pillar_broken":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.pillar_broken,0.7,Vector2(0,-18))
+		"rubble":_atlas(sprite,TX_PROPS,TX_PROP_REGIONS.rubble,0.95,Vector2(0,4))
+		"stairs_down":sprite.texture=_stairs();sprite.scale=Vector2.ONE*1.1;sprite.offset=Vector2(0,-18)
 		"merchant":sprite.texture=MERCHANT;_fit_to_pixels(sprite,74.0)
 		"gold":sprite.texture=GOLD;_fit_to_pixels(sprite,30.0)
 		"potion":sprite.texture=POTION;_fit_to_pixels(sprite,32.0)
 		"key":sprite.texture=KEY;_fit_to_pixels(sprite,26.0)
 	return sprite
+
+## An archway with dark steps going down inside it, built once from TX Struct.
+static func _stairs()->Texture2D:
+	if _stairs_texture!=null:return _stairs_texture
+	var arch:=TX_STRUCT.get_image().get_region(Rect2i(STAIRS_ARCH))
+	arch.convert(Image.FORMAT_RGBA8)
+	var image:=Image.create_empty(64,64,false,Image.FORMAT_RGBA8)
+	image.fill_rect(Rect2i(12,18,40,46),Color("#0b0812"))
+	for step in 5:
+		var y:=24+step*8;var inset:=step*3
+		image.fill_rect(Rect2i(14+inset,y,36-inset*2,3),Color(0.32,0.29,0.36).darkened(step*0.15))
+	image.blend_rect(arch,Rect2i(0,0,64,64),Vector2i.ZERO)
+	_stairs_texture=ImageTexture.create_from_image(image)
+	return _stairs_texture
 
 static func _atlas(sprite:Sprite2D,texture:Texture2D,region:Rect2,scale_value:float,offset:Vector2)->void:
 	sprite.texture=_texture_region(texture,region);sprite.scale=Vector2.ONE*scale_value;sprite.offset=offset

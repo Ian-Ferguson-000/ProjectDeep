@@ -75,6 +75,10 @@ static func tavern_keeper_frames() -> SpriteFrames:
 	return frames
 
 static func enemy_frames(enemy_id: String) -> SpriteFrames:
+	# An enemy can borrow another's sprites until it has its own
+	# (slasher_balance.json enemy_visuals.<id>.art).
+	var art := String(Dictionary(GameBalance.get_slasher_balance("enemy_visuals").get(enemy_id,{})).get("art",""))
+	if not art.is_empty() and art != enemy_id: return enemy_frames(art)
 	if ForestCreatureArt.CREATURES.has(enemy_id):return ForestCreatureArt.frames_for(String(ForestCreatureArt.CREATURES[enemy_id]))
 	var frame_resource_path:="res://assets/enemies/%s/frames.tres"%enemy_id
 	if ResourceLoader.exists(frame_resource_path):return load(frame_resource_path) as SpriteFrames

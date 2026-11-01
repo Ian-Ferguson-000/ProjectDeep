@@ -27,7 +27,8 @@ const ROLE_NAMES := ["start","combat","elite","treasure","shop","rest","boss","g
 @export_flags("start","combat","elite","treasure","shop","rest","boss","guardian") var roles := 2
 ## How often this map is picked compared with others of the same role (1 = normal).
 @export_range(0.05,5.0,0.05) var weight := 1.0
-## Size in 48px cells. Must be odd. Standard 27x15, large 35x19.
+## Size in 48px cells. Must be odd. Forest: standard 27x15, large 35x19.
+## Crypt (1.5x): standard 41x23, large 53x29.
 @export var size_cells := Vector2i(27,15):
 	set(value): size_cells = value; queue_redraw(); update_configuration_warnings()
 

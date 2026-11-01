@@ -74,7 +74,8 @@ func _run() -> void:
 	for id in ["forest","crypt","balors_hell","ashen_farmstead","sunken_mine","ember_foundry","moonlit_grove","abyssal_archive"]:
 		_expect(DirAccess.dir_exists_absolute(MapLibrary.folder_for(id) + "rooms"),"No rooms folder for %s" % id)
 	_expect(MapLibrary.folder_for("balors_hell") == "res://maps/hell/","Hell folder mapping wrong")
-	_expect(MapLibrary.rooms("crypt").is_empty(),"Crypt should have no rooms yet")
+	_expect(MapLibrary.rooms("crypt").size() >= 18,"The crypt is missing its painted rooms")
+	_expect(MapLibrary.rooms("balors_hell").is_empty(),"Hell should have no rooms yet")
 	for path in ["res://maps/forest/tiles/forest_ground.tres","res://maps/forest/tiles/forest_paths.tres","res://maps/crypt/tiles/crypt_ground.tres","res://maps/hell/tiles/hell_ground.tres"]:
 		_expect(load(path) is TileSet,"%s is not a TileSet" % path)
 	var paths_set: TileSet = load("res://maps/forest/tiles/forest_paths.tres")

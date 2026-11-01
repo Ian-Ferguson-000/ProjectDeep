@@ -1,8 +1,10 @@
 extends "res://scripts/slasher/slasher_forest.gd"
 
-## Verdant Forest as interconnected rooms, Binding of Isaac style.
+## Dungeons as interconnected rooms, Binding of Isaac style. The Verdant Forest
+## uses this scene directly; the Stone Crypt extends it and swaps the look
+## through _room_theme() (stone walls, iron bars, stairs down).
 ##
-## Each floor is a graph of painted rooms (maps/forest/rooms/*.tscn) laid out
+## Each floor is a graph of painted rooms (maps/<dungeon>/rooms/*.tscn) laid out
 ## by FieldDungeonGenerator. Doors sit on the centre of each room edge, stay
 ## barred by brambles while foes remain, and open once the room is cleared. The
 ## gate room holds the root gate down to the next floor, so the existing descent,
@@ -28,6 +30,9 @@ var transition_cooldown := 0.0
 var treasure_area: Area2D
 var campfire_position := Vector2(-99999,-99999)
 var rooms_active := false
+var active_pedestal: Node2D
+## Walking away re-arms the pedestal, so a swap doesn't immediately swap back.
+var _pedestal_armed := true
 
 func uses_room_layout() -> bool:
 	if run_state == null or use_authored_layout or run_state.slasher_merchant_interlude or _is_tutorial_expedition(): return false
@@ -38,6 +43,7 @@ func _build_floor() -> void:
 	if not rooms_active:
 		super._build_floor()
 		return
+	ROOMS.use_dungeon(run_state.active_dungeon_id)
 	get_tree().paused = false
 	secret_door_available = false; secret_door_node = null; merchant_offer_nodes.clear(); has_dungeon_merchant = false; treasure_area = null
 	var new_floor := _ensure_floor_graph()
@@ -55,12 +61,25 @@ func _build_floor() -> void:
 	if new_floor: player.reset_combo_progress()
 	_spawn_enemies(); _spawn_loot(); _build_hud(); _refresh_hud(); _entry_fade()
 	if new_floor and player.item_runtime: player.item_runtime.floor_entered()
-	if new_floor: _show_message("%s · floor %d" % [String(layout.room_name),run_state.current_floor],3.0)
-	if room_role == "boss" and not bool(room.get("cleared",false)) and (bool(layout.get("is_boss_floor",false)) or bool(layout.get("is_elite_floor",false))): _show_guardian_banner()
+	if new_floor: _show_floor_banner()
+	if room_role == "boss" and not bool(room.get("cleared",false)) and bool(layout.get("is_guarded",false)): _show_guardian_banner()
 	if new_floor and run_state.current_floor == 1 and not run_state.starter_reward_claimed: call_deferred("_offer_starter_relic")
 	transition_cooldown = 0.5
 
 ## Generates this floor's room graph the first time the floor is entered.
+## How this dungeon's rooms look and what things are called. The crypt
+## overrides it; see slasher_crypt.gd.
+##   walls         "thicket" (trees on the edge) or "stone" (wall tiles drawn by the wall generator)
+##   prop_kinds    solid prop kinds swapped when a room is built (the map's T is a tree in the forest)
+##   hollow_kind   the breakable that may hide a keyless chest, drawn a shade darker
+func _room_theme() -> Dictionary:
+	return {
+		"walls":"thicket","gate_name":"Root Gate","exit_sprite":"exit","exit_glow":"#83d978",
+		"gate_open":"Gate open · descend through the roots.","room_clear":"Room cleared · the brambles pull back.",
+		"guardian_falls":"The guardian falls · its pack scatters and the Root Gate opens.",
+		"prop_kinds":{},"hollow_kind":"tree_large","hollow_found":"Something glints inside the hollow trunk…",
+	}
+
 func _ensure_floor_graph() -> bool:
 	var floor_key := "%d:%d" % [run_state.get_current_floor_seed(),run_state.current_floor]
 	if String(run_state.field_run.get("forest_floor_key","")) == floor_key: return false
@@ -118,8 +137,12 @@ func _room_layout() -> Dictionary:
 	var state: Dictionary = Dictionary(room.get("slasher",{}))
 	var destroyed: Array = Array(state.get("destroyed_props",[]))
 	built.solid_props = Array(built.solid_props).filter(func(prop): return not destroyed.has(Vector2i(prop.cell)))
+	var swaps: Dictionary = Dictionary(_room_theme().get("prop_kinds",{}))
+	for prop in built.solid_props:
+		if swaps.has(String(prop.kind)): prop.kind = String(swaps[String(prop.kind)])
 	built["is_boss_floor"] = room_role == "boss" and run_state.is_slasher_boss_floor()
 	built["is_elite_floor"] = room_role == "boss" and run_state.is_slasher_elite_floor()
+	built["is_guarded"] = room_role == "boss" and floor_gate_guarded()
 	built["cycle_floor"] = run_state.get_slasher_cycle_floor()
 	var arrival := String(run_state.field_run.get("arrival_direction",""))
 	if int(run_state.field_run.get("previous_room",-1)) >= 0 and Dictionary(built.doors).has(arrival): built.start = ROOMS.arrival_cell(built,arrival)
@@ -136,6 +159,23 @@ func _neighbor_template_ids() -> Array:
 		if not String(other.get("template_id","")).is_empty(): ids.append(String(other.template_id))
 	return ids
 
+## The room's walkable area (inside the outer wall) in world space.
+func room_arena() -> Rect2:
+	return Rect2(ORIGIN + Vector2(TILE,TILE),Vector2(float((int(layout.width) - 2) * TILE),float((int(layout.height) - 2) * TILE)))
+
+func _slasher_config() -> Dictionary:
+	return Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{}))
+
+## The mini boss holding the gate room (dungeons.json slasher.gate_guardian).
+func gate_guardian() -> Dictionary:
+	var config: Dictionary = Dictionary(_slasher_config().get("gate_guardian",{}))
+	return {"visual_id":String(config.get("visual_id","briar_guardian")),"behavior_id":String(config.get("behavior_id","elite_guardian")),"every_floor":bool(config.get("every_floor",false))}
+
+## Whether this floor's gate room has a guardian to beat before the way down
+## opens: the boss floor, the elite floor, and every floor when gate_guardian.every_floor is set.
+func floor_gate_guarded() -> bool:
+	return run_state.is_slasher_boss_floor() or run_state.is_slasher_elite_floor() or bool(gate_guardian().every_floor)
+
 ## Which foes hold this room. Plain foes use the forest's normal wolf and beast
 ## rotation; elite rooms and the gate room add guardians on their cycle floors.
 func _encounter(built: Dictionary) -> Array:
@@ -146,18 +186,26 @@ func _encounter(built: Dictionary) -> Array:
 	for index in range(markers.size()-1,0,-1):
 		var swap := rng.randi_range(0,index); var held = markers[index]; markers[index] = markers[swap]; markers[swap] = held
 	var elite_cell: Vector2i = Array(built.elite_markers)[0] if not Array(built.elite_markers).is_empty() else (markers.pop_back() if not markers.is_empty() else Vector2i(int(built.width)/2,int(built.height)/2))
-	# TUNING: plain foes per room grow with depth and stop at the room's markers.
-	var count := clampi(2 + int(run_state.current_floor/2.0),2,maxi(2,markers.size()))
+	# TUNING: plain foes per room grow with depth and stop at the room's markers
+	# (dungeons.json slasher.room_count.foes_base / foes_per_floor).
+	var room_tuning: Dictionary = Dictionary(_slasher_config().get("room_count",{}))
+	var base_foes := int(room_tuning.get("foes_base",2))
+	var count := clampi(base_foes + int(run_state.current_floor * float(room_tuning.get("foes_per_floor",0.5))),base_foes,maxi(base_foes,markers.size()))
+	var guardian := gate_guardian()
 	var spawns: Array = []
 	if room_role == "boss" and bool(built.is_boss_floor) and Vector2i(built.get("colossus",Vector2i(-100,-100))).x >= 0:
 		# The colossus is the whole fight: no adds at the start.
-		return [{"position":Vector2i(built.colossus),"visual_id":"heartwood_colossus","behavior_id":"heartwood_colossus","is_boss":true,"is_mini_boss":false}]
+		var colossus_id := String(_slasher_config().get("colossus","heartwood_colossus"))
+		return [{"position":Vector2i(built.colossus),"visual_id":colossus_id,"behavior_id":colossus_id,"is_boss":true,"is_mini_boss":false}]
 	if room_role == "boss" and bool(built.is_boss_floor):
 		spawns.append({"position":elite_cell,"visual_id":"dark_druid","behavior_id":"","is_boss":true,"is_mini_boss":false})
-		for index in mini(2,markers.size()): spawns.append({"position":markers[index],"visual_id":"briar_guardian","behavior_id":"elite_guardian","is_boss":false,"is_mini_boss":true})
+		for index in mini(2,markers.size()): spawns.append({"position":markers[index],"visual_id":guardian.visual_id,"behavior_id":guardian.behavior_id,"is_boss":false,"is_mini_boss":true})
 		return spawns
-	if room_role == "elite" or (room_role == "boss" and bool(built.is_elite_floor)):
-		spawns.append({"position":elite_cell,"visual_id":"briar_guardian","behavior_id":"elite_guardian","is_boss":false,"is_mini_boss":true})
+	if room_role == "elite" or (room_role == "boss" and bool(built.is_guarded)):
+		# Elite rooms can have their own champion (slasher.elite_room_guardian); otherwise the gate guardian.
+		var champion: Dictionary = Dictionary(_slasher_config().get("elite_room_guardian",{})) if room_role == "elite" else {}
+		var champion_visual := String(champion.get("visual_id",guardian.visual_id)); var champion_behavior := String(champion.get("behavior_id",guardian.behavior_id))
+		spawns.append({"position":elite_cell,"visual_id":champion_visual,"behavior_id":champion_behavior,"is_boss":false,"is_mini_boss":true})
 		count = maxi(1,count-1)
 	elif not Array(built.elite_markers).is_empty():
 		markers.push_front(elite_cell)
@@ -180,7 +228,9 @@ func _build_world() -> void:
 	# Collision follows the walkable edge; the thicket trees are the visible wall.
 	wall_generator = SlasherWallGenerator.new(); wall_generator.name = "WallGenerator"; wall_generator.profile_id = String(profile.get("wall_profile","stone_wall")); wall_generator.tile_size = TILE; wall_generator.render_visuals = false; wall_generator.render_collisions = true; add_child(wall_generator)
 	wall_topology = wall_generator.generate(layout.cells,[],ORIGIN)
-	_build_thicket(); _build_decorations(); _build_solid_props(); _build_landmarks(); _build_doors(); _build_mist(); _build_vignette()
+	if String(_room_theme().walls) == "stone": _build_stone_walls(profile)
+	else: _build_thicket()
+	_build_decorations(); _build_solid_props(); _build_landmarks(); _build_doors(); _build_mist(); _build_vignette()
 
 ## The room's painted art (maps/forest/rooms/*.tscn). Rooms without a scene
 ## fall back to the ground drawn in code from the forest sheet.
@@ -198,6 +248,16 @@ func _build_room_art() -> void:
 		node.position += ORIGIN
 		node.z_index = 0
 		canopy_layer.add_child(node)
+
+## Stone dungeons: the wall generator draws real walls around the room. Pits and
+## a colossus's body count as floor here, so they read as holes and bodies, not walls.
+func _build_stone_walls(profile: Dictionary) -> void:
+	var visual_cells: Dictionary = Dictionary(layout.cells).duplicate()
+	for cell in Dictionary(layout.get("water_cells",{})): visual_cells[cell] = true
+	for cell in Dictionary(layout.get("colossus_cells",{})): visual_cells[cell] = true
+	var walls := SlasherWallGenerator.new(); walls.name = "StoneWalls"; walls.profile_id = String(profile.get("wall_profile","stone_wall")); walls.tile_size = TILE; walls.render_visuals = true; walls.render_collisions = false
+	add_child(walls)
+	walls.generate(visual_cells,[],ORIGIN)
 
 func _build_thicket() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -230,8 +290,9 @@ func _build_landmarks() -> void:
 	var gate := Vector2i(layout.exit)
 	exit_position = _world(gate) if gate.x >= 0 else Vector2(-99999,-99999)
 	if gate.x >= 0:
-		var exit_root := Node2D.new(); exit_root.name = "RootGate"; exit_root.position = exit_position; exit_root.z_index = 12; exit_root.add_child(_glow(Color("#83d978"),34))
-		var exit_sprite := SlasherForestArt.make_sprite("exit"); exit_sprite.position = Vector2(0,-30); exit_root.add_child(exit_sprite); actor_layer.add_child(exit_root)
+		var theme := _room_theme()
+		var exit_root := Node2D.new(); exit_root.name = "RootGate"; exit_root.position = exit_position; exit_root.z_index = 12; exit_root.add_child(_glow(Color(String(theme.exit_glow)),34))
+		var exit_sprite := SlasherForestArt.make_sprite(String(theme.exit_sprite)); exit_sprite.position = Vector2(0,-30) if String(theme.exit_sprite) == "exit" else Vector2.ZERO; exit_root.add_child(exit_sprite); actor_layer.add_child(exit_root)
 	if Vector2i(layout.get("colossus",Vector2i(-100,-100))).x >= 0 and (bool(room.get("cleared",false)) or not bool(layout.get("is_boss_floor",false))): _build_colossus_remains()
 	var merchant_cell := Vector2i(layout.merchant)
 	has_dungeon_merchant = room_role == "shop" and merchant_cell.x >= 0
@@ -251,7 +312,10 @@ func _build_landmarks() -> void:
 		actor_layer.add_child(camp)
 		if pathfinder != null: pathfinder.set_cell_blocked(fire,true)
 	var pedestal := Vector2i(layout.treasure)
-	if room_role == "treasure" and pedestal.x >= 0 and not bool(room.get("reward_claimed",false)):
+	active_pedestal = null
+	if room_role == "treasure" and pedestal.x >= 0 and not _treasure_active().is_empty():
+		_build_active_pedestal(_world(pedestal))
+	elif room_role == "treasure" and pedestal.x >= 0 and not bool(room.get("reward_claimed",false)) and not bool(Dictionary(room.get("slasher",{})).get("active_room",false)):
 		treasure_area = Area2D.new(); treasure_area.name = "TreasurePedestal"; treasure_area.position = _world(pedestal)
 		var shape := CollisionShape2D.new(); var circle := CircleShape2D.new(); circle.radius = 24; shape.shape = circle; treasure_area.add_child(shape)
 		treasure_area.add_child(_glow(Color("#d67ee8"),30))
@@ -267,12 +331,11 @@ func _build_doors() -> void:
 		var door := Node2D.new(); door.name = "Door_%s" % direction; door.position = _world(cell); actor_layer.add_child(door)
 		var barrier := StaticBody2D.new(); barrier.name = "Brambles"
 		var shape := CollisionShape2D.new(); var rect := RectangleShape2D.new(); rect.size = Vector2(TILE,TILE); shape.shape = rect; barrier.add_child(shape)
-		for offset in [Vector2(-12,-4),Vector2(12,2),Vector2(0,10)]:
-			var bush := SlasherForestArt.make_sprite("rounded_bush" if offset.y < 5 else "low_bush_b"); bush.position = offset; bush.modulate = Color(0.62,0.48,0.42); barrier.add_child(bush)
+		_dress_door_barrier(barrier,direction)
 		door.add_child(barrier)
 		var neighbor := run_state.get_field_room(int(Dictionary(room.neighbors).get(direction,-1)))
 		var to_gate := String(neighbor.get("role","")) == "boss"
-		var guarded := to_gate and not bool(neighbor.get("cleared",false)) and (run_state.is_slasher_boss_floor() or run_state.is_slasher_elite_floor())
+		var guarded := to_gate and not bool(neighbor.get("cleared",false)) and floor_gate_guarded()
 		var glow := _glow(Color("#e0503c") if guarded else (Color("#83d978") if to_gate else Color("#9fe39a")),26 if to_gate else 22); glow.name = "OpenGlow"; door.add_child(glow)
 		if to_gate:
 			var mark := GateDoorMark.new(); mark.name = "GateMark"; mark.guarded = guarded; mark.position = Vector2(0,-6); mark.scale = Vector2.ONE * 1.5; mark.z_index = 9; door.add_child(mark)
@@ -285,16 +348,22 @@ func _build_doors() -> void:
 		door_nodes[direction] = door
 	_set_doors_open(exit_open)
 
+## What blocks a door while foes remain: brambles in the forest.
+func _dress_door_barrier(barrier: Node2D, _direction: String) -> void:
+	for offset in [Vector2(-12,-4),Vector2(12,2),Vector2(0,10)]:
+		var bush := SlasherForestArt.make_sprite("rounded_bush" if offset.y < 5 else "low_bush_b"); bush.position = offset; bush.modulate = Color(0.62,0.48,0.42); barrier.add_child(bush)
+
 func _door_hint(neighbor: Dictionary) -> String:
 	# Like Isaac's boss door, the way to the gate room is recognisable before you go in.
 	if String(neighbor.get("role","")) == "boss" and not bool(neighbor.get("cleared",false)):
 		if run_state.is_slasher_boss_floor(): return "Guardian"
-		if run_state.is_slasher_elite_floor(): return "Elite Guardian"
-	if not bool(neighbor.get("visited",false)): return "Root Gate" if String(neighbor.get("role","")) == "boss" else "?"
+		if floor_gate_guarded(): return "Elite Guardian"
+	var gate_name := String(_room_theme().gate_name)
+	if not bool(neighbor.get("visited",false)): return gate_name if String(neighbor.get("role","")) == "boss" else "?"
 	match String(neighbor.get("role","")):
 		"shop": return "Camp"
 		"treasure": return "Treasure" if not bool(neighbor.get("reward_claimed",false)) else ""
-		"boss": return "Root Gate"
+		"boss": return gate_name
 		"rest": return "Campfire"
 	return ""
 
@@ -333,14 +402,14 @@ func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
 		_mark_room_cleared(true)
 		_set_doors_open(true)
 		_spawn_loot()
-		_show_message("Gate open · descend through the roots." if Vector2i(layout.exit).x >= 0 else "Room cleared · the brambles pull back.")
+		_show_message(String(_room_theme().gate_open) if Vector2i(layout.exit).x >= 0 else String(_room_theme().room_clear))
 
 ## The foe whose death decides the gate room: the boss on boss floors, the
 ## elite guardian on elite floors.
 func _is_room_guardian(enemy: SlasherEnemy) -> bool:
 	if not is_instance_valid(enemy): return false
 	if enemy.boss: return true
-	return bool(layout.get("is_elite_floor",false)) and enemy.mini_boss and not bool(layout.get("is_boss_floor",false))
+	return bool(layout.get("is_guarded",false)) and enemy.mini_boss and not bool(layout.get("is_boss_floor",false))
 
 func _scatter_remaining_foes() -> void:
 	for node in get_tree().get_nodes_in_group("slasher_enemy"):
@@ -356,13 +425,16 @@ func _scatter_remaining_foes() -> void:
 	_set_doors_open(true)
 	_spawn_loot()
 	AudioCue.play_from(self,"reward",false)
-	_show_message("The guardian falls · its pack scatters and the Root Gate opens.",3.0)
+	_show_message(String(_room_theme().guardian_falls),3.0)
 	_refresh_hud()
 
 func _mark_room_cleared(fought: bool) -> void:
 	room["cleared"] = true
 	run_state.update_field_room(room_id,{"cleared":true})
 	if fought:
+		# Clearing a fight charges the active item by one pip.
+		ActiveItems.add_room_charge(run_state,1)
+		_refresh_active_hud()
 		# TUNING: a small purse for every room fought through, on top of enemy rewards.
 		var amount := run_state.apply_reward_bonus(int(Dictionary(Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{})).get("room_count",{})).get("room_clear_gold",3)),"gold")
 		run_state.gold += amount
@@ -377,7 +449,7 @@ func _spawn_loot() -> void:
 	loot_nodes.clear()
 	if not exit_open: return
 	var taken: Array = Array(Dictionary(room.get("slasher",{})).get("loot_taken",[]))
-	var kinds := ["gold","potion","key"]
+	var kinds := ["gold","potion","key"] if RunState.potions_drop() else ["gold","gold","key"]
 	for index in Array(layout.loot_spawns).size():
 		var cell: Vector2i = layout.loot_spawns[index]
 		if taken.has(cell): continue
@@ -395,6 +467,10 @@ func _collect_loot(loot: Area2D) -> void:
 func _on_prop_broken(prop: SlasherBreakableProp, kind: String, cell: Vector2i) -> void:
 	super._on_prop_broken(prop,kind,cell)
 	if rooms_active: _remember("destroyed_props",cell)
+	if rooms_active and kind == String(_room_theme().hollow_kind) and cell == _hollow_cell():
+		_spawn_hidden_chest(cell)
+		AudioCue.play_from(self,"reward",false)
+		_show_message(String(_room_theme().hollow_found),3.0)
 
 func _on_chest_opened(chest: SlasherBreakableProp, cell: Vector2i) -> void:
 	if not rooms_active:
@@ -405,6 +481,52 @@ func _on_chest_opened(chest: SlasherBreakableProp, cell: Vector2i) -> void:
 	relic_choice_source = "chest"
 	var cycle: int = maxi(0,run_state.get_slasher_cycle_number()-1) if run_state.slasher_endless_mode else 0
 	relic_modal.open(run_state,run_state.generate_slasher_chest_choices(run_state.current_floor,"room_%d_chest_%d_%d" % [room_id,cell.x,cell.y],cycle),true)
+
+# ---------------------------------------------------------------- hollow trees
+
+## Rooms with breakable trees may hide a chest inside one of them, a shade
+## darker than the rest. Decided once per room per floor and remembered.
+## TUNING: breakable_props.tree_large.hollow_chance in slasher_balance.json.
+func _build_solid_props() -> void:
+	super._build_solid_props()
+	if not rooms_active: return
+	var hollow := _hollow_cell()
+	if hollow.x < 0: return
+	var standing := false
+	for node in actor_layer.get_children():
+		if node is SlasherBreakableProp and node.prop_kind == String(_room_theme().hollow_kind) and node.cell == hollow:
+			standing = true
+			node.set_meta("hollow",true)
+			node.modulate = Color(0.66,0.6,0.58)
+	if not standing and not bool(Dictionary(room.get("slasher",{})).get("hollow_opened",false)): _spawn_hidden_chest(hollow)
+
+func _hollow_cell() -> Vector2i:
+	var state: Dictionary = Dictionary(room.get("slasher",{}))
+	if not state.has("hollow_tree"):
+		var cell := Vector2i(-1,-1)
+		var hollow_kind := String(_room_theme().hollow_kind)
+		var trees: Array = Array(layout.solid_props).filter(func(prop): return String(prop.kind) == hollow_kind)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash("%s:%d:hollow" % [String(run_state.field_run.get("forest_floor_key","")),room_id])
+		var chance := float(Dictionary(GameBalance.get_slasher_balance("breakable_props").get(hollow_kind,{})).get("hollow_chance",0.4))
+		if not trees.is_empty() and rng.randf() < chance: cell = Vector2i(trees[rng.randi_range(0,trees.size() - 1)].cell)
+		state["hollow_tree"] = cell
+		room["slasher"] = state
+		run_state.update_field_room(room_id,{"slasher":state})
+	return Vector2i(state.hollow_tree)
+
+## A chest that needs no key: finding it is the reward.
+func _spawn_hidden_chest(cell: Vector2i) -> void:
+	var chest: SlasherBreakableProp = BREAKABLE_PROP.new(); chest.name = "HiddenChest"
+	chest.setup("chest",cell); chest.position = _world(cell)
+	chest.set_meta("no_key",true)
+	chest.opened.connect(func(_chest, at):
+		var state: Dictionary = Dictionary(room.get("slasher",{})); state["hollow_opened"] = true; room["slasher"] = state
+		run_state.update_field_room(room_id,{"slasher":state}))
+	chest.opened.connect(_on_chest_opened)
+	actor_layer.add_child(chest)
+	chest.add_child(_glow(Color("#f3d366"),20))
+	if pathfinder != null: pathfinder.set_cell_blocked(cell,true)
 
 func _remember(key: String, cell: Vector2i) -> void:
 	var state: Dictionary = Dictionary(room.get("slasher",{}))
@@ -425,6 +547,7 @@ func _process(delta: float) -> void:
 	if player.input_locked or (relic_modal != null and relic_modal.visible): return
 	if treasure_area != null and is_instance_valid(treasure_area) and player.global_position.distance_to(treasure_area.global_position) < 40: _open_treasure()
 	if room_role == "rest" and player.global_position.distance_to(campfire_position) < 70: _offer_rest()
+	if is_instance_valid(active_pedestal): _check_active_pedestal()
 	_check_doors()
 
 func _check_doors() -> void:
@@ -462,6 +585,72 @@ func rest_at_campfire() -> bool:
 	_show_message("%s rests by the fire and recovers." % run_state.get_active_character().display_name if run_state.get_active_character() != null else "You rest by the fire and recover.")
 	return true
 
+# ---------------------------------------------------------------- active item pedestals
+
+## Which active item this treasure room's pedestal holds ("" for a relic room,
+## or once taken). Decided the first time the room is built, then remembered,
+## including the item you leave behind when you swap.
+## TUNING: treasure_chance in data/active_items.json.
+func _treasure_active() -> String:
+	if room_role != "treasure" or _is_tutorial_expedition(): return ""
+	var state: Dictionary = Dictionary(room.get("slasher",{}))
+	if not state.has("active_pedestal"):
+		var id := ""
+		var held := ActiveItems.held(run_state)
+		var pool: Array[String] = ActiveItems.ids_for_class(run_state.selected_class_id).filter(func(item_id): return item_id != held)
+		var stats := run_state.run_stats()
+		var rng := RandomNumberGenerator.new(); rng.seed = hash("%s:%d:active" % [String(run_state.field_run.get("forest_floor_key","")),room_id])
+		var first_offer := held.is_empty() and not bool(stats.get("active_offered",false))
+		if not pool.is_empty() and (first_offer or rng.randf() < float(ActiveItems.data().get("treasure_chance",0.35))):
+			id = pool[rng.randi_range(0,pool.size() - 1)]
+			stats["active_offered"] = true
+		state["active_pedestal"] = id
+		state["active_room"] = not id.is_empty()
+		room["slasher"] = state
+		run_state.update_field_room(room_id,{"slasher":state})
+	return String(state.get("active_pedestal",""))
+
+func _build_active_pedestal(at: Vector2) -> void:
+	var pedestal := ActivePedestal.new(); pedestal.name = "ActivePedestal"; pedestal.position = at
+	pedestal.item_id = _treasure_active()
+	pedestal.add_child(_glow(Color("#f3d366"),30))
+	actor_layer.add_child(pedestal)
+	active_pedestal = pedestal
+
+func _check_active_pedestal() -> void:
+	var distance := player.global_position.distance_to(active_pedestal.global_position)
+	if distance > 64.0:
+		_pedestal_armed = true
+		return
+	var id := String(active_pedestal.get("item_id"))
+	if id.is_empty() or not _pedestal_armed or distance > 44.0: return
+	var held := ActiveItems.held(run_state)
+	if held.is_empty():
+		take_active_item()
+		return
+	_show_message("Press E to swap %s for %s." % [String(ActiveItems.item(held).get("name",held)),String(ActiveItems.item(id).get("name",id))],0.15)
+	if Input.is_action_just_pressed("interact"):
+		player.basic_mouse_held = false
+		take_active_item()
+
+## Takes the pedestal's item into the active slot; whatever was held is left on the pedestal.
+func take_active_item() -> String:
+	if not is_instance_valid(active_pedestal): return ""
+	var id := String(active_pedestal.get("item_id"))
+	if id.is_empty(): return ""
+	var old := ActiveItems.give(run_state,id)
+	var state: Dictionary = Dictionary(room.get("slasher",{})); state["active_pedestal"] = old; room["slasher"] = state
+	room["reward_claimed"] = true
+	run_state.update_field_room(room_id,{"slasher":state,"reward_claimed":true})
+	active_pedestal.set("item_id",old)
+	active_pedestal.queue_redraw()
+	_pedestal_armed = false
+	AudioCue.play_from(self,"reward",false)
+	var record := ActiveItems.item(id)
+	if dungeon_hud != null: dungeon_hud.show_pickup(String(record.get("name",id)).to_upper(),String(record.get("description","")))
+	_refresh_active_hud()
+	return old
+
 func _open_treasure() -> void:
 	if relic_modal == null or relic_modal.visible: return
 	AudioCue.play_at_from(self,"chest_open",treasure_area.global_position)
@@ -478,6 +667,18 @@ func _spawn_player() -> void:
 	var settings := _settings()
 	if settings != null and settings.settings_changed.is_connected(_on_game_setting_changed): settings.settings_changed.disconnect(_on_game_setting_changed)
 	super._spawn_player()
+	_apply_arena_zoom()
+
+## Colossus arenas are bigger than the screen, so the camera pulls back there to
+## keep the guardian in view (dungeons.json slasher.guardian_camera_zoom).
+func _apply_arena_zoom() -> void:
+	if not rooms_active or not is_instance_valid(player) or player.camera == null: return
+	if Vector2i(layout.get("colossus",Vector2i(-100,-100))).x < 0 or bool(room.get("cleared",false)): return
+	player.camera.zoom *= float(_slasher_config().get("guardian_camera_zoom",0.75))
+
+func _on_game_setting_changed(key: String, value: Variant) -> void:
+	super._on_game_setting_changed(key,value)
+	if key in ["slasher_zoom","reset"]: _apply_arena_zoom()
 
 func _snapshot_player() -> Dictionary:
 	if not is_instance_valid(player): return {}
@@ -493,7 +694,7 @@ func _build_hud() -> void:
 	super._build_hud()
 	if not rooms_active: return
 	var map := ROOM_MINIMAP.new(); map.name = "ForestRoomMap"
-	map.set_anchors_preset(Control.PRESET_TOP_RIGHT); map.offset_left = -214; map.offset_right = -18; map.offset_top = 18; map.offset_bottom = 152
+	map.set_anchors_preset(Control.PRESET_TOP_RIGHT); map.offset_left = -200; map.offset_right = -22; map.offset_top = 20; map.offset_bottom = 140
 	map.setup(run_state); get_node("HUD").add_child(map)
 
 func _refresh_hud() -> void:
@@ -502,13 +703,45 @@ func _refresh_hud() -> void:
 	var depth_text: String = "ENDLESS · FLOOR %d" % run_state.current_floor if run_state.slasher_endless_mode else "FLOOR %d" % run_state.current_floor
 	var status := "%d FOES" % enemies_remaining if not exit_open else ("GATE OPEN" if Vector2i(layout.exit).x >= 0 else "CLEAR")
 	if bool(layout.get("is_boss_floor",false)) and not exit_open: status = "BOSS"
-	elif bool(layout.get("is_elite_floor",false)) and not exit_open: status = "ELITE GUARDIAN"
+	elif bool(layout.get("is_guarded",false)) and not exit_open: status = "ELITE GUARDIAN"
 	objective_label.text = "VERDANT FOREST  ·  %s  ·  %s  ·  %s" % [depth_text,String(layout.room_name).to_upper(),status]
 	var map := get_node_or_null("HUD/ForestRoomMap")
 	if map: map.queue_redraw()
 
 
 # ---------------------------------------------------------------- guardian warnings
+
+## A stone pedestal with an active item floating over it.
+class ActivePedestal extends Node2D:
+	var item_id := "":
+		set(value):
+			item_id = value
+			_refresh()
+	var icon: Sprite2D
+	var label: Label
+	var _time := 0.0
+	func _ready() -> void:
+		icon = Sprite2D.new(); icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST; add_child(icon)
+		label = Label.new(); label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.size = Vector2(160,20); label.position = Vector2(-80,14)
+		label.add_theme_font_size_override("font_size",12); label.add_theme_color_override("font_color",Color("#f6d77a"))
+		label.add_theme_color_override("font_outline_color",Color(0,0,0,0.9)); label.add_theme_constant_override("outline_size",4)
+		add_child(label)
+		_refresh()
+	func _refresh() -> void:
+		if icon == null or label == null: return
+		var record := ActiveItems.item(item_id)
+		label.text = String(record.get("name","")) if not item_id.is_empty() else ""
+	func _process(delta: float) -> void:
+		_time += delta
+		if icon != null: icon.position = Vector2(0,-38 + sin(_time * 3.0) * 4.0)
+		queue_redraw()
+	func _draw() -> void:
+		draw_rect(Rect2(-18,-14,36,22),Color("#3d3a44")); draw_rect(Rect2(-22,4,44,8),Color("#2a2730"))
+		draw_rect(Rect2(-18,-14,36,4),Color("#77707f"))
+		if not item_id.is_empty():
+			var float_at := Vector2(0,-38 + sin(_time * 3.0) * 4.0)
+			draw_circle(float_at,22.0,Color(1.0,0.9,0.5,0.18))
+			SlasherActiveEffects.draw_icon(self,item_id,float_at,34.0)
 
 ## Isaac-style intro when you walk into the guardian's room.
 func _show_guardian_banner() -> void:
@@ -518,9 +751,10 @@ func _show_guardian_banner() -> void:
 	var boss_id := "dark_druid"
 	for node in actor_layer.get_children():
 		if node is SlasherEnemy and node.boss: boss_id = String(node.visual_id)
-	var title := String(GameBalance.get_slasher_journal_entry(boss_id).get("name","The Guardian")) if boss else "Elite Guardian"
+	var guardian_name := String(GameBalance.get_slasher_journal_entry(String(gate_guardian().visual_id)).get("name","Elite Guardian"))
+	var title := String(GameBalance.get_slasher_journal_entry(boss_id).get("name","The Guardian")) if boss else guardian_name
 	var banner := GuardianBanner.new(); banner.name = "GuardianBanner"
-	banner.setup(title.to_upper(),"Guardian of the %s" % String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Forest")) if boss else "The Root Gate is held",Color("#e0503c") if boss else Color("#ff9e3d"))
+	banner.setup(title.to_upper(),"Guardian of the %s" % String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Forest")) if boss else "The %s is held" % String(_room_theme().gate_name),Color("#e0503c") if boss else Color("#ff9e3d"))
 	hud.add_child(banner)
 	AudioCue.play_from(self,"combo",false)
 
@@ -575,9 +809,13 @@ class GuardianBanner extends Control:
 ## What's left of a fallen colossus: a split stump filling its cells.
 func _build_colossus_remains() -> void:
 	if actor_layer.get_node_or_null("ColossusRemains") != null: return
-	var remains := ColossusRemains.new(); remains.name = "ColossusRemains"
+	var remains := _make_colossus_remains(); remains.name = "ColossusRemains"
 	remains.position = _world(Vector2i(layout.colossus))
 	actor_layer.add_child(remains)
+
+## What a fallen colossus leaves behind; the crypt draws a heap of bones instead.
+func _make_colossus_remains() -> Node2D:
+	return ColossusRemains.new()
 
 class ColossusRemains extends Node2D:
 	func _draw() -> void:

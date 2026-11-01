@@ -3,6 +3,7 @@
     "Chance that a defeated enemy drops something you can pick up. Kept low to begin with; unlocks raise 'drop luck', which multiplies every chance below.",
     "chances: per kill, rolled rarest first; an enemy drops at most one thing. 0.05 = 5%.",
     "enemy_multipliers: scales all chances for some enemies (elites drop more, swarming sporelings less). Keys not listed use 'default'.",
+    "fighter_active_item: separate elite and boss roll for the ten fighter active items. Picking one up fills the active slot and fully charges it.",
     "gold_amount: coins in a gold drop: min-max, plus per_floor for each floor deeper.",
     "luck_cap: the most drop luck can multiply chances by."
   ],
@@ -19,6 +20,22 @@
     "sporeling": 0.4,
     "bandit_cutthroat": 1.3,
     "bandit_knifethrower": 1.3
+  },
+  "fighter_active_item": {
+    "elite_chance": 0.35,
+    "boss_chance": 0.65,
+    "item_ids": [
+      "eldritch_bowstaff",
+      "demon_blade",
+      "storm_trident",
+      "valkyrian_sling",
+      "dragonbone_dagger",
+      "archon_crossbow",
+      "divine_hammer",
+      "grim_reaver",
+      "sentinel_shield",
+      "umbral_bow"
+    ]
   },
   "gold_amount": {
     "min": 1,

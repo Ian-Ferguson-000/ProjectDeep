@@ -1,0 +1,29 @@
+{
+  "how_to_edit": [
+    "Active items: one slot, used with Space (the special button). Isaac-style.",
+    "charge: \"rooms\" refills one pip per room you clear (rooms = how many pips); \"timer\" refills over seconds.",
+    "Picking one up gives it fully charged. Picking up another swaps: the old one is left on the pedestal.",
+    "classes: which adventurers can find it. Only warrior items exist so far.",
+    "icon: attack, defense, move, mode, special, spell, gold, potion (the relic icon set).",
+    "effect: the numbers for what it does; see scripts/slasher/slasher_active_effects.gd for each kind.",
+    "treasure_chance: how often a treasure room holds an active item instead of a relic. The first treasure room of a run always does while your slot is empty."
+  ],
+  "treasure_chance": 0.35,
+  "items": {
+    "shadow_step": {"name": "Shadow Step", "description": "Dash a short way in the direction you're moving, untouchable while you do.", "charge": "timer", "seconds": 3.5, "classes": ["warrior"], "icon": "move", "effect": {"kind": "dash", "distance": 190, "duration": 0.14, "invulnerable": 0.35}},
+    "whirlwind": {"name": "Whirlwind", "description": "Spin with your blade out, hitting everything around you three times as hard and throwing it back.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "attack", "effect": {"kind": "spin", "radius": 125, "damage_multiplier": 3.0, "knockback": 280}},
+    "earthsplitter": {"name": "Earthsplitter", "description": "Slam your sword down: a crack tears along the ground ahead, hurting and stunning everything in its path.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "special", "effect": {"kind": "line", "length": 380, "width": 54, "damage_multiplier": 2.5, "stun": 0.9}},
+    "war_horn": {"name": "War Horn", "description": "A battle cry: for 6 seconds you hit 50% harder and swing 40% faster, and nearby foes are knocked back.", "charge": "rooms", "rooms": 3, "classes": ["warrior"], "icon": "mode", "effect": {"kind": "rally", "seconds": 6.0, "damage_multiplier": 1.5, "haste": 1.4, "push_radius": 150, "push": 240}},
+    "iron_skin": {"name": "Iron Skin", "description": "Harden like iron: soak up the next two hearts of damage within 10 seconds.", "charge": "rooms", "rooms": 3, "classes": ["warrior"], "icon": "defense", "effect": {"kind": "ward", "amount": 8, "seconds": 10.0}},
+    "eldritch_bowstaff": {"name": "Eldritch Bowstaff", "description": "Sweep nearby foes with stacking curses. Cursed deaths dissolve into allied corrupted mini-beasts.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "spell", "effect": {"kind": "fighter_weapon", "weapon_id": "eldritch_bowstaff"}},
+    "demon_blade": {"name": "Demon Blade", "description": "Draw blood to frenzy, gaining damage and attack speed while taking double damage.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "attack", "effect": {"kind": "fighter_weapon", "weapon_id": "demon_blade"}},
+    "storm_trident": {"name": "Storm Trident", "description": "Throw into a targeted storm zone, pinning foes that take double damage until the trident is retrieved.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "special", "effect": {"kind": "fighter_weapon", "weapon_id": "storm_trident"}},
+    "valkyrian_sling": {"name": "Valkyrian Sling", "description": "Loose a returning shot that ricochets through the enemy line and can be parried back stronger.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "attack", "effect": {"kind": "fighter_weapon", "weapon_id": "valkyrian_sling"}},
+    "dragonbone_dagger": {"name": "Dragonbone Dagger", "description": "Carve a rapid crossing wound whose stacking armor reduction makes every cut bite deeper.", "charge": "timer", "seconds": 5.0, "classes": ["warrior"], "icon": "attack", "effect": {"kind": "fighter_weapon", "weapon_id": "dragonbone_dagger"}},
+    "archon_crossbow": {"name": "Archon Crossbow", "description": "Fire a metal skewer that pierces and drags foes, gaining damage for every creature speared.", "charge": "rooms", "rooms": 3, "classes": ["warrior"], "icon": "attack", "effect": {"kind": "fighter_weapon", "weapon_id": "archon_crossbow"}},
+    "divine_hammer": {"name": "Divine Hammer", "description": "Call down a radiant smash. Killing a foe refreshes it and repeats on the nearest enemy.", "charge": "rooms", "rooms": 3, "classes": ["warrior"], "icon": "special", "effect": {"kind": "fighter_weapon", "weapon_id": "divine_hammer"}},
+    "grim_reaver": {"name": "Grim Reaver", "description": "Reap a huge critical arc; kills begin a rampage with increasing critical chance.", "charge": "rooms", "rooms": 3, "classes": ["warrior"], "icon": "attack", "effect": {"kind": "fighter_weapon", "weapon_id": "grim_reaver"}},
+    "sentinel_shield": {"name": "Sentinel Shield", "description": "Bash the front line with a stunning impact that drives enemies far backward.", "charge": "timer", "seconds": 4.5, "classes": ["warrior"], "icon": "defense", "effect": {"kind": "fighter_weapon", "weapon_id": "sentinel_shield"}},
+    "umbral_bow": {"name": "Umbral Bow", "description": "Fire a shadow arrow that leashes and slows foes while stealing their speed.", "charge": "rooms", "rooms": 2, "classes": ["warrior"], "icon": "spell", "effect": {"kind": "fighter_weapon", "weapon_id": "umbral_bow"}}
+  }
+}

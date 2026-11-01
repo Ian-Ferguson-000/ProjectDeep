@@ -38,6 +38,8 @@ var dungeon_seconds: float = 0.0
 ## What happened this expedition, for bounties and unlocks:
 ## {kills:{family:n}, kills_total, potions, clears:[{dungeon,seconds,class_id,potions,holding}], unlocked:[names]}
 var run_stats: Dictionary = {}
+## The run's floor seed, so a resumed expedition rebuilds the same floors.
+var floor_seed: int = 0
 
 func begin(ids: Array[String], target_dungeon: String, is_tutorial: bool = false, run_id: int = 0, patron_id: String = "", selected_objective_id: String = "") -> void:
 	active = true; expedition_id = maxi(0, run_id); dungeon_id = target_dungeon; party_ids = ids.duplicate()
@@ -69,7 +71,7 @@ func continue_from_checkpoint() -> void:
 	extraction_available = false
 
 func to_dict() -> Dictionary:
-	return {"run_stats":run_stats.duplicate(true),"run_seconds":run_seconds,"dungeon_seconds":dungeon_seconds,"objective_id":objective_id,"patron_deity_id":patron_deity_id,"deployment_type":deployment_type,"departure_day":departure_day,"departure_shift_index":departure_shift_index,"due_shift_index":due_shift_index,"due_day":due_day,"retreat_policy":retreat_policy,"simulation_seed":simulation_seed,"risk_ratio":risk_ratio,"locked_loadouts":locked_loadouts,"secured_gold":secured_gold,"secured_essence":secured_essence,"active":active,"expedition_id":expedition_id,"dungeon_id":dungeon_id,"party_ids":party_ids.duplicate(),"member_runtime":member_runtime.duplicate(true),"floor":floor,"carried_gold":carried_gold,"carried_relic_essence":carried_relic_essence,"carried_contribution":carried_contribution,"carried_relics":carried_relics.duplicate(),"casualties":casualties.duplicate(),"extraction_available":extraction_available,"tutorial_run":tutorial_run,"tutorial_step":tutorial_step,"tutorial_controls_complete":tutorial_controls_complete,"tutorial_restart_count":tutorial_restart_count,"rewarded_checkpoints":rewarded_checkpoints.duplicate(true)}
+	return {"floor_seed":floor_seed,"run_stats":run_stats.duplicate(true),"run_seconds":run_seconds,"dungeon_seconds":dungeon_seconds,"objective_id":objective_id,"patron_deity_id":patron_deity_id,"deployment_type":deployment_type,"departure_day":departure_day,"departure_shift_index":departure_shift_index,"due_shift_index":due_shift_index,"due_day":due_day,"retreat_policy":retreat_policy,"simulation_seed":simulation_seed,"risk_ratio":risk_ratio,"locked_loadouts":locked_loadouts,"secured_gold":secured_gold,"secured_essence":secured_essence,"active":active,"expedition_id":expedition_id,"dungeon_id":dungeon_id,"party_ids":party_ids.duplicate(),"member_runtime":member_runtime.duplicate(true),"floor":floor,"carried_gold":carried_gold,"carried_relic_essence":carried_relic_essence,"carried_contribution":carried_contribution,"carried_relics":carried_relics.duplicate(),"casualties":casualties.duplicate(),"extraction_available":extraction_available,"tutorial_run":tutorial_run,"tutorial_step":tutorial_step,"tutorial_controls_complete":tutorial_controls_complete,"tutorial_restart_count":tutorial_restart_count,"rewarded_checkpoints":rewarded_checkpoints.duplicate(true)}
 
 static func from_dict(data: Dictionary) -> ExpeditionState:
 	var state := ExpeditionState.new();
@@ -86,7 +88,7 @@ static func from_dict(data: Dictionary) -> ExpeditionState:
 	state.secured_essence = data.get("secured_essence",0)
 	state.patron_deity_id = String(data.get("patron_deity_id", ""))
 	state.objective_id = String(data.get("objective_id", ""))
-	state.run_stats = Dictionary(data.get("run_stats",{})).duplicate(true); state.run_seconds = maxf(0.0,float(data.get("run_seconds",0.0))); state.dungeon_seconds = maxf(0.0,float(data.get("dungeon_seconds",0.0)))
+	state.floor_seed = int(data.get("floor_seed",0)); state.run_stats = Dictionary(data.get("run_stats",{})).duplicate(true); state.run_seconds = maxf(0.0,float(data.get("run_seconds",0.0))); state.dungeon_seconds = maxf(0.0,float(data.get("dungeon_seconds",0.0)))
 	state.active = bool(data.get("active", false)); state.expedition_id = maxi(0, int(data.get("expedition_id", 0))); state.dungeon_id = String(data.get("dungeon_id", ""))
 	state.party_ids.assign(data.get("party_ids", [])); state.member_runtime = Dictionary(data.get("member_runtime", {})).duplicate(true); state.floor = maxi(1, int(data.get("floor", 1)))
 	state.carried_gold = maxi(0, int(data.get("carried_gold", 0))); state.carried_relic_essence = maxi(0, int(data.get("carried_relic_essence", 0))); state.carried_contribution = maxi(0, int(data.get("carried_contribution", 0))); state.carried_relics.assign(data.get("carried_relics", [])); state.casualties.assign(data.get("casualties", []))

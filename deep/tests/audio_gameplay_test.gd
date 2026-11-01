@@ -74,9 +74,9 @@ func _run()->void:
 	# A successful purchase can leave stock available; it must still play coins.
 	audio.set_context("tavern")
 	var shop:Node=SHOP.new();var state:=RunState.new();state.gold=100;shop.setup(state,"tavern","tavern");root.add_child(shop)
-	heard.clear();audio.last_played.clear();shop._purchase("tavern_potion")
+	heard.clear();audio.last_played.clear();shop._purchase("tavern_key")
 	_expect(heard.has("coins"),"Successful purchase is silent while stock remains")
-	heard.clear();state.gold=0;shop._purchase("tavern_potion")
+	heard.clear();state.gold=0;shop._purchase("tavern_key")
 	_expect(heard.has("ui_error"),"Failed purchase is silent")
 	shop.queue_free();main.queue_free();await process_frame
 	# Allow short UI/outcome sounds to finish before shutting down the mixer.

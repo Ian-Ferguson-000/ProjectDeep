@@ -41,7 +41,7 @@ func _physics_process(delta:float)->void:
 	if age>=lifetime:_finish();return
 	if movement_pattern in ["curve","orbit"]:direction=direction.rotated(angular_velocity*delta)
 	if sprite!=null:sprite.rotation=direction.angle()
-	if visual_type in ["knife","spore"]:queue_redraw()
+	if visual_type in ["knife","spore","bone"]:queue_redraw()
 	var movement:=direction*speed*delta
 	var query:=PhysicsRayQueryParameters2D.create(global_position,global_position+movement,collision_mask_value)
 	if is_instance_valid(source):query.exclude.append(source.get_rid())
@@ -87,6 +87,13 @@ func _draw()->void:
 		# A soft glowing spore that pulses as it drifts.
 		var pulse:=1.0+sin(age*12.0)*0.15
 		draw_circle(Vector2.ZERO,12.0*pulse,Color(tint.r,tint.g,tint.b,0.3));draw_circle(Vector2.ZERO,8.5*pulse,Color(0.12,0.02,0.1,0.9));draw_circle(Vector2.ZERO,7.0*pulse,tint);draw_circle(Vector2(-2,-2),2.6,Color(1,1,0.9,0.9))
+		return
+	if visual_type=="bone":
+		# A tumbling thrown bone.
+		draw_set_transform(Vector2.ZERO,age*16.0)
+		draw_line(Vector2(-9,0),Vector2(9,0),Color("#3c3740"),6.0);draw_line(Vector2(-9,0),Vector2(9,0),tint,3.5)
+		for end in [-1.0,1.0]:draw_circle(Vector2(9.0*end,-2.5),3.2,tint);draw_circle(Vector2(9.0*end,2.5),3.2,tint)
+		draw_set_transform(Vector2.ZERO,0.0)
 		return
 	if visual_type=="knife":
 		# A spinning thrown dagger: steel blade, dark grip.

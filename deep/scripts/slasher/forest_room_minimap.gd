@@ -20,7 +20,7 @@ func setup(state: RunState) -> void:
 
 func _draw() -> void:
 	var panel := StyleBoxFlat.new()
-	panel.bg_color = Color("#0c120fd9"); panel.border_color = Color("#795238"); panel.set_border_width_all(2); panel.set_corner_radius_all(7)
+	panel.bg_color = Color("#0b080899"); panel.border_color = Color("#0b0808cc"); panel.set_border_width_all(2); panel.set_corner_radius_all(3)
 	draw_style_box(panel,Rect2(Vector2.ZERO,size))
 	if run_state == null: return
 	var rooms: Array = run_state.field_run.get("rooms",[])

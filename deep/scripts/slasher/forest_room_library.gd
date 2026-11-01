@@ -29,10 +29,17 @@ const PEACEFUL_ROLES := ["start","treasure","shop","rest"]
 const CAMP_SYMBOLS := {"F":["shop","rest"],"M":["shop"]}
 
 static var _cache: Dictionary = {}
+## Which dungeon's rooms are in use. The room scene sets it on every floor.
+static var dungeon_id := "forest"
 
-## Rooms come from the painted scenes in maps/forest/rooms/ (see MapLibrary).
+static func use_dungeon(id: String) -> void:
+	if id == dungeon_id: return
+	dungeon_id = id
+	_cache.clear()
+
+## Rooms come from the painted scenes in maps/<dungeon>/rooms/ (see MapLibrary).
 static func data() -> Dictionary:
-	if _cache.is_empty(): _cache = {"rooms":MapLibrary.rooms("forest")}
+	if _cache.is_empty(): _cache = {"rooms":MapLibrary.rooms(dungeon_id)}
 	return _cache
 
 static func templates() -> Array:

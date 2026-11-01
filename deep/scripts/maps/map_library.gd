@@ -12,7 +12,8 @@ const ROOT := "res://maps/"
 const CELL := 48.0
 const ART_LAYERS := ["Ground","Terrain","Paths","Detail"]
 const CANOPY_LAYERS := ["Canopy"]
-const KIND_SYMBOLS := {"water":"~","cobble":"c"}
+## Tile kinds that change how the game treats a cell. Water and pits block movement.
+const KIND_SYMBOLS := {"water":"~","pit":"~","cobble":"c"}
 ## Dungeon id -> folder under maps/. Folders use short names artists can find.
 const FOLDERS := {"forest":"forest","crypt":"crypt","balors_hell":"hell","ashen_farmstead":"farmstead","sunken_mine":"mine","ember_foundry":"foundry","moonlit_grove":"grove","abyssal_archive":"archive"}
 
@@ -113,7 +114,7 @@ static func _dirt_corners(layer: TileMapLayer, center: Vector2) -> int:
 static func problems(room: MapRoom) -> Array[String]:
 	var result: Array[String] = []
 	if room.size_cells.x < 7 or room.size_cells.y < 7 or room.size_cells.x % 2 == 0 or room.size_cells.y % 2 == 0:
-		return ["Size must be odd and at least 7x7 (standard 27x15, large 35x19)."]
+		return ["Size must be odd and at least 7x7 (forest 27x15 or 35x19, crypt 41x23 or 53x29)."]
 	if room.role_list().is_empty(): result.append("Tick at least one role in the Inspector (combat, shop, ...).")
 	for layer in ["Ground","Thicket","Markers"]:
 		if room.get_node_or_null(layer) == null: result.append("Missing the %s node. Start from maps/_templates/RoomTemplate.tscn." % layer)

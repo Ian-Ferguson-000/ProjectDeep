@@ -32,6 +32,18 @@ func _run() -> void:
 	for i in 20000: if FOREST_SCRIPT.roll_drop("wolf_vanguard",false,false,1.0,rng) == "relic": relics += 1
 	_expect(relics > 20 and relics < 160,"Relic drops should be rare (%d in 20000)" % relics)
 	_expect(FOREST_SCRIPT.roll_drop("wolfmaster",false,true,10.0,rng) == "","Bosses should not roll enemy drops")
+	var elite_weapon_hits:=0;var elite_weapons:Dictionary={}
+	for i in 20000:
+		var weapon_id:=FOREST_SCRIPT.roll_fighter_active_item(true,false,rng)
+		if not weapon_id.is_empty():elite_weapon_hits+=1;elite_weapons[weapon_id]=true
+	var elite_weapon_rate:=elite_weapon_hits/20000.0
+	_expect(elite_weapon_rate>0.32 and elite_weapon_rate<0.38,"Elite fighter active-item rate should be high (~35%%), got %.3f"%elite_weapon_rate)
+	_expect(elite_weapons.size()==10,"Elite drop pool must include all ten fighter active items")
+	var boss_weapon_hits:=0
+	for i in 20000:
+		if not FOREST_SCRIPT.roll_fighter_active_item(false,true,rng).is_empty():boss_weapon_hits+=1
+	_expect(boss_weapon_hits/20000.0>0.62 and boss_weapon_hits/20000.0<0.68,"Boss fighter active-item rate should be high (~65%%)")
+	_expect(FOREST_SCRIPT.roll_fighter_active_item(false,false,rng).is_empty(),"Ordinary enemies must not roll fighter active items")
 
 	# Locked items stay out of chests until their unlock is earned.
 	var c := _company()

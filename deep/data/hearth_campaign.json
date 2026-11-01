@@ -309,6 +309,66 @@
       "block": true,
       "block_limit": 5
     },
+    "eldritch_bowstaff": {
+      "name": "Eldritch Bowstaff", "slot": "weapon", "tier": 1, "rarity": "uncommon", "price": 82,
+      "description": "Curse strikes dissolve slain foes into corrupted mini-beasts, one for every curse stack.",
+      "modifiers": {"attack_power": 2}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "crypt", "abyssal_archive"], "class_id": "warrior", "damage": 3, "block": false, "block_limit": 0
+    },
+    "demon_blade": {
+      "name": "Demon Blade", "slot": "weapon", "tier": 2, "rarity": "rare", "price": 175,
+      "description": "Drawing blood triggers Frenzy: attacks become faster and stronger, but incoming damage is doubled.",
+      "modifiers": {"attack_power": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "balors_hell"], "class_id": "warrior", "damage": 4, "block": false, "block_limit": 0
+    },
+    "storm_trident": {
+      "name": "Storm Trident", "slot": "weapon", "tier": 2, "rarity": "rare", "price": 168,
+      "description": "Throw into a targeted storm zone to pin creatures and make them take double damage; retrieve it to throw again.",
+      "modifiers": {"attack_power": 2, "speed": 1}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "sunken_mine"], "class_id": "warrior", "damage": 4, "block": false, "block_limit": 0
+    },
+    "valkyrian_sling": {
+      "name": "Valkyrian Sling", "slot": "weapon", "tier": 2, "rarity": "rare", "price": 158,
+      "description": "A ricocheting shot returns to its wielder and can be parried back with another stack of attack damage.",
+      "modifiers": {"dexterity": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "moonlit_grove"], "class_id": "warrior", "damage": 4, "block": false, "block_limit": 0
+    },
+    "dragonbone_dagger": {
+      "name": "Dragonbone Dagger", "slot": "weapon", "tier": 1, "rarity": "uncommon", "price": 88,
+      "description": "Every cut deepens a refreshing wound that strips armor and increases the damage of later strikes.",
+      "modifiers": {"attack_power": 1, "dexterity": 2}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "ashen_farmstead"], "class_id": "warrior", "damage": 3, "block": false, "block_limit": 0
+    },
+    "archon_crossbow": {
+      "name": "Archon Crossbow", "slot": "weapon", "tier": 3, "rarity": "legendary", "price": 335,
+      "description": "Heavy bolts pierce and drag enemies, gaining damage for each creature already speared.",
+      "modifiers": {"attack_power": 4}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "ember_foundry"], "class_id": "warrior", "damage": 5, "block": false, "block_limit": 0
+    },
+    "divine_hammer": {
+      "name": "Divine Hammer", "slot": "weapon", "tier": 3, "rarity": "legendary", "price": 350,
+      "description": "Hits release radiant splash; a killing smite refreshes the attack and repeats upon the nearest foe.",
+      "modifiers": {"attack_power": 3, "max_health": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "crypt"], "class_id": "warrior", "damage": 5, "block": false, "block_limit": 0
+    },
+    "grim_reaver": {
+      "name": "Grim Reaver", "slot": "weapon", "tier": 3, "rarity": "legendary", "price": 345,
+      "description": "Wide scythe arcs critically strike often; kills stack a rampage that raises critical chance further.",
+      "modifiers": {"attack_power": 4}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "abyssal_archive"], "class_id": "warrior", "damage": 5, "block": false, "block_limit": 0
+    },
+    "sentinel_shield": {
+      "name": "Sentinel Shield", "slot": "weapon", "tier": 1, "rarity": "uncommon", "price": 76,
+      "description": "A controlling shield whose Sentinel Bash drives enemies far back from the line.",
+      "modifiers": {"max_health": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "forest"], "class_id": "warrior", "damage": 3, "block": true, "block_limit": 4
+    },
+    "umbral_bow": {
+      "name": "Umbral Bow", "slot": "weapon", "tier": 2, "rarity": "rare", "price": 172,
+      "description": "Shadow-slick arrows leash and slow enemy shadows, stealing their speed for the wielder.",
+      "modifiers": {"dexterity": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": ["merchant", "abyssal_archive"], "class_id": "warrior", "damage": 4, "block": false, "block_limit": 0
+    },
     "magic_missile_shield": {
       "name": "Missile Focus",
       "slot": "weapon",

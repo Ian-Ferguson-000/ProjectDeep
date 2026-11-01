@@ -8,7 +8,7 @@ const MERCHANT_PANEL:=preload("res://scripts/ui/merchant_shop_panel.gd")
 const CODEX:=preload("res://scripts/slasher/slasher_codex_menu.gd")
 const BREAKABLE_PROP:=preload("res://scripts/slasher/slasher_breakable_prop.gd")
 const RELIC_MODAL:=preload("res://scripts/slasher/slasher_relic_choice_modal.gd")
-const RESOURCE_HUD_FRAME:=preload("res://assets/slasher/ui/slasher_resource_hud_frame.png")
+const DUNGEON_HUD:=preload("res://scripts/ui/dungeon_hud.gd")
 const GOLD_UI_ICON:=preload("res://assets/slasher/ui/resource_gold.svg")
 const KEY_UI_ICON:=preload("res://assets/slasher/ui/resource_key.svg")
 const POTION_UI_ICON:=preload("res://assets/slasher/ui/resource_potion.svg")
@@ -59,6 +59,7 @@ var resource_value_label:Label
 var gold_value_label:Label
 var key_value_label:Label
 var potion_value_label:Label
+var dungeon_hud:DungeonHud
 var merchant_shop_panel:MerchantShopPanel
 var codex:SlasherCodexMenu
 var relic_modal:SlasherRelicChoiceModal
@@ -131,7 +132,7 @@ func _build_floor()->void:
 	layout=authored_layout if not authored_layout.is_empty() else SlasherForestGenerator.generate(run_state.get_current_floor_seed(),run_state.current_floor,run_state.active_dungeon_id)
 	if run_state.slasher_merchant_interlude:layout=_merchant_interlude_layout()
 	pathfinder=GRID_PATHFINDER.new().configure(Dictionary(layout.get("cells",{})),Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
-	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();player.reset_combo_progress();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade()
+	active_summons.clear();_build_world();_install_authored_visuals();_spawn_player();player.reset_combo_progress();_spawn_enemies();_spawn_loot();_build_hud();_refresh_hud();_entry_fade();_show_floor_banner()
 	if player.item_runtime:player.item_runtime.floor_entered()
 	if not run_state.slasher_merchant_interlude and run_state.current_floor==1 and not run_state.starter_reward_claimed and (not _is_tutorial_expedition() or run_state.campaign.expedition.tutorial_controls_complete):call_deferred("_offer_starter_relic")
 
@@ -315,6 +316,19 @@ func _spawn_enemies()->void:
 		_spawn_enemy(_world(spawn),visual_id,behavior_id,bool(spawn_record.get("is_boss",false)),bool(spawn_record.get("is_mini_boss",false)));spawn_index+=1
 		if behavior_id=="sporeling":_spawn_sporeling_cluster(_world(spawn))
 	exit_open=enemies_remaining==0
+	_attach_boss_bar()
+
+## One big health bar, top centre, for the room's boss (or, failing that, its
+## guardian). Colossi bring their own.
+func _attach_boss_bar()->void:
+	var pick:SlasherEnemy=null
+	for node in actor_layer.get_children():
+		if not node is SlasherEnemy or node is SlasherColossus or node.dead:continue
+		if node.boss and (pick==null or not pick.boss):pick=node
+		elif node.mini_boss and pick==null:pick=node
+	if pick==null or pick.get_node_or_null("BossBar")!=null:return
+	var entry:Dictionary=GameBalance.get_slasher_journal_entry(pick.visual_id)
+	pick.add_child(SlasherBossBar.new().setup(pick,String(entry.get("name",pick.visual_id.capitalize())),[],Color("#c0392b") if pick.boss else Color("#d8743a")))
 	if exit_open:_reveal_secret_door()
 
 ## Sporelings sleep in clusters: extra caps around the first one.
@@ -368,7 +382,7 @@ func _spawn_loot()->void:
 	loot_nodes.clear();var loot_index:=0
 	for spawn_value:Variant in layout.loot_spawns:
 		var spawn:Vector2i=spawn_value;var area:=Area2D.new();area.name="ForestCache";area.position=_world(spawn);var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape)
-		var kind:=String(["gold","potion","key"][loot_index%3]);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),18));actor_layer.add_child(area);loot_nodes.append(area);area.set_meta("kind",kind);loot_index+=1
+		var kind:=String((["gold","potion","key"] if RunState.potions_drop() else ["gold","gold","key"])[loot_index%3]);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),18));actor_layer.add_child(area);loot_nodes.append(area);area.set_meta("kind",kind);loot_index+=1
 
 func _process(delta:float)->void:
 	if not is_instance_valid(player):return
@@ -388,12 +402,15 @@ func _process(delta:float)->void:
 		_cycle_party_member();return
 	# Modal controls consume Escape themselves. Never let the same keypress fall through to abandon.
 	if modal_open or codex_open:return
+	_process_active_item(delta)
 	var interaction_used:=false;var nearby_chest:SlasherBreakableProp=_nearby_chest()
 	if nearby_chest!=null:
-		_show_message("Locked chest · find a key." if run_state.keys<=0 else "Chest ready · press E to unlock and open.",0.15)
+		var keyless:=bool(nearby_chest.get_meta("no_key",false))
+		_show_message("A hidden chest · press E to open." if keyless else ("Locked chest · find a key." if run_state.keys<=0 else "Chest ready · press E to unlock and open."),0.15)
 		if Input.is_action_just_pressed("interact"):
 			interaction_used=true;player.basic_mouse_held=false
-			if run_state.keys<=0:_show_message("The chest is locked. Find a key.")
+			if keyless:nearby_chest.open_chest();_show_message("The hidden chest creaks open.")
+			elif run_state.keys<=0:_show_message("The chest is locked. Find a key.")
 			else:run_state.keys-=1;nearby_chest.open_chest();_show_message("The key turns. The chest opens.")
 	for loot in loot_nodes.duplicate():
 		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<30:_collect_loot(loot);loot_nodes.erase(loot)
@@ -565,6 +582,18 @@ func _collect_loot(loot:Area2D)->void:
 			if run_state.add_consumable("healing_potion"):AudioCue.play_from(loot,"pickup");_show_message("Healing potion collected.")
 			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
 		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
+		"active_item":
+			var item_id:=String(loot.get_meta("item_id",""));var entry:=ActiveItems.item(item_id)
+			if entry.is_empty():_show_message("The active item crumbles to dust.")
+			else:
+				var replaced:=ActiveItems.give(run_state,item_id);AudioCue.play_from(loot,"reward")
+				var suffix:=""
+				if not replaced.is_empty():
+					var away:Vector2=player.aim_direction.normalized() if not player.aim_direction.is_zero_approx() else Vector2.DOWN
+					_spawn_fighter_active_drop(loot.global_position-away*46.0,replaced);suffix=" · left %s behind"%String(ActiveItems.item(replaced).get("name",replaced))
+				_show_message("Active item acquired: %s%s."%[String(entry.name),suffix],4.0)
+				if dungeon_hud!=null:dungeon_hud.show_pickup(String(entry.name).to_upper(),String(entry.get("description","")))
+				_refresh_active_hud()
 		"relic":
 			var choices:Array[String]=run_state.generate_slasher_chest_choices(run_state.current_floor,"enemy_relic_%d"%Time.get_ticks_usec())
 			if choices.is_empty():_show_message("The relic crumbles to dust.")
@@ -624,11 +653,24 @@ static func roll_drop(enemy_key:String,elite:bool,boss:bool,luck:float,rng:Rando
 		if rng.randf()<float(chances[kind])*scale:return String(kind)
 	return ""
 
+## Elites and bosses can drop the fighter's authored weapons directly into the
+## dungeon active-item loop. Bosses use the higher configured chance.
+static func roll_fighter_active_item(is_elite:bool,is_boss:bool,rng:RandomNumberGenerator)->String:
+	if not is_elite and not is_boss:return ""
+	var rules:Dictionary=drop_table().get("fighter_active_item",{})
+	var pool:Array=rules.get("item_ids",[])
+	var chance:=float(rules.get("boss_chance",0.65) if is_boss else rules.get("elite_chance",0.35))
+	if pool.is_empty() or rng.randf()>=chance:return ""
+	return String(pool[rng.randi_range(0,pool.size()-1)])
+
 func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	if _is_tutorial_expedition() or not is_instance_valid(enemy):return
+	var active_item_id:=roll_fighter_active_item(enemy.elite or enemy.mini_boss,enemy.boss,drop_rng())
+	if not active_item_id.is_empty():_spawn_fighter_active_drop(enemy.global_position,active_item_id);return
 	var key:=String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)
 	var kind:=roll_drop(key,enemy.elite or enemy.mini_boss,enemy.boss,Unlocks.drop_luck(run_state.campaign),drop_rng())
 	if kind.is_empty():return
+	if kind=="healing_potion" and not RunState.potions_drop():kind="gold"
 	var spot:=enemy.global_position
 	match kind:
 		"gold":
@@ -650,6 +692,12 @@ func _spawn_relic_drop(world_position:Vector2)->void:
 	var gem:=Polygon2D.new();gem.polygon=PackedVector2Array([Vector2(0,-22),Vector2(9,-10),Vector2(0,2),Vector2(-9,-10)]);gem.color=Color("#d38cff");area.add_child(gem)
 	var shine:=Polygon2D.new();shine.polygon=PackedVector2Array([Vector2(0,-19),Vector2(4,-12),Vector2(0,-6),Vector2(-3,-12)]);shine.color=Color("#f6e2ff");area.add_child(shine)
 	area.add_child(_glow(Color("#c77dff"),20));area.set_meta("kind","relic");actor_layer.add_child(area);loot_nodes.append(area)
+
+func _spawn_fighter_active_drop(world_position:Vector2,item_id:String)->void:
+	var area:=Area2D.new();area.name="FighterActiveItemDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=18;shape.shape=circle;area.add_child(shape)
+	var blade:=Polygon2D.new();blade.polygon=PackedVector2Array([Vector2(-4,-28),Vector2(5,-28),Vector2(8,6),Vector2(0,16),Vector2(-8,6)]);blade.color=Color("#f4d27a");blade.rotation=0.65;area.add_child(blade)
+	var guard:=Polygon2D.new();guard.polygon=PackedVector2Array([Vector2(-13,-1),Vector2(13,-1),Vector2(13,4),Vector2(-13,4)]);guard.color=Color("#8b5bd1");guard.rotation=0.65;area.add_child(guard)
+	area.add_child(_glow(Color("#efb85f"),26));area.set_meta("kind","active_item");area.set_meta("item_id",item_id);actor_layer.add_child(area);loot_nodes.append(area)
 
 func _spawn_pickup_drop(kind:String,world_position:Vector2)->void:
 	var area:=Area2D.new();area.name="Chest%sDrop"%kind.capitalize();area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape);var sprite:=SlasherForestArt.make_sprite(kind);sprite.position=Vector2(0,-8);area.add_child(sprite);area.add_child(_glow(Color("#f3d366"),16));area.set_meta("kind",kind);actor_layer.add_child(area);loot_nodes.append(area)
@@ -681,19 +729,30 @@ func _refresh_clock_label()->void:
 
 func _build_hud()->void:
 	var canvas:=CanvasLayer.new();canvas.name="HUD";canvas.layer=10;add_child(canvas)
-	_build_party_strip(canvas)
-	var panel:=PanelContainer.new();panel.set_anchors_preset(Control.PRESET_TOP_WIDE);panel.offset_left=340;panel.offset_top=18;panel.offset_right=-340;panel.offset_bottom=98;panel.add_theme_stylebox_override("panel",_panel_style(Color("#101c18e8"),Color("#557c54")));canvas.add_child(panel)
-	var status:=VBoxContainer.new();status.add_theme_constant_override("separation",2);panel.add_child(status)
-	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;status.add_child(objective_label)
-	combo_label=_label(Vector2.ZERO,Vector2(360,22),14);combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_color_override("font_color",Color("#e5bf68"));status.add_child(combo_label)
+	# Isaac-style: hearts, coins and keys top left, the map top right, nothing else
+	# until it matters. See scripts/ui/dungeon_hud.gd.
+	dungeon_hud=DUNGEON_HUD.new();canvas.add_child(dungeon_hud)
+	if GameBalance.max_party_size()>1:_build_party_strip(canvas);dungeon_hud.set_items_top(108)
 	_build_resource_hud(canvas)
-	clock_label=Label.new();clock_label.name="RunClock";clock_label.set_anchors_preset(Control.PRESET_CENTER_TOP);clock_label.offset_left=-220;clock_label.offset_right=220;clock_label.offset_top=100;clock_label.offset_bottom=124;clock_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;clock_label.add_theme_font_size_override("font_size",15);clock_label.add_theme_color_override("font_color",Color("#f0e2b8"));clock_label.add_theme_color_override("font_outline_color",Color("#10120e"));clock_label.add_theme_constant_override("outline_size",5);canvas.add_child(clock_label)
+	# Kept for the room/floor text other code and tests read; the floor banner shows it now.
+	objective_label=_label(Vector2.ZERO,Vector2(360,26),17);objective_label.name="Objective";objective_label.visible=false;canvas.add_child(objective_label)
+	clock_label=Label.new();clock_label.name="RunClock";clock_label.set_anchors_preset(Control.PRESET_CENTER_TOP);clock_label.set_anchors_preset(Control.PRESET_TOP_RIGHT);clock_label.offset_left=-340;clock_label.offset_right=-22;clock_label.offset_top=148;clock_label.offset_bottom=170;clock_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;clock_label.add_theme_font_size_override("font_size",16);clock_label.add_theme_color_override("font_color",Color("#f0e2b8"));clock_label.add_theme_color_override("font_outline_color",Color("#0b0808"));clock_label.add_theme_constant_override("outline_size",7);canvas.add_child(clock_label)
 	clock_label.visible=run_state.campaign!=null and not _is_tutorial_expedition()
-	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));canvas.add_child(message_label)
+	combo_label=Label.new();combo_label.name="Combo";combo_label.set_anchors_preset(Control.PRESET_CENTER_TOP);combo_label.offset_left=-220;combo_label.offset_right=220;combo_label.offset_top=64;combo_label.offset_bottom=86;combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_font_size_override("font_size",15);combo_label.add_theme_color_override("font_color",Color("#e5bf68"));combo_label.add_theme_color_override("font_outline_color",Color("#0b0808"));combo_label.add_theme_constant_override("outline_size",6);canvas.add_child(combo_label)
+	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));message_label.add_theme_color_override("font_outline_color",Color("#0b0808"));message_label.add_theme_constant_override("outline_size",6);canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)
 	relic_modal=RELIC_MODAL.new();relic_modal.name="SlasherRelicChoice";relic_modal.relic_selected.connect(_claim_relic);canvas.add_child(relic_modal)
 	if _is_tutorial_expedition() and not run_state.campaign.expedition.tutorial_controls_complete:_build_control_tutorial()
+
+## "VERDANT FOREST" / "Floor 2 of 5" across the top when a floor begins.
+func _show_floor_banner()->void:
+	if dungeon_hud==null or _is_tutorial_expedition() or run_state.slasher_merchant_interlude:return
+	var dungeon_name:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Dungeon"))
+	var depth:="Endless · Cycle %d · Floor %d"%[run_state.get_slasher_cycle_number(),run_state.current_floor] if run_state.slasher_endless_mode else "Floor %d of %d"%[run_state.current_floor,run_state.max_floors]
+	if bool(layout.get("is_boss_floor",false)):depth+="  ·  the guardian waits"
+	elif bool(layout.get("is_elite_floor",false)):depth+="  ·  an elite guards the gate"
+	dungeon_hud.show_floor_banner(dungeon_name.to_upper(),depth)
 
 func _refresh_hud()->void:
 	if not is_instance_valid(player) or objective_label==null:return
@@ -703,7 +762,41 @@ func _refresh_hud()->void:
 	var dungeon_name:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("name","Dungeon"));objective_label.text="%s  ·  %s  ·  %s"%[dungeon_name.to_upper(),depth_text,encounter_text]
 	health_bar.max_value=maxi(1,player.max_health);health_bar.value=player.health;health_value_label.text="%d / %d"%[player.health,player.max_health]
 	resource_bar.max_value=maxi(1,run_state.get_class_resource_max());resource_bar.value=run_state.class_resource;resource_value_label.text="%s  %d / %d"%[run_state.get_class_resource_name(),run_state.class_resource,run_state.get_class_resource_max()]
-	gold_value_label.text=str(run_state.gold);key_value_label.text=str(run_state.keys);potion_value_label.text=str(run_state.get_consumables().count("healing_potion"))
+	var potions:=run_state.get_consumables().count("healing_potion")
+	gold_value_label.text=str(run_state.gold);key_value_label.text=str(run_state.keys);potion_value_label.text=str(potions)
+	_refresh_dungeon_hud()
+
+## The active item slot: timer items recharge while you play; Space uses a charged item.
+func _process_active_item(delta:float)->void:
+	if _is_tutorial_expedition():return
+	ActiveItems.tick(run_state,delta)
+	if Input.is_action_just_pressed("slasher_special") and not player.input_locked and player.health>0:use_active_item()
+	_refresh_active_hud()
+
+func use_active_item()->bool:
+	var id:=ActiveItems.held(run_state)
+	if id.is_empty():return false
+	if not ActiveItems.is_ready(run_state):
+		_show_message("%s is still charging."%String(ActiveItems.item(id).get("name","The item")),0.8);AudioCue.play_from(self,"block");return false
+	if not SlasherActiveEffects.use(player,id):return false
+	ActiveItems.spend(run_state);_refresh_active_hud();return true
+
+func _refresh_active_hud()->void:
+	if dungeon_hud==null:return
+	var id:=ActiveItems.held(run_state)
+	dungeon_hud.show_active(id,ActiveItems.charge(run_state),ActiveItems.max_charge(id),ActiveItems.uses_timer(id))
+
+func _refresh_dungeon_hud()->void:
+	if dungeon_hud==null or not is_instance_valid(player):return
+	var potions:=run_state.get_consumables().count("healing_potion")
+	dungeon_hud.show_state(player.health,player.max_health,run_state.gold,run_state.keys,potions)
+	# Specials are off for now, so the resource pips only show when they come back.
+	var picked:Array=[]
+	for entry in run_state.inventory_items:picked.append(entry)
+	dungeon_hud.show_items(picked)
+	_refresh_active_hud()
+	dungeon_hud.show_resource_pips(run_state.class_resource,run_state.get_class_resource_max(),_class_resource_color(),GameBalance.action_enabled("special"))
+	gold_value_label.text="%02d"%run_state.gold;key_value_label.text="%02d"%run_state.keys;potion_value_label.text=str(potions)
 
 func _build_party_strip(canvas:CanvasLayer)->void:
 	var panel:=PanelContainer.new();panel.name="PartyStripPanel";panel.position=Vector2(18,12);panel.custom_minimum_size=Vector2(300,84);panel.add_theme_stylebox_override("panel",_panel_style(Color("#101713e8"),Color("#80602d")));canvas.add_child(panel)
@@ -732,19 +825,14 @@ func _flash_fallen_portrait(character_id:String)->void:
 	if not is_instance_valid(portrait):_rebuild_party_strip();return
 	portrait.update_state(0,maxi(1,portrait.maximum),false);var tween:=create_tween();tween.tween_property(portrait,"modulate",Color(1.0,0.22,0.18,0.9),0.16);tween.tween_interval(0.35);tween.tween_property(portrait,"modulate:a",0.0,0.28);tween.tween_callback(_rebuild_party_strip)
 
+## The old bars, kept hidden: other code reads and writes them. What the player
+## sees is DungeonHud.
 func _build_resource_hud(canvas:CanvasLayer)->void:
-	var hud:=Control.new();hud.name="ResourceHUD";hud.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT);hud.position=Vector2(-358,-385);hud.size=Vector2(340,367);hud.mouse_filter=Control.MOUSE_FILTER_IGNORE;canvas.add_child(hud)
-	var frame:=TextureRect.new();frame.name="Ornament";frame.texture=RESOURCE_HUD_FRAME;frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);frame.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;frame.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;frame.mouse_filter=Control.MOUSE_FILTER_IGNORE;hud.add_child(frame)
-	gold_value_label=_add_resource_counter(hud,GOLD_UI_ICON,Vector2(253,39),"Gold")
-	key_value_label=_add_resource_counter(hud,KEY_UI_ICON,Vector2(253,114),"Keys")
-	potion_value_label=_add_resource_counter(hud,POTION_UI_ICON,Vector2(253,186),"Potions")
-	health_bar=_add_hud_bar(hud,Vector2(66,270),Vector2(198,24),Color("#bd1724"),Color("#ff5960"))
-	resource_bar=_add_hud_bar(hud,Vector2(66,321),Vector2(198,24),_class_resource_color(),Color("#6ec8ff"))
-	health_value_label=_bar_value_label(hud,Vector2(66,266),Vector2(198,32));resource_value_label=_bar_value_label(hud,Vector2(66,317),Vector2(198,32))
-
-func _add_resource_counter(parent:Control,texture:Texture2D,position_value:Vector2,tooltip:String)->Label:
-	var icon:=TextureRect.new();icon.texture=texture;icon.position=position_value;icon.size=Vector2(48,48);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.tooltip_text=tooltip;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.z_index=5;parent.add_child(icon)
-	var value:=_label(position_value+Vector2(-70,8),Vector2(66,32),18);value.size=Vector2(66,32);value.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;value.vertical_alignment=VERTICAL_ALIGNMENT_CENTER;value.add_theme_color_override("font_outline_color",Color("#080b10"));value.add_theme_constant_override("outline_size",5);parent.add_child(value);return value
+	var hud:=Control.new();hud.name="ResourceHUD";hud.set_anchors_preset(Control.PRESET_TOP_LEFT);hud.visible=false;hud.mouse_filter=Control.MOUSE_FILTER_IGNORE;canvas.add_child(hud)
+	health_bar=_add_hud_bar(hud,Vector2.ZERO,Vector2(198,24),Color("#bd1724"),Color("#ff5960"))
+	resource_bar=_add_hud_bar(hud,Vector2(0,30),Vector2(198,24),_class_resource_color(),Color("#6ec8ff"))
+	health_value_label=_bar_value_label(hud,Vector2.ZERO,Vector2(198,32));resource_value_label=_bar_value_label(hud,Vector2(0,30),Vector2(198,32))
+	gold_value_label=dungeon_hud.gold_label;key_value_label=dungeon_hud.key_label;potion_value_label=dungeon_hud.potion_label
 
 func _add_hud_bar(parent:Control,position_value:Vector2,size_value:Vector2,fill_color:Color,highlight:Color)->ProgressBar:
 	var bar:=ProgressBar.new();bar.position=position_value;bar.size=size_value;bar.show_percentage=false;bar.mouse_filter=Control.MOUSE_FILTER_IGNORE

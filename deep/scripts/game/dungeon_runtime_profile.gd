@@ -2,7 +2,7 @@ extends RefCounted
 class_name DungeonRuntimeProfile
 
 const PROFILES:Dictionary={
-	"forest":{"theme":"briar","wall_profile":"stone_wall","underlay":"07100d","hazards":["thorns","snare_traps"],"slasher_enemies":["sporeling","bandit_cutthroat","thornback_boar","bandit_knifethrower","briar_guardian","spore_beast","bandit_cutthroat"],"boss":"wolfmaster"},
+	"forest":{"theme":"briar","wall_profile":"stone_wall","underlay":"07100d","hazards":["thorns","snare_traps"],"slasher_enemies":["sporeling","bandit_cutthroat","thornback_boar","bandit_knifethrower","spore_beast","bandit_cutthroat"],"boss":"wolfmaster"},
 	"ashen_farmstead":{"theme":"ashfield","wall_profile":"stone_wall","underlay":"1a0d08","hazards":["scorched_zones","possessed_crops"],"slasher_enemies":["ash_rat","possessed_scarecrow","ember_crow","blighted_farmhand"],"boss":"harvest_wretch"},
 	"crypt":{"theme":"ossuary","wall_profile":"stone_wall","underlay":"090811","hazards":["bone_spikes","soulflame","curse_sigils"],"slasher_enemies":["skeletal_archer","grave_acolyte","soul_wisp","skeleton"],"boss":"crypt_boss"},
 	"balors_hell":{"theme":"inferno","wall_profile":"hell_wall","underlay":"170301","hazards":["flame_trails","eruptions","burning_ground"],"slasher_enemies":["infernal_caster","rift_stalker","hellcharger","cinder_bomber"],"boss":"balor"},

@@ -9,9 +9,14 @@ func _run()->void:
 	var failures:Array[String]=[];var state:=RunState.new();state.set_class("warrior");state.start_new_run(GearData.create("crypt_test","Crypt Test",3,true,1,"","","warrior"), "crypt")
 	var floor_seven:=SlasherForestGenerator.generate(7717,5,"crypt");var floor_seven_copy:=SlasherForestGenerator.generate(7717,5,"crypt");_expect(bool(floor_seven.is_boss_floor) and not bool(floor_seven.is_elite_floor) and floor_seven==floor_seven_copy,"Crypt floor five is not a deterministic boss floor",failures)
 	var floor_four:=SlasherForestGenerator.generate(4404,3,"crypt");_expect(bool(floor_four.is_elite_floor) and not bool(floor_four.is_boss_floor),"Crypt floor three is not the elite gauntlet",failures)
-	var scene:=CRYPT.instantiate();scene.setup(null,state);root.add_child(scene);await process_frame;await process_frame
+	var scene:=CRYPT.instantiate();scene._ensure_designer_controls();scene.setup(null,state);root.add_child(scene);await process_frame;await process_frame
 	_expect(scene.get_script().resource_path.ends_with("slasher_crypt.gd"),"Crypt did not use its dedicated runtime",failures)
-	_expect(scene.ground_layer.get_child_count()==Dictionary(scene.layout.cells).size(),"Stone floor did not cover every walkable Crypt cell",failures)
+	# The crypt plays as painted rooms now; hazards wait in the fighting rooms.
+	var fight:=-1
+	for value in state.field_run.rooms:
+		if String(value.role)=="combat":fight=int(value.id);break
+	state.field_run["current_room"]=fight;state.field_run["previous_room"]=-1;scene._build_floor();await process_frame;await process_frame
+	_expect(scene.rooms_active and scene.ground_layer.get_child_count()>0,"Crypt room has no painted stone floor",failures)
 	_expect(not scene.crypt_hazards.is_empty() and scene.crypt_hazards[0] is SlasherCryptHazard,"Crypt hazards were not installed",failures)
 	var archer:=CRYPT_ENEMY.new();archer.configure(4,false,"skeletal_archer",false,"skeletal_archer");scene.actor_layer.add_child(archer);archer.global_position=scene.player.global_position+Vector2(220,0);archer.target=scene.player;archer.pathfinder=scene.pathfinder;archer.activation_delay=0.0;archer.attack_cooldown=0.0;archer._begin_ranged_windup(float(archer.behavior_tuning.telegraph));_expect(archer.ai_state=="ranged_windup" and archer.state_timer>0.0,"Skeletal archer did not expose a telegraphed ranged attack",failures)
 	var boss:=CRYPT_ENEMY.new();boss.configure(7,true,"crypt_boss",false,"crypt_lord");scene.actor_layer.add_child(boss);boss.target=scene.player;boss.pathfinder=scene.pathfinder;boss.activation_delay=0.0;boss.health=roundi(boss.max_health*0.69);boss._process_crypt_lord();_expect(boss.boss_phase==1 and boss.transition_time>0.0,"Crypt Lord phase two transition failed",failures);boss.transition_time=0.0;boss.health=roundi(boss.max_health*0.34);boss._process_crypt_lord();_expect(boss.boss_phase==2,"Crypt Lord phase three transition failed",failures)
