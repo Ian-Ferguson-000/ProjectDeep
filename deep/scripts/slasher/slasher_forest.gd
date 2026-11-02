@@ -62,6 +62,7 @@ var potion_value_label:Label
 var dungeon_hud:DungeonHud
 var merchant_shop_panel:MerchantShopPanel
 var codex:SlasherCodexMenu
+var pause_menu:GamePauseMenu
 var relic_modal:SlasherRelicChoiceModal
 var relic_choice_source:=""
 var tutorial_canvas:CanvasLayer
@@ -742,6 +743,8 @@ func _build_hud()->void:
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));message_label.add_theme_color_override("font_outline_color",Color("#0b0808"));message_label.add_theme_constant_override("outline_size",6);canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)
+	pause_menu=GamePauseMenu.new().setup(controller,run_state,"dungeon");pause_menu.can_open=_can_open_pause_menu;pause_menu.open_codex=_open_codex.bind("system")
+	add_child(pause_menu)
 	relic_modal=RELIC_MODAL.new();relic_modal.name="SlasherRelicChoice";relic_modal.relic_selected.connect(_claim_relic);canvas.add_child(relic_modal)
 	if _is_tutorial_expedition() and not run_state.campaign.expedition.tutorial_controls_complete:_build_control_tutorial()
 
@@ -896,6 +899,10 @@ func _on_tutorial_completed()->void:
 
 func _is_tutorial_expedition()->bool:
 	return run_state!=null and run_state.campaign!=null and run_state.campaign.expedition.active and run_state.campaign.expedition.tutorial_run
+
+## Esc opens the pause menu only when no shop, relic choice or codex is up.
+func _can_open_pause_menu()->bool:
+	return is_instance_valid(player) and not (codex!=null and codex.visible) and not (merchant_shop_panel!=null and merchant_shop_panel.visible) and not (relic_modal!=null and relic_modal.visible)
 
 func _open_codex(input_source:String="system")->void:
 	if codex==null or merchant_shop_panel.visible:return

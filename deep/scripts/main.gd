@@ -113,6 +113,13 @@ func show_start_screen() -> void:
 	start_screen.setup(self)
 	add_child(start_screen)
 
+## From the pause menu: back to the title screen to pick a save. Saving is done
+## by the caller (the tavern saves; the dungeon saved on entering the floor).
+func return_to_title() -> void:
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	show_start_screen()
+
 func begin_game() -> void:
 	if campaign==null:return
 	if campaign.is_tutorial_complete():
@@ -417,6 +424,7 @@ func _clear_scene() -> void:
 		current_scene = null
 
 func _ensure_input_actions() -> void:
+	GamePauseMenu.ensure_action()
 	_add_key_action("move_up", [KEY_W, KEY_UP])
 	_add_key_action("move_down", [KEY_S, KEY_DOWN])
 	_add_key_action("move_left", [KEY_A, KEY_LEFT])

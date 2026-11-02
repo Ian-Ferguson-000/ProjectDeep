@@ -95,6 +95,7 @@ var dismissal_confirmation:ConfirmationDialog
 var pending_dismissal_id:=""
 var activity_controller:TavernActivityController
 var departure_running:=false
+var pause_menu: GamePauseMenu
 var active_living_actor_id:=""
 var tavern_dialogue_service:TavernDialogueService
 var actor_dialogue:DialogueChat
@@ -131,6 +132,7 @@ func _ready() -> void:
 	_build_story_dialogue()
 	actor_dialogue=DIALOGUE_CHAT.new();actor_dialogue.name="ActorDialogue";actor_dialogue.conversation_finished.connect(_on_actor_dialogue_finished);ui_root.add_child(actor_dialogue)
 	_setup_merchant_shops()
+	pause_menu = GamePauseMenu.new().setup(controller,run_state,"tavern"); pause_menu.can_open = _can_open_pause_menu; pause_menu.before_leave = _save_tavern_progress; add_child(pause_menu)
 	management = preload("res://scenes/ui/hearth/Company.tscn").instantiate()
 	ui_root.add_child(management)
 	management.manual_launch.connect(_hearth_manual_launch)
@@ -953,6 +955,10 @@ func _close_top_modal() -> void:
 	elif results_backdrop.visible: _close_modal(results_backdrop)
 	elif expedition_backdrop.visible: _close_modal(expedition_backdrop)
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
+
+## Esc opens the pause menu only from the tavern floor itself (Esc closes any open window first).
+func _can_open_pause_menu() -> bool:
+	return not _modal_visible() and not departure_running and not arrivals_running
 
 func _modal_visible() -> bool:
 	return active_contest!=null or (management != null and management.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
