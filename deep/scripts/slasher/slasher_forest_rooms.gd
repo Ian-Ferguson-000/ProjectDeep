@@ -166,10 +166,22 @@ func room_arena() -> Rect2:
 func _slasher_config() -> Dictionary:
 	return Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{}))
 
-## The mini boss holding the gate room (dungeons.json slasher.gate_guardian).
+## The one mini boss of the floor, holding the gate room (dungeons.json
+## slasher.gate_guardian). With a "pool" it's picked at random per floor (the
+## same pick every time you enter that floor).
+var forced_gate_guardian := ""  ## Tests and playtests: force a pool entry by visual_id.
+
 func gate_guardian() -> Dictionary:
 	var config: Dictionary = Dictionary(_slasher_config().get("gate_guardian",{}))
-	return {"visual_id":String(config.get("visual_id","briar_guardian")),"behavior_id":String(config.get("behavior_id","elite_guardian")),"every_floor":bool(config.get("every_floor",false))}
+	var pick: Dictionary = config
+	var pool: Array = Array(config.get("pool",[]))
+	var forced: Array = pool.filter(func(entry): return String(entry.get("visual_id","")) == forced_gate_guardian)
+	if not forced.is_empty(): pick = Dictionary(forced[0])
+	elif not pool.is_empty():
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash("%s:gate_guardian" % String(run_state.field_run.get("forest_floor_key","")))
+		pick = Dictionary(pool[rng.randi_range(0,pool.size() - 1)])
+	return {"visual_id":String(pick.get("visual_id","briar_guardian")),"behavior_id":String(pick.get("behavior_id","elite_guardian")),"every_floor":bool(config.get("every_floor",false))}
 
 ## Whether this floor's gate room has a guardian to beat before the way down
 ## opens: the boss floor, the elite floor, and every floor when gate_guardian.every_floor is set.
@@ -198,17 +210,18 @@ func _encounter(built: Dictionary) -> Array:
 		var colossus_id := String(_slasher_config().get("colossus","heartwood_colossus"))
 		return [{"position":Vector2i(built.colossus),"visual_id":colossus_id,"behavior_id":colossus_id,"is_boss":true,"is_mini_boss":false}]
 	if room_role == "boss" and bool(built.is_boss_floor):
+		# No colossus arena: the floor's single boss holds the room alone.
+		for index in mini(count,markers.size()): spawns.append({"position":markers[index],"visual_id":"","behavior_id":"","is_boss":false,"is_mini_boss":false})
 		spawns.append({"position":elite_cell,"visual_id":"dark_druid","behavior_id":"","is_boss":true,"is_mini_boss":false})
-		for index in mini(2,markers.size()): spawns.append({"position":markers[index],"visual_id":guardian.visual_id,"behavior_id":guardian.behavior_id,"is_boss":false,"is_mini_boss":true})
 		return spawns
-	if room_role == "elite" or (room_role == "boss" and bool(built.is_guarded)):
-		# Elite rooms can have their own champion (slasher.elite_room_guardian); otherwise the gate guardian.
-		var champion: Dictionary = Dictionary(_slasher_config().get("elite_room_guardian",{})) if room_role == "elite" else {}
-		var champion_visual := String(champion.get("visual_id",guardian.visual_id)); var champion_behavior := String(champion.get("behavior_id",guardian.behavior_id))
-		spawns.append({"position":elite_cell,"visual_id":champion_visual,"behavior_id":champion_behavior,"is_boss":false,"is_mini_boss":true})
+	# One boss per floor, at the end: only the gate room has a guardian.
+	if room_role == "boss" and bool(built.is_guarded):
+		spawns.append({"position":elite_cell,"visual_id":guardian.visual_id,"behavior_id":guardian.behavior_id,"is_boss":false,"is_mini_boss":true})
 		count = maxi(1,count-1)
-	elif not Array(built.elite_markers).is_empty():
-		markers.push_front(elite_cell)
+	else:
+		if not Array(built.elite_markers).is_empty(): markers.push_front(elite_cell)
+		# Elite rooms are a tougher fight with more foes, but no mini boss.
+		if room_role == "elite": count = mini(count + 2,markers.size())
 	for index in mini(count,markers.size()): spawns.append({"position":markers[index],"visual_id":"","behavior_id":"","is_boss":false,"is_mini_boss":false})
 	return spawns
 
