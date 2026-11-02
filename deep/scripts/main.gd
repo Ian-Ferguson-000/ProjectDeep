@@ -151,7 +151,10 @@ func _resume_saved_expedition()->void:
 	run_state.active_dungeon_id=campaign.expedition.dungeon_id;run_state.current_floor=campaign.expedition.floor;run_state.gold=campaign.expedition.carried_gold
 	if campaign.expedition.floor_seed>0:run_state.floor_seed=campaign.expedition.floor_seed
 	var dungeon:=GameBalance.get_dungeon(run_state.active_dungeon_id);run_state.max_floors=int(dungeon.get("floors",1))
-	run_state.select_active_character(living[0]);run_state.apply_tutorial_health_cap();_load_active_dungeon()
+	run_state.select_active_character(living[0]);run_state.apply_tutorial_health_cap()
+	# Back to the same room of the same floor, with the gold, keys and cleared rooms you had.
+	run_state.restore_run_snapshot(campaign.expedition.run_snapshot)
+	_load_active_dungeon()
 
 func advance_tutorial_from_tavern() -> void:
 	var starter := campaign.create_tutorial_adventurer()

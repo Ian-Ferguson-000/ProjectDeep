@@ -243,6 +243,7 @@ func refresh() -> void:
 		if group.id != group_id or Array(group.pages).size() < 2: continue
 		for page in group.pages:
 			var tab := Button.new()
+			tab.name = "%sTab" % String(page).replace(" ","")
 			tab.text = String(PAGES[page].tab)
 			tab.icon = THEME.icon(String(PAGES[page].icon))
 			tab.expand_icon = true

@@ -90,9 +90,39 @@ func sync_campaign_runtime() -> void:
 	campaign.legacy_runtime = {"completed_dungeons":completed_dungeons.duplicate(true),"forest_cleared":forest_cleared,"completed_runs":completed_runs,"deaths":deaths,"merchant_progress":merchant_progress.duplicate(true),"merchant_offer_stock":merchant_offer_stock.duplicate(true),"purchased_favor_offers":purchased_favor_offers.duplicate(true),"enemy_defeat_counts":enemy_defeat_counts.duplicate(true)}
 
 func autosave_on_floor_entry() -> bool:
-	if campaign != null and campaign.expedition.active: _sync_active_profile_to_character()
+	if campaign != null and campaign.expedition.active:
+		_sync_active_profile_to_character()
+		campaign.expedition.run_snapshot = run_snapshot()
+		campaign.expedition.carried_gold = gold
 	sync_campaign_runtime()
 	return campaign.save_atomic() if campaign != null else false
+
+## Saves mid-floor: called by the room scenes when you enter a room and when a
+## room is cleared, so a crash or quitting puts you back in the same room.
+func save_room_checkpoint() -> bool:
+	if campaign == null or not campaign.expedition.active: return false
+	return autosave_on_floor_entry()
+
+## The run's loose state that isn't kept on the campaign. The room map is
+## stored as text because it holds Vector2i values JSON can't keep.
+func run_snapshot() -> Dictionary:
+	return {"floor":current_floor,"floor_seed":floor_seed,"gold":gold,"keys":keys,"potions":potions,"class_resource":class_resource,
+		"field_run":var_to_str(field_run),"starter_reward_claimed":starter_reward_claimed,"slasher_endless_mode":slasher_endless_mode,
+		"slasher_campaign_boss_cleared":slasher_campaign_boss_cleared,"slasher_merchant_interlude":slasher_merchant_interlude}
+
+## Puts a saved snapshot back when a saved expedition is continued. Only used
+## when it belongs to the floor being resumed.
+func restore_run_snapshot(snapshot: Dictionary) -> bool:
+	if snapshot.is_empty() or int(snapshot.get("floor",-1)) != current_floor: return false
+	gold = int(snapshot.get("gold",gold)); keys = int(snapshot.get("keys",keys)); potions = int(snapshot.get("potions",potions))
+	class_resource = int(snapshot.get("class_resource",class_resource))
+	var rooms = str_to_var(String(snapshot.get("field_run","{}")))
+	if rooms is Dictionary: field_run = rooms
+	starter_reward_claimed = bool(snapshot.get("starter_reward_claimed",starter_reward_claimed))
+	slasher_endless_mode = bool(snapshot.get("slasher_endless_mode",slasher_endless_mode))
+	slasher_campaign_boss_cleared = bool(snapshot.get("slasher_campaign_boss_cleared",slasher_campaign_boss_cleared))
+	slasher_merchant_interlude = bool(snapshot.get("slasher_merchant_interlude",slasher_merchant_interlude))
+	return true
 
 func _restore_campaign_runtime() -> void:
 	if campaign == null or campaign.legacy_runtime.is_empty(): return

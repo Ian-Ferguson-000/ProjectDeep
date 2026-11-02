@@ -7,23 +7,33 @@ The game pauses and the menu offers:
 | --- | --- | --- |
 | Resume | both | Closes the menu (Esc does too). |
 | Codex | dungeon | Opens the M codex: stats, progression, items, journal. |
+| Tavern Guide | tavern | Replays the first-visit guide (docs/TavernGuide.md). |
 | Options | both | Window, resolution, VSync, UI scale, camera zoom, screen shake, volumes. |
 | Controls | both | Every keyboard/mouse and controller binding. |
 | Return to Title Screen | both | Back to the start screen to continue, start or switch saves. |
 | Quit Game | both (not on web) | Closes the game. |
 
-Esc on a sub-page steps back to the main list. The menu only opens when nothing
-else is up: in the dungeon not over the codex, a shop or a relic choice; at the
-tavern Esc closes any open window first (the Hearth, a shop, the calendar...).
+Esc on a sub-page steps back to the main list. It's the main menu, so it opens
+over **everything**: the codex, shops, relic choices, the Hearth windows and
+dialogue. It catches Esc before anything else does, so Esc no longer closes
+those windows (use their close buttons, M for the codex, or controller B).
+Closing the menu puts you back exactly where you were.
 
 ## Leaving and saving
 
-Saving follows the autosave policy (`tests/autosave_policy_test.gd`):
+Nothing is lost when you leave, quit or crash:
 
-- **Tavern:** saves before leaving, so nothing is lost.
-- **Dungeon:** the run was saved on entering the floor. Continuing that save
-  puts you back at the start of the floor; rooms cleared and loot picked up on
-  the floor since then are lost. The confirmation says so before you leave.
+- **Tavern:** saves before leaving.
+- **Dungeon:** the game saves on entering every floor, on entering every room,
+  and when a room is cleared. Continuing puts you back in the room you were in,
+  with your health, gold, keys, potions, relics and the floor's cleared rooms.
+  A room you left mid-fight starts that fight again.
+- What's saved for the floor is `ExpeditionState.run_snapshot` (written by
+  `RunState.run_snapshot()` on every save, put back by
+  `restore_run_snapshot()` in `main.gd → _resume_saved_expedition`). Room
+  saves go through `RunState.save_room_checkpoint()`, called from
+  `slasher_forest_rooms.gd → _save_checkpoint`; `tests/autosave_policy_test.gd`
+  keeps saving to these paths. Test: `tests/run_checkpoint_test.gd`.
 
 ## Code
 

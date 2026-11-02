@@ -65,6 +65,15 @@ func _build_floor() -> void:
 	if room_role == "boss" and not bool(room.get("cleared",false)) and bool(layout.get("is_guarded",false)): _show_guardian_banner()
 	if new_floor and run_state.current_floor == 1 and not run_state.starter_reward_claimed: call_deferred("_offer_starter_relic")
 	transition_cooldown = 0.5
+	_save_checkpoint()
+
+## Saves on entering each room and on clearing it, so progress within a floor
+## survives a crash or quitting.
+func _save_checkpoint() -> void:
+	if run_state == null or run_state.campaign == null or not run_state.campaign.expedition.active or not is_instance_valid(player): return
+	_store_active_slasher_state()
+	run_state.current_health = player.health
+	run_state.save_room_checkpoint()
 
 ## Generates this floor's room graph the first time the floor is entered.
 ## How this dungeon's rooms look and what things are called. The crypt
@@ -444,6 +453,7 @@ func _scatter_remaining_foes() -> void:
 func _mark_room_cleared(fought: bool) -> void:
 	room["cleared"] = true
 	run_state.update_field_room(room_id,{"cleared":true})
+	call_deferred("_save_checkpoint")
 	if fought:
 		# Clearing a fight charges the active item by one pip.
 		ActiveItems.add_room_charge(run_state,1)

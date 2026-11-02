@@ -900,9 +900,9 @@ func _on_tutorial_completed()->void:
 func _is_tutorial_expedition()->bool:
 	return run_state!=null and run_state.campaign!=null and run_state.campaign.expedition.active and run_state.campaign.expedition.tutorial_run
 
-## Esc opens the pause menu only when no shop, relic choice or codex is up.
+## The pause menu is the main menu: it opens over the codex, shops and relic choices too.
 func _can_open_pause_menu()->bool:
-	return is_instance_valid(player) and not (codex!=null and codex.visible) and not (merchant_shop_panel!=null and merchant_shop_panel.visible) and not (relic_modal!=null and relic_modal.visible)
+	return is_instance_valid(player)
 
 func _open_codex(input_source:String="system")->void:
 	if codex==null or merchant_shop_panel.visible:return

@@ -5,10 +5,8 @@ class_name GamePauseMenu
 ## in the dungeon and at the tavern: Resume, Codex (dungeon), Options, Controls,
 ## Return to Title Screen (to switch saves) and Quit Game.
 ##
-## Saving follows the autosave policy (tests/autosave_policy_test.gd): the
-## dungeon saves on entering each floor, so
-## leaving mid-floor resumes from the start of that floor; the tavern saves
-## through its own helper before leaving.
+## Nothing is lost by leaving: the dungeon saves at every floor and room, and
+## the tavern saves through its own helper before leaving.
 
 const THEME := preload("res://scripts/ui/tavern_ui_theme.gd")
 const OPTIONS_PANEL := preload("res://scripts/ui/game_options_panel.gd")
@@ -18,12 +16,14 @@ signal closed
 
 ## "dungeon" or "tavern".
 var context := "dungeon"
-## Returns true when nothing else (a shop, a dialogue, the codex) is open.
+## Returns false only while the scene can't be paused (e.g. mid scene change).
 var can_open: Callable = func() -> bool: return true
 ## Called before returning to the title (the tavern saves here).
 var before_leave: Callable = func() -> void: pass
 ## Opens the codex (dungeon only).
 var open_codex: Callable
+## Replays the tavern guide (tavern only).
+var guide: Callable
 var controller: Node
 var run_state: RunState
 
@@ -64,7 +64,7 @@ func setup(game_controller: Node, state: RunState, menu_context: String) -> Game
 
 func _ready() -> void:
 	ensure_action()
-	layer = 60
+	layer = 100
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	shade = ColorRect.new(); shade.name = "Shade"; shade.color = Color(0.03,0.02,0.01,0.78)
@@ -97,7 +97,9 @@ func close() -> void:
 	AudioCue.play_from(self,"ui_close",false)
 	closed.emit()
 
-func _unhandled_input(event: InputEvent) -> void:
+## _input runs before any window's own Esc handling, so the menu opens over
+## everything (the codex, shops, the Hearth, dialogue) and nothing else sees the key.
+func _input(event: InputEvent) -> void:
 	if not event.is_action_pressed(ACTION): return
 	if visible:
 		# Esc steps back out of a sub-page, then closes.
@@ -134,6 +136,8 @@ func _main_page() -> void:
 	var first := _button("Resume",close,true)
 	if context == "dungeon" and open_codex.is_valid():
 		_button("Codex",func(): close(); open_codex.call())
+	if context == "tavern" and guide.is_valid():
+		_button("Tavern Guide",func(): close(); guide.call())
 	_button("Options",show_page.bind("options"))
 	_button("Controls",show_page.bind("controls"))
 	body.add_child(_spacer(4))
@@ -182,8 +186,7 @@ func _confirm_page(kind: String) -> void:
 ## What leaving keeps, in plain words.
 func _leave_note() -> String:
 	if context == "tavern": return "The Hearth is saved. You can pick this save, or another one, from the title screen."
-	var floor_number := run_state.current_floor if run_state != null else 1
-	return "Your run was saved when you entered floor %d. Continuing this save puts you back at the start of floor %d; rooms cleared and loot picked up on this floor since then are lost." % [floor_number,floor_number]
+	return "Your run is saved at every room. Continuing this save puts you back in the room you're in now, with what you're carrying. If foes are still standing here, the fight starts again."
 
 # ---------------------------------------------------------------- actions
 

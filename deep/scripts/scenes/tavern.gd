@@ -96,6 +96,7 @@ var pending_dismissal_id:=""
 var activity_controller:TavernActivityController
 var departure_running:=false
 var pause_menu: GamePauseMenu
+var tavern_tour: TavernTour
 var active_living_actor_id:=""
 var tavern_dialogue_service:TavernDialogueService
 var actor_dialogue:DialogueChat
@@ -132,7 +133,7 @@ func _ready() -> void:
 	_build_story_dialogue()
 	actor_dialogue=DIALOGUE_CHAT.new();actor_dialogue.name="ActorDialogue";actor_dialogue.conversation_finished.connect(_on_actor_dialogue_finished);ui_root.add_child(actor_dialogue)
 	_setup_merchant_shops()
-	pause_menu = GamePauseMenu.new().setup(controller,run_state,"tavern"); pause_menu.can_open = _can_open_pause_menu; pause_menu.before_leave = _save_tavern_progress; add_child(pause_menu)
+	pause_menu = GamePauseMenu.new().setup(controller,run_state,"tavern"); pause_menu.can_open = _can_open_pause_menu; pause_menu.before_leave = _save_tavern_progress; pause_menu.guide = start_tavern_tour; add_child(pause_menu)
 	management = preload("res://scenes/ui/hearth/Company.tscn").instantiate()
 	ui_root.add_child(management)
 	management.manual_launch.connect(_hearth_manual_launch)
@@ -956,9 +957,9 @@ func _close_top_modal() -> void:
 	elif expedition_backdrop.visible: _close_modal(expedition_backdrop)
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
 
-## Esc opens the pause menu only from the tavern floor itself (Esc closes any open window first).
+## The pause menu is the main menu: it opens over the Hearth, shops and dialogue too.
 func _can_open_pause_menu() -> bool:
-	return not _modal_visible() and not departure_running and not arrivals_running
+	return true
 
 func _modal_visible() -> bool:
 	return active_contest!=null or (management != null and management.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
@@ -971,6 +972,37 @@ func _restore_hub_focus() -> void:
 	var expedition_button:=toolbar_buttons.get("Expedition") as Button
 	if expedition_button!=null and expedition_button.visible and not expedition_button.disabled:expedition_button.grab_focus()
 	else:ui_root.grab_focus()
+	call_deferred("_maybe_start_tavern_tour")
+
+# ---------------------------------------------------------------- tavern guide
+
+## The first time the tavern is free after the tutorial run, walk the player
+## through it (scripts/ui/tavern_tour.gd). Once only; replay from the Esc menu.
+func _maybe_start_tavern_tour() -> void:
+	if run_state == null or run_state.campaign == null or TavernTour.done(run_state.campaign): return
+	if not run_state.campaign.is_tutorial_complete() or run_state.campaign.expedition.active: return
+	if _modal_visible() or departure_running or arrivals_running or not pending_story_lines.is_empty(): return
+	if story_dialogue != null and story_dialogue.is_playing(): return
+	start_tavern_tour()
+
+func start_tavern_tour() -> void:
+	if tavern_tour != null and is_instance_valid(tavern_tour): return
+	if run_state == null or run_state.campaign == null or not run_state.campaign.is_tutorial_complete(): return
+	tavern_tour = TavernTour.new()
+	tavern_tour.search_root = self
+	tavern_tour.open_page = func(page: String) -> void:
+		if page.is_empty():
+			if management != null: management.hide()
+		else: _open_hearth(page)
+	tavern_tour.finished.connect(_on_tavern_tour_finished)
+	add_child(tavern_tour)
+	tavern_tour.start()
+
+func _on_tavern_tour_finished(_skipped: bool) -> void:
+	tavern_tour = null
+	TavernTour.mark_done(run_state.campaign)
+	_save_tavern_progress()
+	_restore_hub_focus()
 
 func _refresh_ui() -> void:
 	if hud_label == null or run_state == null: return

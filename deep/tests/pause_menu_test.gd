@@ -30,7 +30,7 @@ func _frames(count: int) -> void:
 
 func _press_escape(menu: GamePauseMenu) -> void:
 	var event := InputEventAction.new(); event.action = GamePauseMenu.ACTION; event.pressed = true
-	menu._unhandled_input(event)
+	menu._input(event)
 	await process_frame
 
 func _buttons(menu: GamePauseMenu) -> Array:
@@ -56,7 +56,9 @@ func _run() -> void:
 	# Not while the codex is open.
 	forest.codex.open(state,forest.player)
 	await _press_escape(menu)
-	_expect(not menu.visible,"The pause menu opened over the codex")
+	_expect(menu.visible and paused and forest.codex.visible,"The pause menu didn't open over the codex")
+	await _press_escape(menu)
+	_expect(not menu.visible and paused and forest.codex.visible,"Closing the menu should leave the codex open and paused")
 	forest.codex.close(); paused = false
 	await _press_escape(menu)
 	_expect(menu.visible and paused,"Esc didn't open and pause the dungeon menu")
@@ -71,7 +73,7 @@ func _run() -> void:
 	_expect(menu.body.get_child(0) is GameOptionsPanel,"Options page has no options panel")
 	menu.show_page("confirm_title"); await process_frame
 	var note: String = menu._leave_note()
-	_expect(note.contains("floor 1"),"The dungeon warning doesn't say where you'll resume: %s" % note)
+	_expect(note.contains("room you're in"),"The dungeon note doesn't say where you'll resume: %s" % note)
 	(menu.body.find_child("Confirm",true,false) as Button).pressed.emit()
 	await process_frame
 	_expect(fake.titles == 1 and not paused,"Return to Title didn't reach the game or left it paused")
@@ -94,10 +96,7 @@ func _run() -> void:
 		var tavern_fake := FakeController.new(); root.add_child(tavern_fake); tavern_menu.controller = tavern_fake
 		tavern._open_hearth("Company"); await process_frame
 		await _press_escape(tavern_menu)
-		_expect(not tavern_menu.visible,"The pause menu opened over the Hearth window")
-		tavern.management.hide(); await process_frame
-		await _press_escape(tavern_menu)
-		_expect(tavern_menu.visible,"Esc didn't open the tavern menu")
+		_expect(tavern_menu.visible and tavern.management.visible,"The pause menu didn't open over the Hearth window")
 		_expect(not _buttons(tavern_menu).has("Codex"),"The tavern menu shouldn't offer the dungeon codex")
 		var saves_before := tavern_state.saves
 		tavern_menu.return_to_title()
