@@ -34,12 +34,18 @@ func _run() -> void:
 	await process_frame
 	_expect(screen.visible and screen.step == 0,"Set Out didn't open on the destination step")
 	_expect(screen.find_child("Destination_forest",true,false) is Button,"No forest card")
-	var soon := screen.find_child("ComingSoon_balors_hell",true,false)
-	_expect(soon != null and not soon is BaseButton,"Coming-soon tiles should be shown and not clickable")
-	_expect(screen.find_child("Destination_balors_hell",true,false) == null,"A coming-soon dungeon got a selectable card")
-	(screen.find_child("Destination_crypt",true,false) as Button).pressed.emit()
-	await process_frame
-	_expect(screen.dungeon_id == "crypt","Picking the crypt didn't select it")
+	# Three tiles, left to right: forest, then the farmstead and grove as locked "coming soon".
+	var row: Node = screen.find_child("Destination_forest",true,false).get_parent()
+	var names: Array = row.get_children().map(func(n): return String(n.name))
+	_expect(names == ["Destination_forest","ComingSoon_ashen_farmstead","ComingSoon_moonlit_grove"],"Destination tiles are %s" % [names])
+	for id in ["ashen_farmstead","moonlit_grove"]:
+		var soon := screen.find_child("ComingSoon_%s" % id,true,false)
+		_expect(soon != null and not soon is BaseButton and soon.find_child("Lock",true,false) != null,"%s should be a locked, unclickable tile" % id)
+	# The crypt is reached by playing through the forest, not picked here.
+	_expect(screen.find_child("Destination_crypt",true,false) == null and screen.find_child("Destination_balors_hell",true,false) == null,"Only the forest should be selectable")
+	screen.dungeon_id = "crypt"; screen.go_to(1); await process_frame
+	_expect(screen.step == 0 and not screen.readiness().ok,"The crypt can be chosen as a starting destination")
+	screen.dungeon_id = "forest"
 	(screen.find_child("Destination_forest",true,false) as Button).pressed.emit()
 	await process_frame
 	screen.go_to(1); await process_frame

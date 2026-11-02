@@ -16,6 +16,13 @@ signal closed
 
 const THEME = preload("res://scripts/ui/tavern_ui_theme.gd")
 const PREVIEWS := "res://assets/ui/destinations/%s.png"
+## The three tiles on the Destination step, left to right. Only the forest can
+## be chosen: deeper dungeons (the Stone Crypt) are reached by playing through
+## it. The other two show as locked "Coming soon" tiles.
+const DESTINATIONS := ["forest","ashen_farmstead","moonlit_grove"]
+const STARTING_DUNGEON := "forest"
+const TILE_SIZE := Vector2(372,0)
+const PREVIEW_SIZE := Vector2(348,196)
 const STEPS := ["Destination","Adventurer","Gear & Supplies"]
 const SLOTS := ["weapon","armor","accessory","relic"]
 const RARITY_COLORS := {"common":Color("ead9b8"),"uncommon":Color("8fd48a"),"rare":Color("7fb4ee"),"epic":Color("c79af0"),"legendary":Color("f0a24f")}
@@ -155,48 +162,43 @@ func refresh() -> void:
 
 func _destination_step() -> void:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation",16)
+	row.add_theme_constant_override("separation",18)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	content.add_child(row)
-	var playable := HBoxContainer.new()
-	playable.add_theme_constant_override("separation",14)
-	row.add_child(playable)
-	var coming := VBoxContainer.new()
-	coming.add_theme_constant_override("separation",8)
-	coming.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(coming)
-	coming.add_child(_label("COMING SOON",13,THEME.MUTED))
-	var grid := GridContainer.new(); grid.columns = 2
-	grid.add_theme_constant_override("h_separation",8); grid.add_theme_constant_override("v_separation",8)
-	coming.add_child(grid)
-	for id in _dungeon_order():
-		if RunState.is_coming_soon(id): grid.add_child(_coming_soon_tile(id))
-		else: playable.add_child(_destination_card(id))
+	for id in DESTINATIONS:
+		if GameBalance.get_dungeon(id).is_empty(): continue
+		if RunState.is_coming_soon(id): row.add_child(_coming_soon_tile(id))
+		else: row.add_child(_destination_card(id))
 
-func _dungeon_order() -> Array[String]:
-	var ids: Array[String] = []
-	for id in GameBalance.get_dungeon_order():
-		if not GameBalance.get_dungeon(String(id)).is_empty(): ids.append(String(id))
-	return ids
-
+## Runs always start in the forest; the crypt and beyond are reached from inside a run.
 func _selectable(id: String) -> bool:
-	return not id.is_empty() and RunState.dungeon_available(id) and state != null and state.is_dungeon_unlocked(id)
+	return id == STARTING_DUNGEON and RunState.dungeon_available(id) and state != null and state.is_dungeon_unlocked(id)
+
+func _preview(id: String, dimmed: bool) -> TextureRect:
+	var preview := TextureRect.new()
+	preview.name = "Preview"
+	preview.custom_minimum_size = PREVIEW_SIZE
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var path := PREVIEWS % id
+	if ResourceLoader.exists(path): preview.texture = load(path)
+	if dimmed:
+		preview.material = ShaderMaterial.new()
+		(preview.material as ShaderMaterial).shader = SlasherEnemy.desaturate_shader()
+		(preview.material as ShaderMaterial).set_shader_parameter("amount",0.75)
+		preview.modulate = Color(0.55,0.55,0.58)
+	return preview
 
 func _destination_card(id: String) -> Control:
 	var dungeon := GameBalance.get_dungeon(id)
 	var open := _selectable(id)
-	var card := _card_button("Destination_%s" % id,id == dungeon_id,Vector2(340,0))
+	var card := _card_button("Destination_%s" % id,id == dungeon_id,TILE_SIZE)
 	card.disabled = not open
 	card.pressed.connect(func(): dungeon_id = id; refresh())
 	var box := _card_body(card)
-	var preview := TextureRect.new()
-	preview.custom_minimum_size = Vector2(316,178)
-	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var path := PREVIEWS % id
-	if ResourceLoader.exists(path): preview.texture = load(path)
-	if not open: preview.modulate = Color(0.4,0.4,0.42)
-	box.add_child(preview)
+	box.add_child(_preview(id,not open))
 	box.add_child(_label(String(dungeon.get("name",id)),22,THEME.HIGHLIGHT_GOLD if open else THEME.MUTED))
 	box.add_child(_label(String(dungeon.get("subtitle","")),14,THEME.IVORY if open else THEME.MUTED))
 	var chips := HBoxContainer.new(); chips.add_theme_constant_override("separation",6); chips.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -206,25 +208,35 @@ func _destination_card(id: String) -> Control:
 	var record := ClearRecords.best(campaign,id)
 	box.add_child(_label(("Record %s · %s" % [ClearRecords.format_time(float(record.time)),String(record.hero)]) if not record.is_empty() else "No clear yet: set the first time.",13,Color("8fd48a") if not record.is_empty() else THEME.MUTED))
 	if not open: box.add_child(_wrap(_label("Locked · %s" % String(dungeon.get("unlock_text","")),13,Color("e0a35e"))))
+	elif id == STARTING_DUNGEON: box.add_child(_wrap(_label("Fight through it to find the way down to the Stone Crypt.",13,Color("b9a98f"))))
 	return card
 
 func _coming_soon_tile(id: String) -> Control:
 	var dungeon := GameBalance.get_dungeon(id)
+	# A panel, not a button: it can't be picked.
 	var tile := PanelContainer.new()
 	tile.name = "ComingSoon_%s" % id
-	tile.custom_minimum_size = Vector2(250,88)
+	tile.custom_minimum_size = TILE_SIZE
+	tile.size_flags_vertical = Control.SIZE_FILL
 	tile.mouse_filter = Control.MOUSE_FILTER_STOP
+	tile.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN
 	tile.tooltip_text = "%s isn't in this build yet." % String(dungeon.get("name",id))
 	var accent := Color("#" + String(dungeon.get("accent","777777")))
-	tile.add_theme_stylebox_override("panel",THEME.panel(Color("17110c"),accent.darkened(0.6),6,1))
-	var box := VBoxContainer.new(); box.add_theme_constant_override("separation",2); box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := THEME.panel(Color("17110c"),accent.darkened(0.55),8,1); style.set_content_margin_all(12)
+	tile.add_theme_stylebox_override("panel",style)
+	var box := VBoxContainer.new(); box.add_theme_constant_override("separation",6); box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tile.add_child(box)
+	var picture := Control.new(); picture.custom_minimum_size = PREVIEW_SIZE; picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(picture)
+	var preview := _preview(id,true); preview.set_anchors_preset(Control.PRESET_FULL_RECT)
+	picture.add_child(preview)
+	var lock := LockBadge.new(); lock.name = "Lock"; lock.accent = accent; lock.set_anchors_preset(Control.PRESET_FULL_RECT); lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	picture.add_child(lock)
 	var top := HBoxContainer.new(); top.mouse_filter = Control.MOUSE_FILTER_IGNORE; box.add_child(top)
-	var name_label := _label(String(dungeon.get("name",id)),16,Color("8a7e70")); name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var name_label := _label(String(dungeon.get("name",id)),22,Color("8a7e70")); name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(name_label)
-	top.add_child(_label("🔒",14,Color("6f6458")))
-	box.add_child(_label(String(dungeon.get("subtitle","")),12,Color("6f6458")))
-	box.add_child(_label("Coming soon",12,accent.darkened(0.2).lerp(Color("8a7e70"),0.5)))
+	box.add_child(_label(String(dungeon.get("subtitle","")),14,Color("6f6458")))
+	box.add_child(_label("Not in this build yet.",13,accent.lerp(Color("8a7e70"),0.5)))
 	return tile
 
 # ---------------------------------------------------------------- step 2: adventurer
@@ -467,3 +479,29 @@ class HeartRow extends Control:
 					if String(shape[y])[x] != "X": continue
 					var colour := Color("#d42a2a") if float(x) + 0.5 <= filled * 7.0 else Color("#3a2424")
 					draw_rect(Rect2(at + Vector2(x,y) * 2.0,Vector2(2,2)),colour)
+
+## A padlock and a "COMING SOON" ribbon over a locked destination's picture.
+class LockBadge extends Control:
+	var accent := Color("#c9a36a")
+	func _draw() -> void:
+		draw_rect(Rect2(Vector2.ZERO,size),Color(0.05,0.03,0.02,0.35))
+		var centre := size * 0.5 + Vector2(0,-14)
+		draw_circle(centre,34.0,Color(0.06,0.04,0.03,0.85))
+		draw_arc(centre,34.0,0.0,TAU,48,accent.darkened(0.2),2.0,true)
+		var metal := Color("#d8c39a"); var shade := Color("#7a6648")
+		# Shackle, then the body with a keyhole.
+		draw_arc(centre + Vector2(0,-6),10.0,PI,TAU,24,shade,7.0,true)
+		draw_arc(centre + Vector2(0,-6),10.0,PI,TAU,24,metal,4.0,true)
+		for side in [-10.0,10.0]: draw_line(centre + Vector2(side,-6),centre + Vector2(side,2),metal,4.0)
+		var body := Rect2(centre + Vector2(-15,0),Vector2(30,22))
+		draw_rect(body.grow(1.5),shade); draw_rect(body,metal)
+		draw_rect(Rect2(body.position,Vector2(body.size.x,3)),metal.lightened(0.3))
+		draw_circle(centre + Vector2(0,8),3.5,Color("#2a1d12"))
+		draw_rect(Rect2(centre + Vector2(-1.5,9),Vector2(3,8)),Color("#2a1d12"))
+		# Ribbon.
+		var font := ThemeDB.fallback_font
+		var text := "COMING SOON"
+		var text_size := font.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1,15)
+		var ribbon := Rect2(Vector2((size.x - text_size.x) * 0.5 - 16,centre.y + 44),Vector2(text_size.x + 32,24))
+		draw_rect(ribbon.grow(1.5),Color("#140b04")); draw_rect(ribbon,accent.darkened(0.45))
+		draw_string(font,Vector2(ribbon.position.x + 16,ribbon.position.y + 17),text,HORIZONTAL_ALIGNMENT_LEFT,-1,15,Color("#f2e3c4"))

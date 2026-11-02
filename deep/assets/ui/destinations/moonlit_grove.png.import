@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://due0yro8q2wjg"
-path="res://.godot/imported/crypt.png-3ce920fbc5c562479e472bf25341c912.ctex"
+uid="uid://beqienytrcg3b"
+path="res://.godot/imported/moonlit_grove.png-72e12f640eb3058be6f4b3973eb837f9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/destinations/crypt.png"
-dest_files=["res://.godot/imported/crypt.png-3ce920fbc5c562479e472bf25341c912.ctex"]
+source_file="res://assets/ui/destinations/moonlit_grove.png"
+dest_files=["res://.godot/imported/moonlit_grove.png-72e12f640eb3058be6f4b3973eb837f9.ctex"]
 
 [params]
 

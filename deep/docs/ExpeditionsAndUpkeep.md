@@ -10,12 +10,12 @@ building, retreat policies and auto-resolved dispatches are gone from the game
 Hearth → **Expeditions** → **Plan an Expedition** opens a full-screen, three-step
 screen (`scripts/ui/expedition_setup.gd`):
 
-1. **Destination**: a card with a picture of the map for each dungeon in the
-   build (Verdant Forest, Stone Crypt), with floors, difficulty and your best
-   clear. Locked dungeons show why.
-   Dungeons that are planned but not built (Balor's Hell, Ashen Farmstead,
-   Sunken Mine, Ember Foundry, Moonlit Grove, Abyssal Archive) are greyed-out
-   **Coming soon** tiles that can't be clicked.
+1. **Destination**: three picture tiles. **Verdant Forest** (left) is the only
+   choice: every run starts there, and the **Stone Crypt** is reached by
+   fighting through the forest (the crossroads after its guardian), not picked
+   here. **Ashen Farmstead** (middle) and **Moonlit Grove** (right) are greyed
+   out with a padlock and a "Coming soon" ribbon and can't be clicked. The
+   tiles are `ExpeditionSetup.DESTINATIONS`.
 2. **Adventurer**: one card per adventurer: portrait, class, hearts, mood and
    weapon. Anyone away or still recovering is greyed out.
 3. **Gear & Supplies**: change their equipment (the Armory's stock), see the
@@ -25,8 +25,9 @@ screen (`scripts/ui/expedition_setup.gd`):
 The footer always shows what's chosen. **Set Out** is enabled only when the run
 is ready, and says why when it isn't.
 
-- Map pictures: `assets/ui/destinations/<dungeon>.png` (captured in game;
-  replace with painted art any time).
+- Pictures: `assets/ui/destinations/<dungeon>.png`, 320x180 pixel-art scenes
+  painted by `tools/ui/paint_destinations.py` (placeholders: drop painted art
+  of any 16:9 size in the same place).
 - Coming soon: `"coming_soon": true` on the dungeon in `data/dungeons.json`.
   `RunState.is_coming_soon(id)` makes the dungeon unavailable everywhere (the
   crossroads after a guardian won't continue into it either). Remove the flag
