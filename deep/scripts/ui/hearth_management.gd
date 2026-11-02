@@ -25,10 +25,10 @@ const PAGES = {
 	"Company":{"title":"Company","tab":"Roster","icon":"roster","hint":"Your adventurers and anyone waiting to sign on. Adventurers share 20% of the gold each expedition brings home."},
 	"Training":{"title":"Training Yard","tab":"Training","icon":"armory","hint":"Spend gold to drill one attribute per adventurer each day. Good rooms and the right furnishings make it likelier to stick."},
 	"Lodgings":{"title":"Lodgings","tab":"Lodgings","icon":"hearth","hint":"Every adventurer needs a room. Build more, make them finer, and furnish them to suit the people who sleep there."},
-	"Expeditions":{"title":"Expeditions","tab":"Expeditions","icon":"expedition","hint":"Choose a dungeon, pick a party, and lead them yourself or dispatch them."},
-	"Facilities":{"title":"Improvements","tab":"Improvements","icon":"hearth","hint":"Expand the Hearth and commission new facilities. Construction takes days to finish."},
+	"Expeditions":{"title":"Expeditions","tab":"Expeditions","icon":"expedition","hint":"Choose a destination, an adventurer, and what they carry, then lead the run yourself."},
+	"Facilities":{"title":"Facilities","tab":"Facilities","icon":"hearth","hint":"Expand the Hearth with gold and renown. Construction takes days to finish."},
 	"Armory":{"title":"Armory","tab":"Armory","icon":"armory","hint":"Outfit each adventurer. Every item has one wearer, and gear stays with the Hearth when someone retires."},
-	"Merchants":{"title":"Suppliers","tab":"Suppliers","icon":"merchants","hint":"Buy travel supplies, provisions, and equipment. Everything goes straight into storage."},
+	"Merchants":{"title":"Suppliers","tab":"Suppliers","icon":"merchants","hint":"Feed the company and buy equipment. Better food keeps adventurers happy."},
 	"Calendar":{"title":"Calendar","tab":"Calendar","icon":"calendar","hint":"What has happened at the Hearth, and what is coming."},
 	"Reports":{"title":"Expedition Reports","tab":"Reports","icon":"ledger","hint":"Every return: gold, losses, and what was recovered."},
 	"Bounties":{"title":"Bounty Board","tab":"Bounties","icon":"ledger","hint":"Contracts posted at the Hearth. Meet one on an expedition and get home alive to collect. Unfinished bounties come down after a few days."},
@@ -58,6 +58,7 @@ var bank_label: Label
 var notice: Label
 var notice_panel: PanelContainer
 var body: VBoxContainer
+var expedition_setup: ExpeditionSetup
 var tabs: HBoxContainer
 var resource_row: HBoxContainer
 var nav_buttons: Dictionary = {}
@@ -84,6 +85,13 @@ func _ready() -> void:
 	shell.add_child(columns)
 	_build_sidebar(columns)
 	_build_main(columns)
+	# Setting out has its own full-screen, picture-led flow on top of the Hearth.
+	expedition_setup = ExpeditionSetup.new()
+	add_child(expedition_setup)
+	expedition_setup.launch_requested.connect(func(dungeon: String, hero: String):
+		hide()
+		var party: Array[String] = [hero]
+		manual_launch.emit(dungeon,party))
 	section = initial_section
 	hide()
 
@@ -203,6 +211,11 @@ func show_section(page: String) -> void:
 	last_page_in_group[_group_of(section)] = section
 	_set_notice("")
 	refresh()
+	if section == "Expeditions": open_expedition_setup()
+
+func open_expedition_setup() -> void:
+	if campaign == null or campaign.expedition.active: return
+	expedition_setup.open(campaign,state)
 
 func _group_of(page: String) -> String:
 	for group in GROUPS:
@@ -247,9 +260,9 @@ func refresh() -> void:
 	hearth_name_label.text = String(HearthCatalog.tier(campaign.establishment_tier).name)
 	bank_label.text = "Day %d · %s\n%s · %s %d" % [campaign.calendar_day,HearthCalendar.shift_name(campaign),String(date.weekday),String(date.season),int(date.season_day)]
 	_resource("Gold","%d" % campaign.banked_gold,"Banked gold for wages, gear, and construction.")
-	_resource("Supplies","%d" % campaign.supplies,"Each expedition consumes travel supplies. Buy more from Suppliers.")
+	_resource("Supplies","%d" % campaign.supplies,"Rations in the pantry. Everyone at home eats one a day, and each expedition takes %d. Buy more from Suppliers." % HearthUpkeep.rations_per_run())
 	_resource("Essence","%d" % campaign.relic_essence,"Recovered from dungeons. Spent on major improvements.")
-	_resource("Renown","%d" % campaign.reputation,"Reputation draws stronger recruits and unlocks facilities.")
+	_resource("Renown","%d" % campaign.reputation,"Earned by victories and bounties. Spent on expanding the Hearth, and draws stronger recruits.")
 	_resource("Rooms","%d/%d" % [campaign.living_roster().size(),campaign.get_roster_capacity()],"Adventurers housed out of rooms available.")
 	match section:
 		"Company": company_page()
@@ -485,6 +498,7 @@ func _member_card(member: CharacterRecord) -> void:
 	facts_label.custom_minimum_size = Vector2(200,0)
 	info.add_child(facts_label)
 	info.add_child(_health_bar(member))
+	info.add_child(_mood_bar(member))
 	var stats := AdventurerStatGrid.new(true)
 	stats.show_attributes(member.attributes)
 	info.add_child(stats)
@@ -516,6 +530,26 @@ func _member_card(member: CharacterRecord) -> void:
 		small_buttons.append(train)
 	small_buttons.append(button(actions,"Retire",_confirm_retire.bind(member.id),available))
 	for small in small_buttons: small.custom_minimum_size = Vector2(86,36)
+
+## Happiness (data/upkeep.json): fed well and winning, they stay; miserable, they may leave.
+func _mood_bar(member: CharacterRecord, width: int = 180) -> HBoxContainer:
+	var value := HearthUpkeep.happiness(member)
+	var band := HearthUpkeep.band(value)
+	var colour := Color(String(band.get("color","#e8cf72")))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation",8)
+	row.tooltip_text = "Happiness %d / 100. The food you serve, training, and how expeditions go all change it. Below %d an adventurer may leave the Hearth." % [value,int(HearthUpkeep.data().get("leave_below",25))]
+	row.add_child(label("Mood",13,THEME.MUTED))
+	var bar := ProgressBar.new()
+	bar.custom_minimum_size = Vector2(width,10)
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.show_percentage = false
+	bar.max_value = 100; bar.value = value
+	var back := StyleBoxFlat.new(); back.bg_color = Color("120c08"); bar.add_theme_stylebox_override("background",back)
+	var fill := StyleBoxFlat.new(); fill.bg_color = colour; bar.add_theme_stylebox_override("fill",fill)
+	row.add_child(bar)
+	row.add_child(label(String(band.get("name","")),13,colour))
+	return row
 
 func _health_bar(member: CharacterRecord, width: int = 180) -> HBoxContainer:
 	var row := HBoxContainer.new()
@@ -1023,101 +1057,15 @@ func _furnishing_bonus_text(item: Dictionary) -> String:
 
 # ---------------------------------------------------------------- expeditions
 
+## The Expeditions page behind the Set Out screen: a way back into it, and
+## where things stand. Runs are solo and always led by you.
 func expedition_page() -> void:
-	var unlocked: Array[String] = []
-	for id in HearthCatalog.data().dungeon_levels:
-		if state.is_dungeon_unlocked(id): unlocked.append(id)
-	if not unlocked.has(dungeon_id): dungeon_id="forest"
-	_heading("Destination")
-	var destinations := HFlowContainer.new()
-	destinations.add_theme_constant_override("h_separation",6)
-	destinations.add_theme_constant_override("v_separation",6)
-	body.add_child(destinations)
-	for id in unlocked:
-		var choice := Button.new()
-		choice.text = String(GameBalance.get_dungeon(id).get("name",id))
-		choice.tooltip_text = "Your company knows the way past its guardian. Parties can be dispatched here." if campaign.has_completed_dungeon(id) else "Lead a party past its guardian yourself before you can dispatch one here."
-		THEME.apply_button(choice,id == dungeon_id,14,Vector2(150,40))
-		choice.pressed.connect(func(): dungeon_id=id; selected_party.clear(); refresh())
-		destinations.add_child(choice)
-	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation",14)
-	body.add_child(columns)
-	var cap := campaign.get_party_cap(dungeon_id)
-	selected_party = selected_party.filter(func(id:String): return campaign.character(id)!=null and campaign.character(id).status=="available")
-	var party := card("Party · %d / %d" % [selected_party.size(),cap],"Survivors keep their equipment; the fallen lose what they carried.",columns)
-	(party.get_parent() as Control).size_flags_stretch_ratio = 1.3
-	for member in campaign.living_roster():
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation",8)
-		party.add_child(row)
-		var check := CheckBox.new()
-		check.text = "%s · %s" % [member.display_name,_class_label(member)]
-		check.add_theme_font_size_override("font_size",15)
-		_style_check(check)
-		check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		check.button_pressed=selected_party.has(member.id)
-		check.disabled=member.status!="available"
-		check.toggled.connect(func(on:bool):
-			if on and selected_party.size()<campaign.get_party_cap(dungeon_id): selected_party.append(member.id)
-			elif not on: selected_party.erase(member.id)
-			refresh())
-		row.add_child(check)
-		row.add_child(label("%d/%d HP" % [member.current_health,member.max_health],13,THEME.MUTED))
-		if member.status != "available": row.add_child(_status_chip(member))
-	var plan := VBoxContainer.new()
-	plan.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	plan.add_theme_constant_override("separation",10)
-	columns.add_child(plan)
-	var risk := HearthExpeditions.risk(campaign,selected_party,dungeon_id)
-	var band := String(risk.band)
-	var risk_color: Color = {"Low":GOOD,"Moderate":Color("e8cf72"),"High":Color("e0a35e"),"Severe":BAD}.get(band,THEME.GOLD)
-	var risk_card := card("%s risk" % band,"",plan,risk_color)
-	for reason in risk.reasons:
-		var reason_label := label("•  " + String(reason),14,THEME.IVORY)
-		reason_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		risk_card.add_child(reason_label)
-	risk_card.add_child(label("Keeper keeps 80%% of recovered gold · back Day %d, %s" % [campaign.calendar_day+campaign.calendar_shift,"Late Shift" if campaign.calendar_shift == 0 else "Early Shift"],13,THEME.MUTED))
-	var times_card := card("Time to beat","",plan)
-	var dungeon_record := ClearRecords.best(campaign,dungeon_id)
-	if dungeon_record.is_empty():
-		times_card.add_child(label("No clear yet. Defeat the guardian to set the first time.",14,THEME.MUTED))
-	else:
-		times_card.add_child(label("Record  %s  ·  %s (%s)  ·  %d clears" % [ClearRecords.format_time(float(dungeon_record.time)),String(dungeon_record.hero),String(dungeon_record.class_id).capitalize(),ClearRecords.clears(campaign,dungeon_id)],14,THEME.HIGHLIGHT_GOLD))
-	var shown_classes: Array[String] = []
-	for member_id in selected_party:
-		var member := campaign.character(member_id)
-		if member == null or shown_classes.has(member.class_id): continue
-		shown_classes.append(member.class_id)
-		var class_best := ClearRecords.best(campaign,dungeon_id,member.class_id)
-		times_card.add_child(label("%s best  %s" % [member.class_id.capitalize(),ClearRecords.format_time(float(class_best.time)) if not class_best.is_empty() else "— not cleared as a %s yet" % member.class_id.capitalize()],14,GOOD if not class_best.is_empty() else THEME.IVORY))
-	BountyBoard.refresh(campaign)
-	var bounty_card := card("Bounties","Meet one and get home alive to be paid.",plan)
-	for bounty in BountyBoard.offers(campaign):
-		var line := label("•  %s  (%s)" % [String(bounty.text),BountyBoard.reward_text(bounty.reward)],14,THEME.IVORY)
-		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		bounty_card.add_child(line)
-	var policy_card := card("Retreat policy","How readily a dispatched party turns back.",plan)
-	var controls := HBoxContainer.new()
-	controls.add_theme_constant_override("separation",6)
-	policy_card.add_child(controls)
-	for value in ["cautious","balanced","bold"]:
-		var choice := button(controls,("✓ " if value==policy else "")+value.capitalize(),func(): policy=value; refresh())
-		THEME.apply_button(choice,value == policy,14,Vector2(100,36))
-	var readiness := HearthExpeditions.readiness(campaign,selected_party,dungeon_id)
-	if not readiness.ok: plan.add_child(label(String(readiness.error),14,Color("f0a08f")))
-	var launch := HBoxContainer.new()
-	launch.add_theme_constant_override("separation",8)
-	plan.add_child(launch)
-	var lead := _primary_button(launch,"Lead Expedition",func(): hide(); manual_launch.emit(dungeon_id,selected_party.duplicate()),readiness.ok)
-	lead.tooltip_text = "Play the expedition yourself."
-	var dispatch := button(launch,"Dispatch Party",func(): act(HearthExpeditions.dispatch(campaign,selected_party,dungeon_id,policy)),readiness.ok and campaign.has_completed_dungeon(dungeon_id))
-	dispatch.custom_minimum_size = Vector2(150,42)
-	dispatch.tooltip_text = "Send them without you. Available once you have led a party past this dungeon's guardian yourself." if not campaign.has_completed_dungeon(dungeon_id) else "Send them without you. They return after one shift."
-	if not campaign.dispatches.is_empty():
-		_heading("Parties away")
-		for value in campaign.dispatches.values():
-			card("%s · back Day %d" % [String(GameBalance.get_dungeon(String(value.dungeon_id)).get("name",String(value.dungeon_id).capitalize())),value.due_day],"%s · %s retreat policy" % [("Early Shift" if int(value.get("due_shift_index",-1)) % 2 == 0 else "Late Shift") if int(value.get("due_shift_index",-1)) >= 0 else "Morning",String(value.retreat_policy).capitalize()])
+	var plan := card("Set out","Pick a destination, an adventurer, and what they carry.")
+	var open_button := _primary_button(plan,"Plan an Expedition",open_expedition_setup,not campaign.expedition.active)
+	open_button.custom_minimum_size = Vector2(240,46)
+	if campaign.expedition.active: plan.add_child(label("An expedition is already under way.",14,Color("e7b45a")))
+	var pantry := card("Rations","Each expedition takes %d rations from the pantry." % HearthUpkeep.rations_per_run())
+	pantry.add_child(label("Pantry %d · lasts about %d days at home" % [campaign.supplies,HearthUpkeep.days_left(campaign)],14,THEME.IVORY))
 
 static var _check_icons: Dictionary = {}
 
@@ -1149,7 +1097,7 @@ func _style_check(check: CheckBox) -> void:
 # ---------------------------------------------------------------- facilities
 
 func facilities_page() -> void:
-	_heading("Establishment","Each expansion adds rooms, expedition slots, and stronger recruits")
+	_heading("Establishment","Each expansion adds rooms and stronger recruits")
 	var tiers := HBoxContainer.new()
 	tiers.add_theme_constant_override("separation",8)
 	body.add_child(tiers)
@@ -1164,50 +1112,23 @@ func facilities_page() -> void:
 		panel.add_child(content)
 		content.add_child(label("CURRENT" if current else ("BUILT" if reached else "TIER %d" % (rank+1)),11,THEME.GOLD if current else THEME.MUTED))
 		content.add_child(label(String(tier.name),16,THEME.HIGHLIGHT_GOLD if reached else THEME.MUTED))
-		content.add_child(label("%d rooms · %d slots" % [tier.capacity,tier.expedition_slots],13,THEME.IVORY if reached else THEME.MUTED))
+		content.add_child(label("%d rooms" % int(tier.capacity),13,THEME.IVORY if reached else THEME.MUTED))
 		if GameBalance.leveling_enabled(): content.add_child(label("Recruits L%d–%d" % [tier.recruit_levels[0],tier.recruit_levels[1]],13,THEME.IVORY if reached else THEME.MUTED))
-	_heading("Improvements","Commissioned work finishes after a few days")
-	var grid := _grid(2)
-	var branches: Array = ["roster_services"]+HearthCatalog.data().facilities.keys()
-	for branch in branches:
-		# Training only raises levels, so it is hidden while levelling is switched off.
-		if branch == "replacement_quality" and not GameBalance.leveling_enabled(): continue
-		var definition: Dictionary=HearthCatalog.data().facilities.get(branch,{"name":"Expand the Hearth","description":"Build the next authored wing and increase company capacity."})
-		var cost := HearthFacilities.quote(campaign,branch)
-		var rank := int(campaign.tavern_upgrades.get(branch,0))
-		var content := card(String(definition.name),String(definition.description),grid)
-		var pips := HBoxContainer.new()
-		pips.add_theme_constant_override("separation",4)
-		content.add_child(pips)
-		pips.add_child(label("Rank %d" % rank,13,THEME.MUTED))
-		for index in range(maxi(3,rank+1)):
-			var pip := ColorRect.new()
-			pip.custom_minimum_size = Vector2(14,6)
-			pip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			pip.color = THEME.GOLD if index < rank else Color("3a2a1c")
-			pips.add_child(pip)
-		var footer := HBoxContainer.new()
-		footer.add_theme_constant_override("separation",8)
-		content.add_child(footer)
-		var status: Label
-		if campaign.construction.has(branch): status = label("Under construction · ready Day %d" % campaign.construction[branch].due_day,13,Color("8fb8e0"))
-		elif cost.available: status = label("%dg · %d essence · %d %s" % [cost.gold,cost.essence,cost.days,"day" if int(cost.days) == 1 else "days"],13,THEME.IVORY)
-		else: status = label(String(cost.error),13,THEME.MUTED)
-		status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		if cost.available: status.tooltip_text = "Requires tier %d, reputation %d, and %d guardians defeated on expeditions you led." % [int(cost.tier)+1,cost.get("reputation",0),cost.get("manual_clears",0)]
-		footer.add_child(status)
-		var commission := button(footer,"Commission",func(): act(HearthFacilities.purchase(campaign,branch)),cost.available)
-		commission.custom_minimum_size = Vector2(120,36)
+	# Expanding the Hearth is the one upgrade: gold and renown.
+	var expand := card("Expand the Hearth","More rooms for more adventurers, and better recruits.")
+	var cost := HearthFacilities.quote(campaign,"roster_services")
+	if campaign.construction.has("roster_services"): expand.add_child(label("Under construction · ready Day %d" % campaign.construction.roster_services.due_day,14,Color("8fb8e0")))
+	elif cost.available: expand.add_child(label("%dg · %d renown · %d days" % [cost.gold,int(cost.get("renown",0)),cost.days],14,THEME.IVORY))
+	else: expand.add_child(label(String(cost.error),14,THEME.MUTED))
+	var commission := button(expand,"Expand",func(): act(HearthFacilities.purchase(campaign,"roster_services")),cost.available)
+	commission.custom_minimum_size = Vector2(140,38)
 
 # ---------------------------------------------------------------- suppliers
 
 func merchant_page() -> void:
-	_heading("Provisions","Stock refreshes each week")
+	_pantry_section()
+	_heading("Provisions","Found on expeditions; pack them on the Set Out screen")
 	var provisions := _grid(3)
-	var supplies := card("Travel supplies","Every expedition consumes supplies. You have %d." % campaign.supplies,provisions)
-	var buy_supplies := button(supplies,"Buy 4 · 8g",_buy_supplies)
-	buy_supplies.custom_minimum_size = Vector2(120,36)
 	for id in HearthCatalog.data().consumables:
 		var data := GameBalance.get_consumable(id)
 		var content := card(String(data.get("name",id)),String(data.get("description","")),provisions)
@@ -1249,6 +1170,30 @@ func merchant_page() -> void:
 		var buy_item := button(content,"Buy · %dg" % entry.price,func(): act(HearthArmory.buy(campaign,id)),campaign.banked_gold >= int(entry.price))
 		buy_item.custom_minimum_size = Vector2(120,36)
 	if listed == 0: _empty_state("No equipment for sale yet","Expand the Hearth to attract better suppliers.")
+
+## The pantry (data/upkeep.json): everyone at home eats one ration a day of the
+## quality you serve, and each expedition takes rations with it.
+func _pantry_section() -> void:
+	var eaters := HearthUpkeep.diners(campaign).size()
+	_heading("Pantry","%d at the table · %d rations · lasts about %d days" % [eaters,campaign.supplies,HearthUpkeep.days_left(campaign)])
+	var grid := _grid(3)
+	for food_id in HearthUpkeep.order():
+		var food := HearthUpkeep.food(food_id)
+		var serving: bool = food_id == campaign.served_food
+		var mood := int(food.get("happiness",0))
+		var content := card(String(food.get("name",food_id)),String(food.get("description","")),grid,THEME.HIGHLIGHT_GOLD if serving else THEME.GOLD)
+		content.add_child(label("%d in the pantry · %dg each" % [int(campaign.pantry.get(food_id,0)),int(food.get("cost",1))],14,THEME.IVORY))
+		content.add_child(label("Happiness %+d a day" % mood,13,GOOD if mood > 0 else BAD))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation",6)
+		content.add_child(row)
+		for count in [1,5]:
+			var buy_food := button(row,"Buy %d · %dg" % [count,int(food.get("cost",1)) * count],func(): act(HearthUpkeep.buy(campaign,food_id,count)),campaign.banked_gold >= int(food.get("cost",1)) * count)
+			buy_food.custom_minimum_size = Vector2(96,34)
+			buy_food.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var serve := button(content,"Serving at the table" if serving else "Serve this",func(): act(HearthUpkeep.serve(campaign,food_id)),not serving)
+		serve.custom_minimum_size = Vector2(0,34)
+		if serving: THEME.apply_button(serve,true,14,Vector2(0,34))
 
 # ---------------------------------------------------------------- records
 

@@ -1,0 +1,73 @@
+{
+  "how_to_edit": [
+    "Hearth upkeep: the pantry feeds everyone at home once a day, and each expedition takes rations with it.",
+    "foods: the three qualities of supplies. cost is gold per ration. happiness is the daily change for each adventurer who eats it.",
+    "The Hearth serves the quality chosen on the Suppliers page; if that runs out it falls back to the next cheapest, then the next best.",
+    "hungry_happiness: daily change for an adventurer when the pantry is empty.",
+    "Happiness runs 0-100. Below leave_below an adventurer may walk out at the start of a day: leave_chance, or leave_chance_after_training if they trained the day before.",
+    "rations_per_run: supplies taken when you set out on an expedition.",
+    "Expedition results change happiness on return (victory/retreat/defeat)."
+  ],
+  "order": [
+    "scraps",
+    "hearty",
+    "feast"
+  ],
+  "foods": {
+    "scraps": {
+      "name": "Scraps",
+      "cost": 2,
+      "happiness": -5,
+      "description": "Stale bread and thin broth. Keeps them fed, not happy."
+    },
+    "hearty": {
+      "name": "Hearty Fare",
+      "cost": 5,
+      "happiness": 2,
+      "description": "Stew, fresh bread and ale. Keeps spirits steady."
+    },
+    "feast": {
+      "name": "Feast",
+      "cost": 11,
+      "happiness": 7,
+      "description": "Roasts, pies and good wine. They'll talk about it for days."
+    }
+  },
+  "starting_pantry": {
+    "scraps": 0,
+    "hearty": 8,
+    "feast": 0
+  },
+  "default_served": "hearty",
+  "rations_per_run": 2,
+  "hungry_happiness": -15,
+  "training_happiness": -4,
+  "victory_happiness": 10,
+  "retreat_happiness": 2,
+  "defeat_happiness": -8,
+  "leave_below": 25,
+  "leave_chance": 0.2,
+  "leave_chance_after_training": 0.4,
+  "bands": [
+    {
+      "min": 75,
+      "name": "Content",
+      "color": "#8fd48a"
+    },
+    {
+      "min": 50,
+      "name": "Settled",
+      "color": "#e8cf72"
+    },
+    {
+      "min": 25,
+      "name": "Unhappy",
+      "color": "#e0a35e"
+    },
+    {
+      "min": 0,
+      "name": "Miserable",
+      "color": "#e07a62"
+    }
+  ]
+}

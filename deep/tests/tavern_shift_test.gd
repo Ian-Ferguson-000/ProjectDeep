@@ -83,12 +83,15 @@ func run() -> void:
 		hero.level = 20
 		hero.max_health = 1000
 		hero.current_health = 1000
-	check(HearthExpeditions.dispatch(runs,[party[0].id],"forest","cautious").ok,"Dispatch failed")
+	# Runs are solo: players can't dispatch parties any more. Dispatches already in
+	# an old save still come home, so the rest of this builds them the old way.
+	check(not HearthExpeditions.dispatch(runs,[party[0].id],"forest","cautious").ok,"Players can still dispatch parties")
+	check(HearthExpeditions._legacy_dispatch(runs,[party[0].id],"forest","cautious").ok,"Dispatch failed")
 	check(runs.calendar_shift == 0 and runs.calendar_day == 1,"Dispatch advanced time")
-	check(not HearthExpeditions.dispatch(runs,[party[0].id],"forest","cautious").ok,"An away recruit was dispatched twice")
+	check(not HearthExpeditions._legacy_dispatch(runs,[party[0].id],"forest","cautious").ok,"An away recruit was dispatched twice")
 	check(not HearthArmory.unequip(runs,party[0].id,"weapon").ok,"Away equipment was unlocked")
-	check(HearthExpeditions.dispatch(runs,[party[1].id],"forest","cautious").ok,"Second available party could not depart")
-	check(not HearthExpeditions.dispatch(runs,[party[1].id],"crypt","cautious").ok,"Dispatch bypassed dungeon unlock")
+	check(HearthExpeditions._legacy_dispatch(runs,[party[1].id],"forest","cautious").ok,"Second available party could not depart")
+	check(not HearthExpeditions._legacy_dispatch(runs,[party[1].id],"crypt","cautious").ok,"Dispatch bypassed dungeon unlock")
 	var saved_runs := restored(runs)
 	var returns := HearthCalendar.advance_shift(runs)
 	HearthCalendar.advance_shift(saved_runs)
@@ -108,7 +111,7 @@ func run() -> void:
 	mixed_party[0].level = 20
 	mixed_party[0].max_health = 1000
 	mixed_party[0].current_health = 1000
-	HearthExpeditions.dispatch(mixed,[mixed_party[0].id],"forest","cautious")
+	HearthExpeditions._legacy_dispatch(mixed,[mixed_party[0].id],"forest","cautious")
 	check(mixed.launch_expedition([mixed_party[1].id],"forest").ok,"Manual run alongside dispatch failed")
 	var manual_id := mixed.expedition.expedition_id
 	check(not HearthCalendar.advance_shift(mixed).ok,"Calendar advanced during active manual run")
@@ -164,6 +167,8 @@ func run() -> void:
 	bounded.world_crisis.war_stage = "open_war"
 	# Freeze ecology progression to isolate the no-event limit from outbreaks.
 	for value in bounded.dungeon_ecology.values(): value.last_day = 10000
+	# A full pantry, so hunger (which stops the shortcut) doesn't interrupt.
+	bounded.pantry["hearty"] = 100000
 	var no_event := HearthCalendar.advance_to_next_event(bounded)
 	check(no_event.ok and bounded.calendar_day == 113 and bounded.calendar_shift == 0 and String(no_event.message).contains("no qualifying event"),"Shortcut did not stop and report its 112-day limit")
 	bounded.ending_state = {"ending_id":"test"}
@@ -198,7 +203,7 @@ func run() -> void:
 	legacy_hero.level = 20
 	legacy_hero.max_health = 1000
 	legacy_hero.current_health = 1000
-	HearthExpeditions.dispatch(legacy_dispatch,[legacy_hero.id],"forest","cautious")
+	HearthExpeditions._legacy_dispatch(legacy_dispatch,[legacy_hero.id],"forest","cautious")
 	var record: Dictionary = legacy_dispatch.dispatches.values()[0]
 	record.erase("departure_shift_index")
 	record.erase("due_shift_index")

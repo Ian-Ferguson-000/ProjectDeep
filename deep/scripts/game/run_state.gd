@@ -288,7 +288,11 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	if campaign != null and campaign.expedition.active and not campaign.expedition.tutorial_run: _note_unlocks(Unlocks.check(campaign,run_stats(),{"type":"reach","dungeon":dungeon_id}))
 
 static func dungeon_available(dungeon_id: String) -> bool:
-	return not GameBalance.get_dungeon(dungeon_id).is_empty() and not String(GameBalance.get_dungeon(dungeon_id).get("runtime", "")).is_empty()
+	return not GameBalance.get_dungeon(dungeon_id).is_empty() and not String(GameBalance.get_dungeon(dungeon_id).get("runtime", "")).is_empty() and not is_coming_soon(dungeon_id)
+
+## Dungeons not in this build yet (dungeons.json "coming_soon"): shown greyed out, never entered.
+static func is_coming_soon(dungeon_id: String) -> bool:
+	return bool(GameBalance.get_dungeon(dungeon_id).get("coming_soon",false))
 
 func advance_floor() -> bool:
 	if current_floor >= max_floors:
@@ -453,7 +457,7 @@ func has_completed_dungeon(dungeon_id: String) -> bool:
 
 func is_dungeon_unlocked(dungeon_id: String) -> bool:
 	var dungeon := GameBalance.get_dungeon(dungeon_id)
-	if dungeon.is_empty(): return false
+	if dungeon.is_empty() or bool(dungeon.get("coming_soon",false)): return false
 	if GameBalance.are_all_dungeons_unlocked_for_testing(): return true
 	var unlock: Dictionary = dungeon.get("unlock", {})
 	match String(unlock.get("type", "always")):

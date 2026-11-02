@@ -17,8 +17,9 @@ static func readiness(c: CampaignState, ids: Array[String], dungeon_id: String) 
 		if member == null or member.status != CharacterRecord.STATUS_AVAILABLE or member.recovery_until > c.calendar_day: return HearthArmory.fail("Every party member must be home and recovered.")
 		var weapon: Dictionary = c.armory.get(member.equipment.get("weapon",""),{})
 		if weapon.is_empty() or weapon.get("owner","")!=id: return HearthArmory.fail("Equip every adventurer with an owned class weapon.")
-	var cost := maxi(1,ids.size()-int(c.tavern_upgrades.starting_supplies))
-	if c.supplies < cost: return HearthArmory.fail("This party needs %d supplies." % cost)
+	# Rations for the road (data/upkeep.json rations_per_run).
+	var cost := HearthUpkeep.rations_per_run()
+	if c.supplies < cost: return HearthArmory.fail("An expedition needs %d rations; the pantry has %d. Buy supplies first." % [cost,c.supplies])
 	return {"ok":true,"supplies":cost}
 
 static func risk(c: CampaignState, ids: Array[String], dungeon_id: String) -> Dictionary:
@@ -44,7 +45,12 @@ static func risk(c: CampaignState, ids: Array[String], dungeon_id: String) -> Di
 	reasons.append_array(compatibility.reasons)
 	return {"ratio":ratio,"band":"Low" if ratio>=1.4 else ("Moderate" if ratio>=0.95 else "High"),"compatibility":compatibility,"reasons":reasons}
 
+## Runs are solo and always led by you: sending parties out unattended is gone.
+## (Dispatches already in an old save still come home through resolve_auto.)
 static func dispatch(c: CampaignState, ids: Array[String], dungeon_id: String, policy: String) -> Dictionary:
+	return HearthArmory.fail("Expeditions are solo runs you lead yourself.")
+
+static func _legacy_dispatch(c: CampaignState, ids: Array[String], dungeon_id: String, policy: String) -> Dictionary:
 	if policy not in ["cautious","balanced","bold"]: return HearthArmory.fail("Choose a valid retreat policy.")
 	if not c.has_completed_dungeon(dungeon_id): return HearthArmory.fail("Manually clear this dungeon before dispatching a party.")
 	var check := readiness(c,ids,dungeon_id)
@@ -130,6 +136,7 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 			c.expedition = e
 			return transition
 		if transition.get("reset",false): return {"ok":true,"reset":true,"duplicate":false,"logs":[transition.message],"report":{}}
+	HearthUpkeep.on_return(c,e.party_ids,outcome)
 	var divine_modifiers := DIVINE.settlement_modifiers(c,e)
 	var gross := roundi(e.carried_gold*float(divine_modifiers.gold_multiplier)) if outcome != "death" else 0
 	var share := 0 if bool(extra.get("legacy_resolve",false)) else int(gross*0.2)

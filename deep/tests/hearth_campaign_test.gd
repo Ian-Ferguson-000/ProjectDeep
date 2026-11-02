@@ -71,9 +71,11 @@ func run() -> void:
 	expansion.supplies=30
 	for member in members: member.level=10; member.max_health=100; member.current_health=100
 	var away: Array[String]=[members[0].id]
-	check(HearthExpeditions.dispatch(expansion,away,"forest","cautious").ok,"Automated dispatch failed")
-	check(not HearthExpeditions.dispatch(expansion,away,"forest","cautious").ok,"Same character dispatched twice")
-	check(not HearthExpeditions.dispatch(expansion,[members[1].id],"crypt","balanced").ok,"Automation skipped manual unlock")
+	# Solo runs only: dispatching is gone for players; old saves' dispatches still resolve.
+	check(not HearthExpeditions.dispatch(expansion,away,"forest","cautious").ok,"Players can still dispatch parties")
+	check(HearthExpeditions._legacy_dispatch(expansion,away,"forest","cautious").ok,"Automated dispatch failed")
+	check(not HearthExpeditions._legacy_dispatch(expansion,away,"forest","cautious").ok,"Same character dispatched twice")
+	check(not HearthExpeditions._legacy_dispatch(expansion,[members[1].id],"crypt","balanced").ok,"Automation skipped manual unlock")
 	var saved:=expansion.to_dict()
 	var duplicate:=CampaignState.new()
 	duplicate._load_dict(saved)
@@ -109,29 +111,27 @@ func run() -> void:
 	for page in HearthManagement.SECTIONS:
 		ui.open(expansion,ui_state,page)
 		check(ui.body.get_child_count()>0,"Empty UI page: "+page)
-	# Regression: party and policy controls rebuild the management page from
-	# inside their own signals. The old synchronous free crashed Godot after a
-	# return/recruit/select sequence instead of producing a recoverable script error.
+	# The Set Out screen: opening Expeditions shows it, and picking cards rebuilds
+	# it from inside their own signals without freeing them mid-signal.
 	var selection_campaign:=company()
 	var selection_state:=RunState.new()
 	selection_state.attach_campaign(selection_campaign)
 	ui.open(selection_campaign,selection_state,"Expeditions")
-	var party_checks: Array[Node]=ui.body.find_children("*","CheckBox",true,false)
-	check(not party_checks.is_empty(),"Expedition page did not create party selectors")
-	if not party_checks.is_empty():
-		var party_check:=party_checks[0] as CheckBox
-		party_check.button_pressed=true
+	check(ui.expedition_setup.visible,"Expeditions did not open the Set Out screen")
+	var forest_card := ui.expedition_setup.find_child("Destination_forest",true,false) as Button
+	check(forest_card != null,"No forest destination card")
+	if forest_card != null:
+		forest_card.pressed.emit()
 		await process_frame
-		check(ui.selected_party.size()==1,"Party selection was lost during safe page refresh")
-	var policy_button:Button=null
-	var policy_buttons: Array[Node]=ui.body.find_children("*","Button",true,false)
-	for candidate in policy_buttons:
-		if (candidate as Button).text.ends_with("Bold"): policy_button=candidate as Button;break
-	check(policy_button!=null,"Expedition page did not create policy controls")
-	if policy_button!=null:
-		policy_button.pressed.emit()
+		check(ui.expedition_setup.dungeon_id == "forest","Destination choice was lost during refresh")
+	ui.expedition_setup.go_to(1)
+	await process_frame
+	var hero_cards: Array[Node] = ui.expedition_setup.find_children("Hero_*","Button",true,false)
+	check(not hero_cards.is_empty(),"No adventurer cards")
+	if not hero_cards.is_empty():
+		(hero_cards[0] as Button).pressed.emit()
 		await process_frame
-		check(ui.policy=="bold","Policy selection was lost during safe page refresh")
+		check(not ui.expedition_setup.hero_id.is_empty(),"Adventurer choice was lost during refresh")
 	ui.queue_free()
 	await process_frame
 	if failures.is_empty(): print("HEARTH_CAMPAIGN_TESTS_PASSED")
