@@ -51,6 +51,7 @@ func _build_floor() -> void:
 	if is_instance_valid(player): _store_active_slasher_state()
 	for child in get_children(): child.free()
 	room_id = int(run_state.field_run.get("current_room",0))
+	_drop_rng = null
 	run_state.enter_field_room(room_id,int(run_state.field_run.get("previous_room",-1)))
 	room = run_state.get_field_room(room_id)
 	room_role = String(room.get("role","combat"))
@@ -66,6 +67,9 @@ func _build_floor() -> void:
 	if new_floor and run_state.current_floor == 1 and not run_state.starter_reward_claimed: call_deferred("_offer_starter_relic")
 	transition_cooldown = 0.5
 	_save_checkpoint()
+
+func _drop_seed_key() -> String:
+	return "room%d" % room_id
 
 ## Saves on entering each room and on clearing it, so progress within a floor
 ## survives a crash or quitting.

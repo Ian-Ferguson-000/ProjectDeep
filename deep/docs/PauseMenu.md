@@ -8,10 +8,14 @@ The game pauses and the menu offers:
 | Resume | both | Closes the menu (Esc does too). |
 | Codex | dungeon | Opens the M codex: stats, progression, items, journal. |
 | Tavern Guide | tavern | Replays the first-visit guide (docs/TavernGuide.md). |
+| Abandon Run | dungeon (not the tutorial) | Leave the run and go home to the tavern as a retreat: the adventurer comes back safe; you keep the gold secured at the last floor checkpoint and leave the rest. The confirmation shows both amounts. |
 | Options | both | Window, resolution, VSync, UI scale, camera zoom, screen shake, volumes. |
 | Controls | both | Every keyboard/mouse and controller binding. |
 | Return to Title Screen | both | Back to the start screen to continue, start or switch saves. |
 | Quit Game | both (not on web) | Closes the game. |
+
+In the dungeon the menu also shows the run's **seed** with Copy and Save
+buttons (docs/RunSeeds.md).
 
 Esc on a sub-page steps back to the main list. It's the main menu, so it opens
 over **everything**: the codex, shops, relic choices, the Hearth windows and

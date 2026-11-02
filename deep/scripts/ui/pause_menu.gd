@@ -24,6 +24,8 @@ var before_leave: Callable = func() -> void: pass
 var open_codex: Callable
 ## Replays the tavern guide (tavern only).
 var guide: Callable
+## Leaves the run and goes home to the tavern (dungeon only, not the tutorial).
+var abandon_run: Callable
 var controller: Node
 var run_state: RunState
 
@@ -119,6 +121,7 @@ func show_page(id: String) -> void:
 		"controls": _controls_page()
 		"confirm_title": _confirm_page("title")
 		"confirm_quit": _confirm_page("quit")
+		"confirm_abandon": _abandon_page()
 		_: _main_page()
 
 # ---------------------------------------------------------------- pages
@@ -132,6 +135,7 @@ func _title(text_value: String, subtitle: String = "") -> void:
 
 func _main_page() -> void:
 	_title("Paused",_where())
+	if context == "dungeon" and run_state != null: _seed_row()
 	body.add_child(_spacer(6))
 	var first := _button("Resume",close,true)
 	if context == "dungeon" and open_codex.is_valid():
@@ -141,9 +145,56 @@ func _main_page() -> void:
 	_button("Options",show_page.bind("options"))
 	_button("Controls",show_page.bind("controls"))
 	body.add_child(_spacer(4))
+	if context == "dungeon" and abandon_run.is_valid(): _button("Abandon Run",show_page.bind("confirm_abandon"))
 	_button("Return to Title Screen",show_page.bind("confirm_title"))
 	if not OS.has_feature("web"): _button("Quit Game",show_page.bind("confirm_quit"))
 	first.call_deferred("grab_focus")
+
+## The run's seed, with buttons to copy it or keep it for testing.
+func _seed_row() -> void:
+	var code := run_state.seed_code()
+	var row := HBoxContainer.new(); row.name = "SeedRow"; row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation",8)
+	body.add_child(row)
+	var seed_label := _label("Seed  %s%s" % [code,"  (chosen)" if run_state.run_seeded else ""],15,THEME.IVORY)
+	seed_label.name = "SeedLabel"
+	row.add_child(seed_label)
+	var copy := Button.new(); copy.name = "CopySeed"; copy.text = "Copy"
+	THEME.apply_button(copy,false,13,Vector2(64,30))
+	copy.pressed.connect(func():
+		DisplayServer.clipboard_set(code)
+		copy.text = "Copied")
+	row.add_child(copy)
+	var keep := Button.new(); keep.name = "SaveSeed"
+	keep.text = "Saved" if RunSeed.is_saved(code) else "Save"
+	keep.disabled = RunSeed.is_saved(code)
+	keep.tooltip_text = "Keep this seed in the saved list on the Set Out screen."
+	THEME.apply_button(keep,false,13,Vector2(64,30))
+	keep.pressed.connect(func():
+		if RunSeed.save_seed(code,_where()):
+			keep.text = "Saved"; keep.disabled = true)
+	row.add_child(keep)
+
+func _abandon_page() -> void:
+	_title("Abandon this run?")
+	var secured := 0
+	if run_state != null and run_state.campaign != null: secured = run_state.campaign.expedition.secured_gold
+	var carried := run_state.gold if run_state != null else 0
+	var lost := maxi(0,carried - secured)
+	var text_value := "Leave the dungeon and head home to the Hearth. Your adventurer returns safely, counted as a retreat.\n\nYou keep the %d gold secured at your last floor checkpoint" % secured
+	text_value += (", and leave behind the %d gold picked up since." % lost) if lost > 0 else "."
+	var note := _label(text_value,15,THEME.IVORY)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; note.custom_minimum_size = Vector2(440,0)
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.add_child(note)
+	body.add_child(_spacer(6))
+	var confirm := _button("Abandon Run",func():
+		visible = false
+		get_tree().paused = false
+		abandon_run.call(),true)
+	confirm.name = "Confirm"
+	_button("Cancel",show_page.bind("main"))
+	confirm.call_deferred("grab_focus")
 
 func _where() -> String:
 	if context == "tavern": return "The Hearth"

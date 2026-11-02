@@ -34,6 +34,9 @@ var state: RunState
 var step := 0
 var dungeon_id := ""
 var hero_id := ""
+## A chosen run seed ("" = random). See RunSeed.
+var seed_text := ""
+var seed_status: Label
 var content: VBoxContainer
 var step_row: HBoxContainer
 var footer_summary: HBoxContainer
@@ -130,12 +133,14 @@ func _next() -> void:
 		return
 	var ready := readiness()
 	if not ready.ok: return
+	if state != null: state.requested_seed = RunSeed.decode(seed_text) if not seed_text.strip_edges().is_empty() else 0
 	hide()
 	launch_requested.emit(dungeon_id,hero_id)
 
 func readiness() -> Dictionary:
 	if not _selectable(dungeon_id): return {"ok":false,"error":"Choose a destination."}
 	if not _hero_ready(campaign.character(hero_id)): return {"ok":false,"error":"Choose an adventurer who is home and ready."}
+	if not seed_text.strip_edges().is_empty() and not RunSeed.is_valid(seed_text): return {"ok":false,"error":"That seed isn't valid: 8 letters and numbers, like K7QF-2MXA."}
 	var ids: Array[String] = [hero_id]
 	return HearthExpeditions.readiness(campaign,ids,dungeon_id)
 
@@ -317,6 +322,7 @@ func _gear_step() -> void:
 	var gear := _panel_box(columns,Vector2(430,0))
 	gear.add_child(_label("EQUIPMENT",13,THEME.GOLD))
 	for slot in SLOTS: gear.add_child(_slot_row(member,slot))
+	gear.add_child(_seed_box())
 	# Supplies, potions, bounties.
 	var side := _panel_box(columns,Vector2(0,0))
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -340,6 +346,55 @@ func _gear_step() -> void:
 	if not offers.is_empty():
 		side.add_child(_label("BOUNTIES",13,THEME.GOLD))
 		for bounty in offers: side.add_child(_wrap(_label("•  %s  (%s)" % [String(bounty.text),BountyBoard.reward_text(bounty.reward)],13,THEME.IVORY)))
+
+## Optional run seed: type one, pick a saved one, or leave it blank for a random run.
+func _seed_box() -> Control:
+	var box := VBoxContainer.new(); box.name = "SeedBox"; box.add_theme_constant_override("separation",4)
+	box.add_child(_label("RUN SEED",13,THEME.GOLD))
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation",8); box.add_child(row)
+	var field := LineEdit.new(); field.name = "SeedField"
+	field.placeholder_text = "Random"
+	field.text = seed_text
+	field.max_length = 12
+	field.custom_minimum_size = Vector2(170,34)
+	field.text_changed.connect(_on_seed_typed)
+	row.add_child(field)
+	var picker := OptionButton.new(); picker.name = "SavedSeeds"; picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	picker.add_item("Saved seeds…"); picker.set_item_metadata(0,"")
+	for entry in RunSeed.saved():
+		var note := String(entry.get("note",""))
+		picker.add_item("%s%s" % [String(entry.code),"  ·  " + note if not note.is_empty() else ""])
+		picker.set_item_metadata(picker.item_count - 1,String(entry.code))
+	picker.disabled = picker.item_count <= 1
+	picker.item_selected.connect(func(index: int):
+		var code := String(picker.get_item_metadata(index))
+		if code.is_empty(): return
+		field.text = code
+		_on_seed_typed(code))
+	row.add_child(picker)
+	seed_status = _label("",12,THEME.MUTED)
+	box.add_child(seed_status)
+	_show_seed_status()
+	return box
+
+func _on_seed_typed(text_value: String) -> void:
+	seed_text = text_value
+	_show_seed_status()
+	for child in footer_summary.get_children():
+		footer_summary.remove_child(child); child.queue_free()
+	_footer()
+
+func _show_seed_status() -> void:
+	if seed_status == null or not is_instance_valid(seed_status): return
+	if seed_text.strip_edges().is_empty():
+		seed_status.text = "Blank for a new random run. Same seed, same floors and loot."
+		seed_status.add_theme_color_override("font_color",THEME.MUTED)
+	elif RunSeed.is_valid(seed_text):
+		seed_status.text = "Seeded run: %s" % RunSeed.encode(RunSeed.decode(seed_text))
+		seed_status.add_theme_color_override("font_color",Color("8fd48a"))
+	else:
+		seed_status.text = "Not a valid seed yet (8 letters and numbers)."
+		seed_status.add_theme_color_override("font_color",Color("e0a35e"))
 
 func _slot_row(member: CharacterRecord, slot: String) -> Control:
 	var row := HBoxContainer.new(); row.name = "Slot_%s" % slot; row.add_theme_constant_override("separation",8)

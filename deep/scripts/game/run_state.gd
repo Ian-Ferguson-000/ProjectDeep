@@ -38,6 +38,13 @@ var gold: int = 0
 var keys: int = 0
 var potions: int = 0
 var floor_seed: int = 1001
+## Set before starting a run to play a chosen seed (0 = random); used once.
+var requested_seed: int = 0
+## Whether the current run was started from a chosen seed.
+var run_seeded := false
+## The seed the run started with (floor_seed shifts when a run carries on into
+## the next dungeon; this doesn't).
+var run_seed: int = 0
 var current_floor: int = 1
 var max_floors: int = 5
 var active_dungeon_id: String = "forest"
@@ -108,7 +115,8 @@ func save_room_checkpoint() -> bool:
 func run_snapshot() -> Dictionary:
 	return {"floor":current_floor,"floor_seed":floor_seed,"gold":gold,"keys":keys,"potions":potions,"class_resource":class_resource,
 		"field_run":var_to_str(field_run),"starter_reward_claimed":starter_reward_claimed,"slasher_endless_mode":slasher_endless_mode,
-		"slasher_campaign_boss_cleared":slasher_campaign_boss_cleared,"slasher_merchant_interlude":slasher_merchant_interlude}
+		"slasher_campaign_boss_cleared":slasher_campaign_boss_cleared,"slasher_merchant_interlude":slasher_merchant_interlude,
+		"run_seed":run_seed,"run_seeded":run_seeded}
 
 ## Puts a saved snapshot back when a saved expedition is continued. Only used
 ## when it belongs to the floor being resumed.
@@ -122,6 +130,7 @@ func restore_run_snapshot(snapshot: Dictionary) -> bool:
 	slasher_endless_mode = bool(snapshot.get("slasher_endless_mode",slasher_endless_mode))
 	slasher_campaign_boss_cleared = bool(snapshot.get("slasher_campaign_boss_cleared",slasher_campaign_boss_cleared))
 	slasher_merchant_interlude = bool(snapshot.get("slasher_merchant_interlude",slasher_merchant_interlude))
+	run_seed = int(snapshot.get("run_seed",run_seed)); run_seeded = bool(snapshot.get("run_seeded",run_seeded))
 	return true
 
 func _restore_campaign_runtime() -> void:
@@ -304,10 +313,13 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	current_floor = 1
 	slasher_endless_mode=false;slasher_campaign_boss_cleared=false
 	class_resource = 0
-	# A fresh seed every run: floors, chests and the trader differ run to run,
-	# even straight after launching the game. Saved with the expedition so a
-	# resumed run keeps its floors.
-	floor_seed = randi_range(1,2000000000)
+	# A fresh seed every run (or the one chosen on the Set Out screen): floors,
+	# rooms, foes, chests, the trader and drops all come from it. Saved with the
+	# expedition so a resumed run keeps its floors. See RunSeed.
+	run_seeded = requested_seed > 0
+	floor_seed = requested_seed if run_seeded else RunSeed.random_value()
+	run_seed = floor_seed
+	requested_seed = 0
 	if campaign != null and campaign.expedition.active: campaign.expedition.floor_seed = floor_seed
 	field_run.clear()
 	if String(dungeon.get("dungeon_type", "mystery")) == "field":
@@ -458,6 +470,10 @@ func is_slasher_elite_floor()->bool:
 	# TUNING: Change forest.slasher.elite_floor_in_cycle to move the elite miniboss.
 	return get_slasher_cycle_floor()==int(Dictionary(GameBalance.get_dungeon(active_dungeon_id).get("slasher",{})).get("elite_floor_in_cycle",5))
 func enter_slasher_endless()->void:slasher_endless_mode=true;slasher_campaign_boss_cleared=true
+
+## The run's seed as a code to share or type in ("K7QF-2MXA").
+func seed_code() -> String:
+	return RunSeed.encode(run_seed if run_seed > 0 else floor_seed)
 
 func get_current_floor_seed() -> int:
 	return floor_seed + current_floor * 997

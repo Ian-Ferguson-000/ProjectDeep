@@ -54,6 +54,7 @@ func begin(ids: Array[String], target_dungeon: String, is_tutorial: bool = false
 	carried_gold = 0; carried_relic_essence = 0; carried_contribution = 0; extraction_available = false; tutorial_run = is_tutorial
 	tutorial_step = 0; tutorial_controls_complete = false; tutorial_restart_count = 0
 	run_seconds = 0.0; dungeon_seconds = 0.0; run_stats = {}; run_snapshot = {}
+	secured_gold = 0; secured_essence = 0
 
 func living_party_ids() -> Array[String]:
 	var living: Array[String] = []
