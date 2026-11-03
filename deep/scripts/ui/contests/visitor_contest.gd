@@ -44,13 +44,14 @@ func _ready()->void:
 	var eyebrow:=Label.new();eyebrow.text="THE HEARTH  /  FRIENDLY RIVALRIES";eyebrow.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;eyebrow.add_theme_font_size_override("font_size",11);eyebrow.add_theme_color_override("font_color",THEME.MUTED);body.add_child(eyebrow)
 	var title:=Label.new();title.text=RULES.CONTESTS[contest_id].name;title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;title.add_theme_font_size_override("font_size",25);title.add_theme_color_override("font_color",THEME.HIGHLIGHT_GOLD);body.add_child(title)
 	var people:=HBoxContainer.new();people.alignment=BoxContainer.ALIGNMENT_CENTER;people.add_theme_constant_override("separation",18);body.add_child(people)
-	for person in [{"name":"You · Tavern Keeper","portrait":"res://assets/merchants/tavern_mara.png"},{"name":context.get("visitor_name","Visitor"),"portrait":context.get("portrait","")}]:
+	for person in [{"name":"You · Tavern Keeper","portrait":"res://assets/merchants/tavern_mara.png"},{"name":context.get("visitor_name","Visitor"),"portrait":context.get("portrait",""),"texture":context.get("portrait_texture",null)}]:
 		if not score_labels.is_empty():
 			var versus:=Label.new();versus.text="VS";versus.add_theme_color_override("font_color",THEME.GOLD);people.add_child(versus)
 		var card:=PanelContainer.new();card.custom_minimum_size.x=240;card.add_theme_stylebox_override("panel",THEME.panel(Color("#172121"),Color("#50665f"),6));people.add_child(card)
 		var row:=HBoxContainer.new();card.add_child(row)
 		var portrait:=TextureRect.new();portrait.custom_minimum_size=Vector2(44,48);portrait.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;portrait.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		if ResourceLoader.exists(String(person.portrait)):portrait.texture=load(String(person.portrait))
+		if person.get("texture") is Texture2D:portrait.texture=person.texture
+		elif ResourceLoader.exists(String(person.portrait)):portrait.texture=load(String(person.portrait))
 		row.add_child(portrait)
 		var column:=VBoxContainer.new();column.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(column)
 		var caption:=Label.new();caption.text=String(person.name);caption.add_theme_font_size_override("font_size",14);column.add_child(caption)

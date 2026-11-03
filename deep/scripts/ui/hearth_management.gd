@@ -17,7 +17,7 @@ const THEME = preload("res://scripts/ui/tavern_ui_theme.gd")
 const SECTIONS = ["Company","Training","Lodgings","Expeditions","Bounties","Facilities","Armory","Merchants","Calendar","Reports","Best Times","Unlocks"]
 const GROUPS = [
 	{"id":"Company","label":"Company","icon":"roster","pages":["Company","Training","Lodgings"]},
-	{"id":"Expeditions","label":"Expeditions","icon":"expedition","pages":["Expeditions","Bounties"]},
+	{"id":"Expeditions","label":"Expeditions","icon":"expedition","pages":["Expeditions","Bounties","Quests"]},
 	{"id":"Facilities","label":"Facilities","icon":"hearth","pages":["Facilities","Armory","Merchants"]},
 	{"id":"Records","label":"Records","icon":"ledger","pages":["Calendar","Reports","Best Times","Unlocks"]},
 ]
@@ -31,6 +31,7 @@ const PAGES = {
 	"Merchants":{"title":"Suppliers","tab":"Suppliers","icon":"merchants","hint":"Feed the company and buy equipment. Better food keeps adventurers happy."},
 	"Calendar":{"title":"Calendar","tab":"Calendar","icon":"calendar","hint":"What has happened at the Hearth, and what is coming."},
 	"Reports":{"title":"Expedition Reports","tab":"Reports","icon":"ledger","hint":"Every return: gold, losses, and what was recovered."},
+	"Quests":{"title":"Visitors & Quests","tab":"Quests","icon":"ledger","hint":"People of note who call at the Hearth. Take their jobs when they visit, finish them on expeditions or at home, and collect your reward next time they're in. Their favour opens up their wares."},
 	"Bounties":{"title":"Bounty Board","tab":"Bounties","icon":"ledger","hint":"Contracts posted at the Hearth. Meet one on an expedition and get home alive to collect. Unfinished bounties come down after a few days."},
 	"Unlocks":{"title":"Unlocks","tab":"Unlocks","icon":"ledger","hint":"Goals that permanently add new relics to the drop pool, raise drop luck, or put more bounties on the board."},
 	"Best Times":{"title":"Best Times","tab":"Best Times","icon":"ledger","hint":"Dungeons are never finished. Each guardian you defeat sets a clear time: beat the record, and the best for every class."},
@@ -276,6 +277,7 @@ func refresh() -> void:
 		"Reports": reports_page()
 		"Best Times": best_times_page()
 		"Bounties": bounties_page()
+		"Quests": quests_page()
 		"Unlocks": unlocks_page()
 		"Calendar":
 			var calendar := preload("res://scripts/ui/hearth_calendar_view.gd").new()
@@ -1216,6 +1218,33 @@ func _pantry_section() -> void:
 		if serving: THEME.apply_button(serve,true,14,Vector2(0,34))
 
 # ---------------------------------------------------------------- records
+
+## Visitors of merit: who's in, who's coming, and every job in hand.
+func quests_page() -> void:
+	var jobs := VisitorService.active_quests(campaign)
+	_heading("Jobs in hand","%d active" % jobs.size())
+	if jobs.is_empty(): _empty_state("No jobs yet","Talk to visitors of note in the tavern to take on their work.")
+	for entry in jobs:
+		var v := VisitorService.visitor(String(entry.visitor))
+		var q := VisitorService.quest(String(entry.visitor),String(entry.quest))
+		var content := card(String(q.get("title","")),String(q.get("summary","")),null,Color("8fd48a") if String(entry.state) == "ready" else THEME.GOLD)
+		content.add_child(label("For %s · %s" % [String(v.get("name","")),VisitorService.progress_text(campaign,String(entry.visitor),String(entry.quest))],13,GOOD if String(entry.state) == "ready" else THEME.MUTED))
+	_heading("Visitors","Their favour opens their wares")
+	var grid := _grid(2)
+	for id in VisitorService.ids():
+		var v := VisitorService.visitor(id)
+		var known := bool(VisitorService.state(campaign,id).get("met",false)) or VisitorService.is_present(campaign,id)
+		var unlocked := VisitorService.unlocked(campaign,id)
+		var content := card(String(v.get("name",id)) if known else "Someone unknown",String(v.get("title","")) if known else "",grid,THEME.GOLD if unlocked else THEME.MUTED)
+		var row := HBoxContainer.new(); row.add_theme_constant_override("separation",10); content.add_child(row)
+		var face := TextureRect.new(); face.custom_minimum_size = Vector2(48,60); face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		face.texture = PlaceholderArt.visitor_portrait(v); face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		row.add_child(face)
+		var info := VBoxContainer.new(); row.add_child(info)
+		var next := VisitorService.next_visit_day(campaign,id)
+		var when := "In the tavern now" if VisitorService.is_present(campaign,id) else ("Next visit: Day %d" % next if next > 0 else "Not yet seen at the Hearth")
+		info.add_child(label(when,14,GOOD if VisitorService.is_present(campaign,id) else THEME.IVORY))
+		if known: info.add_child(label("%s · %d favour" % [VisitorService.rank_name(campaign,id),VisitorService.favour(campaign,id)],13,THEME.MUTED))
 
 func bounties_page() -> void:
 	BountyBoard.refresh(campaign)

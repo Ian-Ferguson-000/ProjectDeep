@@ -328,6 +328,7 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	run_outcome = "%s opens before you. The tavern falls quiet behind you." % String(dungeon.get("name", active_dungeon_id.capitalize()))
 	_sync_crypt_unlock()
 	if campaign != null and campaign.expedition.active and not campaign.expedition.tutorial_run: _note_unlocks(Unlocks.check(campaign,run_stats(),{"type":"reach","dungeon":dungeon_id}))
+	note_floor_reached()
 
 static func dungeon_available(dungeon_id: String) -> bool:
 	return not GameBalance.get_dungeon(dungeon_id).is_empty() and not String(GameBalance.get_dungeon(dungeon_id).get("runtime", "")).is_empty() and not is_coming_soon(dungeon_id)
@@ -376,6 +377,7 @@ func note_kill(enemy_id: String) -> Array:
 	if campaign == null: return []
 	var life: Dictionary = campaign.lifetime_stats.get("kills",{}); life[family] = int(life.get(family,0)) + 1; campaign.lifetime_stats["kills"] = life
 	campaign.lifetime_stats["kills_total"] = int(campaign.lifetime_stats.get("kills_total",0)) + 1
+	_note_quests(VisitorService.notify(campaign,{"type":"kill","family":family}))
 	return _note_unlocks(Unlocks.check(campaign,stats,{"type":"kill","family":family}))
 
 func note_potion() -> void:
@@ -414,6 +416,7 @@ func record_active_dungeon_completion() -> Array[String]:
 		campaign.lifetime_stats["clears"] = int(campaign.lifetime_stats.get("clears",0)) + 1
 		var event := clear.duplicate(); event["type"] = "clear"
 		for unlock in _note_unlocks(Unlocks.check(campaign,stats,event)): logs.append("Unlocked: %s. %s" % [String(unlock.name),String(unlock.text)])
+		for done in _note_quests(VisitorService.notify(campaign,event)): logs.append("Job done: %s. Tell them at the Hearth." % done)
 	if active_dungeon_id == "forest": mark_forest_cleared()
 	if campaign != null and campaign.expedition.active:
 		campaign.expedition.carried_gold = gold
@@ -429,6 +432,7 @@ func transition_to_dungeon(dungeon_id: String) -> bool:
 	current_floor = 1
 	campaign.expedition.dungeon_seconds = 0.0
 	_note_unlocks(Unlocks.check(campaign,run_stats(),{"type":"reach","dungeon":dungeon_id}))
+	note_floor_reached()
 	var slasher_config: Dictionary = Dictionary(dungeon.get("slasher", {}))
 	max_floors = int(dungeon.get("floors", 1))
 	class_resource = 0
@@ -458,6 +462,18 @@ func transition_to_dungeon(dungeon_id: String) -> bool:
 func advance_slasher_floor()->void:
 	current_floor+=1;class_resource=0;_tick_inventory_floor_durations()
 	if campaign != null and campaign.expedition.active:campaign.expedition.floor=current_floor
+	note_floor_reached()
+
+## Tells visitors' quests which floor the run has reached (VisitorService).
+func note_floor_reached() -> Array[String]:
+	if campaign == null or not campaign.expedition.active or campaign.expedition.tutorial_run: return []
+	return _note_quests(VisitorService.notify(campaign,{"type":"floor","dungeon":active_dungeon_id,"floor":current_floor}))
+
+## Quests finished during a run, for the run log / HUD to mention.
+var quests_ready_this_run: Array[String] = []
+func _note_quests(finished: Array[String]) -> Array[String]:
+	quests_ready_this_run.append_array(finished)
+	return finished
 
 func get_slasher_cycle_length()->int:
 	# TUNING: Change forest.slasher.cycle_length to alter the repeating Endless cadence.

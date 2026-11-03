@@ -36,6 +36,8 @@ const STEPS := [
 		"text":"Outfit each adventurer with weapons, armour, accessories and relics. Each item has one wearer. You can also change gear right before setting out."},
 	{"title":"Bounties","page":"Bounties","target":"BountiesTab",
 		"text":"Contracts posted at the Hearth: a clear time to beat, a class to clear with, and so on. Meet one on an expedition and get home alive to collect the reward. Unfinished bounties come down after a few days."},
+	{"title":"Visitors of note","page":"Quests","target":"QuestsTab",
+		"text":"People of note call at the Hearth on their own schedules: the mayor, travelling traders, stranger folk. Talk to them in the tavern to take on their jobs, finish the work on an expedition or at home, and collect your reward on their next visit.\n\nTheir favour opens up better wares and new jobs. This page shows who's due and every job you have in hand."},
 	{"title":"Passing time","page":"Company","target":"AdvanceShiftButton",
 		"text":"Each day has an early and a late shift. Advance time here. At each new day the company eats, training resets and construction moves on, and new visitors may arrive."},
 	{"title":"Setting out","page":"Company","target":"ExpeditionsNav",

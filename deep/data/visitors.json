@@ -1,0 +1,318 @@
+{
+  "how_to_edit": [
+    "Visitors of merit: named people who call at the Hearth on a schedule, give quests, and (for traders) open a shop that grows as you earn their favour. Read by scripts/game/visitor_service.gd.",
+    "schedule: first_day = the first day they can turn up; every_days = how often they come back; stay_days = how many days they stay each visit. requires (optional): {\"clear\": dungeon_id} or {\"flag\": story_flag} before they ever come.",
+    "ranks: favour needed for each rank, lowest first. Favour comes from quest rewards and mini-game wins.",
+    "art: portrait/sprite paths. Leave them empty and the game draws a dark silhouette with a question mark (art still to come).",
+    "quest objective types: kills {family, count} (families: sporeling, bandit, undead) · reach_floor {dungeon, floor} · clear {dungeon, class?, max_seconds?, max_potions?} · return_gold {gold} (come home alive carrying at least this much) · runs_home {count} (adventurers coming home alive) · train {count} (training sessions) · contest_win {count} (beat them at their mini-game) · deliver {food: id, count} or {gold: amount} (handed over in person).",
+    "quest fields: requires_rank (index into ranks), requires_quests (ids that must be finished first), lines.offer / lines.progress / lines.done (what they say).",
+    "reward fields: gold, renown, favour, items (armory item ids), furnishings (lodging furnishing ids), food {id: count}, flag (a story flag other content can check).",
+    "shop: offers sold once the visitor's rank reaches min_rank. kind: item (armory id), furnishing (lodging id), food (pantry id, count). price in gold. once: true = sold a single time.",
+    "minigame: one of arm_wrestling, memory_match, quick_draw, drinking, with the visitor's stat score; a win gives favour_per_win, once per visit."
+  ],
+  "default_ranks": [
+    {"name": "Stranger", "favour": 0},
+    {"name": "Acquaintance", "favour": 3},
+    {"name": "Ally", "favour": 8},
+    {"name": "Confidant", "favour": 15}
+  ],
+  "visitors": {
+    "mayor_corvin_rook": {
+      "name": "Corvin Rook",
+      "title": "Mayor of the Crossroads",
+      "nation": "crossroads",
+      "role": "dignitary",
+      "accent": "c9a36a",
+      "art": {"portrait": "", "sprite": ""},
+      "art_brief": "Late fifties, ink-stained cuffs, a chain of office he keeps tucking under his coat. Tired, decent, always counting something.",
+      "blurb": "The town's mayor. He doesn't care which god gets the credit, only whether the roads stay open and people eat.",
+      "schedule": {"first_day": 2, "every_days": 5, "stay_days": 1},
+      "lines": {
+        "greeting": [
+          "Keeper. Corvin Rook, mayor, for my sins. The town's watching what you do with this place.",
+          "Keeper. The farmers on the east road asked after your people. That's new.",
+          "Ah, Keeper. Sit, if you've a moment. The council argued about you for an hour. In a good way.",
+          "Keeper. I'll say it plainly: this town would be worse off without the Hearth."
+        ],
+        "idle": [
+          "Refugees on the north road again. Nordians, mostly. They say the border holds are emptying.",
+          "Every nation wants this crossroads. None of them want to feed it.",
+          "Debts, roads, roofs. That's what a town is. The gods can argue about the rest."
+        ]
+      },
+      "quests": [
+        {
+          "id": "roads_open",
+          "title": "Open the Briarway",
+          "summary": "Reach the third floor of the Verdant Forest.",
+          "objective": {"type": "reach_floor", "dungeon": "forest", "floor": 3},
+          "reward": {"gold": 40, "renown": 3, "favour": 3},
+          "lines": {
+            "offer": "The Briarway's the shortest road east, and nothing's come back up it for a month. Send someone deep enough to tell me what's down there.",
+            "progress": "No word from the third floor yet. The carters are waiting on you.",
+            "done": "Three floors down and back to tell it. I'll have the carters try the road. Here, the council's thanks, in coin."
+          }
+        },
+        {
+          "id": "refugee_rations",
+          "title": "Bread for the North Road",
+          "summary": "Give the mayor 4 Hearty Fare for the refugee camp.",
+          "objective": {"type": "deliver", "food": "hearty", "count": 4},
+          "reward": {"renown": 4, "favour": 3},
+          "lines": {
+            "offer": "There are families camped by the north bridge. I can't ask the town for more. Could the Hearth spare some proper food? Four rations would see them through the week.",
+            "progress": "Four rations of Hearty Fare, when you can spare them. No scraps, mind. They've had enough of those.",
+            "done": "They'll remember who fed them. So will I."
+          }
+        },
+        {
+          "id": "guardian_of_the_crossroads",
+          "title": "Guardian of the Crossroads",
+          "summary": "Defeat the Verdant Forest's guardian.",
+          "requires_rank": 1,
+          "requires_quests": ["roads_open"],
+          "objective": {"type": "clear", "dungeon": "forest"},
+          "reward": {"gold": 80, "renown": 6, "favour": 5, "flag": "mayor_trusts_hearth"},
+          "lines": {
+            "offer": "Whatever holds the forest isn't just beasts. The old foresters talk about a heart in the wood that doesn't die. Kill it, Keeper, and the east road is ours again.",
+            "progress": "The forest still holds. I won't pretend that isn't costing us.",
+            "done": "The Heartwood's quiet. The council voted you a purse, and for once nobody argued."
+          }
+        },
+        {
+          "id": "crypt_rumours",
+          "title": "Under the Ossuary",
+          "summary": "Reach the Stone Crypt beneath the forest.",
+          "requires_rank": 2,
+          "requires_quests": ["guardian_of_the_crossroads"],
+          "objective": {"type": "reach_floor", "dungeon": "crypt", "floor": 1},
+          "reward": {"renown": 8, "favour": 5, "flag": "mayor_knows_of_crypt"},
+          "lines": {
+            "offer": "The foresters say there's stone under the roots. Old stone, older than the town. I need to know if it's a cellar or a grave.",
+            "progress": "Nothing from below the forest yet.",
+            "done": "A crypt. Under my town. Keep this quiet, Keeper. If the nations hear there's a prison at the crossroads, they'll come with more than refugees."
+          }
+        }
+      ],
+      "shop": [
+        {"offer_id": "mayor_feast_crate", "kind": "food", "id": "feast", "count": 3, "price": 24, "min_rank": 2},
+        {"offer_id": "mayor_war_table", "kind": "furnishing", "id": "war_table", "price": 38, "min_rank": 1, "once": true}
+      ]
+    },
+    "tessaly_vane": {
+      "name": "Tessaly Vane",
+      "title": "Nordian Arms-Trader",
+      "nation": "nordia",
+      "role": "trader",
+      "accent": "8fb4d8",
+      "art": {"portrait": "", "sprite": ""},
+      "art_brief": "Broad-shouldered, forties, a fur-lined travelling coat over a smith's apron. A border-hold oath ring on her left hand. Laughs loudly, haggles harder.",
+      "blurb": "A travelling smith from the Nordian border holds. She sells only to people she's seen prove themselves.",
+      "schedule": {"first_day": 3, "every_days": 4, "stay_days": 2},
+      "lines": {
+        "greeting": [
+          "Hm. A tavern keeper buying swords? Show me your people can use them first.",
+          "Back again. Your kobold-killers have been talked about on the road.",
+          "Keeper! Come, I've kept the good steel under the cloth for you.",
+          "Friend. In the holds we'd call you oath-kin. Take whatever you need."
+        ],
+        "idle": [
+          "Steel from the holds, carried four hundred miles. Don't ask for a discount.",
+          "The holds want Balor's road closed for good. They'd burn the whole prison to do it.",
+          "My brother went south to fight. I went south to sell to the people fighting. One of us is smarter."
+        ]
+      },
+      "quests": [
+        {
+          "id": "kobold_trouble",
+          "title": "Kobold Trouble",
+          "summary": "Slay 15 kobold bandits.",
+          "objective": {"type": "kills", "family": "bandit", "count": 15},
+          "reward": {"gold": 25, "favour": 3},
+          "lines": {
+            "offer": "Kobolds took two of my mules on the forest road. Kill fifteen of the thieving things and I'll believe your people can hold a blade.",
+            "progress": "Still counting kobolds. I want fifteen.",
+            "done": "Fifteen! Ha. My mules are avenged. Here, and come see what's under the cloth."
+          }
+        },
+        {
+          "id": "proven_blade",
+          "title": "A Proven Blade",
+          "summary": "Defeat the forest's guardian with a Warrior.",
+          "requires_rank": 1,
+          "requires_quests": ["kobold_trouble"],
+          "objective": {"type": "clear", "dungeon": "forest", "class": "warrior"},
+          "reward": {"favour": 5, "items": ["sentinel_shield"]},
+          "lines": {
+            "offer": "In the holds a blade isn't proven until it's held a line. Send a warrior through the forest to its guardian and back, and I'll give them a shield worth the name.",
+            "progress": "A warrior, through the whole forest. No mages hiding behind them.",
+            "done": "That's a held line. The shield's yours. Sentinel steel, hold-forged."
+          }
+        },
+        {
+          "id": "bones_for_steel",
+          "title": "Bones for Steel",
+          "summary": "Slay 25 of the risen dead.",
+          "requires_rank": 2,
+          "requires_quests": ["proven_blade"],
+          "objective": {"type": "kills", "family": "undead", "count": 25},
+          "reward": {"gold": 60, "favour": 5, "flag": "tessaly_crypt_steel"},
+          "lines": {
+            "offer": "Old crypt-bone makes the best quench there is. Don't look at me like that. Put down twenty-five of the dead below the forest and I'll make it worth your while.",
+            "progress": "Twenty-five of the dead. I've got the forge ready.",
+            "done": "Good bone. The holds would call this grave-robbing. The holds can buy their swords elsewhere."
+          }
+        }
+      ],
+      "shop": [
+        {"offer_id": "tessaly_medium_armor", "kind": "item", "id": "medium_armor_0", "price": 22, "min_rank": 0},
+        {"offer_id": "tessaly_buckle", "kind": "item", "id": "hearth_soldiers_buckle", "price": 22, "min_rank": 0},
+        {"offer_id": "tessaly_spear", "kind": "item", "id": "spear_shield", "price": 58, "min_rank": 1},
+        {"offer_id": "tessaly_heavy_armor", "kind": "item", "id": "heavy_armor_1", "price": 60, "min_rank": 1},
+        {"offer_id": "tessaly_greatsword", "kind": "item", "id": "greatsword", "price": 135, "min_rank": 2, "once": true},
+        {"offer_id": "tessaly_gauntlet", "kind": "item", "id": "hearth_worldbreaker_gauntlet", "price": 140, "min_rank": 3, "once": true}
+      ],
+      "minigame": {"contest": "arm_wrestling", "stat": 13, "favour_per_win": 1}
+    },
+    "calden_ashwick": {
+      "name": "Calden Ashwick",
+      "title": "Helvetican Physician",
+      "nation": "helvetica",
+      "role": "trader",
+      "accent": "9fd39a",
+      "art": {"portrait": "", "sprite": ""},
+      "art_brief": "Thin, thirties, spectacles, a physician's satchel crusted with road dust. Licensed by a civic league he no longer quite believes in.",
+      "blurb": "A league physician travelling the border towns. He believes rest and food save more lives than any blessing.",
+      "schedule": {"first_day": 4, "every_days": 6, "stay_days": 2},
+      "lines": {
+        "greeting": [
+          "Good day. Calden Ashwick, physician. Your people look underfed. That's an observation, not an insult.",
+          "Keeper. Your adventurers are sleeping better. I can tell from the colour of them.",
+          "Ah, the Keeper. I've written to the league about the Hearth. They didn't reply. They rarely do.",
+          "Keeper. If the leagues ran their infirmaries like you run this place, I'd still be working for them."
+        ],
+        "idle": [
+          "The leagues treat the seals like aqueducts: infrastructure to be maintained. I'm not sure the prisoners agree.",
+          "Most wounds I see aren't from monsters. They're from hunger and bad sleep.",
+          "Spores from the forest get into the lungs. Your people should cover their faces."
+        ]
+      },
+      "quests": [
+        {
+          "id": "spore_samples",
+          "title": "Spore Samples",
+          "summary": "Slay 20 sporelings.",
+          "objective": {"type": "kills", "family": "sporeling", "count": 20},
+          "reward": {"gold": 20, "favour": 3, "food": {"hearty": 4}},
+          "lines": {
+            "offer": "The forest spores are spreading into the farms. I need samples, which means someone has to kill the things carrying them. Twenty should do.",
+            "progress": "Twenty sporelings. Burst them from a distance if you can.",
+            "done": "Excellent samples. Disgusting, but excellent. Take some proper food for your people; I insist."
+          }
+        },
+        {
+          "id": "well_trained",
+          "title": "A Disciplined House",
+          "summary": "Hold 6 training sessions at the Hearth.",
+          "objective": {"type": "train", "count": 6},
+          "reward": {"favour": 3, "furnishings": ["herb_garden"]},
+          "lines": {
+            "offer": "Training is medicine too, done properly. Six sessions, Keeper. Show me the Hearth takes its people seriously.",
+            "progress": "Keep them training. Steady, not cruel.",
+            "done": "Six sessions and nobody broken. Here: an herb garden for one of the rooms. Good for the lungs."
+          }
+        },
+        {
+          "id": "home_alive",
+          "title": "Bring Them Home",
+          "summary": "Have 3 adventurers come home alive from their expeditions.",
+          "requires_rank": 1,
+          "objective": {"type": "runs_home", "count": 3},
+          "reward": {"favour": 5, "renown": 4, "flag": "calden_respects_hearth"},
+          "lines": {
+            "offer": "Every tavern on this road sends people into the dark. Very few send them home. Do it three times and I'll stop worrying about you.",
+            "progress": "Three adventurers, home and breathing. Retreating counts. Dying doesn't.",
+            "done": "Three home. That's rarer than you'd think, Keeper. Much rarer."
+          }
+        }
+      ],
+      "shop": [
+        {"offer_id": "calden_hearty_crate", "kind": "food", "id": "hearty", "count": 5, "price": 20, "min_rank": 0},
+        {"offer_id": "calden_feast_crate", "kind": "food", "id": "feast", "count": 2, "price": 18, "min_rank": 1},
+        {"offer_id": "calden_prayer_altar", "kind": "furnishing", "id": "prayer_altar", "price": 30, "min_rank": 1, "once": true},
+        {"offer_id": "calden_menders_sachet", "kind": "item", "id": "hearth_menders_sachet", "price": 130, "min_rank": 2, "once": true}
+      ],
+      "minigame": {"contest": "memory_match", "stat": 12, "favour_per_win": 1}
+    },
+    "grey_archivist": {
+      "name": "The Grey Archivist",
+      "title": "Seeker from the Veiled Isles",
+      "nation": "veiled_isles",
+      "role": "mystic",
+      "accent": "b39ddb",
+      "art": {"portrait": "", "sprite": ""},
+      "art_brief": "Hooded, age hard to tell, grey travelling robes stitched with tide charts. Carries a sealed book they never open in company. Never seen eating.",
+      "blurb": "A quiet investigator from the Isles who keeps accounts of things other empires renamed. Appears only after the forest's guardian falls.",
+      "schedule": {"first_day": 1, "every_days": 7, "stay_days": 1, "requires": {"clear": "forest"}},
+      "lines": {
+        "greeting": [
+          "You killed the heart of the wood. Did you ask what it was guarding?",
+          "Keeper. You've started asking questions. Good.",
+          "Keeper. My book has a page for this tavern now. That has not happened in a long time.",
+          "Keeper. When the Hearth forgets, I will remember for you. That is a promise."
+        ],
+        "idle": [
+          "The gods did not build the prisons alone. Ask who held the other end of the chain.",
+          "This building is older than your town. You know that, don't you?",
+          "Every prisoner has a name the victors stopped using."
+        ]
+      },
+      "quests": [
+        {
+          "id": "below_the_roots",
+          "title": "Below the Roots",
+          "summary": "Reach the third floor of the Stone Crypt.",
+          "objective": {"type": "reach_floor", "dungeon": "crypt", "floor": 3},
+          "reward": {"favour": 4, "renown": 4, "flag": "archivist_crypt_mapped"},
+          "lines": {
+            "offer": "The crypt below the forest has carvings on its third floor. I need someone to see them and come back. Remember what you see.",
+            "progress": "The third floor of the crypt. The carvings are on the walls near the stairs.",
+            "done": "Chains, and hands on both ends of them. As I feared. Thank you, Keeper."
+          }
+        },
+        {
+          "id": "heavy_purse",
+          "title": "A Heavy Purse",
+          "summary": "Have an adventurer come home carrying 300 gold or more.",
+          "objective": {"type": "return_gold", "gold": 300},
+          "reward": {"favour": 3, "gold": 30},
+          "lines": {
+            "offer": "Gold is memory, of a kind: it remembers every hand that held it. Bring me a purse of three hundred from below and I'll read it.",
+            "progress": "Three hundred, carried home in one trip.",
+            "done": "This coin was minted before your town existed. Interesting. Keep most of it; I only needed to see."
+          }
+        },
+        {
+          "id": "the_charnel_king",
+          "title": "The King in the Bones",
+          "summary": "Defeat the Stone Crypt's guardian.",
+          "requires_rank": 2,
+          "requires_quests": ["below_the_roots"],
+          "objective": {"type": "clear", "dungeon": "crypt"},
+          "reward": {"favour": 6, "renown": 8, "flag": "archivist_truth_of_the_crypt"},
+          "lines": {
+            "offer": "The thing at the bottom of the crypt wears a crown. Prisoners don't wear crowns, Keeper. Wardens do. Put it down and we'll learn which it was.",
+            "progress": "The crowned one still sits below.",
+            "done": "A warden, then, who forgot which side of the door they were on. Write that down somewhere the Hearth can't lose it."
+          }
+        }
+      ],
+      "shop": [
+        {"offer_id": "archivist_orrery", "kind": "furnishing", "id": "starglass_orrery", "price": 80, "min_rank": 1, "once": true},
+        {"offer_id": "archivist_echo_prism", "kind": "item", "id": "echo_prism", "price": 140, "min_rank": 2, "once": true},
+        {"offer_id": "archivist_chronomancers_pin", "kind": "item", "id": "hearth_chronomancers_pin", "price": 150, "min_rank": 3, "once": true}
+      ],
+      "minigame": {"contest": "quick_draw", "stat": 14, "favour_per_win": 1}
+    }
+  }
+}

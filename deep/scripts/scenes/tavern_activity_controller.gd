@@ -30,6 +30,8 @@ func populate(enter_candidates:bool)->void:
 	_spawn_merchant("tavern")
 	for merchant_id in GameBalance.get_merchants():
 		if merchant_id!="tavern" and run_state.is_merchant_recruited(String(merchant_id)):_spawn_merchant(String(merchant_id))
+	# Visitors of merit who are in today (VisitorService); "!" when they have news.
+	for visitor_id in VisitorService.present(run_state.campaign):_spawn_visitor(visitor_id)
 	var count:=0
 	for candidate in run_state.campaign.get_candidates():
 		if count>=visible_adventurer_cap:break
@@ -111,6 +113,15 @@ func _spawn_merchant(merchant_id:String)->TavernActor:
 	var actor:=ACTOR_SCENE.instantiate() as TavernActor;actors_root.add_child(actor);actor.global_position=anchor.global_position
 	var frames:=SlasherSpriteLibrary.static_enemy_frames(String(data.get("portrait","")))
 	actor.configure("merchant",merchant_id,String(data.get("name",merchant_id.capitalize())),frames,Vector2(0.82,0.82));actor.conversation_id="merchant_default";_register(actor);return actor
+
+func _spawn_visitor(visitor_id:String)->TavernActor:
+	var data:=VisitorService.visitor(visitor_id)
+	var anchor:=_claim_anchor(visitor_id,["Seat","Wait","Merchant"])
+	if data.is_empty() or anchor==null:return null
+	var actor:=ACTOR_SCENE.instantiate() as TavernActor;actors_root.add_child(actor);actor.global_position=anchor.global_position
+	var label:=String(data.get("name",visitor_id))+("  !" if VisitorService.has_news(run_state.campaign,visitor_id) else "")
+	actor.configure("visitor",visitor_id,label,PlaceholderArt.visitor_frames(data),Vector2(1.0,1.0));actor.conversation_id="visitor";_register(actor)
+	return actor
 
 func _spawn_adventurer(kind:String,id:String,member:CharacterRecord,entering:bool)->TavernActor:
 	var target:=_claim_anchor(id,["Wait","Wander","Seat"])

@@ -261,6 +261,7 @@ static func train(c: CampaignState, character_id: String, stat: String) -> Dicti
 	training["practice"] = practice
 	training["gains"] = gains
 	member.training = training
+	VisitorService.notify(c,{"type":"train"})
 	c._add_calendar_event("training",message)
 	return {"ok":true,"success":success,"stat":stat,"chance":chance,"cost":int(check.cost),"message":message}
 
