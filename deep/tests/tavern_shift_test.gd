@@ -117,7 +117,9 @@ func run() -> void:
 	check(not HearthCalendar.advance_shift(mixed).ok,"Calendar advanced during active manual run")
 	mixed.settle_expedition(manual_id,"retreat")
 	check(mixed.calendar_day == 1 and mixed.calendar_shift == 1 and mixed.return_reports.size() == 2 and mixed.period_completed_runs == 2,"Manual settlement missed simultaneous dispatch return or advanced too far")
-	check(mixed_party[1].status == "available" and mixed_party[1].current_health == mixed_party[1].max_health,"Infirmary did not grant immediate readiness")
+	# The manual runner retires to town after their expedition; the old-save dispatch comes home.
+	check(mixed_party[1].status == CharacterRecord.STATUS_RETIRED,"The manual runner didn't retire after their expedition")
+	check(mixed_party[0].status == "available" and mixed_party[0].current_health == mixed_party[0].max_health,"Infirmary did not grant immediate readiness")
 	mixed.settle_expedition(manual_id,"retreat")
 	check(mixed.period_completed_runs == 2 and mixed.period_elapsed_shifts == 1,"Duplicate settlement changed time or progress")
 

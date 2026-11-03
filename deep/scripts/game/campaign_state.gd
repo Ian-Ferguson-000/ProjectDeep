@@ -315,7 +315,7 @@ func recruit_candidate(candidate_id:String,class_id:String="") -> Dictionary:
 	if banked_gold < fee: return {"ok":false,"error":"Signing this recruit costs %d gold." % fee}
 	banked_gold -= fee
 	var member:=candidate.adventurer;_set_class(member,class_id)
-	member.status=CharacterRecord.STATUS_AVAILABLE;roster[member.id]=member;candidate_pool.erase(candidate_id)
+	member.status=CharacterRecord.STATUS_AVAILABLE;member.joined_day=calendar_day;roster[member.id]=member;candidate_pool.erase(candidate_id)
 	HearthArmory.ensure_starter(self,member)
 	HearthLodging.sync_occupants(self)
 	var was_recruited := first_company_recruited
@@ -457,6 +457,8 @@ func _generate_character(class_id:String="") -> CharacterRecord:
 	character.birth_day = calendar_day - identity_rng.randi_range(20,55)*112
 	character.signing_fee = 8 + character.level*character.level*3
 	var quality_rng:=_rng(seed^0x719);var quality:=clampi(roundi(quality_rng.randfn(35.0+6.0*int(tavern_upgrades.get("roster_services",0))+0.25*reputation,maxf(4.0,15.0-int(tavern_upgrades.get("roster_services",0))))),5,95);_apply_attributes(character,quality,seed)
+	# Fame: better-known recruits cost more and come stronger (data/tavern_cut.json).
+	HearthCut.apply_fame(character,HearthCut.roll_fame(establishment_tier,_rng(seed^0xfa3e)),GameBalance.leveling_enabled())
 	var health:=BUILDS.max_health_for(class_id,character.level,character.attributes)
 	character.max_health = maxi(1, health); character.current_health = character.max_health;character.gear_id=String(BASIC_GEAR.get(class_id,""))
 	next_character_number += 1;return character

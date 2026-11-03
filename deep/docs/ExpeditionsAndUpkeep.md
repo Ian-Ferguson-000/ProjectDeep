@@ -5,6 +5,9 @@ building, retreat policies and auto-resolved dispatches are gone from the game
 (old saves with a dispatch still in flight resolve it once, through
 `HearthExpeditions._legacy_dispatch` / `resolve_auto`).
 
+Each adventurer goes on **one** expedition: when they come home the Hearth
+keeps its cut and they retire to town (docs/TavernBusiness.md).
+
 ## The Set Out screen
 
 Hearth → **Expeditions** → **Plan an Expedition** opens a full-screen, three-step

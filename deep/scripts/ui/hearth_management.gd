@@ -22,7 +22,7 @@ const GROUPS = [
 	{"id":"Records","label":"Records","icon":"ledger","pages":["Calendar","Reports","Best Times","Unlocks"]},
 ]
 const PAGES = {
-	"Company":{"title":"Company","tab":"Roster","icon":"roster","hint":"Your adventurers and anyone waiting to sign on. Adventurers share 20% of the gold each expedition brings home."},
+	"Company":{"title":"Company","tab":"Roster","icon":"roster","hint":"Your adventurers and anyone waiting to sign on. Each goes on one expedition; the Hearth keeps a cut of what they bring home (10% to 90%, higher the better you've trained and cared for them) and they retire to town with the rest."},
 	"Training":{"title":"Training Yard","tab":"Training","icon":"armory","hint":"Spend gold to drill one attribute per adventurer each day. Good rooms and the right furnishings make it likelier to stick."},
 	"Lodgings":{"title":"Lodgings","tab":"Lodgings","icon":"hearth","hint":"Every adventurer needs a room. Build more, make them finer, and furnish them to suit the people who sleep there."},
 	"Expeditions":{"title":"Expeditions","tab":"Expeditions","icon":"expedition","hint":"Choose a destination, an adventurer, and what they carry, then lead the run yourself."},
@@ -478,6 +478,23 @@ func _status_chip(member: CharacterRecord) -> PanelContainer:
 		"recovering": return _chip("Recovering · Day %d" % member.recovery_until,Color("8fb8e0"),"Back on Day %d." % member.recovery_until)
 	return _chip(member.status.capitalize(),THEME.MUTED)
 
+## "Tavern cut 34%" with what it's made of; it's what the Hearth keeps when they come home.
+func _cut_row(member: CharacterRecord) -> Control:
+	var row := HBoxContainer.new(); row.name = "CutRow"; row.add_theme_constant_override("separation",8)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.tooltip_text = HearthCut.explain(campaign,member)
+	var cut := HearthCut.percent(campaign,member)
+	var name_label := label("Tavern cut",13,THEME.MUTED); name_label.custom_minimum_size = Vector2(70,0); name_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_child(name_label)
+	var bar := ProgressBar.new(); bar.show_percentage = false; bar.min_value = 0; bar.max_value = 100; bar.value = cut
+	bar.custom_minimum_size = Vector2(180,10); bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER; bar.mouse_filter = Control.MOUSE_FILTER_PASS
+	var fill := StyleBoxFlat.new(); fill.bg_color = THEME.HIGHLIGHT_GOLD; bar.add_theme_stylebox_override("fill",fill)
+	var back := StyleBoxFlat.new(); back.bg_color = Color("120c08"); bar.add_theme_stylebox_override("background",back)
+	row.add_child(bar)
+	var value_label := label("%d%%" % cut,13,THEME.HIGHLIGHT_GOLD); value_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_child(value_label)
+	return row
+
 func _member_card(member: CharacterRecord) -> void:
 	var row := _card_panel()
 	row.add_child(_portrait(member,Vector2(72,96)))
@@ -500,6 +517,7 @@ func _member_card(member: CharacterRecord) -> void:
 	info.add_child(facts_label)
 	info.add_child(_health_bar(member))
 	info.add_child(_mood_bar(member))
+	info.add_child(_cut_row(member))
 	var stats := AdventurerStatGrid.new(true)
 	stats.show_attributes(member.attributes)
 	info.add_child(stats)
@@ -589,6 +607,7 @@ func _arrival_card(candidate: CandidateRecord) -> void:
 	title.add_theme_constant_override("separation",8)
 	info.add_child(title)
 	title.add_child(label("%s %s" % [member.display_name,member.family_name],18,THEME.HIGHLIGHT_GOLD))
+	title.add_child(_chip(HearthCut.fame_name(member.fame),HearthCut.fame_color(member.fame),"How well known they are. Better-known adventurers cost more to sign and come stronger."))
 	if not member.stat_build_id.is_empty(): title.add_child(_chip(_build_name(member),THEME.GOLD,String(AdventurerBuilds.build(member.stat_build_id).get("description",""))))
 	title.add_child(_chip("Hopes to be a %s" % member.calling_class_id.capitalize(),THEME.IVORY,"Their calling. You choose their class when you sign them."))
 	var quote := label("“%s”" % candidate.motivation,14,THEME.MUTED)
@@ -1281,14 +1300,15 @@ func reports_page() -> void:
 		var numbers := HBoxContainer.new()
 		numbers.add_theme_constant_override("separation",6)
 		content.add_child(numbers)
-		for pair in [["Gross","%dg" % report.gold],["Adventurer share","−%dg" % report.share],["Net","%dg" % report.net],["Essence","%d" % report.essence]]:
+		var cut_label := "Hearth's cut (%d%%)" % int(report.get("tavern_cut_percent",0)) if report.has("tavern_cut_percent") and not Array(report.get("settled_in_town",[])).is_empty() else "Net"
+		for pair in [["Gross","%dg" % report.gold],["Adventurer's purse","−%dg" % report.share],[cut_label,"%dg" % report.net],["Essence","%d" % report.essence]]:
 			var tile := _panel(numbers,Color("241910"),Color("4a3522"),8)
 			var stack := VBoxContainer.new()
 			stack.add_theme_constant_override("separation",0)
 			tile.add_child(stack)
 			stack.add_child(label(String(pair[0]).to_upper(),11,THEME.MUTED))
 			stack.add_child(label(String(pair[1]),16,THEME.HIGHLIGHT_GOLD))
-		for line in [["Returned",report.returned,GOOD],["Lost",report.lost,BAD],["Recovered gear",report.items,THEME.IVORY]]:
+		for line in [["Retired to town",report.get("settled_in_town",[]),THEME.HIGHLIGHT_GOLD],["Returned",[] if not Array(report.get("settled_in_town",[])).is_empty() else report.returned,GOOD],["Lost",report.lost,BAD],["Recovered gear",report.items,THEME.IVORY]]:
 			if Array(line[1]).is_empty(): continue
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation",8)

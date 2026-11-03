@@ -110,7 +110,7 @@ func _run() -> void:
 	_expect(String(main.current_scene.name) == "Tavern","Abandoning didn't go back to the tavern (%s)" % main.current_scene.name)
 	_expect(not campaign.expedition.active,"The expedition is still active after abandoning")
 	_expect(not paused,"The game was left paused")
-	_expect(campaign.character(hero.id) != null and campaign.memorial.filter(func(m): return String(m.get("id","")) == hero.id).is_empty(),"The adventurer died instead of coming home")
+	_expect(campaign.memorial.filter(func(m): return String(m.get("id","")) == hero.id).is_empty() and campaign.retired_heroes.any(func(r): return String(r.get("id","")) == hero.id),"The adventurer died instead of coming home and retiring")
 	_expect(campaign.banked_gold > bank_before and campaign.banked_gold - bank_before <= 30,"Abandoning should bank only the secured gold (banked %d)" % (campaign.banked_gold - bank_before))
 	main.queue_free(); await _frames(2)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(CampaignState.save_path(SLOT)))

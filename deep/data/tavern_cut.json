@@ -1,0 +1,34 @@
+{
+  "how_to_edit": [
+    "The tavern's cut: when an adventurer comes home from their one expedition, the Hearth keeps cut% of the gold and the adventurer keeps the rest, then retires to Eros town for good.",
+    "cut% = min + the points below, kept between min and max. Everything here is read by scripts/game/hearth_cut.gd.",
+    "per_training_session: every session (a gain or a practice point) adds this, up to training_cap.",
+    "happiness: points by mood band at the moment they set out (names match data/upkeep.json bands).",
+    "room_quality: points for the room they sleep in (ids match data/lodging.json qualities).",
+    "per_suited_furnishing: each furnishing in their room that suits their class, up to furnishing_cap.",
+    "per_day_housed: each day since they joined, up to days_cap.",
+    "fame: recruit fame tiers. weights_by_establishment_tier[t] are the odds of each tier (in order) at Hearth tier t. Each tier multiplies the signing fee and adds stat_bonus to every attribute and level_bonus to level (when levelling is on)."
+  ],
+  "cut": {
+    "min": 10,
+    "max": 90,
+    "per_training_session": 4,
+    "training_cap": 40,
+    "happiness": {"Content": 10, "Settled": 4, "Unhappy": -6, "Miserable": -15},
+    "room_quality": {"cot": 0, "bunk": 4, "chamber": 8, "suite": 14},
+    "per_suited_furnishing": 3,
+    "furnishing_cap": 12,
+    "per_day_housed": 1,
+    "days_cap": 15
+  },
+  "fame": {
+    "order": ["unknown", "local", "known", "famous"],
+    "tiers": {
+      "unknown": {"name": "Unknown", "fee_multiplier": 1.0, "stat_bonus": 0, "level_bonus": 0, "color": "a99678"},
+      "local": {"name": "Local Name", "fee_multiplier": 1.8, "stat_bonus": 1, "level_bonus": 0, "color": "8fd48a"},
+      "known": {"name": "Well Known", "fee_multiplier": 3.0, "stat_bonus": 2, "level_bonus": 1, "color": "7fb4ee"},
+      "famous": {"name": "Famous", "fee_multiplier": 5.0, "stat_bonus": 3, "level_bonus": 2, "color": "f0a24f"}
+    },
+    "weights_by_establishment_tier": [[70, 25, 5, 0], [45, 35, 17, 3], [30, 35, 25, 10], [20, 30, 30, 20]]
+  }
+}

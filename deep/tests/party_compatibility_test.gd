@@ -29,7 +29,10 @@ func _initialize() -> void:
 	var settlement_party:=settlement_campaign.default_party("forest");var launch:=settlement_campaign.launch_expedition(settlement_party,"forest")
 	settlement_campaign.expedition.carried_contribution=7
 	var settlement:=settlement_campaign.settle_expedition(int(launch.get("expedition_id",0)),"victory",{"headline":"Founders return"})
-	var returned_brina:=settlement_campaign.character(settlement_party[0]);var returned_eamon:=settlement_campaign.character(settlement_party[1])
+	# Survivors take their purse and retire to town, so read them from the retired list.
+	var retired_by_id:={}
+	for record in settlement_campaign.retired_heroes:retired_by_id[String(record.get("id",""))]=CharacterRecord.from_dict(record)
+	var returned_brina:CharacterRecord=retired_by_id.get(settlement_party[0]);var returned_eamon:CharacterRecord=retired_by_id.get(settlement_party[1])
 	_expect(bool(settlement.get("ok",false)) and int(settlement_campaign.faction_standing.get("nordia",0))==3 and int(settlement_campaign.faction_standing.get("zarabia",0))==1,"Victory settlement did not advance represented nation standings exactly once.",failures)
 	_expect(returned_brina!=null and returned_eamon!=null and int(returned_brina.relationships.get(returned_eamon.id,0))==1,"Victory settlement did not build the surviving party relationship.",failures)
 	_expect(settlement_campaign.contribution==97,"Settlement did not preserve expedition Contribution.",failures)

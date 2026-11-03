@@ -49,14 +49,16 @@ func run() -> void:
 	c.expedition.carried_gold=100
 	c.expedition.carried_relic_essence=8
 	var run_id:=c.expedition.expedition_id
-	var result:=c.settle_expedition(run_id,"victory")
-	check(result.ok and c.banked_gold==before+80 and c.calendar_day==1 and c.calendar_shift==1,"Net settlement/calendar mismatch")
-	check(first.status=="recovering" and first.recovery_until==2,"Recovery date mismatch")
-	check(c.settle_expedition(run_id,"victory").duplicate and c.banked_gold==before+80,"Settlement applied twice")
-	HearthCalendar.advance(c,3,false)
-	check(first.status=="available" and first.current_health==first.max_health,"Recovery did not restore readiness")
+	# The Hearth keeps its cut of each survivor's share; they keep the rest and retire to town.
+	var expected_cut := 0
+	for member in [first,second]: expected_cut += int(HearthCut.split(50,HearthCut.percent(c,member)).cut)
 	var returning_id: String=first.equipment.weapon
-	check(HearthCalendar.retire(c,first).ok and c.armory[returning_id].owner=="","Retirement did not return gear")
+	var result:=c.settle_expedition(run_id,"victory")
+	check(result.ok and c.banked_gold==before+expected_cut and c.calendar_day==1 and c.calendar_shift==1,"Cut settlement/calendar mismatch: banked %d, expected %d" % [c.banked_gold-before,expected_cut])
+	check(first.status==CharacterRecord.STATUS_RETIRED and c.character(first.id)==null,"A survivor didn't retire after their expedition")
+	check(c.retired_heroes.any(func(r): return String(r.get("id",""))==first.id and bool(r.get("settled_in_town",false)) and int(r.get("purse",0))==50-int(HearthCut.split(50,HearthCut.percent(c,first)).cut)),"The retiree's purse wasn't recorded")
+	check(c.armory[returning_id].owner=="","Retirement did not return gear")
+	check(c.settle_expedition(run_id,"victory").duplicate and c.banked_gold==before+expected_cut,"Settlement applied twice")
 	var expansion:=company()
 	expansion.banked_gold=2000
 	expansion.relic_essence=100

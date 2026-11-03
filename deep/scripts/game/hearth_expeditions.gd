@@ -136,10 +136,27 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 			c.expedition = e
 			return transition
 		if transition.get("reset",false): return {"ok":true,"reset":true,"duplicate":false,"logs":[transition.message],"report":{}}
+	# The tavern's cut is set by how well the Hearth looked after them before
+	# they left (HearthCut), so read it before the run changes their mood.
+	var manual := e.deployment_type == "manual"
+	var cut_percents := {}
+	for id in e.party_ids: cut_percents[id] = HearthCut.percent(c,c.character(id))
 	HearthUpkeep.on_return(c,e.party_ids,outcome)
 	var divine_modifiers := DIVINE.settlement_modifiers(c,e)
 	var gross := roundi(e.carried_gold*float(divine_modifiers.gold_multiplier)) if outcome != "death" else 0
 	var share := 0 if bool(extra.get("legacy_resolve",false)) else int(gross*0.2)
+	var cut_percent := 0
+	var survivors: Array[String] = []
+	if manual:
+		# Everyone who comes home takes their purse and leaves the company.
+		for id in e.living_party_ids():
+			if c.character(id) != null: survivors.append(id)
+		share = 0
+		for id in survivors:
+			var portion := roundi(gross / float(survivors.size()))
+			var split := HearthCut.split(portion,int(cut_percents[id]))
+			share += int(split.purse)
+			cut_percent = int(cut_percents[id])
 	c.banked_gold += gross-share
 	var essence := e.carried_relic_essence if outcome != "death" else 0
 	c.relic_essence += essence
@@ -189,6 +206,15 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 			if survivor!=null:represented_nations[survivor.nation_id]=true
 		for nation_id in represented_nations:c.faction_standing[nation_id]=int(c.faction_standing.get(nation_id,0))+1
 	var retired:Array[String]=[]
+	var settled_in_town: Array[String] = []
+	if manual and outcome != "death":
+		for id in survivors:
+			var leaver := c.character(id)
+			if leaver == null or leaver.status == CharacterRecord.STATUS_DEAD: continue
+			var purse: int = int(HearthCut.split(roundi(gross / float(survivors.size())),int(cut_percents[id])).purse)
+			HearthCut.retire_to_town(c,leaver,int(purse),e.dungeon_id,outcome)
+			settled_in_town.append(leaver.display_name)
+		retire_after_settlement.clear()
 	for id in retire_after_settlement:
 		var veteran:=c.character(id)
 		if veteran==null:continue
@@ -227,7 +253,7 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 		e.run_stats["unlocked"] = names
 	BountyBoard.refresh(c)
 	var divine_result := DIVINE.record_expedition_outcome(c,e,outcome)
-	var report := {"expedition_id":e.expedition_id,"outcome":outcome,"headline":"%s: %s" % [e.dungeon_id.capitalize(),outcome.capitalize()],"dungeon":e.dungeon_id,"deployment_type":e.deployment_type,"depth":e.floor,"gold":gross,"share":share,"net":gross-share,"essence":essence,"contribution":contribution,"returned":returned,"retired":retired,"lost":lost,"items":rewards,"events":extra.get("events",[]),"divine":divine_result}
+	var report := {"expedition_id":e.expedition_id,"outcome":outcome,"headline":"%s: %s" % [e.dungeon_id.capitalize(),outcome.capitalize()],"dungeon":e.dungeon_id,"deployment_type":e.deployment_type,"depth":e.floor,"gold":gross,"share":share,"net":gross-share,"tavern_cut_percent":cut_percent,"settled_in_town":settled_in_town.duplicate(),"essence":essence,"contribution":contribution,"returned":returned,"retired":retired,"lost":lost,"items":rewards,"events":extra.get("events",[]),"divine":divine_result}
 	report["bounties"] = completed_bounties.map(func(bounty): return "%s (+%s)" % [String(bounty.text),BountyBoard.reward_text(bounty.reward)])
 	report["unlocks"] = Array(e.run_stats.get("unlocked",[])).duplicate()
 	c.return_reports.append(report)
@@ -241,4 +267,7 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 	c.dispatches.erase(key)
 	c._add_calendar_event(outcome,report.headline)
 	c.tavern_phase = CampaignState.TAVERN_ARRIVALS if c.last_presented_wave_id < c.candidate_wave_id else CampaignState.TAVERN_OPEN
-	return {"ok":true,"duplicate":false,"logs":["Recovered %d gold; company share %d; net %d. Contribution recorded: %d." % [gross,share,gross-share,contribution]],"report":report}
+	var summary := "Recovered %d gold; company share %d; net %d. Contribution recorded: %d." % [gross,share,gross-share,contribution]
+	if manual and not settled_in_town.is_empty():
+		summary = "Recovered %d gold. The Hearth's cut (%d%%): %d gold. %s keeps %d gold and retires to Eros town." % [gross,cut_percent,gross-share," and ".join(settled_in_town),share]
+	return {"ok":true,"duplicate":false,"logs":[summary],"report":report}

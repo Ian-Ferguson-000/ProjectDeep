@@ -286,6 +286,9 @@ func _hero_card(member: CharacterRecord) -> Control:
 	info.add_child(_mood_row(member))
 	var weapon := HearthCatalog.item(String(Dictionary(campaign.armory.get(member.equipment.get("weapon",""),{})).get("item_id","")))
 	info.add_child(_label("Wields %s" % String(weapon.get("name","nothing")),13,THEME.MUTED))
+	var cut := _label("Tavern cut %d%%" % HearthCut.percent(campaign,member),13,THEME.HIGHLIGHT_GOLD)
+	cut.name = "Cut"; cut.tooltip_text = HearthCut.explain(campaign,member); cut.mouse_filter = Control.MOUSE_FILTER_PASS
+	info.add_child(cut)
 	if not ready:
 		var why := "Away on an expedition" if member.status == CharacterRecord.STATUS_EXPEDITION else ("Recovering until Day %d" % member.recovery_until if member.recovery_until > campaign.calendar_day or member.status == "recovering" else member.status.capitalize())
 		info.add_child(_label(why,13,Color("e0a35e")))
@@ -318,6 +321,12 @@ func _gear_step() -> void:
 	var hearts := HeartRow.new(); hearts.health = member.current_health; hearts.maximum = member.max_health
 	who.add_child(hearts)
 	who.add_child(_mood_row(member))
+	# Their one expedition: what the Hearth keeps, and that they leave afterwards.
+	var cut_percent := HearthCut.percent(campaign,member)
+	var deal := _wrap(_label("The Hearth keeps %d%% of what %s brings home. They keep the rest and retire to Eros town after this run." % [cut_percent,member.display_name],13,THEME.IVORY))
+	deal.name = "Deal"; deal.tooltip_text = HearthCut.explain(campaign,member); deal.mouse_filter = Control.MOUSE_FILTER_PASS
+	who.add_child(_label("TAVERN CUT  %d%%" % cut_percent,13,THEME.GOLD))
+	who.add_child(deal)
 	# Equipment.
 	var gear := _panel_box(columns,Vector2(430,0))
 	gear.add_child(_label("EQUIPMENT",13,THEME.GOLD))

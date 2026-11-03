@@ -57,7 +57,11 @@ func _run() -> void:
 	_expect(state.is_dungeon_unlocked("forest") and state.dungeon_available("forest"),"Forest closed after being cleared")
 	campaign.calendar_day += 1
 	for member in campaign.living_roster(): member.current_health = member.max_health; member.recovery_until = 0; member.status = CharacterRecord.STATUS_AVAILABLE
-	var again := campaign.launch_expedition([hero.id],"forest")
+	# The hero who cleared it has retired to town with their purse; send someone else.
+	_expect(campaign.character(hero.id) == null,"The clearing hero should have retired after their run")
+	var replay_ids: Array[String] = []
+	if not campaign.living_roster().is_empty(): replay_ids.append(campaign.living_roster()[0].id)
+	var again := campaign.launch_expedition(replay_ids,"forest")
 	_expect(bool(again.ok),"A cleared dungeon could not be replayed: %s" % String(again.get("error","")))
 	_expect(is_equal_approx(campaign.expedition.run_seconds,0.0),"A new expedition did not reset the clock")
 
