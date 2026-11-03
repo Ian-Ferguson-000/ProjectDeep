@@ -33,11 +33,11 @@ floor, floor 5 the guardian floor.
 - **Every floor's stairs are held by the Crypt Lord** (the old crypt boss, as a
   mini boss at 55% health: `crypt_lord.gate_health_scale`). Killing it scatters
   the rest of the room and opens the stairs.
-- **Elite rooms** have a **Tomb Guard champion** (bigger, elite health).
+- **One boss per floor, at the end.** Elite rooms have no mini boss; they're
+  just a bigger fight (two extra foes).
 - **Floor 5:** **Big Skelly Boi** in the Charnel Throne (below).
 
-Set in `dungeons.json → crypt.slasher`: `gate_guardian`, `elite_room_guardian`,
-`colossus`.
+Set in `dungeons.json → crypt.slasher`: `gate_guardian`, `colossus`.
 
 ## Foes
 
@@ -110,16 +110,16 @@ ring. Its body can't be hurt.
 
 ## The forest change
 
-The forest's **reflecting Elite Guardian** (the briar guardian that answers
-every hit with a ring of thorns) now holds the **gate room on every forest
-floor**, not just floor 3; floor 5 is still the Heartwood Colossus. It no
-longer appears anywhere else: forest elite rooms hold a Kobold Cutthroat
-champion instead (`forest.slasher.elite_room_guardian`), and it's out of the
-forest's ordinary foes.
+Every forest floor has **one mini boss, in the gate room at the end**: either
+the reflecting **Briar Guardian** (answers every hit with a ring of thorns) or
+a **Kobold Cutthroat** champion, picked at random per floor (the same pick if
+you leave and come back). Floor 5 is still the Heartwood Colossus. No mini
+bosses appear anywhere else, elite rooms included (they get two extra foes
+instead). The pool is `dungeons.json → forest.slasher.gate_guardian.pool`; add
+entries to add more gate bosses.
 
 Chests can't be destroyed by attacks any more; they only open (with a key, or
-freely for hidden ones). Set with
-`dungeons.json → forest.slasher.gate_guardian.every_floor`.
+freely for hidden ones). 
 
 ## Code
 

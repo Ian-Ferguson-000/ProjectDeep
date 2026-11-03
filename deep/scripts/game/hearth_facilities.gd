@@ -8,6 +8,9 @@ static func quote(c: CampaignState, branch: String) -> Dictionary:
 		if c.establishment_tier >= 3: return {"gold":0,"essence":0,"levels":0,"available":false,"error":"Fully expanded."}
 		cost = HearthCatalog.tier(c.establishment_tier+1).duplicate(true)
 		cost["tier"] = c.establishment_tier
+		# Expanding is paid in gold and renown (the tier's reputation figure).
+		cost["renown"] = int(cost.get("reputation",0))
+		cost["essence"] = 0
 	else:
 		var facility: Dictionary = HearthCatalog.data().facilities.get(branch,{})
 		var rank := int(c.tavern_upgrades.get(branch,0))
@@ -21,11 +24,12 @@ static func purchase(c: CampaignState, branch: String) -> Dictionary:
 	var cost := quote(c,branch)
 	if not cost.available: return HearthArmory.fail(cost.error)
 	if c.establishment_tier < int(cost.tier): return HearthArmory.fail("Expand the tavern first.")
-	if c.reputation < int(cost.get("reputation",0)): return HearthArmory.fail("Earn more reputation before expanding.")
+	if c.reputation < int(cost.get("renown",cost.get("reputation",0))): return HearthArmory.fail("Not enough renown: win expeditions and bounties to earn more.")
 	if c.completed_dungeons.size() < int(cost.get("manual_clears",0)): return HearthArmory.fail("Explore and manually clear more distinct dungeons.")
 	if c.banked_gold < int(cost.gold) or c.relic_essence < int(cost.essence): return HearthArmory.fail("Not enough gold or relic essence.")
 	c.banked_gold -= int(cost.gold)
 	c.relic_essence -= int(cost.essence)
+	c.reputation -= int(cost.get("renown",0))
 	c.construction[branch] = {"due_day":c.calendar_day+int(cost.days)}
 	return {"ok":true,"message":"Construction completes on Day %d." % c.construction[branch].due_day}
 
