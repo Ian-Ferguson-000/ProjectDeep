@@ -211,6 +211,8 @@ static func training_chance(c: CampaignState, member: CharacterRecord, stat: Str
 	var furnishing_bonus := 0
 	for furnishing_id in Array(room.get("furnishings",[])): furnishing_bonus += int(Dictionary(furnishing(String(furnishing_id)).get("stats",{})).get(stat,0))
 	if furnishing_bonus != 0: chance += furnishing_bonus; parts.append("furnishings +%d%%" % furnishing_bonus)
+	var charm := SimpleCombat.training_bonus(int(member.attributes.get("cha",10)))
+	if charm != 0: chance += charm; parts.append("charisma %+d%%" % charm)
 	var practice := int(Dictionary(member.training.get("practice",{})).get(stat,0)) * int(rules.get("practice_bonus",15))
 	if practice != 0: chance += practice; parts.append("practice +%d%%" % practice)
 	if member.learning_potential_known:
@@ -221,6 +223,7 @@ static func training_chance(c: CampaignState, member: CharacterRecord, stat: Str
 static func can_train(c: CampaignState, member: CharacterRecord, stat: String) -> Dictionary:
 	if member == null: return HearthArmory.fail("That adventurer is not in the company.")
 	if not ATTRIBUTE_IDS.has(stat): return HearthArmory.fail("That is not something you can train.")
+	if not SimpleCombat.trainable(stat): return HearthArmory.fail("Charisma can't be trained. It's who they are.")
 	if member.status != CharacterRecord.STATUS_AVAILABLE: return HearthArmory.fail("%s is away and cannot train." % member.display_name)
 	if trained_today(c,member): return HearthArmory.fail("%s has already trained today. Rest until tomorrow." % member.display_name)
 	if int(member.attributes.get(stat,10)) >= int(training_rules().get("stat_cap",18)): return HearthArmory.fail("%s has trained %s as far as the Hearth can take it." % [member.display_name,stat.to_upper()])

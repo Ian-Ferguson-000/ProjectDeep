@@ -12,6 +12,30 @@ to return to the old numbers.
 | **Every enemy hit costs one heart**, after blocks: a fully blocked or parried hit still costs nothing. | `enemy_hit_damage` | 1 |
 | **Enemy health** is multiplied when they spawn, so fights take about as many hits as before. | `enemy_health_scale` | 0.5 |
 
+## What each stat does
+
+| Stat | Does | Numbers |
+| --- | --- | --- |
+| **STR** | Damage with strength weapons: swords, spears, hammers, the greatsword, the tank's shields and maces | STR ÷ 5, rounded, 1–4 |
+| **DEX** | Damage with dexterity weapons: daggers, bows, the sling, the crossbow. Also a chance to dodge any hit completely ("Dodge!") | DEX ÷ 5 for damage; dodge 1% per point above 10, max 15% (DEX 20 = 10%) |
+| **CON** | Hearts, for every class | CON ÷ 4, rounded |
+| **INT** | Magic strength: the mage's foci (missiles, fireball, lightning) | INT ÷ 5, 1–4 |
+| **WIS** | Summon strength: the summoner's bonded wolf hits with WIS (and the summoner's staffs) | WIS ÷ 5, 1–4 |
+| **CHA** | Trader prices in the dungeon, and better odds on every training session at the Hearth. **Can't be trained.** | 3% off per point above 10 (CHA 20 = 30% off; CHA 6 = 12% dearer, limits 70–130%); training +2% per point above 10 (CHA 8 = −4%) |
+
+**The weapon decides the stat, not the class.** A Fighter with the Dragonbone
+Dagger or a bow hits with DEX; with a sword, STR. The map is
+`simple_combat.weapon_stats` (any weapon not listed uses the class default in
+`damage_stat_by_class`). The healer's staffs are set to INT for now (healing
+counts as magic); change them there if they should use WIS. Attacks can set
+their own stat with `"damage_stat"` (the summoner's wolf uses `"wis"`).
+
+Dodge rolls come from the run's seed, so a seeded run dodges the same way.
+Stat tooltips on the Company page and the recruitment dialogue show these
+descriptions (`simple_combat.stat_descriptions`). On the Training page,
+Charisma shows "Can't be trained" and the bonus it gives to every other
+session.
+
 ## How player damage is worked out
 
 Every player hit is converted where it lands
@@ -36,9 +60,11 @@ health is halved.
   damage shield is up (`boss_durability`).
 - Items that add max health or damage still add their old amounts on top: an
   item giving +2 max health now gives +2 hearts.
-- Other classes use their own main stat for now (`damage_stat_by_class`:
-  Mage INT, Rogue DEX, Healer/Summoner WIS, Tank STR) so they still play, but
-  they haven't been balanced.
+- Other classes now follow the stat rules above through their weapons, but
+  they haven't been balanced. Spells cast by a Fighter's active items still
+  use the weapon's stat.
+- Visitors' and suppliers' prices at the Hearth aren't affected by Charisma:
+  you, the keeper, buy those, not the adventurer.
 - The tutorial run is still capped at 3 hearts.
 
 ## Saves

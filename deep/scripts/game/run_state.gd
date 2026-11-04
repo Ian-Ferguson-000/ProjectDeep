@@ -882,7 +882,7 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 		var item := GameBalance.get_item(item_id)
 		var offer_id := "trader:%d:%d" % [seed_value,index]
 		var sold := trader_sold.has(offer_id)
-		result.append({"offer_id":offer_id,"kind":"item","item_id":item_id,"gold":int(prices.get(slots[index],100)),"favor":0,"min_rank":0,"unlocked":true,"claimed":false,
+		result.append({"offer_id":offer_id,"kind":"item","item_id":item_id,"gold":SimpleCombat.price(int(prices.get(slots[index],100)),int(get_stats().get("cha",10))),"base_gold":int(prices.get(slots[index],100)),"favor":0,"min_rank":0,"unlocked":true,"claimed":false,
 			"name":String(item.get("name",item_id)),"description":String(item.get("description","")),"rules_text":_sentence(GameBalance.get_slasher_item_rules_text(item_id).trim_prefix("Slasher: ")),"rarity":String(item.get("rarity",slots[index])),
 			"max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":index + 1,"bonus_slot":index >= int(settings.get("common_slots",3))})
 	return result

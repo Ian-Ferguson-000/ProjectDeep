@@ -51,3 +51,42 @@ static func enemy_hit_damage() -> int:
 
 static func enemy_health(health: int) -> int:
 	return maxi(1,int(round(health * float(rules().get("enemy_health_scale",1.0)))))
+
+# ---------------------------------------------------------------- what each stat does
+##   STR  damage with strength weapons (swords, spears, hammers, shields)
+##   DEX  damage with dexterity weapons (daggers, bows, slings) + a dodge chance
+##   CON  hearts
+##   INT  magic strength (spells)
+##   WIS  summon strength
+##   CHA  trader prices and training odds at the Hearth; can't be trained
+
+## The stat a weapon hits with (weapon_stats), else the class's default.
+static func weapon_stat(weapon_id: String, class_id: String) -> String:
+	var stats: Dictionary = Dictionary(rules().get("weapon_stats",{}))
+	return String(stats[weapon_id]) if stats.has(weapon_id) else damage_stat(class_id)
+
+## Chance (0..1) to dodge a hit completely, from Dexterity above 10.
+static func dodge_chance(dexterity: int) -> float:
+	var r := rules()
+	return clampf(maxi(0,dexterity - 10) * float(r.get("dodge_per_dex_point",0.01)),0.0,float(r.get("dodge_max",0.15)))
+
+## Price multiplier from Charisma (CHA 20 = 30% off, CHA 6 = 12% dearer).
+static func price_factor(charisma: int) -> float:
+	var r := rules()
+	var limits: Array = Array(r.get("charisma_price_limits",[0.7,1.3]))
+	return clampf(1.0 - (charisma - 10) * float(r.get("charisma_price_per_point",0.03)),float(limits[0]),float(limits[1]))
+
+static func price(base: int, charisma: int) -> int:
+	if not enabled(): return base
+	return maxi(1,int(round(base * price_factor(charisma))))
+
+## Training chance bonus (percentage points) from Charisma.
+static func training_bonus(charisma: int) -> int:
+	if not enabled(): return 0
+	return (charisma - 10) * int(rules().get("charisma_training_per_point",2))
+
+static func trainable(stat: String) -> bool:
+	return not (enabled() and Array(rules().get("untrainable_stats",[])).has(stat))
+
+static func describe(stat: String) -> String:
+	return String(Dictionary(rules().get("stat_descriptions",{})).get(stat,""))

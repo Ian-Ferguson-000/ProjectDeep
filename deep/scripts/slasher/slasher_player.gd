@@ -444,10 +444,29 @@ func _defensive(result:Dictionary)->Dictionary:
 ## (the Fighter's Strength), and the ordinary swing it's measured against.
 var simple_base:=1
 var simple_reference:=1
+## Hit size for each damage stat (str, dex, int, wis); the weapon picks which.
+var simple_bases:Dictionary={}
+var weapon_stat:="str"
+var dodge_chance:=0.0
+## Dodge rolls come from the run's seed, so a seeded run dodges the same way.
+var dodge_rng:=RandomNumberGenerator.new()
 func _setup_simple_combat(state:RunState)->void:
 	var stats:Dictionary=state.get_stats()
-	simple_base=SimpleCombat.damage_for(int(stats.get(SimpleCombat.damage_stat(state.selected_class_id),10)))
+	for stat in ["str","dex","int","wis"]:simple_bases[stat]=SimpleCombat.damage_for(int(stats.get(stat,10)))
+	weapon_stat=SimpleCombat.weapon_stat(state.selected_gear.id if state.selected_gear else "",state.selected_class_id)
+	simple_base=int(simple_bases.get(weapon_stat,1))
 	simple_reference=maxi(1,_scaled_damage(_ability_tuning("basic")))
+	dodge_chance=SimpleCombat.dodge_chance(int(stats.get("dex",10))) if SimpleCombat.enabled() else 0.0
+	dodge_rng.seed=hash("%d:%d:dodge"%[state.get_current_floor_seed(),state.current_floor])
+
+## Hit size for an attack: its own damage_stat (a summon's WIS), else the weapon's.
+func simple_base_for(attack:Dictionary)->int:
+	return int(simple_bases.get(String(attack.get("damage_stat","")),simple_base))
+
+func _show_dodge()->void:
+	var label:=Label.new();label.text="Dodge!";label.add_theme_font_size_override("font_size",16);label.add_theme_color_override("font_color",Color("#9fe0ff"));label.add_theme_color_override("font_outline_color",Color("#10202a"));label.add_theme_constant_override("outline_size",5)
+	label.position=Vector2(-26,-70);label.z_index=40;add_child(label)
+	var tween:=label.create_tween();tween.tween_property(label,"position:y",label.position.y-26.0,0.6);tween.parallel().tween_property(label,"modulate:a",0.0,0.6);tween.tween_callback(label.queue_free)
 
 func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->void:
 	if is_instance_valid(warrior_kit) and warrior_kit.has_method("modify_incoming_damage"):amount=warrior_kit.modify_incoming_damage(amount)
@@ -463,6 +482,9 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 			_award_resource(int(tuning.get("resource_gain",1)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());defense_kind="";defense_window=0.0
 			if is_instance_valid(attacker) and Array(tuning.get("progression_flags",[])).has("evade_counter"):attacker.receive_attack(_configured_attack(tuning,"physical"),self)
 		return
+	# Dexterity: a small chance to sidestep the hit entirely.
+	if amount>0 and dodge_chance>0.0 and dodge_rng.randf()<dodge_chance:
+		_show_dodge();AudioCue.play_from(self,"block");return
 	var prevented:=0
 	if defense_window>0.0:
 		match defense_kind:

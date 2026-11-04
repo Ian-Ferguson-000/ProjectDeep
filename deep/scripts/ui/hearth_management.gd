@@ -922,7 +922,11 @@ func training_page() -> void:
 		odds.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		odds.add_theme_constant_override("separation",0)
 		row.add_child(odds)
-		if value >= cap:
+		if not SimpleCombat.trainable(stat):
+			odds.add_child(label("Can't be trained",14,THEME.MUTED))
+			var charm := SimpleCombat.training_bonus(value)
+			odds.add_child(label("Gives %+d%% on every other session" % charm,11,THEME.MUTED))
+		elif value >= cap:
 			odds.add_child(label("Mastered for now",14,THEME.MUTED))
 		else:
 			var chance := HearthLodging.training_chance(campaign,member,stat)
@@ -931,7 +935,7 @@ func training_page() -> void:
 			var parts: Array = chance.parts
 			odds.add_child(label(", ".join(parts) if not parts.is_empty() else "No bonuses yet",11,THEME.MUTED))
 		var check := HearthLodging.can_train(campaign,member,stat)
-		var drill := button(row,"Mastered" if value >= cap else "Train · %dg" % HearthLodging.training_cost(member,stat),func(): act(HearthLodging.train(campaign,member.id,stat)),bool(check.ok))
+		var drill := button(row,"Natural" if not SimpleCombat.trainable(stat) else ("Mastered" if value >= cap else "Train · %dg" % HearthLodging.training_cost(member,stat)),func(): act(HearthLodging.train(campaign,member.id,stat)),bool(check.ok))
 		drill.custom_minimum_size = Vector2(108,36)
 		if not bool(check.ok): drill.tooltip_text = String(check.get("error",""))
 

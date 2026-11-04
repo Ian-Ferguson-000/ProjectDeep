@@ -359,7 +359,7 @@ func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	var was_dead := dead
 	var amount:=maxi(1,int(attack.get("damage",1)))
 	# Simple combat: every player hit lands on the 1-4 scale (SimpleCombat).
-	if SimpleCombat.enabled() and is_instance_valid(attacker):amount=SimpleCombat.player_hit(amount,attacker.simple_reference,attacker.simple_base)
+	if SimpleCombat.enabled() and is_instance_valid(attacker):amount=SimpleCombat.player_hit(amount,attacker.simple_reference,attacker.simple_base_for(attack))
 	var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
 	var element:=String(attack.get("damage_type","physical"))
 	var sound_event:="impact_"+element if element in ["fire","ice","lightning","aether"] else "impact"
