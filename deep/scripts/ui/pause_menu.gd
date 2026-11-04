@@ -41,7 +41,6 @@ const CONTROLS := [
 	["Defend","Shift + Left click","Y"],
 	["Dodge / class movement","Right click","B"],
 	["Active item (or class special if none)","Space","X"],
-	["Sidearm (Fighter's secondary weapon)","F","RB"],
 	["Drink potion","Q","L3"],
 	["Use packed consumable","1 – 4",""],
 	["Interact / talk","E","A"],

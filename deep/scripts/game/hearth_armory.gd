@@ -8,16 +8,15 @@ static func grant(c: CampaignState, item_id: String, bound: bool = false) -> Str
 	c.armory[id] = {"item_id":item_id, "owner":"", "bound":bound}
 	return id
 
-## Classes that can carry a sidearm in the "secondary" slot (F in the dungeon).
-const SECONDARY_CLASSES := ["warrior"]
-## A Hunting Spear given once to every company, so the sidearm can be tried.
-const STARTER_SECONDARY := "hunting_spear"
-const STARTER_SECONDARY_FLAG := "starter_secondary_granted"
-
-static func grant_starter_secondary(c: CampaignState) -> void:
-	if c == null or bool(c.tavern_dialogue_flags.get(STARTER_SECONDARY_FLAG,false)) or HearthCatalog.item(STARTER_SECONDARY).is_empty(): return
-	c.tavern_dialogue_flags[STARTER_SECONDARY_FLAG] = true
-	grant(c,STARTER_SECONDARY)
+## Drops armory items whose catalog entry no longer exists (e.g. the short-lived
+## sidearm spears), unequipping them first.
+static func drop_unknown_items(c: CampaignState) -> void:
+	for instance_id in c.armory.keys():
+		if not HearthCatalog.item(String(c.armory[instance_id].get("item_id",""))).is_empty(): continue
+		for member in c.roster.values():
+			for slot in member.equipment.keys():
+				if String(member.equipment[slot]) == String(instance_id): member.equipment.erase(slot)
+		c.armory.erase(instance_id)
 
 static func equip(c: CampaignState, character_id: String, instance_id: String) -> Dictionary:
 	var member := c.character(character_id)

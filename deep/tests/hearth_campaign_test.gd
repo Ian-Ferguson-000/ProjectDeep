@@ -23,13 +23,12 @@ func run() -> void:
 		counts[item.slot] = int(counts.get(item.slot,0))+1
 		check(not item.sources.is_empty() and FileAccess.file_exists(item.icon),"Missing source/icon: "+id)
 		check(not GameBalance.get_item(id).is_empty() and not GameBalance.get_slasher_item_effects(id).is_empty(),"Missing mode support: "+id)
-	check(counts=={"weapon":34,"secondary":2,"armor":12,"accessory":16,"relic":12},"Catalog count mismatch: %s" % [counts])
+	check(counts=={"weapon":35,"armor":12,"accessory":16,"relic":12},"Catalog count mismatch: %s" % [counts])
 	check(HearthCatalog.data().legacy_item_audit.size()==52,"Legacy audit incomplete")
 	var c := company()
 	var first: CharacterRecord=c.living_roster()[0]
 	var second: CharacterRecord=c.living_roster()[1]
-	# Two owned founder weapons plus the company's starter Hunting Spear (unowned).
-	check(c.armory.size()==3 and c.armory.values().filter(func(i): return String(i.item_id)=="hunting_spear").size()==1,"Founders did not receive owned starter equipment")
+	check(c.armory.size()==2,"Founders did not receive owned starter equipment")
 	var purchase := HearthArmory.buy(c,"light_armor_0")
 	check(purchase.ok,"Could not buy armor")
 	var item_id: String=purchase.instance_id
@@ -106,7 +105,7 @@ func run() -> void:
 	var ids:=defeated.default_party("forest")
 	defeated.launch_expedition(ids, "forest")
 	defeated.settle_expedition(defeated.expedition.expedition_id,"death")
-	check(defeated.memorial.size()==2 and defeated.armory.values().all(func(i): return String(i.owner).is_empty() and String(i.item_id)=="hunting_spear"),"Defeat did not lose equipped items")
+	check(defeated.memorial.size()==2 and defeated.armory.is_empty(),"Defeat did not lose equipped items")
 	var ui:=preload("res://scenes/ui/hearth/Company.tscn").instantiate()
 	root.add_child(ui)
 	var ui_state:=RunState.new()

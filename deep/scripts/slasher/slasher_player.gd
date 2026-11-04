@@ -106,9 +106,6 @@ var buffered_left:=0.0
 ## A short forward step with each Fighter swing.
 var lunge_velocity:=Vector2.ZERO
 var lunge_left:=0.0
-## Secondary weapon (F / right shoulder): the equipped sidearm's catalog entry.
-var secondary_id:=""
-var secondary:Dictionary={}
 
 func snapshot_party_state()->Dictionary:
 	var state:={"cooldowns":cooldowns.duplicate(true),"invulnerable":invulnerable,"defense_window":defense_window,"defense_kind":defense_kind,"empowered":empowered,"is_hidden":is_hidden,"hidden_time":hidden_time,"retribution_stored":retribution_stored,"consumable_aegis":consumable_aegis,"consumable_speed_time":consumable_speed_time,"consumable_speed_multiplier":consumable_speed_multiplier,"movement_debuff_time":movement_debuff_time,"movement_debuff_multiplier":movement_debuff_multiplier,"next_attack_multiplier":next_attack_multiplier,"last_fireball_attack":last_fireball_attack.duplicate(true),"warrior_slash_chain":warrior_slash_chain,"warrior_slash_chain_time":warrior_slash_chain_time,"last_direction":[last_direction.x,last_direction.y],"aim_direction":[aim_direction.x,aim_direction.y],"marked_enemy_instance_id":marked_enemy.get_instance_id() if is_instance_valid(marked_enemy) else 0}
@@ -159,7 +156,6 @@ func setup(state:RunState)->void:
 	speed=float(tuning.get("speed",speed));max_health=state.max_health;health=state.current_health
 	attack_power=maxi(2,state.get_derived_stat("attack_power")+(state.selected_gear.damage if state.selected_gear else 1))
 	_setup_simple_combat(state)
-	_setup_secondary(state)
 	spell_power=maxi(2,state.get_derived_stat("spell_potency")+(state.selected_gear.damage if state.selected_gear else 1))
 	if item_runtime!=null:item_runtime.setup(state,self)
 	var hitbox:=get_node_or_null("PlayerHitbox") as CollisionShape2D
@@ -202,8 +198,7 @@ func _physics_process(delta:float)->void:
 		if buffered_left<=0.0:buffered_slot=""
 		elif float(cooldowns.get(buffered_slot,0.0))<=0.0 and not input_locked:
 			var slot_to_fire:=buffered_slot;var source:=buffered_source;buffered_slot="";buffered_left=0.0
-			if slot_to_fire=="secondary":use_secondary(source)
-			else:use_action(slot_to_fire,source)
+			use_action(slot_to_fire,source)
 	var was_invulnerable:=invulnerable>0.0
 	invulnerable=maxf(0.0,invulnerable-delta);defense_window=maxf(0.0,defense_window-delta);animation_lock=maxf(0.0,animation_lock-delta);hidden_time=maxf(0.0,hidden_time-delta)
 	if was_invulnerable or invulnerable>0.0:queue_redraw()
@@ -235,7 +230,6 @@ func _physics_process(delta:float)->void:
 		var held_result:Dictionary=use_action("basic", "mouse")
 		var input_rules:Dictionary=GameBalance.get_slasher_balance("input")
 		if bool(held_result.get("started",false)):cooldowns.basic=float(cooldowns.basic)*float(Dictionary(input_rules.get("held_basic_cooldown_multiplier_by_class",{})).get(class_id,input_rules.get("held_basic_cooldown_multiplier",2.25)))
-	if InputMap.has_action("slasher_secondary") and Input.is_action_just_pressed("slasher_secondary"):use_secondary("keyboard" if Input.is_physical_key_pressed(KEY_F) else "controller")
 
 func _unhandled_input(event:InputEvent)->void:
 	if input_locked:return
@@ -648,62 +642,6 @@ func _lunge(tuning:Dictionary,swing:int)->void:
 	if steps.is_empty():return
 	var distance:=float(steps[clampi(swing-1,0,steps.size()-1)]);var time:=maxf(0.02,float(tuning.get("lunge_time",0.09)))
 	lunge_velocity=aim_direction.normalized()*distance/time;lunge_left=time
-
-# ---------------------------------------------------------------- secondary weapon
-
-## Loads the equipped sidearm (CharacterRecord.equipment["secondary"]).
-func _setup_secondary(state:RunState)->void:
-	secondary_id=state.secondary_weapon_id() if state!=null else ""
-	secondary=Dictionary(HearthCatalog.item(secondary_id).get("secondary",{})) if not secondary_id.is_empty() else {}
-	if not secondary.is_empty() and not cooldowns.has("secondary"):cooldowns["secondary"]=0.0
-
-func has_secondary()->bool:
-	return not secondary.is_empty()
-
-## F / right shoulder: the sidearm's attack. Spears thrust straight ahead,
-## hitting every foe in a line and pushing them back.
-func use_secondary(source:String="system")->Dictionary:
-	var result:={"started":false,"slot":"secondary","targets_hit":0,"failure":""}
-	if not has_secondary() or input_locked:result.failure="no secondary";return result
-	if float(cooldowns.get("secondary",0.0))>0.0:_buffer("secondary",source);result.failure="cooling down";return result
-	var reach:=float(secondary.get("reach",220.0));var width:=float(secondary.get("width",30.0))
-	var attack:=_configured_attack(_ability_tuning("basic"),"physical")
-	attack.damage=maxi(1,int(round(simple_reference*float(secondary.get("damage_ratio",1.0)))))
-	attack.knockback=float(secondary.get("knockback",70.0));attack.damage_stat=SimpleCombat.weapon_stat(secondary_id,class_id)
-	var direction:=aim_direction.normalized()
-	result.targets_hit=_line_attack(global_position,global_position+direction*reach,width*0.5,attack)
-	_spear_visual(global_position,direction,reach,width)
-	cooldowns["secondary"]=float(secondary.get("cooldown",1.1))
-	lunge_velocity=direction*12.0/0.06;lunge_left=0.06
-	AudioCue.play_from(self,"sword_swing");_play_action_animation("attack",0.3);animation_lock=0.2
-	result.started=true
-	ability_resolved.emit(result)
-	return result
-
-func _spear_visual(origin:Vector2,direction:Vector2,reach:float,width:float)->void:
-	var streak:=SpearStreak.new();streak.direction=direction;streak.reach=reach;streak.width=width
-	get_parent().add_child(streak);streak.global_position=origin
-
-## The thrust: a bright shaft that shoots out and fades.
-class SpearStreak extends Node2D:
-	var direction:=Vector2.RIGHT
-	var reach:=220.0
-	var width:=30.0
-	var life:=0.0
-	const DURATION:=0.18
-	func _ready()->void:z_index=30
-	func _process(delta:float)->void:
-		life+=delta;queue_redraw()
-		if life>=DURATION:queue_free()
-	func _draw()->void:
-		var t:=clampf(life/DURATION,0.0,1.0)
-		var length:=reach*minf(1.0,t*3.0)
-		var alpha:=1.0-t
-		var tip:=direction*length
-		var side:=direction.orthogonal()
-		draw_colored_polygon(PackedVector2Array([direction*14.0+side*width*0.5,tip,direction*14.0-side*width*0.5]),Color(1.0,0.93,0.72,0.28*alpha))
-		draw_line(direction*10.0,tip,Color(0.55,0.4,0.25,alpha),4.0)
-		draw_colored_polygon(PackedVector2Array([tip+direction*14.0,tip+side*7.0,tip-side*7.0]),Color(0.9,0.92,0.98,alpha))
 
 func _melee_attack(data:Dictionary)->int:
 	# Snapshot once: on-hit effects can move actors, but cannot move this strike.

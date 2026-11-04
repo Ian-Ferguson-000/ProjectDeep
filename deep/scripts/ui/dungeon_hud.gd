@@ -69,8 +69,6 @@ var potion_label: Label
 var potion_slot: Panel
 ## The active item slot (Space), bottom-left corner.
 var active_slot: ActiveSlot
-## The Fighter's sidearm (F), bottom-right like Isaac's pocket slot.
-var secondary_slot: SecondarySlot
 var _potion_icon: TextureRect
 var _banner: Control
 
@@ -89,9 +87,6 @@ func _init() -> void:
 	_build_potion_slot()
 	active_slot = ActiveSlot.new(); active_slot.name = "ActiveSlot"; active_slot.size = Vector2.ONE * ACTIVE_SLOT
 	add_child(active_slot)
-	secondary_slot = SecondarySlot.new(); secondary_slot.name = "SecondarySlot"; secondary_slot.size = Vector2.ONE * SECONDARY_SLOT
-	secondary_slot.visible = false
-	add_child(secondary_slot)
 	_items.name = "Items"
 	_items.columns = ITEMS_PER_ROW
 	_items.add_theme_constant_override("h_separation",4)
@@ -221,7 +216,6 @@ func _hearts_left() -> float:
 func _layout_counters() -> void:
 	var bottom := size.y - MARGIN.y + 2.0
 	active_slot.position = Vector2(MARGIN.x,bottom - ACTIVE_SLOT)
-	if secondary_slot != null: secondary_slot.position = Vector2(size.x - MARGIN.x - SECONDARY_SLOT,bottom - SECONDARY_SLOT)
 	potion_slot.position = Vector2(MARGIN.x + ACTIVE_SLOT + 10.0,bottom - POTION_SLOT)
 	var top := minf(_hearts_top() - (16.0 if show_resource else 0.0),active_slot.position.y - 4.0) - 32.0
 	_counters.position = Vector2(MARGIN.x - 2.0,top)
@@ -281,11 +275,6 @@ func _draw_heart(at: Vector2, filled: float, beat: float) -> void:
 
 ## The active item: its icon, charge (pips for room items, a filling bar for
 ## timer items) and whether it's ready. Empty shows a faint slot.
-## The sidearm slot: hidden with no sidearm; a sweep shows its cooldown.
-func show_secondary(item_id: String, cooldown_left: float, cooldown: float) -> void:
-	secondary_slot.visible = not item_id.is_empty()
-	if secondary_slot.visible: secondary_slot.show_item(item_id,cooldown_left,cooldown)
-
 func show_active(item_id: String, charge: float, maximum: float, timer: bool) -> void:
 	active_slot.show_item(item_id,charge,maximum,timer)
 
@@ -401,44 +390,6 @@ static func item_icon(icon_key: String) -> Texture2D:
 
 ## The active item slot: a gold-framed box with the item's icon, a charge meter
 ## down its right side and the key that uses it. Glows when ready.
-const SECONDARY_SLOT := 56.0
-
-class SecondarySlot extends Control:
-	var item_id := ""
-	var left := 0.0
-	var total := 1.0
-	var ready_flash := 0.0
-	func _init() -> void:
-		mouse_filter = Control.MOUSE_FILTER_PASS
-		var key := Label.new(); key.text = "F"; key.position = Vector2(4,-16)
-		key.add_theme_font_size_override("font_size",11); key.add_theme_color_override("font_color",Color("#f4ecd8"))
-		key.add_theme_color_override("font_outline_color",Color("#0b0808")); key.add_theme_constant_override("outline_size",4)
-		key.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(key)
-	func show_item(id: String, cooldown_left: float, cooldown: float) -> void:
-		if id != item_id:
-			item_id = id
-			var entry := HearthCatalog.item(id)
-			tooltip_text = "%s\n%s" % [String(entry.get("name","")),String(entry.get("description",""))]
-		if left > 0.0 and cooldown_left <= 0.0: ready_flash = 0.3
-		left = cooldown_left; total = maxf(0.01,cooldown)
-		queue_redraw()
-	func _process(delta: float) -> void:
-		if ready_flash > 0.0: ready_flash = maxf(0.0,ready_flash - delta); queue_redraw()
-	func _draw() -> void:
-		var rect := Rect2(Vector2.ZERO,size)
-		draw_rect(rect,Color(0.05,0.035,0.025,0.82))
-		draw_rect(rect,Color("#c9a36a") if left <= 0.0 else Color("#5d4428"),false,2.0)
-		# A spear across the slot.
-		var a := Vector2(10,size.y - 10); var b := Vector2(size.x - 12,12)
-		draw_line(a,b,Color("#8a6038"),4.0)
-		var direction := (b - a).normalized(); var side := direction.orthogonal()
-		draw_colored_polygon(PackedVector2Array([b + direction * 9.0,b + side * 5.0,b - side * 5.0]),Color("#dfe4ee"))
-		if left > 0.0:
-			var fraction := clampf(left / total,0.0,1.0)
-			draw_rect(Rect2(Vector2(0,size.y * (1.0 - fraction)),Vector2(size.x,size.y * fraction)),Color(0,0,0,0.55))
-		if ready_flash > 0.0: draw_rect(rect.grow(2.0),Color(1.0,0.9,0.6,ready_flash * 2.0),false,3.0)
-
 class ActiveSlot extends Control:
 	var item_id := ""
 	var charge := 0.0

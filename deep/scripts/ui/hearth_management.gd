@@ -734,8 +734,7 @@ func armory_page() -> void:
 	summary_info.add_child(_health_bar(member,110))
 	if locked: summary_info.add_child(label("Away · loadout locked",13,Color("e7b45a")))
 	_heading("Loadout","",loadout_column)
-	for slot in ["weapon","secondary","armor","accessory","relic"]:
-		if slot == "secondary" and not HearthArmory.SECONDARY_CLASSES.has(member.class_id): continue
+	for slot in ["weapon","armor","accessory","relic"]:
 		var id: String = member.equipment.get(slot,"")
 		var entry := HearthCatalog.item(String(Dictionary(campaign.armory.get(id,{})).get("item_id","")))
 		var slot_panel := _panel(loadout_column,Color("241910"),Color("4a3522"),10)
@@ -771,7 +770,7 @@ func armory_page() -> void:
 	var storage_title := label("STORAGE",14,THEME.GOLD)
 	storage_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	filters.add_child(storage_title)
-	for slot in ["all","weapon","secondary","armor","accessory","relic"]:
+	for slot in ["all","weapon","armor","accessory","relic"]:
 		var filter := Button.new()
 		filter.text = slot.capitalize()
 		THEME.apply_button(filter,slot == slot_filter,13,Vector2(74,32))

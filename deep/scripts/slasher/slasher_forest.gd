@@ -406,7 +406,6 @@ func _process(delta:float)->void:
 	# Modal controls consume Escape themselves. Never let the same keypress fall through to abandon.
 	if modal_open or codex_open:return
 	_process_active_item(delta)
-	if dungeon_hud!=null and is_instance_valid(player):dungeon_hud.show_secondary(player.secondary_id if player.has_secondary() else "",float(player.cooldowns.get("secondary",0.0)),float(player.secondary.get("cooldown",1.0)))
 	var interaction_used:=false;var nearby_chest:SlasherBreakableProp=_nearby_chest()
 	if nearby_chest!=null:
 		var keyless:=bool(nearby_chest.get_meta("no_key",false))

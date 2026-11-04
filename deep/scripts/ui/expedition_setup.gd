@@ -331,8 +331,6 @@ func _gear_step() -> void:
 	var gear := _panel_box(columns,Vector2(430,0))
 	gear.add_child(_label("EQUIPMENT",13,THEME.GOLD))
 	for slot in SLOTS: gear.add_child(_slot_row(member,slot))
-	# Fighters can carry a sidearm (F in the dungeon).
-	if HearthArmory.SECONDARY_CLASSES.has(member.class_id): gear.add_child(_slot_row(member,"secondary"))
 	gear.add_child(_seed_box())
 	# Supplies, potions, bounties.
 	var side := _panel_box(columns,Vector2(0,0))

@@ -6,7 +6,7 @@ The Fighter's three-swing chain is tuned to flow rather than stop-start:
 
 | Change | Before | Now | Setting |
 | --- | --- | --- | --- |
-| **Input buffer** | A click during a swing was thrown away | A press within 0.25 s of an action being ready fires the moment it is (swings, special, dodge, sidearm) | `slasher_balance.json → input.buffer_window`, `buffered_slots` |
+| **Input buffer** | A click during a swing was thrown away | A press within 0.25 s of an action being ready fires the moment it is (swings, special, dodge) | `slasher_balance.json → input.buffer_window`, `buffered_slots` |
 | **Holding attack** | Held swings were 2.25× slower than clicking | Holding chains at full speed for the Fighter | `input.held_basic_cooldown_multiplier_by_class.warrior` |
 | **After the third swing** | 0.90 s pause | 0.42 s | `classes.warrior.basic.combo_finisher_cooldown` |
 | **Chain window** | 0.70 s to keep the chain going | 0.85 s | `combo_reset_window` |
@@ -14,24 +14,31 @@ The Fighter's three-swing chain is tuned to flow rather than stop-start:
 | **Third swing** | Same as the others | 1.8× knockback and a 24° wider arc | `finisher_knockback_multiplier`, `finisher_arc_bonus` |
 | **On-screen text** | "SLASH 2/3 · …" and "… is cooling down." | Gone. A finished named combo (e.g. Crosscut) still flashes briefly | — |
 
-## Sidearm (secondary weapon)
+## Sword or spear
 
-Fighters have a new **Secondary** equipment slot (Hearth → Company → Equipment,
-and the Set Out Gear step). The sidearm is used with **F** (controller **RB**)
-and shows bottom-right on the HUD with a cooldown sweep.
+Like Hades' weapons, the spear is a Fighter weapon of its own with its own
+moveset, not an add-on. **Each Fighter arrives with one or the other**
+(picked when they're generated; the tutorial's Alden and the founding
+Fighter keep the sword). The weapon can still be swapped in the Armory.
 
-| Sidearm | Thrust | Damage | Cooldown | Where |
-| --- | --- | --- | --- | --- |
-| **Hunting Spear** (common) | 220 px straight ahead, 30 px wide, hits every foe in the line, shoves them back | Strength damage (same as a swing) | 1.1 s | Every company gets one free; Tessaly Vane sells them; merchants and forest drops |
-| **Boar Pike** (uncommon) | 270 px, 38 px wide, bigger shove | About 1⅓× a swing (4 at STR 15, capped at 4) | 1.0 s | Tessaly Vane (Acquaintance); merchants and forest drops |
+| | Sword and Shield | Borderkeeper's Spear |
+| --- | --- | --- |
+| **Attack** | Three-swing chain in a wide arc in front | **Measured Thrust**: a long, narrow thrust down a line (about 260 px); the tip hits hardest and gives Stamina |
+| **Special (Space)** | Charge | **Hold the Pass**: plants a lane ahead that hurts anything crossing it, once |
+| **Defend (Shift+click)** | Block with the shield | **Yielding Guard**: step back behind the shaft |
+| **Dodge (right click)** | Charge dash | **Flank March**: a quick sideways step |
+| **Damage stat** | Strength | Strength |
 
-Sidearms are items with `"slot": "secondary"` and a `secondary` block in
-`data/hearth_campaign.json` (`kind`, `reach`, `width`, `cooldown`,
-`damage_ratio`, `knockback`); their damage stat is in
-`simple_combat.weapon_stats`. Only Fighters can carry one for now
-(`HearthArmory.SECONDARY_CLASSES`). The thrust is the only kind so far;
-other kinds (a throwing axe, a shield bash) would be added in
-`SlasherPlayer.use_secondary`.
+The spear's moveset is the existing warrior kit `borderkeepers_spear`
+(`scripts/slasher/slasher_warrior_kit.gd`); its catalog entry is in
+`data/hearth_campaign.json`. Recruits' starting weapons per class are
+`CampaignState.STARTER_WEAPONS` (`{"warrior": ["sword_shield",
+"borderkeepers_spear"]}`); add a class or a third weapon there. Tessaly Vane
+also sells the spear.
+
+**Art needed:** the Fighter's sprite still holds a sword with the spear
+equipped; a spear-holding Fighter sprite (and a thrust animation) would make
+it read properly.
 
 ## Testing note
 

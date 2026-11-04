@@ -24,6 +24,9 @@ const TAVERN_OPEN := "open"
 const TAVERN_EXPEDITION := "expedition"
 const WEEKDAYS := ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 const SEASONS := ["Spring","Summer","Autumn","Winter"]
+## A class's starting weapons: a recruit arrives with one of these (a Fighter
+## with a sword or a spear, never both).
+const STARTER_WEAPONS := {"warrior":["sword_shield","borderkeepers_spear"]}
 const BASIC_GEAR := {"warrior":"sword_shield","mage":"magic_missile_shield","healer":"sunwood_staff","tank":"tower_shield","rogue":"spectral_dagger","summoner":"bond_staff"}
 const ADVENTURERS:=preload("res://scripts/game/adventurer_content.gd")
 const COMPATIBILITY:=preload("res://scripts/game/party_compatibility.gd")
@@ -260,7 +263,6 @@ func apply_post_tutorial_state(outcome: String) -> void:
 	expedition = ExpeditionState.new()
 	tutorial_phase = TUTORIAL_COMPLETE
 	post_tutorial_initialized = true
-	HearthArmory.grant_starter_secondary(self)
 
 func get_calendar_date() -> Dictionary:
 	var zero_based := maxi(0, calendar_day - 1)
@@ -463,7 +465,7 @@ func _generate_character(class_id:String="") -> CharacterRecord:
 	# Fame: better-known recruits cost more and come stronger (data/tavern_cut.json).
 	HearthCut.apply_fame(character,HearthCut.roll_fame(establishment_tier,_rng(seed^0xfa3e)),GameBalance.leveling_enabled())
 	var health:=BUILDS.max_health_for(class_id,character.level,character.attributes)
-	character.max_health = maxi(1, health); character.current_health = character.max_health;character.gear_id=String(BASIC_GEAR.get(class_id,""))
+	character.max_health = maxi(1, health); character.current_health = character.max_health;character.gear_id=starter_weapon(class_id,seed)
 	next_character_number += 1;return character
 
 func _generate_candidate_wave(first_wave:bool=false) -> void:
@@ -533,7 +535,7 @@ func _try_add_descendant()->void:
 		if bool(state.get("descendant_created",false)) or calendar_day-int(state.get("retired_day",calendar_day))<112:continue
 		var checks:=int(state.get("checks",0))+1;state.checks=checks;var rng:=_rng(parent_id.hash()^candidate_wave_id^0x5de5);var appears:=checks>=4 or rng.randf()<(0.35+0.15*(checks-1));lineage_registry[parent_id]=state;parent.descendant_checks=checks;retired_heroes[index]=parent
 		if not appears:continue
-		var parent_class:=String(parent.get("class_id","warrior"));var class_id:=parent_class if rng.randf()<0.55 else String(unlocked_classes[rng.randi_range(0,unlocked_classes.size()-1)]);var child:=_generic_character(class_id,parent_id.hash()+calendar_day*97);child.parent_id=parent_id;child.lineage_id=String(parent.get("lineage_id",parent_id));child.family_name=String(parent.get("family_name",parent.get("name","Vale")));child.generation=maxi(2,int(parent.get("generation",1))+1);child.biography="A descendant of %s, who served the Hearth before them. %s comes carrying family stories of %s."%[String(parent.get("name","a former hero")),child.display_name,String(parent.get("dungeon_id","the old roads")).replace("_"," ")];_apply_attributes(child,35,parent_id.hash()+calendar_day);child.gear_id=String(BASIC_GEAR.get(class_id,""));next_character_number+=1
+		var parent_class:=String(parent.get("class_id","warrior"));var class_id:=parent_class if rng.randf()<0.55 else String(unlocked_classes[rng.randi_range(0,unlocked_classes.size()-1)]);var child:=_generic_character(class_id,parent_id.hash()+calendar_day*97);child.parent_id=parent_id;child.lineage_id=String(parent.get("lineage_id",parent_id));child.family_name=String(parent.get("family_name",parent.get("name","Vale")));child.generation=maxi(2,int(parent.get("generation",1))+1);child.biography="A descendant of %s, who served the Hearth before them. %s comes carrying family stories of %s."%[String(parent.get("name","a former hero")),child.display_name,String(parent.get("dungeon_id","the old roads")).replace("_"," ")];_apply_attributes(child,35,parent_id.hash()+calendar_day);child.gear_id=starter_weapon(class_id,parent_id.hash()+calendar_day);next_character_number+=1
 		if candidate_pool.size()>=7:var ordinary:CandidateRecord=get_candidates().back();candidate_pool.erase(ordinary.id)
 		var descendant:=CandidateRecord.create(child,calendar_day,candidate_wave_id,"I grew up hearing what the Hearth made possible. Now I want a story of my own.",false);descendant.quality_seed=child.id.hash()^candidate_wave_id;descendant.quality_score=_quality_from_attributes(child);candidate_pool[child.id]=descendant;state.descendant_created=true;lineage_registry[parent_id]=state;parent.descendant_created=true;retired_heroes[index]=parent;_add_calendar_event("lineage","%s %s, descendant of %s, arrives at the Hearth."%[child.display_name,child.family_name,String(parent.get("name","a former hero"))]);return
 
@@ -560,6 +562,12 @@ func reassign_class(character_id:String,class_id:String)->Dictionary:
 	HearthArmory.ensure_starter(self,member)
 	_add_calendar_event("retraining","%s retrains from %s to %s."%[member.display_name,_class_name(previous),_class_name(class_id)])
 	return {"ok":true,"character_id":member.id,"class_id":class_id,"message":"%s is now a %s. %s fit."%[member.display_name,_class_name(class_id),BUILDS.class_fit(member.attributes,class_id)]}
+
+## The weapon a new recruit of this class arrives with (picked by seed).
+static func starter_weapon(class_id:String,seed_value:int)->String:
+	var options:Array=Array(STARTER_WEAPONS.get(class_id,[]))
+	if options.is_empty():return String(BASIC_GEAR.get(class_id,""))
+	return String(options[posmod(hash("%d:weapon"%seed_value),options.size())])
 
 func _set_class(member:CharacterRecord,class_id:String)->void:
 	class_id=GameBalance.normalize_class_id(class_id)
@@ -871,7 +879,7 @@ func _load_dict(data: Dictionary) -> void:
 		expedition.due_day = calendar_day+7
 	HearthMigration.upgrade(self,data)
 	if not bool(data.get("simple_hearts",false)): _simplify_roster_health()
-	if post_tutorial_initialized: HearthArmory.grant_starter_secondary(self)
+	HearthArmory.drop_unknown_items(self)
 	ECOLOGY.ensure(self);ECOLOGY.advance_to_day(self,calendar_day);CRISIS.ensure(self)
 
 ## Simple combat: adventurers saved under the old health numbers get hearts

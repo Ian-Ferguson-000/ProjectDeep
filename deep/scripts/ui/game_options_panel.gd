@@ -34,7 +34,7 @@ func setup(show_close_button:bool=true)->void:
 	_add_slider(grid,"Screen Shake","screen_shake_intensity",0.0,1.5,0.05,"%d%%",true)
 	_add_audio_row(grid,"Master","master");_add_audio_row(grid,"Music","music");_add_audio_row(grid,"SFX","sfx")
 	_add_audio_row(grid,"Ambience","ambience");_add_audio_row(grid,"UI","ui")
-	var controls:=Label.new();controls.text="CONTROLS\nKeyboard: WASD move · Left click attack · Shift+click defend · Right click dodge · Space active item · F sidearm · Q potion · E interact · M codex · Esc menu\nController: D-pad move · A attack/interact · Y defend · B dodge · X active item · RB sidearm · L3 potion · Start codex · Back menu";controls.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;controls.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;controls.add_theme_color_override("font_color",Color("cbbd9b"));options_body.add_child(controls)
+	var controls:=Label.new();controls.text="CONTROLS\nKeyboard: WASD move · Left click attack · Shift+click defend · Right click dodge · Space active item · Q potion · E interact · M codex · Esc menu\nController: D-pad move · A attack/interact · Y defend · B dodge · X active item · L3 potion · Start codex · Back menu";controls.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;controls.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;controls.add_theme_color_override("font_color",Color("cbbd9b"));options_body.add_child(controls)
 	var buttons:=HBoxContainer.new();buttons.alignment=BoxContainer.ALIGNMENT_CENTER;buttons.add_theme_constant_override("separation",12);body.add_child(buttons)
 	var reset:=Button.new();reset.text="Reset Defaults";reset.pressed.connect(_reset_defaults);buttons.add_child(reset)
 	if show_close_button:
