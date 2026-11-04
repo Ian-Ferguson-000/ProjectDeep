@@ -525,17 +525,21 @@ func _panel_box(parent: Node, size_value: Vector2) -> VBoxContainer:
 	panel.add_child(box)
 	return box
 
-## A row of small pixel hearts (4 health each), like the dungeon HUD.
+## A row of small pixel hearts, like the dungeon HUD (health per heart from
+## slasher_balance.json "hud"; 1 with simple combat).
 class HeartRow extends Control:
 	var health := 0
 	var maximum := 1
+	static func per_heart() -> int:
+		return maxi(1,int(Dictionary(GameBalance.get_slasher_balance("hud")).get("health_per_heart",4)))
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		custom_minimum_size = Vector2(minf(10.0,ceil(maximum / 4.0)) * 17.0,15)
+		custom_minimum_size = Vector2(minf(10.0,ceil(maximum / float(per_heart()))) * 17.0,15)
 	func _draw() -> void:
-		var hearts := int(ceil(maximum / 4.0))
+		var per := float(per_heart())
+		var hearts := int(ceil(maximum / per))
 		for index in mini(hearts,10):
-			var filled := clampf(float(health - index * 4) / 4.0,0.0,1.0)
+			var filled := clampf(float(health - index * per) / per,0.0,1.0)
 			var at := Vector2(index * 17.0,0)
 			var shape := [".XX.XX.","XXXXXXX","XXXXXXX",".XXXXX.","..XXX..","...X..."]
 			for y in shape.size():

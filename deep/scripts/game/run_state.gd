@@ -162,6 +162,13 @@ func restore_completed_tutorial_health() -> void:
 	if campaign == null or not campaign.is_tutorial_complete() or campaign.expedition.active: return
 	_ensure_profiles()
 	for member in campaign.living_roster():
+		# Simple combat: 3 hearts is a normal amount, not the tutorial cap, so
+		# only put back what their Constitution gives them.
+		if SimpleCombat.enabled():
+			if member.max_health <= TUTORIAL_MAX_HEALTH and member.max_health != AdventurerBuilds.max_health_for(member.class_id,member.level,member.attributes):
+				member.max_health = AdventurerBuilds.max_health_for(member.class_id,member.level,member.attributes)
+				member.current_health = member.max_health
+			continue
 		# Early saves persisted the tutorial cap and created replacements with
 		# placeholder health. Only repair those unmistakable sentinel values.
 		if member.max_health > TUTORIAL_MAX_HEALTH: continue
@@ -1479,6 +1486,8 @@ func _derive_stats(class_id: String, level: int, stats: Dictionary) -> Dictionar
 		legacy["aegis_%s" % damage_type] = 0
 	legacy["range"] = 0
 	legacy["critical_range"] = 20
+	# Simple combat: health is hearts from Constitution (CON 20 = 5).
+	if SimpleCombat.enabled(): legacy["max_health"] = SimpleCombat.hearts_for(int(stats.get("con",10)))
 	return legacy
 
 func _apply_inventory_modifiers_to_derived(derived_stats: Dictionary) -> void:

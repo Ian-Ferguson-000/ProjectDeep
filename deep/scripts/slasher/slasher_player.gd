@@ -147,6 +147,7 @@ func setup(state:RunState)->void:
 	var tuning:Dictionary=GameBalance.get_slasher_class_tuning(class_id)
 	speed=float(tuning.get("speed",speed));max_health=state.max_health;health=state.current_health
 	attack_power=maxi(2,state.get_derived_stat("attack_power")+(state.selected_gear.damage if state.selected_gear else 1))
+	_setup_simple_combat(state)
 	spell_power=maxi(2,state.get_derived_stat("spell_potency")+(state.selected_gear.damage if state.selected_gear else 1))
 	if item_runtime!=null:item_runtime.setup(state,self)
 	var hitbox:=get_node_or_null("PlayerHitbox") as CollisionShape2D
@@ -439,6 +440,15 @@ func _defensive(result:Dictionary)->Dictionary:
 		"summoner":_ensure_companion();defense_kind="cover"
 	return result
 
+## Simple combat (SimpleCombat): this player's hit size from their main stat
+## (the Fighter's Strength), and the ordinary swing it's measured against.
+var simple_base:=1
+var simple_reference:=1
+func _setup_simple_combat(state:RunState)->void:
+	var stats:Dictionary=state.get_stats()
+	simple_base=SimpleCombat.damage_for(int(stats.get(SimpleCombat.damage_stat(state.selected_class_id),10)))
+	simple_reference=maxi(1,_scaled_damage(_ability_tuning("basic")))
+
 func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->void:
 	if is_instance_valid(warrior_kit) and warrior_kit.has_method("modify_incoming_damage"):amount=warrior_kit.modify_incoming_damage(amount)
 	for child in get_children():
@@ -491,6 +501,8 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 	if consumable_aegis>0:
 		var aegis_prevented:int=mini(consumable_aegis,maxi(0,amount-prevented));consumable_aegis-=aegis_prevented;prevented+=aegis_prevented
 	var final:=maxi(0,amount-prevented)
+	# Simple combat: anything that gets through does exactly one heart.
+	if final>0 and SimpleCombat.enabled():final=SimpleCombat.enemy_hit_damage()
 	if item_runtime:
 		var mitigation:Dictionary=item_runtime.mitigate_damage(final);prevented+=int(mitigation.prevented);final=int(mitigation.damage)
 		if item_runtime.try_prevent_lethal(final,health):final=maxi(0,health-1)

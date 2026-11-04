@@ -346,9 +346,21 @@ func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlaye
 	if health<=0:dead=true;guardian_burst_queue.clear();remove_from_group("slasher_enemy");remove_from_group("slasher_damageable");remove_from_group("slasher_wolf");defeated.emit(self,reward);queue_free()
 	return resolved_amount
 
+## Simple combat: enemy health is rescaled once, after configure() and any
+## subclass set-up, when the enemy enters the scene.
+var health_simplified:=false
+func _notification(what:int)->void:
+	if what==NOTIFICATION_READY and not health_simplified and SimpleCombat.enabled():
+		health_simplified=true
+		var fraction:=float(health)/float(maxi(1,max_health))
+		max_health=SimpleCombat.enemy_health(max_health);health=maxi(1,int(ceil(max_health*fraction)))
+
 func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	var was_dead := dead
-	var amount:=maxi(1,int(attack.get("damage",1)));var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
+	var amount:=maxi(1,int(attack.get("damage",1)))
+	# Simple combat: every player hit lands on the 1-4 scale (SimpleCombat).
+	if SimpleCombat.enabled() and is_instance_valid(attacker):amount=SimpleCombat.player_hit(amount,attacker.simple_reference,attacker.simple_base)
+	var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
 	var element:=String(attack.get("damage_type","physical"))
 	var sound_event:="impact_"+element if element in ["fire","ice","lightning","aether"] else "impact"
 	var previous := [incoming_type,incoming_source,incoming_critical]
