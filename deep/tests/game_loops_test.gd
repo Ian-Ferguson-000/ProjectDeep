@@ -58,7 +58,7 @@ func _run() -> void:
 	_expect(rogue_neutral.size()==15,"A class without an authored pool must still receive all fifteen neutral items")
 	# Dev Mode makes testing drops practical: ordinary foes can produce active
 	# choices, while elite and boss active drops are guaranteed.
-	game_settings.values["dev_mode"]=true
+	GameSettingsService.dev_mode_available=true;game_settings.values["dev_mode"]=true
 	var dev_hits:=0
 	for i in 10000:if FOREST_SCRIPT.roll_drop("wolf_vanguard",false,false,1.0,rng)!="":dev_hits+=1
 	_expect(dev_hits/10000.0>base_rate*2.0,"Dev Mode did not substantially increase ordinary loot drops")

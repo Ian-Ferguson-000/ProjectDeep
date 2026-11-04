@@ -75,7 +75,7 @@ func _run() -> void:
 	_expect(Dictionary(state.run_stats().get("active_item",{})).get("id","") == "shadow_step","The slot isn't kept in the run's stats")
 	# Main-screen Dev Mode accelerates both room-pip and timed recharge without
 	# changing either item's authored maximum charge.
-	game_settings.values["dev_mode"]=true
+	GameSettingsService.dev_mode_available=true;game_settings.values["dev_mode"]=true
 	ActiveItems.give(state,"whirlwind");ActiveItems.spend(state);ActiveItems.add_room_charge(state)
 	_expect(ActiveItems.is_ready(state),"Dev Mode did not accelerate room-based active-item recharge")
 	ActiveItems.give(state,"shadow_step");ActiveItems.spend(state);ActiveItems.tick(state,0.7)
@@ -164,7 +164,7 @@ func _run() -> void:
 	_expect(scene.loot_nodes.any(func(node):return is_instance_valid(node) and node!=dropped and node.get_meta("kind","")=="active_item" and node.get_meta("item_id","")=="umbral_bow"),"Replacing a dropped active item did not leave the old one behind")
 	# Dev Mode enemy drops pause play and present three cards. Choosing one
 	# equips it fully charged, while the replaced item remains an exact pickup.
-	game_settings.values["dev_mode"]=true
+	GameSettingsService.dev_mode_available=true;game_settings.values["dev_mode"]=true
 	ActiveItems.give(state,"sentinel_shield")
 	# Even a drop without precomputed choice metadata must expand on pickup.
 	scene._spawn_active_item_drop(scene.player.global_position,"demon_blade")

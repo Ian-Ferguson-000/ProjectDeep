@@ -61,17 +61,21 @@ func _run() -> void:
 	assert(campaign.expedition.active and campaign.expedition.dungeon_id == "crypt" and campaign.expedition.tutorial_run, "Transition settled or lost the tutorial expedition")
 	assert(state.active_character_id == alden.id and state.current_health > 0 and state.gold == 37 and state.selected_gear == gear and state.inventory_items == inventory and state.consumable_items == provisions and int(state.hero_profiles["warrior"].total_xp) == xp, "Connected transition reset the adventurer or carried progress")
 	assert(campaign.tutorial_phase == CampaignState.TUTORIAL_EXPEDITION and not campaign.post_tutorial_initialized, "Forest clear prematurely applied the tutorial epilogue")
-	assert(controller.progression_prompts > 0 and controller.connection_dialogues == 1 and state.save_count >= 2, "Tutorial bypassed normal progression, connecting dialogue or saves")
+	assert((controller.progression_prompts > 0 or not GameBalance.leveling_enabled()) and controller.connection_dialogues == 1 and state.save_count >= 2, "Tutorial bypassed normal progression, connecting dialogue or saves")
 	var restored := CampaignState.new()
 	restored._load_dict(campaign.to_dict())
 	assert(restored.expedition.active and restored.expedition.dungeon_id == "crypt" and restored.expedition.floor == 1 and restored.expedition.tutorial_controls_complete, "Save round-trip lost the continued tutorial run")
 	state.current_floor = int(GameBalance.get_dungeon("crypt").floors)
 	controller.complete_slasher_dungeon_floor()
-	assert(state.active_dungeon_id == "balors_hell" and state.current_floor == 1 and controller.loaded_dungeon == "balors_hell" and controller.returns.is_empty(), "Tutorial Crypt clear did not continue to Balor's Hell")
-	state.current_floor = int(GameBalance.get_dungeon("balors_hell").floors)
-	controller.complete_slasher_dungeon_floor()
-	assert(controller.returns == ["victory"], "Connected tutorial did not finish at the end of the normal route")
+	if RunState.is_coming_soon("balors_hell"):
+		# Balor's Hell isn't in this build: clearing the Crypt ends the run as a victory.
+		assert(controller.returns == ["victory"], "Clearing the Crypt didn't end the run while Balor's Hell is coming soon")
+	else:
+		assert(state.active_dungeon_id == "balors_hell" and state.current_floor == 1 and controller.loaded_dungeon == "balors_hell" and controller.returns.is_empty(), "Tutorial Crypt clear did not continue to Balor's Hell")
+		state.current_floor = int(GameBalance.get_dungeon("balors_hell").floors)
+		controller.complete_slasher_dungeon_floor()
+		assert(controller.returns == ["victory"], "Connected tutorial did not finish at the end of the normal route")
 	controller.queue_free()
 	await process_frame
-	print("Tutorial connected run: Forest → Crypt → Balor's Hell, carried progress, normal progression, save round-trip and final return passed.")
+	print("Tutorial connected run: Forest → Crypt (→ Balor's Hell when built), carried progress, normal progression, save round-trip and final return passed.")
 	quit()

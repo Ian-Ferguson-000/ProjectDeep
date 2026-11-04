@@ -475,6 +475,7 @@ func _build_armory_modal() -> void:
 	var testing := Button.new(); testing.name="OpenTestingGround"; testing.text="Enter testing ground"; testing.tooltip_text="Try every class, weapon, item, and relic with free build swapping."; testing.pressed.connect(func():
 		if controller != null and controller.has_method("open_testing_ground"):controller.open_testing_ground())
 	_style_button(testing); body.add_child(testing)
+	testing.visible = GameSettingsService.dev_mode_available  # a dev tool, hidden in the demo
 	var close := Button.new(); close.text = "Close"; close.pressed.connect(_close_modal.bind(armory_backdrop)); _style_button(close); body.add_child(close)
 
 func _build_expedition_modal() -> void:

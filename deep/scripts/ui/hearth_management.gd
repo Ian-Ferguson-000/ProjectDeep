@@ -252,7 +252,7 @@ func refresh() -> void:
 			tab.add_theme_constant_override("icon_max_width",20)
 			tab.pressed.connect(show_section.bind(page))
 			tabs.add_child(tab)
-	testing_ground_button.visible = section == "Armory"
+	testing_ground_button.visible = section == "Armory" and GameSettingsService.dev_mode_available  # dev tool, hidden in the demo
 	testing_ground_button.disabled = campaign.expedition.active
 	advance_button.text = "Advance to Late Shift" if campaign.calendar_shift == 0 else "End Day"
 	advance_button.disabled = campaign.expedition.active or not campaign.first_company_recruited or not campaign.pending_story_event_id.is_empty() or not campaign.ending_state.is_empty()
