@@ -8,7 +8,9 @@ const VALID_DURATIONS := ["permanent","dungeon_bound","run","temporary"]
 
 var failures: Array[String] = []
 
-func _initialize() -> void: call_deferred("_run")
+func _initialize() -> void:
+	SimpleCombat.dodge_override = 0.0  # every hit must land in this test
+	call_deferred("_run")
 
 func _run() -> void:
 	var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/pickup_items.json"))

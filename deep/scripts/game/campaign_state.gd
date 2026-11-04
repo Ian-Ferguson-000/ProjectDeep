@@ -260,6 +260,7 @@ func apply_post_tutorial_state(outcome: String) -> void:
 	expedition = ExpeditionState.new()
 	tutorial_phase = TUTORIAL_COMPLETE
 	post_tutorial_initialized = true
+	HearthArmory.grant_starter_secondary(self)
 
 func get_calendar_date() -> Dictionary:
 	var zero_based := maxi(0, calendar_day - 1)
@@ -870,6 +871,7 @@ func _load_dict(data: Dictionary) -> void:
 		expedition.due_day = calendar_day+7
 	HearthMigration.upgrade(self,data)
 	if not bool(data.get("simple_hearts",false)): _simplify_roster_health()
+	if post_tutorial_initialized: HearthArmory.grant_starter_secondary(self)
 	ECOLOGY.ensure(self);ECOLOGY.advance_to_day(self,calendar_day);CRISIS.ensure(self)
 
 ## Simple combat: adventurers saved under the old health numbers get hearts

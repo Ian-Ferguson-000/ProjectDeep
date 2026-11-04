@@ -65,8 +65,12 @@ static func weapon_stat(weapon_id: String, class_id: String) -> String:
 	var stats: Dictionary = Dictionary(rules().get("weapon_stats",{}))
 	return String(stats[weapon_id]) if stats.has(weapon_id) else damage_stat(class_id)
 
+## Tests that need every hit to land set this to 0 (-1 = use Dexterity).
+static var dodge_override := -1.0
+
 ## Chance (0..1) to dodge a hit completely, from Dexterity above 10.
 static func dodge_chance(dexterity: int) -> float:
+	if dodge_override >= 0.0: return dodge_override
 	var r := rules()
 	return clampf(maxi(0,dexterity - 10) * float(r.get("dodge_per_dex_point",0.01)),0.0,float(r.get("dodge_max",0.15)))
 

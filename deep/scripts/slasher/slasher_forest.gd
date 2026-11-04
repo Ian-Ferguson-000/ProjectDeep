@@ -406,6 +406,7 @@ func _process(delta:float)->void:
 	# Modal controls consume Escape themselves. Never let the same keypress fall through to abandon.
 	if modal_open or codex_open:return
 	_process_active_item(delta)
+	if dungeon_hud!=null and is_instance_valid(player):dungeon_hud.show_secondary(player.secondary_id if player.has_secondary() else "",float(player.cooldowns.get("secondary",0.0)),float(player.secondary.get("cooldown",1.0)))
 	var interaction_used:=false;var nearby_chest:SlasherBreakableProp=_nearby_chest()
 	if nearby_chest!=null:
 		var keyless:=bool(nearby_chest.get_meta("no_key",false))
@@ -981,7 +982,8 @@ func _on_game_setting_changed(key:String,value:Variant)->void:
 func _on_ability_resolved(result:Dictionary)->void:
 	if tutorial_sequence!=null:tutorial_sequence.observe_ability(result)
 	var failure:=String(result.get("failure",""))
-	if not failure.is_empty():_show_message(failure)
+	# Pressing early just queues the action (input buffer), so cooldowns aren't news.
+	if not failure.is_empty() and not failure.ends_with("cooling down."):_show_message(failure)
 func _on_combo_updated(state:Dictionary)->void:
 	if combo_label==null:return
 	if String(state.get("type",""))=="triggered":
@@ -989,9 +991,8 @@ func _on_combo_updated(state:Dictionary)->void:
 		var triggered_text:=combo_label.text;var tween:=create_tween();tween.tween_interval(1.5);tween.tween_callback(func():
 			if is_instance_valid(combo_label) and combo_label.text==triggered_text:combo_label.text="")
 		return
-	var progress:Dictionary=Dictionary(state.get("progress",{}))
-	if progress.is_empty():combo_label.text="";return
-	combo_label.add_theme_color_override("font_color",Color("#e5bf68"));combo_label.text="%s  %d/%d  ·  %s"%[String(progress.get("name","Combo")).to_upper(),int(progress.get("index",0)),int(progress.get("total",0)),String(progress.get("next","")).to_upper()]
+	# No running "swing 2/3" text: the swings speak for themselves. Only a
+	# finished named combo flashes up (above).
 func _show_message(text:String,duration:float=2.5)->void:
 	if message_label==null:return
 	message_label.text=text

@@ -3,7 +3,9 @@ extends SceneTree
 ## Dash, special and block are switched off in progression.json; this checks them anyway.
 func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
 
-func _initialize()->void:
+func _initialize() -> void:
+	SimpleCombat.dodge_override = 0.0  # every hit must land in this test
+	
 	call_deferred("_run")
 
 func _run()->void:

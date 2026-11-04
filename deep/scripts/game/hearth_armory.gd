@@ -8,6 +8,17 @@ static func grant(c: CampaignState, item_id: String, bound: bool = false) -> Str
 	c.armory[id] = {"item_id":item_id, "owner":"", "bound":bound}
 	return id
 
+## Classes that can carry a sidearm in the "secondary" slot (F in the dungeon).
+const SECONDARY_CLASSES := ["warrior"]
+## A Hunting Spear given once to every company, so the sidearm can be tried.
+const STARTER_SECONDARY := "hunting_spear"
+const STARTER_SECONDARY_FLAG := "starter_secondary_granted"
+
+static func grant_starter_secondary(c: CampaignState) -> void:
+	if c == null or bool(c.tavern_dialogue_flags.get(STARTER_SECONDARY_FLAG,false)) or HearthCatalog.item(STARTER_SECONDARY).is_empty(): return
+	c.tavern_dialogue_flags[STARTER_SECONDARY_FLAG] = true
+	grant(c,STARTER_SECONDARY)
+
 static func equip(c: CampaignState, character_id: String, instance_id: String) -> Dictionary:
 	var member := c.character(character_id)
 	if member == null or member.status != CharacterRecord.STATUS_AVAILABLE: return fail("Only adventurers at home can change equipment.")

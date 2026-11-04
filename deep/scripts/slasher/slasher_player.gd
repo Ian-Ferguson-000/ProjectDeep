@@ -98,6 +98,17 @@ var combo_cast_serial:=0
 var combo_proc_targets:Dictionary={}
 var warrior_slash_chain:=0
 var warrior_slash_chain_time:=0.0
+## Input buffer: a press that lands just before an action is ready fires the
+## moment it is (slasher_balance.json input.buffer_window).
+var buffered_slot:=""
+var buffered_source:=""
+var buffered_left:=0.0
+## A short forward step with each Fighter swing.
+var lunge_velocity:=Vector2.ZERO
+var lunge_left:=0.0
+## Secondary weapon (F / right shoulder): the equipped sidearm's catalog entry.
+var secondary_id:=""
+var secondary:Dictionary={}
 
 func snapshot_party_state()->Dictionary:
 	var state:={"cooldowns":cooldowns.duplicate(true),"invulnerable":invulnerable,"defense_window":defense_window,"defense_kind":defense_kind,"empowered":empowered,"is_hidden":is_hidden,"hidden_time":hidden_time,"retribution_stored":retribution_stored,"consumable_aegis":consumable_aegis,"consumable_speed_time":consumable_speed_time,"consumable_speed_multiplier":consumable_speed_multiplier,"movement_debuff_time":movement_debuff_time,"movement_debuff_multiplier":movement_debuff_multiplier,"next_attack_multiplier":next_attack_multiplier,"last_fireball_attack":last_fireball_attack.duplicate(true),"warrior_slash_chain":warrior_slash_chain,"warrior_slash_chain_time":warrior_slash_chain_time,"last_direction":[last_direction.x,last_direction.y],"aim_direction":[aim_direction.x,aim_direction.y],"marked_enemy_instance_id":marked_enemy.get_instance_id() if is_instance_valid(marked_enemy) else 0}
@@ -148,6 +159,7 @@ func setup(state:RunState)->void:
 	speed=float(tuning.get("speed",speed));max_health=state.max_health;health=state.current_health
 	attack_power=maxi(2,state.get_derived_stat("attack_power")+(state.selected_gear.damage if state.selected_gear else 1))
 	_setup_simple_combat(state)
+	_setup_secondary(state)
 	spell_power=maxi(2,state.get_derived_stat("spell_potency")+(state.selected_gear.damage if state.selected_gear else 1))
 	if item_runtime!=null:item_runtime.setup(state,self)
 	var hitbox:=get_node_or_null("PlayerHitbox") as CollisionShape2D
@@ -184,6 +196,14 @@ func _physics_process(delta:float)->void:
 		if resource_regen_accumulator>=1.0:
 			var restored:=floori(resource_regen_accumulator);resource_regen_accumulator-=restored;run_state.gain_class_resource(restored);resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
 	for key in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-delta)
+	lunge_left=maxf(0.0,lunge_left-delta)
+	if buffered_left>0.0:
+		buffered_left-=delta
+		if buffered_left<=0.0:buffered_slot=""
+		elif float(cooldowns.get(buffered_slot,0.0))<=0.0 and not input_locked:
+			var slot_to_fire:=buffered_slot;var source:=buffered_source;buffered_slot="";buffered_left=0.0
+			if slot_to_fire=="secondary":use_secondary(source)
+			else:use_action(slot_to_fire,source)
 	var was_invulnerable:=invulnerable>0.0
 	invulnerable=maxf(0.0,invulnerable-delta);defense_window=maxf(0.0,defense_window-delta);animation_lock=maxf(0.0,animation_lock-delta);hidden_time=maxf(0.0,hidden_time-delta)
 	if was_invulnerable or invulnerable>0.0:queue_redraw()
@@ -201,7 +221,9 @@ func _physics_process(delta:float)->void:
 	var direction:=Input.get_vector("slasher_left","slasher_right","slasher_up","slasher_down")
 	if direction.length()>0.1:last_direction=direction.normalized()
 	var kit_speed: float=mage_kit.movement_speed_multiplier() if is_instance_valid(mage_kit) and mage_kit.has_method("movement_speed_multiplier") else 1.0
-	velocity=direction*speed*kit_speed*(kit_buffs.speed_multiplier() if is_instance_valid(kit_buffs) else 1.0)*consumable_speed_multiplier*movement_debuff_multiplier*(item_runtime.conversion("speed_multiplier",1.0) if item_runtime else 1.0);move_and_slide()
+	velocity=direction*speed*kit_speed*(kit_buffs.speed_multiplier() if is_instance_valid(kit_buffs) else 1.0)*consumable_speed_multiplier*movement_debuff_multiplier*(item_runtime.conversion("speed_multiplier",1.0) if item_runtime else 1.0)
+	if lunge_left>0.0:velocity+=lunge_velocity
+	move_and_slide()
 	_enforce_field_bounds()
 	if animation_lock<=0.0:_play_animation("run" if direction.length()>0.1 else "idle")
 	if Input.is_action_just_pressed("slasher_controller_basic"):use_action("basic", "controller")
@@ -211,7 +233,9 @@ func _physics_process(delta:float)->void:
 	if Input.is_action_just_pressed("slasher_defend"):use_action("defensive", "controller")
 	if basic_mouse_held and not Input.is_key_pressed(KEY_SHIFT) and float(cooldowns.get("basic",0.0))<=0.0:
 		var held_result:Dictionary=use_action("basic", "mouse")
-		if bool(held_result.get("started",false)):cooldowns.basic=float(cooldowns.basic)*float(GameBalance.get_slasher_balance("input").get("held_basic_cooldown_multiplier",2.25))
+		var input_rules:Dictionary=GameBalance.get_slasher_balance("input")
+		if bool(held_result.get("started",false)):cooldowns.basic=float(cooldowns.basic)*float(Dictionary(input_rules.get("held_basic_cooldown_multiplier_by_class",{})).get(class_id,input_rules.get("held_basic_cooldown_multiplier",2.25)))
+	if InputMap.has_action("slasher_secondary") and Input.is_action_just_pressed("slasher_secondary"):use_secondary("keyboard" if Input.is_physical_key_pressed(KEY_F) else "controller")
 
 func _unhandled_input(event:InputEvent)->void:
 	if input_locked:return
@@ -230,7 +254,9 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	var result:={"started":false,"slot":slot,"class_id":class_id,"input_source":input_source,"targets_hit":0,"projectiles_deflected":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
 	# Actions switched off in progression.json "enabled_actions" do nothing.
 	if not GameBalance.action_enabled(slot):result.failure="disabled";return result
-	if float(cooldowns.get(slot,0.0))>0.0:result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
+	if float(cooldowns.get(slot,0.0))>0.0:
+		_buffer(slot,input_source)
+		result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
 	var tuning:Dictionary=_ability_tuning(slot)
 	var default_cost:=2 if slot=="special" else (int(run_state.get_class_resource_rules(class_id).get("movement_cost",1)) if slot=="movement" else 0)
 	var resource_cost:=int(tuning.get("resource_cost",default_cost))
@@ -323,7 +349,12 @@ func _basic(result:Dictionary)->Dictionary:
 			if class_id=="warrior":
 				if warrior_slash_chain_time<=0.0:warrior_slash_chain=0
 				warrior_slash_chain+=1
-				if warrior_slash_chain>=3:result["cooldown_override"]=float(tuning.get("combo_finisher_cooldown",0.90));result["basic_chain_complete"]=true;warrior_slash_chain=0;warrior_slash_chain_time=0.0
+				var swing:=warrior_slash_chain
+				_lunge(tuning,swing)
+				if warrior_slash_chain>=3:
+					result["cooldown_override"]=float(tuning.get("combo_finisher_cooldown",0.90));result["basic_chain_complete"]=true;warrior_slash_chain=0;warrior_slash_chain_time=0.0
+					# The third swing lands heavier and wider.
+					attack.knockback=float(attack.get("knockback",0.0))*float(tuning.get("finisher_knockback_multiplier",1.0));attack.arc_degrees=float(attack.get("arc_degrees",70.0))+float(tuning.get("finisher_arc_bonus",0.0))
 				else:result["cooldown_override"]=float(tuning.get("cooldown",0.18));warrior_slash_chain_time=float(tuning.get("combo_reset_window",0.70))
 			if class_id=="warrior" and String(resolving_combo.get("id",""))=="crosscut":
 				var effect:Dictionary=Dictionary(resolving_combo.get("effect",{}));attack.damage=maxi(1,int(round(float(attack.damage)*float(effect.get("damage_multiplier",2.0)))));attack.knockback=float(attack.get("knockback",0.0))*float(effect.get("knockback_multiplier",2.0));attack.screen_shake_multiplier=float(effect.get("screen_shake_multiplier",1.6));attack.critical=true;result.critical=true
@@ -602,6 +633,77 @@ func _standard_weapon_visual(origin: Vector2, direction: Vector2, reach: float, 
 
 func combat_hurtbox()->Dictionary:
 	return SlasherHitGeometry.sprite_body(sprite,global_position,18.0,true)
+
+## Remember a press made while an action is cooling down, if it's nearly ready.
+func _buffer(slot:String,source:String)->void:
+	var rules:Dictionary=GameBalance.get_slasher_balance("input")
+	if not Array(rules.get("buffered_slots",["basic"])).has(slot):return
+	var window:=float(rules.get("buffer_window",0.0))
+	if window<=0.0 or float(cooldowns.get(slot,0.0))>window:return
+	buffered_slot=slot;buffered_source=source;buffered_left=window
+
+## A small step toward the aim with each swing (lunge distances per chain step).
+func _lunge(tuning:Dictionary,swing:int)->void:
+	var steps:Array=Array(tuning.get("lunge",[]))
+	if steps.is_empty():return
+	var distance:=float(steps[clampi(swing-1,0,steps.size()-1)]);var time:=maxf(0.02,float(tuning.get("lunge_time",0.09)))
+	lunge_velocity=aim_direction.normalized()*distance/time;lunge_left=time
+
+# ---------------------------------------------------------------- secondary weapon
+
+## Loads the equipped sidearm (CharacterRecord.equipment["secondary"]).
+func _setup_secondary(state:RunState)->void:
+	secondary_id=state.secondary_weapon_id() if state!=null else ""
+	secondary=Dictionary(HearthCatalog.item(secondary_id).get("secondary",{})) if not secondary_id.is_empty() else {}
+	if not secondary.is_empty() and not cooldowns.has("secondary"):cooldowns["secondary"]=0.0
+
+func has_secondary()->bool:
+	return not secondary.is_empty()
+
+## F / right shoulder: the sidearm's attack. Spears thrust straight ahead,
+## hitting every foe in a line and pushing them back.
+func use_secondary(source:String="system")->Dictionary:
+	var result:={"started":false,"slot":"secondary","targets_hit":0,"failure":""}
+	if not has_secondary() or input_locked:result.failure="no secondary";return result
+	if float(cooldowns.get("secondary",0.0))>0.0:_buffer("secondary",source);result.failure="cooling down";return result
+	var reach:=float(secondary.get("reach",220.0));var width:=float(secondary.get("width",30.0))
+	var attack:=_configured_attack(_ability_tuning("basic"),"physical")
+	attack.damage=maxi(1,int(round(simple_reference*float(secondary.get("damage_ratio",1.0)))))
+	attack.knockback=float(secondary.get("knockback",70.0));attack.damage_stat=SimpleCombat.weapon_stat(secondary_id,class_id)
+	var direction:=aim_direction.normalized()
+	result.targets_hit=_line_attack(global_position,global_position+direction*reach,width*0.5,attack)
+	_spear_visual(global_position,direction,reach,width)
+	cooldowns["secondary"]=float(secondary.get("cooldown",1.1))
+	lunge_velocity=direction*12.0/0.06;lunge_left=0.06
+	AudioCue.play_from(self,"sword_swing");_play_action_animation("attack",0.3);animation_lock=0.2
+	result.started=true
+	ability_resolved.emit(result)
+	return result
+
+func _spear_visual(origin:Vector2,direction:Vector2,reach:float,width:float)->void:
+	var streak:=SpearStreak.new();streak.direction=direction;streak.reach=reach;streak.width=width
+	get_parent().add_child(streak);streak.global_position=origin
+
+## The thrust: a bright shaft that shoots out and fades.
+class SpearStreak extends Node2D:
+	var direction:=Vector2.RIGHT
+	var reach:=220.0
+	var width:=30.0
+	var life:=0.0
+	const DURATION:=0.18
+	func _ready()->void:z_index=30
+	func _process(delta:float)->void:
+		life+=delta;queue_redraw()
+		if life>=DURATION:queue_free()
+	func _draw()->void:
+		var t:=clampf(life/DURATION,0.0,1.0)
+		var length:=reach*minf(1.0,t*3.0)
+		var alpha:=1.0-t
+		var tip:=direction*length
+		var side:=direction.orthogonal()
+		draw_colored_polygon(PackedVector2Array([direction*14.0+side*width*0.5,tip,direction*14.0-side*width*0.5]),Color(1.0,0.93,0.72,0.28*alpha))
+		draw_line(direction*10.0,tip,Color(0.55,0.4,0.25,alpha),4.0)
+		draw_colored_polygon(PackedVector2Array([tip+direction*14.0,tip+side*7.0,tip-side*7.0]),Color(0.9,0.92,0.98,alpha))
 
 func _melee_attack(data:Dictionary)->int:
 	# Snapshot once: on-hit effects can move actors, but cannot move this strike.

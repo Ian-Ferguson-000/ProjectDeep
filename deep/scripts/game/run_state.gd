@@ -494,6 +494,16 @@ func is_slasher_elite_floor()->bool:
 	return get_slasher_cycle_floor()==int(Dictionary(GameBalance.get_dungeon(active_dungeon_id).get("slasher",{})).get("elite_floor_in_cycle",5))
 func enter_slasher_endless()->void:slasher_endless_mode=true;slasher_campaign_boss_cleared=true
 
+## The active adventurer's sidearm (armory slot "secondary"), or "" if none.
+## secondary_override is for test and playground runs without a campaign.
+var secondary_override := ""
+func secondary_weapon_id() -> String:
+	if not secondary_override.is_empty(): return secondary_override
+	var member := get_active_character()
+	if member == null or campaign == null: return ""
+	var instance: Dictionary = campaign.armory.get(String(member.equipment.get("secondary","")),{})
+	return String(instance.get("item_id",""))
+
 ## The run's seed as a code to share or type in ("K7QF-2MXA").
 func seed_code() -> String:
 	return RunSeed.encode(run_seed if run_seed > 0 else floor_seed)
