@@ -99,3 +99,11 @@ the dungeon trader, the tavern supplier and the Hearth's provisions. With
 `enemy_drops.json`), loot caches after a room is cleared, and the Hearth's starting
 supplies upgrade. Potion relics are in the drop pool too. Drink one with Q; the
 HUD's potion pocket (bottom left) shows how many you carry.
+
+## Run start: no free relic
+
+A run starts with nothing: there's no relic choice on floor 1 any more, so every
+relic is earned in the dungeon (chests, pedestals, traders, mini bosses). To bring
+the opening choice back, set `run_start.starter_relic` to `true` in
+`data/slasher_balance.json` (`slasher_forest.gd → starter_relic_enabled`).
+Test: `tests/run_start_test.gd`.

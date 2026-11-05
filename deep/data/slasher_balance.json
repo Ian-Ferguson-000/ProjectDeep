@@ -1,4 +1,5 @@
 {
+  "run_start": {"how_to_edit": "starter_relic: true gives a free relic choice when a run begins (floor 1). false: runs start with no relic.", "starter_relic": false},
   "generation": {"width": 44, "height": 28, "base_rooms": 6, "room_growth_per_floor": 1, "room_growth_cap": 3, "room_width_min": 9, "room_width_max": 14, "room_height_min": 7, "room_height_max": 11, "corridor_width": 2, "tile_size": 48, "decoration_density": 0.16, "edge_decoration_density": 0.48, "solid_prop_density": 0.025, "spawn_clearance_cells": 2,"enemy_count_per_room_cap":7},
   "rewards": {"floor_xp_base":45,"floor_xp_per_depth":5,"elite_floor_bonus":55,"campaign_boss_bonus":70,"endless_xp_multiplier":0.35,"loot_gold_base":5},
   "boss_durability": {"max_damage_fraction":0.05,"shield_reduction":0.75,"shield_duration":0.5,"shield_color":"#8fd8ff"},

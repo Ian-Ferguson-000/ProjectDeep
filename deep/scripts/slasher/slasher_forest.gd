@@ -634,7 +634,12 @@ func _on_chest_opened(_chest:SlasherBreakableProp,cell:Vector2i)->void:
 	relic_choice_source="chest";var cycle:int=maxi(0,run_state.get_slasher_cycle_number()-1) if run_state.slasher_endless_mode else 0
 	var choices:Array[String]=run_state.generate_slasher_chest_choices(run_state.current_floor,"chest_%d_%d"%[cell.x,cell.y],cycle);relic_modal.open(run_state,choices,true)
 
+## The free relic choice at the start of a run. Off: runs start with nothing and
+## relics are earned in the dungeon (slasher_balance.json → run_start.starter_relic).
+static func starter_relic_enabled()->bool:return bool(GameBalance.get_slasher_balance("run_start").get("starter_relic",false))
+
 func _offer_starter_relic()->void:
+	if not starter_relic_enabled():return
 	if relic_modal==null or relic_modal.visible:return
 	relic_choice_source="starter";var choices:Array[String]=run_state.generate_slasher_chest_choices(1,"starter",0);relic_modal.open(run_state,choices,true)
 

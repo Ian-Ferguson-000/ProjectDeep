@@ -11,7 +11,7 @@ func _run()->void:
 	GameBalance.set_party_size_override(4)
 	var failures:Array[String]=[];var state:=RunState.new();state.campaign.tutorial_phase=CampaignState.TUTORIAL_COMPLETE;state.campaign.ensure_roster();var party:=state.campaign.default_party("forest")
 	_expect(party.size()==2,"Forest did not provide a two-member party",failures);state.campaign.begin_expedition(party,"forest");state.active_character_id=party[0];state.set_class(state.campaign.character(party[0]).class_id);state.start_new_run(null,"forest")
-	var scene:=SLASHER_FOREST.instantiate();scene.setup(null,state);root.add_child(scene);await process_frame;await process_frame
+	var scene:=SLASHER_FOREST.instantiate();scene._ensure_designer_controls();scene.setup(null,state);root.add_child(scene);await process_frame;await process_frame
 	_expect(scene.party_portraits.size()==2,"Slasher HUD did not show both living recruits",failures)
 	scene.player.combo_updated.emit({"type":"progress","progress":{"name":"Crosscut","index":1,"total":3,"next":"Charge"}});_expect(scene.combo_label!=null and scene.combo_label.text.is_empty(),"Slasher HUD should not show swing progress text any more (was: did not render combo progress",failures)
 	var active_id:=state.active_character_id;var position:Vector2=scene.player.global_position;scene.player.cooldowns.special=3.0;scene.player.combo_runtime.record_action("basic");scene._cycle_party_member()
