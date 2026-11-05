@@ -18,9 +18,10 @@ func _run()->void:
 	_expect(bool(campaign.recruit_candidate(second_id).ok),"Second recruit failed",failures)
 	var launch:=campaign.launch_expedition([first_id], "forest");_expect(bool(launch.ok) and campaign.expedition.party_ids==[first_id],"One-person first launch was not accepted",failures)
 	var run_id:=int(launch.expedition_id);campaign.expedition.carried_gold=25
+	var bank_before:=campaign.banked_gold;var cut:=HearthCut.split(25,HearthCut.percent(campaign,campaign.character(first_id)))
 	var settlement:=campaign.settle_expedition(run_id,"victory",{"headline":"Forest victory"})
-	_expect(bool(settlement.ok) and campaign.calendar_day==1 and campaign.calendar_shift==1 and campaign.banked_gold==140 and int(settlement.report.share)==5,"Victory settlement did not distribute the company share and advance one shift",failures)
-	_expect(campaign.character(first_id)!=null and campaign.character(first_id).status=="recovering" and campaign.retired_heroes.is_empty(),"Participating survivor did not return into recovery",failures)
+	_expect(bool(settlement.ok) and campaign.calendar_day==1 and campaign.calendar_shift==1 and campaign.banked_gold==bank_before+int(cut.cut) and int(settlement.report.share)==int(cut.purse),"Victory settlement did not distribute the company share and advance one shift",failures)
+	_expect(campaign.character(first_id)==null and campaign.retired_heroes.any(func(r):return String(r.get("id",""))==first_id and bool(r.get("settled_in_town",false))),"The survivor didn't retire to town with their purse",failures)
 	_expect(campaign.character(second_id)!=null,"Unselected roster member was removed",failures)
 	_expect(campaign.candidate_pool.size()>=1 and campaign.candidate_pool.size()<=4,"Settlement did not create the next deterministic candidate wave",failures)
 	var rotation:=CampaignState.new();rotation.apply_post_tutorial_state("victory");rotation.unlock_class("rogue");rotation.unlock_class("summoner")

@@ -132,7 +132,7 @@ func open(candidate:CandidateRecord)->void:
 	var known:=candidate.knowledge
 	title_label.text="%s %s"%[member.display_name,member.family_name]
 	_fill_tags(member)
-	fee_label.text="%dg"%member.signing_fee if member.signing_fee>0 else "Free"
+	fee_label.text=("%dg"%member.signing_fee if member.signing_fee>0 else "Free")+"  ·  %s"%HearthCut.fame_name(member.fame)
 	_fill_identity(candidate)
 	stat_grid.show_candidate(candidate)
 	var exact:=AdventurerBuilds.ATTRIBUTE_IDS.filter(func(stat):return String(known.get(stat,""))=="exact").size()

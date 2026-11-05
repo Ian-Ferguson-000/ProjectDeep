@@ -54,11 +54,21 @@ func _run() -> void:
 	ForestRoomLibrary.use_dungeon("forest")
 	_expect(ForestRoomLibrary.templates().size() >= 18 and ForestRoomLibrary.size_of(ForestRoomLibrary.templates()[0]).x <= 35,"Switching back did not restore the forest's rooms")
 
-	# ---- forest: the reflecting Elite Guardian holds the gate on floor 1
+	# ---- forest: one guardian holds the gate, a briar guardian or a kobold cutthroat at random
 	var forest = await _scene(FOREST,"forest",1)
+	var picks := {}
+	var saved_key := String(forest.run_state.field_run.get("forest_floor_key",""))
+	for index in 24:
+		forest.run_state.field_run["forest_floor_key"] = "pick_test_%d" % index
+		picks[String(forest.gate_guardian().visual_id)] = true
+	forest.run_state.field_run["forest_floor_key"] = saved_key
+	_expect(picks.has("briar_guardian") and picks.has("bandit_cutthroat") and picks.size() == 2,"Forest gate guardians are not a mix of briar guardian and cutthroat: %s" % [picks.keys()])
+	forest.forced_gate_guardian = "briar_guardian"
 	await _enter_role(forest,"boss")
-	var gate_foes: Array = _foes(forest).filter(func(e): return e.mini_boss and e.behavior_id == "elite_guardian")
-	_expect(gate_foes.size() == 1,"Forest floor 1 gate room has no reflecting Elite Guardian")
+	var gate_bosses: Array = _foes(forest).filter(func(e): return e.mini_boss or e.boss)
+	_expect(gate_bosses.size() == 1,"Forest gate room should have exactly one boss, has %d" % gate_bosses.size())
+	var gate_foes: Array = gate_bosses.filter(func(e): return e.behavior_id == "elite_guardian")
+	_expect(gate_foes.size() == 1,"Forest gate room has no reflecting Elite Guardian")
 	_expect(bool(forest.layout.is_guarded) and not forest.exit_open,"Forest floor 1 gate is not guarded")
 	if gate_foes.size() == 1: _expect_top_bar(gate_foes[0],"Briar Guardian")
 	var minimap: Control = forest.get_node_or_null("HUD/ForestRoomMap")
@@ -71,11 +81,22 @@ func _run() -> void:
 		guardian.receive_hit(5)
 		await _frames(2)
 		_expect(forest.exit_open,"Killing the forest gate guardian did not open the gate")
-	# Briar guardians only hold the gate: none in fighting or elite rooms.
+	# One boss per floor, at the end: no mini bosses in fighting or elite rooms.
 	for role in ["combat","elite"]:
 		await _enter_role(forest,role)
-		_expect(not _foes(forest).any(func(e): return e.visual_id == "briar_guardian"),"A briar guardian spawned in a forest %s room" % role)
-	_expect(_foes(forest).any(func(e): return e.mini_boss and e.behavior_id == "bandit_cutthroat"),"Forest elite room has no cutthroat champion")
+		_expect(not _foes(forest).any(func(e): return e.mini_boss or e.boss or e.visual_id == "briar_guardian"),"A mini boss spawned in a forest %s room" % role)
+	# A cutthroat gate works too.
+	forest.forced_gate_guardian = "bandit_cutthroat"
+	for value in forest.run_state.field_run.rooms:
+		if String(value.role) == "boss": forest.run_state.update_field_room(int(value.id),{"cleared":false,"slasher":{}})
+	await _enter_role(forest,"boss")
+	var kobold_gate: Array = _foes(forest).filter(func(e): return e.mini_boss or e.boss)
+	_expect(kobold_gate.size() == 1 and kobold_gate[0].behavior_id == "bandit_cutthroat","Forest gate is not held by a lone cutthroat")
+	if kobold_gate.size() == 1:
+		kobold_gate[0].health = 1; kobold_gate[0].receive_hit(5)
+		await _frames(2)
+		_expect(forest.exit_open,"Killing the cutthroat gate guardian did not open the gate")
+	forest.forced_gate_guardian = ""
 	# Chests can't be smashed.
 	var chest := SlasherBreakableProp.new(); chest.setup("chest",Vector2i(2,2)); forest.actor_layer.add_child(chest)
 	await _frames(1)
@@ -143,9 +164,9 @@ func _run() -> void:
 	var bones: Array = crypt.actor_layer.get_children().filter(func(n): return n is SlasherHostileProjectile and n.visual_type == "bone")
 	_expect(bones.size() == 3,"Gravedigger did not throw bones")
 	_expect(String(made.ghoul.kind) == "bandit_cutthroat","Ghoul does not fight like a cutthroat")
-	# The crypt's champion in elite rooms.
+	# No mini boss in the crypt's elite rooms either.
 	await _enter_role(crypt,"elite")
-	_expect(_foes(crypt).any(func(e): return e.mini_boss and e.behavior_id == "tomb_guard"),"Crypt elite room has no Tomb Guard champion")
+	_expect(not _foes(crypt).any(func(e): return e.mini_boss or e.boss),"A mini boss spawned in a crypt elite room")
 	crypt.queue_free(); await _frames(2)
 
 	# ---- floor 5: Big Skelly Boi

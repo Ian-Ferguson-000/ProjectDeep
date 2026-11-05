@@ -38,6 +38,13 @@ var gold: int = 0
 var keys: int = 0
 var potions: int = 0
 var floor_seed: int = 1001
+## Set before starting a run to play a chosen seed (0 = random); used once.
+var requested_seed: int = 0
+## Whether the current run was started from a chosen seed.
+var run_seeded := false
+## The seed the run started with (floor_seed shifts when a run carries on into
+## the next dungeon; this doesn't).
+var run_seed: int = 0
 var current_floor: int = 1
 var max_floors: int = 5
 var active_dungeon_id: String = "forest"
@@ -90,9 +97,41 @@ func sync_campaign_runtime() -> void:
 	campaign.legacy_runtime = {"completed_dungeons":completed_dungeons.duplicate(true),"forest_cleared":forest_cleared,"completed_runs":completed_runs,"deaths":deaths,"merchant_progress":merchant_progress.duplicate(true),"merchant_offer_stock":merchant_offer_stock.duplicate(true),"purchased_favor_offers":purchased_favor_offers.duplicate(true),"enemy_defeat_counts":enemy_defeat_counts.duplicate(true)}
 
 func autosave_on_floor_entry() -> bool:
-	if campaign != null and campaign.expedition.active: _sync_active_profile_to_character()
+	if campaign != null and campaign.expedition.active:
+		_sync_active_profile_to_character()
+		campaign.expedition.run_snapshot = run_snapshot()
+		campaign.expedition.carried_gold = gold
 	sync_campaign_runtime()
 	return campaign.save_atomic() if campaign != null else false
+
+## Saves mid-floor: called by the room scenes when you enter a room and when a
+## room is cleared, so a crash or quitting puts you back in the same room.
+func save_room_checkpoint() -> bool:
+	if campaign == null or not campaign.expedition.active: return false
+	return autosave_on_floor_entry()
+
+## The run's loose state that isn't kept on the campaign. The room map is
+## stored as text because it holds Vector2i values JSON can't keep.
+func run_snapshot() -> Dictionary:
+	return {"floor":current_floor,"floor_seed":floor_seed,"gold":gold,"keys":keys,"potions":potions,"class_resource":class_resource,
+		"field_run":var_to_str(field_run),"starter_reward_claimed":starter_reward_claimed,"slasher_endless_mode":slasher_endless_mode,
+		"slasher_campaign_boss_cleared":slasher_campaign_boss_cleared,"slasher_merchant_interlude":slasher_merchant_interlude,
+		"run_seed":run_seed,"run_seeded":run_seeded}
+
+## Puts a saved snapshot back when a saved expedition is continued. Only used
+## when it belongs to the floor being resumed.
+func restore_run_snapshot(snapshot: Dictionary) -> bool:
+	if snapshot.is_empty() or int(snapshot.get("floor",-1)) != current_floor: return false
+	gold = int(snapshot.get("gold",gold)); keys = int(snapshot.get("keys",keys)); potions = int(snapshot.get("potions",potions))
+	class_resource = int(snapshot.get("class_resource",class_resource))
+	var rooms = str_to_var(String(snapshot.get("field_run","{}")))
+	if rooms is Dictionary: field_run = rooms
+	starter_reward_claimed = bool(snapshot.get("starter_reward_claimed",starter_reward_claimed))
+	slasher_endless_mode = bool(snapshot.get("slasher_endless_mode",slasher_endless_mode))
+	slasher_campaign_boss_cleared = bool(snapshot.get("slasher_campaign_boss_cleared",slasher_campaign_boss_cleared))
+	slasher_merchant_interlude = bool(snapshot.get("slasher_merchant_interlude",slasher_merchant_interlude))
+	run_seed = int(snapshot.get("run_seed",run_seed)); run_seeded = bool(snapshot.get("run_seeded",run_seeded))
+	return true
 
 func _restore_campaign_runtime() -> void:
 	if campaign == null or campaign.legacy_runtime.is_empty(): return
@@ -274,10 +313,13 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	current_floor = 1
 	slasher_endless_mode=false;slasher_campaign_boss_cleared=false
 	class_resource = 0
-	# A fresh seed every run: floors, chests and the trader differ run to run,
-	# even straight after launching the game. Saved with the expedition so a
-	# resumed run keeps its floors.
-	floor_seed = randi_range(1,2000000000)
+	# A fresh seed every run (or the one chosen on the Set Out screen): floors,
+	# rooms, foes, chests, the trader and drops all come from it. Saved with the
+	# expedition so a resumed run keeps its floors. See RunSeed.
+	run_seeded = requested_seed > 0
+	floor_seed = requested_seed if run_seeded else RunSeed.random_value()
+	run_seed = floor_seed
+	requested_seed = 0
 	if campaign != null and campaign.expedition.active: campaign.expedition.floor_seed = floor_seed
 	field_run.clear()
 	if String(dungeon.get("dungeon_type", "mystery")) == "field":
@@ -288,7 +330,11 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	if campaign != null and campaign.expedition.active and not campaign.expedition.tutorial_run: _note_unlocks(Unlocks.check(campaign,run_stats(),{"type":"reach","dungeon":dungeon_id}))
 
 static func dungeon_available(dungeon_id: String) -> bool:
-	return not GameBalance.get_dungeon(dungeon_id).is_empty() and not String(GameBalance.get_dungeon(dungeon_id).get("runtime", "")).is_empty()
+	return not GameBalance.get_dungeon(dungeon_id).is_empty() and not String(GameBalance.get_dungeon(dungeon_id).get("runtime", "")).is_empty() and not is_coming_soon(dungeon_id)
+
+## Dungeons not in this build yet (dungeons.json "coming_soon"): shown greyed out, never entered.
+static func is_coming_soon(dungeon_id: String) -> bool:
+	return bool(GameBalance.get_dungeon(dungeon_id).get("coming_soon",false))
 
 func advance_floor() -> bool:
 	if current_floor >= max_floors:
@@ -425,6 +471,10 @@ func is_slasher_elite_floor()->bool:
 	return get_slasher_cycle_floor()==int(Dictionary(GameBalance.get_dungeon(active_dungeon_id).get("slasher",{})).get("elite_floor_in_cycle",5))
 func enter_slasher_endless()->void:slasher_endless_mode=true;slasher_campaign_boss_cleared=true
 
+## The run's seed as a code to share or type in ("K7QF-2MXA").
+func seed_code() -> String:
+	return RunSeed.encode(run_seed if run_seed > 0 else floor_seed)
+
 func get_current_floor_seed() -> int:
 	return floor_seed + current_floor * 997
 
@@ -453,7 +503,7 @@ func has_completed_dungeon(dungeon_id: String) -> bool:
 
 func is_dungeon_unlocked(dungeon_id: String) -> bool:
 	var dungeon := GameBalance.get_dungeon(dungeon_id)
-	if dungeon.is_empty(): return false
+	if dungeon.is_empty() or bool(dungeon.get("coming_soon",false)): return false
 	if GameBalance.are_all_dungeons_unlocked_for_testing(): return true
 	var unlock: Dictionary = dungeon.get("unlock", {})
 	match String(unlock.get("type", "always")):

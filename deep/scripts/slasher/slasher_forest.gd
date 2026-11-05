@@ -62,6 +62,7 @@ var potion_value_label:Label
 var dungeon_hud:DungeonHud
 var merchant_shop_panel:MerchantShopPanel
 var codex:SlasherCodexMenu
+var pause_menu:GamePauseMenu
 var relic_modal:SlasherRelicChoiceModal
 var relic_choice_source:=""
 var active_drop_origin:=Vector2.ZERO
@@ -712,7 +713,7 @@ func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	match kind:
 		"gold":
 			var amount_rules:Dictionary=drop_table().get("gold_amount",{})
-			var amount:=randi_range(int(amount_rules.get("min",1)),int(amount_rules.get("max",3)))+int(run_state.current_floor*float(amount_rules.get("per_floor",0.5)))
+			var amount:=drop_rng().randi_range(int(amount_rules.get("min",1)),int(amount_rules.get("max",3)))+int(run_state.current_floor*float(amount_rules.get("per_floor",0.5)))
 			_spawn_gold_drop(spot,amount)
 		"healing_potion":_spawn_pickup_drop("potion",spot)
 		"key":_spawn_pickup_drop("key",spot)
@@ -720,8 +721,13 @@ func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 
 var _drop_rng:RandomNumberGenerator
 func drop_rng()->RandomNumberGenerator:
-	if _drop_rng==null:_drop_rng=RandomNumberGenerator.new();_drop_rng.randomize()
+	# Seeded from the run, so the same seed drops the same things in the same room.
+	if _drop_rng==null:_drop_rng=RandomNumberGenerator.new();_drop_rng.seed=hash("%d:%s:drops"%[run_state.get_current_floor_seed(),_drop_seed_key()])
 	return _drop_rng
+
+## Which part of the floor the drop sequence belongs to; the room scenes add the room.
+func _drop_seed_key()->String:
+	return "floor"
 
 ## A rare glowing relic: walk over it to take a random item your class can use.
 func _spawn_relic_drop(world_position:Vector2)->void:
@@ -784,6 +790,9 @@ func _build_hud()->void:
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));message_label.add_theme_color_override("font_outline_color",Color("#0b0808"));message_label.add_theme_constant_override("outline_size",6);canvas.add_child(message_label)
 	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)
+	pause_menu=GamePauseMenu.new().setup(controller,run_state,"dungeon");pause_menu.can_open=_can_open_pause_menu;pause_menu.open_codex=_open_codex.bind("system")
+	if not _is_tutorial_expedition():pause_menu.abandon_run=abandon_run
+	add_child(pause_menu)
 	relic_modal=RELIC_MODAL.new();relic_modal.name="SlasherRelicChoice";relic_modal.relic_selected.connect(_claim_relic);canvas.add_child(relic_modal)
 	if _is_tutorial_expedition() and not run_state.campaign.expedition.tutorial_controls_complete:_build_control_tutorial()
 
@@ -940,6 +949,17 @@ func _on_tutorial_completed()->void:
 
 func _is_tutorial_expedition()->bool:
 	return run_state!=null and run_state.campaign!=null and run_state.campaign.expedition.active and run_state.campaign.expedition.tutorial_run
+
+## From the pause menu: give up the run and go home. Counts as a retreat (you
+## keep the gold secured at the last floor checkpoint).
+func abandon_run()->void:
+	get_tree().paused=false
+	_store_active_slasher_state()
+	if controller and controller.has_method("return_to_tavern"):controller.return_to_tavern("retreat","The run is abandoned on floor %d. The company heads home."%run_state.current_floor)
+
+## The pause menu is the main menu: it opens over the codex, shops and relic choices too.
+func _can_open_pause_menu()->bool:
+	return is_instance_valid(player)
 
 func _open_codex(input_source:String="system")->void:
 	if codex==null or merchant_shop_panel.visible:return

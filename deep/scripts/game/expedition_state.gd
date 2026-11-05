@@ -40,6 +40,10 @@ var dungeon_seconds: float = 0.0
 var run_stats: Dictionary = {}
 ## The run's floor seed, so a resumed expedition rebuilds the same floors.
 var floor_seed: int = 0
+## Everything else about the run in progress (gold, keys, potions, the floor's
+## room map and which rooms are cleared), written on every save so a crash or
+## quitting mid-floor loses nothing (the room checkpoint in RunState).
+var run_snapshot: Dictionary = {}
 
 func begin(ids: Array[String], target_dungeon: String, is_tutorial: bool = false, run_id: int = 0, patron_id: String = "", selected_objective_id: String = "") -> void:
 	active = true; expedition_id = maxi(0, run_id); dungeon_id = target_dungeon; party_ids = ids.duplicate()
@@ -49,7 +53,8 @@ func begin(ids: Array[String], target_dungeon: String, is_tutorial: bool = false
 	for character_id in party_ids:member_runtime[character_id]={"health":-1,"resource":0,"slasher":{}}
 	carried_gold = 0; carried_relic_essence = 0; carried_contribution = 0; extraction_available = false; tutorial_run = is_tutorial
 	tutorial_step = 0; tutorial_controls_complete = false; tutorial_restart_count = 0
-	run_seconds = 0.0; dungeon_seconds = 0.0; run_stats = {}
+	run_seconds = 0.0; dungeon_seconds = 0.0; run_stats = {}; run_snapshot = {}
+	secured_gold = 0; secured_essence = 0
 
 func living_party_ids() -> Array[String]:
 	var living: Array[String] = []
@@ -71,7 +76,7 @@ func continue_from_checkpoint() -> void:
 	extraction_available = false
 
 func to_dict() -> Dictionary:
-	return {"floor_seed":floor_seed,"run_stats":run_stats.duplicate(true),"run_seconds":run_seconds,"dungeon_seconds":dungeon_seconds,"objective_id":objective_id,"patron_deity_id":patron_deity_id,"deployment_type":deployment_type,"departure_day":departure_day,"departure_shift_index":departure_shift_index,"due_shift_index":due_shift_index,"due_day":due_day,"retreat_policy":retreat_policy,"simulation_seed":simulation_seed,"risk_ratio":risk_ratio,"locked_loadouts":locked_loadouts,"secured_gold":secured_gold,"secured_essence":secured_essence,"active":active,"expedition_id":expedition_id,"dungeon_id":dungeon_id,"party_ids":party_ids.duplicate(),"member_runtime":member_runtime.duplicate(true),"floor":floor,"carried_gold":carried_gold,"carried_relic_essence":carried_relic_essence,"carried_contribution":carried_contribution,"carried_relics":carried_relics.duplicate(),"casualties":casualties.duplicate(),"extraction_available":extraction_available,"tutorial_run":tutorial_run,"tutorial_step":tutorial_step,"tutorial_controls_complete":tutorial_controls_complete,"tutorial_restart_count":tutorial_restart_count,"rewarded_checkpoints":rewarded_checkpoints.duplicate(true)}
+	return {"run_snapshot":run_snapshot.duplicate(true),"floor_seed":floor_seed,"run_stats":run_stats.duplicate(true),"run_seconds":run_seconds,"dungeon_seconds":dungeon_seconds,"objective_id":objective_id,"patron_deity_id":patron_deity_id,"deployment_type":deployment_type,"departure_day":departure_day,"departure_shift_index":departure_shift_index,"due_shift_index":due_shift_index,"due_day":due_day,"retreat_policy":retreat_policy,"simulation_seed":simulation_seed,"risk_ratio":risk_ratio,"locked_loadouts":locked_loadouts,"secured_gold":secured_gold,"secured_essence":secured_essence,"active":active,"expedition_id":expedition_id,"dungeon_id":dungeon_id,"party_ids":party_ids.duplicate(),"member_runtime":member_runtime.duplicate(true),"floor":floor,"carried_gold":carried_gold,"carried_relic_essence":carried_relic_essence,"carried_contribution":carried_contribution,"carried_relics":carried_relics.duplicate(),"casualties":casualties.duplicate(),"extraction_available":extraction_available,"tutorial_run":tutorial_run,"tutorial_step":tutorial_step,"tutorial_controls_complete":tutorial_controls_complete,"tutorial_restart_count":tutorial_restart_count,"rewarded_checkpoints":rewarded_checkpoints.duplicate(true)}
 
 static func from_dict(data: Dictionary) -> ExpeditionState:
 	var state := ExpeditionState.new();
@@ -92,4 +97,6 @@ static func from_dict(data: Dictionary) -> ExpeditionState:
 	state.active = bool(data.get("active", false)); state.expedition_id = maxi(0, int(data.get("expedition_id", 0))); state.dungeon_id = String(data.get("dungeon_id", ""))
 	state.party_ids.assign(data.get("party_ids", [])); state.member_runtime = Dictionary(data.get("member_runtime", {})).duplicate(true); state.floor = maxi(1, int(data.get("floor", 1)))
 	state.carried_gold = maxi(0, int(data.get("carried_gold", 0))); state.carried_relic_essence = maxi(0, int(data.get("carried_relic_essence", 0))); state.carried_contribution = maxi(0, int(data.get("carried_contribution", 0))); state.carried_relics.assign(data.get("carried_relics", [])); state.casualties.assign(data.get("casualties", []))
-	state.extraction_available = bool(data.get("extraction_available", false)); state.tutorial_run = bool(data.get("tutorial_run", false)); state.tutorial_step = clampi(int(data.get("tutorial_step", 0)), 0, 9); state.tutorial_controls_complete = bool(data.get("tutorial_controls_complete", state.tutorial_step >= 9)); state.tutorial_restart_count = maxi(0, int(data.get("tutorial_restart_count", 0))); state.rewarded_checkpoints = Dictionary(data.get("rewarded_checkpoints", {})).duplicate(true); return state
+	state.extraction_available = bool(data.get("extraction_available", false)); state.tutorial_run = bool(data.get("tutorial_run", false)); state.tutorial_step = clampi(int(data.get("tutorial_step", 0)), 0, 9); state.tutorial_controls_complete = bool(data.get("tutorial_controls_complete", state.tutorial_step >= 9)); state.tutorial_restart_count = maxi(0, int(data.get("tutorial_restart_count", 0))); state.rewarded_checkpoints = Dictionary(data.get("rewarded_checkpoints", {})).duplicate(true)
+	state.run_snapshot = Dictionary(data.get("run_snapshot", {})).duplicate(true)
+	return state

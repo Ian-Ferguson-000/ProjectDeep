@@ -19,7 +19,8 @@ func _run() -> void:
 			_expect(source.count(".autosave_on_floor_entry()") >= 4, "Main must save at every unified dungeon-floor entry path.", failures)
 			_expect(not source.contains("save_atomic()"), "Main must not bypass the floor-entry autosave API.", failures)
 		elif path == RUN_STATE_PATH:
-			_expect(source.count("autosave_on_floor_entry()") == 2, "RunState must contain one floor-entry API and one connected-dungeon call.", failures)
+			_expect(source.count("autosave_on_floor_entry()") == 3, "RunState must contain one floor-entry API, one connected-dungeon call and the room checkpoint.", failures)
+			_expect(source.count("func save_room_checkpoint() -> bool:") == 1, "RunState must keep the room checkpoint API.", failures)
 			_expect(source.count(".save_atomic()") == 1, "RunState may persist only through the floor-entry autosave API.", failures)
 		elif path == CAMPAIGN_STATE_PATH:
 			_expect(source.count("func save_atomic() -> bool:") == 1, "CampaignState must retain one atomic-save implementation.", failures)
@@ -27,7 +28,11 @@ func _run() -> void:
 		elif path == "res://scripts/scenes/tavern.gd":
 			_expect(source.count(".autosave_on_floor_entry()") == 1,"Tavern must persist presentation and story progress through one shared atomic-save helper.",failures)
 			_expect(not source.contains("save_atomic()"),"Tavern bypasses the atomic autosave API.",failures)
+		elif path == "res://scripts/slasher/slasher_forest_rooms.gd":
+			_expect(source.count(".save_room_checkpoint()") == 1, "Room scenes save through one room-checkpoint helper.", failures)
+			_expect(not source.contains("autosave_on_floor_entry()") and not source.contains("save_atomic()"), "Room scenes bypass the room checkpoint.", failures)
 		else:
+			_expect(not source.contains("save_room_checkpoint()"), "%s saves mid-floor outside the room scenes." % path, failures)
 			_expect(not source.contains("autosave_on_floor_entry()"), "%s introduces a save outside the approved floor-entry paths." % path, failures)
 			_expect(not source.contains("save_atomic()"), "%s bypasses the floor-entry autosave policy." % path, failures)
 	if failures.is_empty():

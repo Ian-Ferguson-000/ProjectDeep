@@ -113,6 +113,13 @@ func show_start_screen() -> void:
 	start_screen.setup(self)
 	add_child(start_screen)
 
+## From the pause menu: back to the title screen to pick a save. Saving is done
+## by the caller (the tavern saves; the dungeon saved on entering the floor).
+func return_to_title() -> void:
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	show_start_screen()
+
 func begin_game() -> void:
 	if campaign==null:return
 	if campaign.is_tutorial_complete():
@@ -144,7 +151,10 @@ func _resume_saved_expedition()->void:
 	run_state.active_dungeon_id=campaign.expedition.dungeon_id;run_state.current_floor=campaign.expedition.floor;run_state.gold=campaign.expedition.carried_gold
 	if campaign.expedition.floor_seed>0:run_state.floor_seed=campaign.expedition.floor_seed
 	var dungeon:=GameBalance.get_dungeon(run_state.active_dungeon_id);run_state.max_floors=int(dungeon.get("floors",1))
-	run_state.select_active_character(living[0]);run_state.apply_tutorial_health_cap();_load_active_dungeon()
+	run_state.select_active_character(living[0]);run_state.apply_tutorial_health_cap()
+	# Back to the same room of the same floor, with the gold, keys and cleared rooms you had.
+	run_state.restore_run_snapshot(campaign.expedition.run_snapshot)
+	_load_active_dungeon()
 
 func advance_tutorial_from_tavern() -> void:
 	var starter := campaign.create_tutorial_adventurer()
@@ -417,6 +427,7 @@ func _clear_scene() -> void:
 		current_scene = null
 
 func _ensure_input_actions() -> void:
+	GamePauseMenu.ensure_action()
 	_add_key_action("move_up", [KEY_W, KEY_UP])
 	_add_key_action("move_down", [KEY_S, KEY_DOWN])
 	_add_key_action("move_left", [KEY_A, KEY_LEFT])

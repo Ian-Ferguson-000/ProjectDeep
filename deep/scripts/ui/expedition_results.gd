@@ -67,6 +67,9 @@ func present(summary: Dictionary, state: RunState, fallback: String) -> void:
 		var headline := String(report.get("headline", "Expedition return"))
 		lines.append("[b][color=#ffd36a]%s[/color][/b]  ·  %s%s" % [headline, String(report.get("deployment_type", "manual")).capitalize(), "  ·  Depth %d" % int(report.depth) if report.has("depth") else ""])
 		if reports.size() > 1: lines.append("Gold %d  ·  Company share %d  ·  Banked %d" % [gross, share, int(report.get("net", gross-share))])
+		var leavers: Array = report.get("settled_in_town", [])
+		if not leavers.is_empty():
+			lines.append("[color=#ffd36a]The Hearth's cut (%d%%): %d gold.[/color]  %s keeps %d gold and retires to Eros town." % [int(report.get("tavern_cut_percent", 0)), int(report.get("net", gross - share)), ", ".join(leavers), share])
 		for field in ["returned", "retired", "lost"]:
 			var names: Array = report.get(field, [])
 			if field != "returned" and not names.is_empty(): lines.append("[color=%s]%s: %s[/color]" % ["#e49c8e" if field == "lost" else "#c9d9b0", field.capitalize(), ", ".join(names)])

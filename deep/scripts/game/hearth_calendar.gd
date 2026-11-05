@@ -39,6 +39,7 @@ static func advance_shift(c: CampaignState, internal: bool = false) -> Dictionar
 		c.calendar_day += 1
 		events.append_array(ECOLOGY.advance_to_day(c,c.calendar_day))
 		events.append_array(CRISIS.advance(c))
+		events.append_array(HearthUpkeep.daily(c))
 		if old_loop != int(c.keeper_memory.get("loop_number",0)):
 			return {"ok":true,"reset":true,"message":"The Hearth falls. A new beginning awaits.","events":events,"reports":reports}
 		for branch in c.construction.keys():

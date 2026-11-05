@@ -58,6 +58,10 @@ var provisions: Array[String] = []
 var birth_day: int = -2687
 var recovery_until: int = 0
 var signing_fee: int = 0
+## How well known they were when recruited (data/tavern_cut.json fame tiers).
+var fame: String = "unknown"
+## The day they joined the company (-1 = unknown); days housed raise the tavern's cut.
+var joined_day: int = -1
 ## Which stat build shaped this adventurer (see AdventurerBuilds). Empty for legacy saves.
 var stat_build_id:=""
 ## The class this adventurer arrived hoping for. The keeper may assign another.
@@ -84,7 +88,7 @@ static func create(character_id: String, name: String, character_class: String, 
 
 func to_dict() -> Dictionary:
 	return {
-		"equipment":equipment.duplicate(true),"provisions":provisions.duplicate(),"birth_day":birth_day,"recovery_until":recovery_until,"signing_fee":signing_fee,"stat_build_id":stat_build_id,"calling_class_id":calling_class_id,"training":training.duplicate(true),
+		"equipment":equipment.duplicate(true),"provisions":provisions.duplicate(),"birth_day":birth_day,"recovery_until":recovery_until,"signing_fee":signing_fee,"fame":fame,"joined_day":joined_day,"stat_build_id":stat_build_id,"calling_class_id":calling_class_id,"training":training.duplicate(true),
 		"id":id, "display_name":display_name, "portrait_variant":portrait_variant, "class_id":class_id,
 		"learning_potential":learning_potential, "learning_potential_known":learning_potential_known,
 		"level":level, "xp":xp, "current_health":current_health, "max_health":max_health,
@@ -104,6 +108,7 @@ static func from_dict(data: Dictionary) -> CharacterRecord:
 	record.birth_day = int(data.get("birth_day",-2687))
 	record.recovery_until = int(data.get("recovery_until",0))
 	record.signing_fee = int(data.get("signing_fee",0))
+	record.fame = String(data.get("fame","unknown")); record.joined_day = int(data.get("joined_day",-1))
 	record.id = String(data.get("id", "")); record.display_name = String(data.get("display_name", "Adventurer"))
 	record.portrait_variant = int(data.get("portrait_variant", 0)); record.class_id = GameBalance.normalize_class_id(String(data.get("class_id", "warrior")))
 	record.level = maxi(1, int(data.get("level", 1))); record.xp = maxi(0, int(data.get("xp", 0)))
