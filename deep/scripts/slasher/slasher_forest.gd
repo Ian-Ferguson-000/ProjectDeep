@@ -701,7 +701,8 @@ func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	if _is_tutorial_expedition() or not is_instance_valid(enemy):return
 	var active_item_id:=roll_class_active_item(run_state.selected_class_id,enemy.elite or enemy.mini_boss,enemy.boss,drop_rng())
 	if not active_item_id.is_empty():
-		var choices:=active_item_drop_choices(run_state.selected_class_id,active_item_id,drop_rng()) if GameSettingsService.dev_mode_enabled() else []
+		var choices:Array[String]=[]
+		if GameSettingsService.dev_mode_enabled():choices=active_item_drop_choices(run_state.selected_class_id,active_item_id,drop_rng())
 		_spawn_active_item_drop(enemy.global_position,active_item_id,choices);return
 	var key:=String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)
 	var kind:=roll_drop(key,enemy.elite or enemy.mini_boss,enemy.boss,Unlocks.drop_luck(run_state.campaign),drop_rng())

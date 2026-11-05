@@ -22,6 +22,131 @@ var elite:=false
 var boss:=false
 var mini_boss:=false
 var dead:=false
+var disorient_time:=0.0
+var disorient_heading:=Vector2.RIGHT
+var mage_controls:Dictionary={}
+var mage_slow_multiplier:=1.0
+var base_armor:=0.0
+var dragonbone_wounds:Dictionary={}
+var storm_vulnerability_left:=0.0
+const STORM_CONTROL_SOURCE:=-71531
+
+## Shared target-owned effects: all attackers see the same armor/pin state.
+func apply_dragonbone_wound(duration:float,cap:int,reduction:float,floor_value:float)->void:
+	var old_stacks:=int(dragonbone_wounds.get("stacks",0))
+	var stacks:=mini(cap,old_stacks+1)
+	var fracture:=0.3 if stacks>=cap and old_stacks<cap else float(dragonbone_wounds.get("fracture",0))
+	dragonbone_wounds={"stacks":stacks,"cap":cap,"left":duration,"reduction":reduction,"floor":floor_value,"refresh":0.2,"fracture":fracture}
+	if stacks>=cap and old_stacks<cap:AudioCue.play_from(self,"fighter_armor_break")
+	queue_redraw()
+
+func effective_armor()->float:
+	if dragonbone_wounds.is_empty():return base_armor
+	return maxf(float(dragonbone_wounds.floor),base_armor-int(dragonbone_wounds.stacks)*float(dragonbone_wounds.reduction))
+
+func apply_storm_pin(duration:float,boss_multiplier:float,immune_slow:float=0.65)->void:
+	var window:=duration*boss_multiplier if boss or mini_boss else duration
+	storm_vulnerability_left=maxf(storm_vulnerability_left,window)
+	if bool(get_meta("stun_immune",false)):
+		apply_mage_slow(STORM_CONTROL_SOURCE,clampf(immune_slow,0,1),window)
+	else:apply_mage_stun(STORM_CONTROL_SOURCE,window)
+	queue_redraw()
+
+func storm_pin_visual_state()->String:
+	if storm_vulnerability_left<=0:return ""
+	return "slowed" if bool(get_meta("stun_immune",false)) else "pinned"
+
+func is_storm_pinned()->bool:
+	return storm_vulnerability_left>0 and not bool(get_meta("stun_immune",false))
+
+func displacement_multiplier()->float:
+	var source:=behavior_tuning if behavior_id=="elite_guardian" else tuning
+	return maxf(0,float(source.get("received_knockback_multiplier",1.0)))
+
+func _tick_fighter_statuses(delta:float)->void:
+	if storm_vulnerability_left>0:queue_redraw()
+	storm_vulnerability_left=maxf(0,storm_vulnerability_left-delta)
+	if not dragonbone_wounds.is_empty():
+		dragonbone_wounds.left-=delta
+		dragonbone_wounds.refresh=maxf(0,float(dragonbone_wounds.get("refresh",0))-delta)
+		dragonbone_wounds.fracture=maxf(0,float(dragonbone_wounds.get("fracture",0))-delta)
+		if float(dragonbone_wounds.left)<=0:dragonbone_wounds.clear()
+		queue_redraw()
+
+func _fighter_damage_multiplier()->float:
+	var armor:=effective_armor()
+	var multiplier:=100.0/(100.0+armor) if armor>=0 else 2.0-100.0/(100.0-armor)
+	return multiplier*(2.0 if storm_vulnerability_left>0 else 1.0)
+
+func apply_disorientation(duration:float,source:int=0)->void:
+	if duration<=0.0:return
+	if disorient_time<=0.0:
+		disorient_heading=velocity.normalized() if velocity.length()>1.0 else Vector2.from_angle(float(get_instance_id()%360))
+	disorient_time=maxf(disorient_time,duration)
+	var control:Dictionary=mage_controls.get(source,{})
+	control.disorient=maxf(float(control.get("disorient",0)),duration)
+	mage_controls[source]=control
+
+func apply_mage_slow(source:int,multiplier:float,duration:float)->void:
+	var control:Dictionary=mage_controls.get(source,{})
+	control.slow=multiplier
+	control.slow_left=duration
+	mage_controls[source]=control
+	_refresh_mage_control()
+
+func apply_mage_stun(source:int,duration:float)->void:
+	var control:Dictionary=mage_controls.get(source,{})
+	control.stun=maxf(float(control.get("stun",0)),duration)
+	mage_controls[source]=control
+
+func clear_mage_control(source:int)->void:
+	mage_controls.erase(source)
+	_refresh_mage_control()
+
+func set_archon_carried(source:int,direction:Vector2)->void:
+	set_meta("fighter_archon_carrier",source)
+	# Freeze a braced pose facing into the drag. Do not rotate/lift the sprite:
+	# its transform also supplies the authoritative combat capsule.
+	facing_name=SlasherSpriteLibrary.direction_name(-direction,facing_name)
+	_play_animation("idle")
+
+func clear_archon_carried(source:int)->void:
+	clear_mage_control(source)
+	if int(get_meta("fighter_archon_carrier",0))!=source:return
+	remove_meta("fighter_archon_carrier")
+	if not dead:_play_animation("idle",true)
+
+func mage_stun_remaining()->float:
+	var result:=0.0
+	for control in mage_controls.values():result=maxf(result,float(control.get("stun",0)))
+	return result
+
+func _refresh_mage_control()->void:
+	mage_slow_multiplier=1.0
+	disorient_time=0.0
+	for control in mage_controls.values():
+		if float(control.get("slow_left",0))>0:mage_slow_multiplier=minf(mage_slow_multiplier,float(control.get("slow",1)))
+		disorient_time=maxf(disorient_time,float(control.get("disorient",0)))
+
+func _process_mage_control(delta:float)->bool:
+	_tick_fighter_statuses(delta)
+	for source in mage_controls.keys():
+		var control:Dictionary=mage_controls[source]
+		for key in ["slow_left","stun","disorient"]:control[key]=maxf(0,float(control.get(key,0))-delta)
+		if float(control.slow_left)+float(control.stun)+float(control.disorient)<=0:mage_controls.erase(source)
+	_refresh_mage_control()
+	if mage_stun_remaining()>0:
+		velocity=Vector2.ZERO
+		_play_animation("idle")
+		queue_redraw()
+		return true
+	if disorient_time>0:
+		velocity=disorient_heading*(0.0 if boss else 35.0)*minf(movement_slow,mage_slow_multiplier)
+		move_and_slide()
+		_play_animation("run")
+		queue_redraw()
+		return true
+	return false
 var visual_id:="feral_wolf"
 var behavior_id:=""
 var sprite:AnimatedSprite2D
@@ -122,6 +247,7 @@ func _physics_process(delta:float)->void:
 	retarget_timer-=delta
 	if retarget_timer<=0.0:_retarget_party();retarget_timer=0.45
 	if dead or not is_instance_valid(target):return
+	if _process_mage_control(delta):return
 	damage_shield_remaining=maxf(0.0,damage_shield_remaining-delta)
 	activation_delay=maxf(0.0,activation_delay-delta)
 	if activation_delay>0.0:
@@ -235,7 +361,7 @@ func _process_charger(delta:float)->void:
 func _begin_dash(distance:float)->void:ai_state="dash";charge_remaining=distance;action_landed=false;_play_animation("attack",true)
 
 func _process_dash(delta:float,dash_speed:float,damage_multiplier:float,recovery:float)->void:
-	var step:=minf(charge_remaining,dash_speed*delta);var collision:=move_and_collide(charge_direction*step);charge_remaining-=step
+	var step:=minf(charge_remaining,dash_speed*delta*mage_slow_multiplier);var collision:=move_and_collide(charge_direction*step);charge_remaining-=step
 	if not action_landed and global_position.distance_to(target.global_position)<=attack_range+18.0:_bite(damage_multiplier,false);action_landed=true
 	if collision!=null or charge_remaining<=0.0 or action_landed:ai_state="recovery";state_timer=recovery;special_cooldown=recovery+0.8;velocity=Vector2.ZERO
 
@@ -296,7 +422,7 @@ func _release_guardian_burst(rotation_offset:float)->void:
 		var direction:=Vector2.RIGHT.rotated(rotation_offset+TAU*float(index)/float(count));var projectile:SlasherHostileProjectile=HOSTILE_PROJECTILE.new().setup(self,target,global_position+direction*22.0,direction,projectile_damage,behavior_tuning);get_parent().add_child(projectile)
 
 func _move_toward(point:Vector2)->void:
-	var waypoint:=_navigator.next_waypoint(pathfinder,global_position,point);var direction:=global_position.direction_to(waypoint);velocity=direction*speed*movement_slow*speed_boost_multiplier;facing_name=SlasherSpriteLibrary.direction_name(direction,facing_name)
+	var waypoint:=_navigator.next_waypoint(pathfinder,global_position,point);var direction:=global_position.direction_to(waypoint);velocity=direction*speed*minf(movement_slow,mage_slow_multiplier)*speed_boost_multiplier;facing_name=SlasherSpriteLibrary.direction_name(direction,facing_name)
 	if not is_inside_tree() or not PhysicsServer2D.body_get_space(get_rid()).is_valid():velocity=Vector2.ZERO;return
 	move_and_slide()
 	if animation_lock<=0.0:_play_animation("run")
@@ -329,14 +455,15 @@ func heal(amount:int)->void:
 func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlayer=null,stun_duration:float=-1.0,shake_multiplier:float=1.0,sound_event:String="impact")->int:
 	if dead:return 0
 	if behavior_id=="wolf_lurker" and not awakened:_awaken_lurker()
-	var resolved_amount:=maxi(1,amount);var durability:=GameBalance.get_slasher_balance("boss_durability")
+	var resolved_amount:=maxi(1,roundi(amount*_fighter_damage_multiplier()));var durability:=GameBalance.get_slasher_balance("boss_durability")
 	if boss or mini_boss:
 		if damage_shield_remaining>0.0:resolved_amount=maxi(1,int(round(resolved_amount*(1.0-float(durability.get("shield_reduction",0.75))))))
 		resolved_amount=mini(resolved_amount,maxi(1,int(floor(max_health*float(durability.get("max_damage_fraction",0.05))))));damage_shield_remaining=float(durability.get("shield_duration",0.5))
 	AudioCue.play_from(self,sound_event)
 	if health<=resolved_amount:AudioCue.play_from(self,"enemy_death")
 	health-=resolved_amount;var stun_source:=behavior_tuning if behavior_id=="elite_guardian" else tuning;var stun:=float(stun_source.get("hit_stun_duration",0.12)) if stun_duration<0.0 else minf(stun_duration,float(stun_source.get("hit_stun_duration",stun_duration)));hit_stun_timer=maxf(hit_stun_timer,stun)
-	var knockback_source:=behavior_tuning if behavior_id=="elite_guardian" else tuning;var adjusted_knockback:=knockback*float(knockback_source.get("received_knockback_multiplier",1.0))
+	var adjusted_knockback:=knockback*displacement_multiplier()
+	if is_storm_pinned():adjusted_knockback=Vector2.ZERO
 	if not adjusted_knockback.is_zero_approx():move_and_collide(adjusted_knockback)
 	if is_instance_valid(attacker):
 		var damage_shake_scale:=1.0+minf(float(resolved_amount),20.0)*0.025;attacker.add_impact_shake(float(tuning.get("screen_shake_strength",4.5))*damage_shake_scale*shake_multiplier,float(tuning.get("screen_shake_duration",0.16)))
@@ -350,7 +477,12 @@ func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	var was_dead := dead
 	var amount:=maxi(1,int(attack.get("damage",1)));var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
 	var element:=String(attack.get("damage_type","physical"))
+	if element=="fire" and is_instance_valid(attacker):
+		for child in attacker.get_children():
+			if child is SlasherMageActiveArsenal:
+				amount=maxi(1,roundi(amount*child.fire_vulnerability(self)))
 	var sound_event:="impact_"+element if element in ["fire","ice","lightning","aether"] else "impact"
+	sound_event=String(attack.get("impact_sound",sound_event))
 	var previous := [incoming_type,incoming_source,incoming_critical]
 	incoming_type=element;incoming_source=String(attack.get("damage_source",""));incoming_critical=bool(attack.get("critical",false))
 	var dealt:=receive_hit(amount,push_direction*float(attack.get("knockback",0.0)),attacker,float(attack.get("hit_stun_duration",tuning.get("hit_stun_duration",0.12))),float(attack.get("screen_shake_multiplier",1.0)),sound_event)
@@ -372,6 +504,36 @@ func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 func is_wolf()->bool:return behavior_id.begins_with("wolf_")
 
 func _draw()->void:
+	if not dragonbone_wounds.is_empty():
+		var stacks:=int(dragonbone_wounds.stacks)
+		var center:=Vector2(22,-36)
+		var alpha:=clampf(float(dragonbone_wounds.left)/0.3,0,1)
+		var pulse:=float(dragonbone_wounds.get("refresh",0))/0.2
+		var capped:=stacks>=int(dragonbone_wounds.get("cap",6))
+		var split:=3.0 if capped else 0.0
+		for side in [-1,1]:
+			var offset:=Vector2(side*split,0)
+			draw_polyline(PackedVector2Array([center+offset+Vector2(0,-8),center+offset+Vector2(side*7,-8),center+offset+Vector2(side*6,3),center+offset+Vector2(0,9)]),Color(1,0.85+0.15*pulse,0.7+0.3*pulse,alpha),1.5+pulse,true)
+		for i in mini(stacks,6):draw_line(center+Vector2(-5+i*2,-5),center+Vector2(-7+i*2,5),Color(0.93,0.39,0.36,alpha),1.5,true)
+		var fracture:=float(dragonbone_wounds.get("fracture",0))/0.3
+		if fracture>0:
+			for i in 4:
+				var direction:=Vector2.from_angle(PI*0.25+i*PI/2)
+				draw_line(center+direction*(9+(1-fracture)*8),center+direction*(14+(1-fracture)*8),Color(1,0.85,0.7,fracture),2,true)
+	if storm_vulnerability_left>0:
+		var storm_tint:=Color("#75dcff");storm_tint.a=clampf(storm_vulnerability_left/0.2,0,1)
+		if storm_pin_visual_state()=="pinned":
+			draw_arc(Vector2.ZERO,24,0,TAU,20,storm_tint,1.5,true)
+			for side in [-1,1]:
+				draw_polyline(PackedVector2Array([Vector2(side*18,8),Vector2(side*10,-3),Vector2(side*15,-10),Vector2(side*6,-21)]),storm_tint,1.5,true)
+				draw_line(Vector2(side*18-3,8),Vector2(side*18+3,8),storm_tint,2,true)
+		else:
+			# Open arcs communicate slow/vulnerability without grounding tethers.
+			for i in 3:draw_arc(Vector2.ZERO,24,i*TAU/3,i*TAU/3+1.2,8,storm_tint,1.5,true)
+		draw_polyline(PackedVector2Array([Vector2(-3,-44),Vector2(4,-50),Vector2(0,-43),Vector2(5,-43),Vector2(-3,-36)]),storm_tint,2,true)
+	if disorient_time>0.0 or mage_stun_remaining()>0.0:
+		draw_arc(Vector2(0,-43),10.0,0.3,4.8,16,Color("#fff5a9"),2.0,true)
+		draw_circle(Vector2(9,-48),2.0,Color("#fff5a9"))
 	var accent:=Color(String(behavior_tuning.get("color","#9b3f52"))) if is_wolf() else (Color("#9b3f52") if boss else (Color("#d88445") if elite else Color("#6f8d48")))
 	if sprite==null or sprite.sprite_frames==null:draw_circle(Vector2.ZERO,24.0 if boss else 14.0,accent)
 	var width:=52.0 if boss else 32.0;draw_rect(Rect2(-width/2.0,-32.0,width,5),Color("#241719"));draw_rect(Rect2(-width/2.0,-32.0,width*maxf(0.0,float(health)/max_health),5),accent)
@@ -385,6 +547,12 @@ func _draw()->void:
 		var telegraph_color:=Color(String(behavior_tuning.get("burst_color","#c9ef72")));telegraph_color.a=0.55;draw_arc(Vector2.ZERO,42.0,0.0,TAU,32,telegraph_color,3.0)
 
 func _play_animation(state:String,restart:bool=false)->void:
+	if has_meta("fighter_archon_carrier"):
+		if is_instance_valid(sprite) and sprite.sprite_frames!=null:
+			var carried_pose:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,"idle",facing_name)
+			if not carried_pose.is_empty():
+				sprite.animation=carried_pose;sprite.set_frame_and_progress(0,0);sprite.pause()
+		return
 	if state=="attack" and restart:AudioCue.play_from(self,"enemy_attack")
 	if sprite==null or sprite.sprite_frames==null:return
 	var animation:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,state,facing_name)

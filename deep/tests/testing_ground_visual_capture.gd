@@ -12,19 +12,14 @@ func _capture() -> void:
 	root.size=Vector2i(1280,720)
 	var ground := GROUND.instantiate();root.add_child(ground)
 	await process_frame;await process_frame
-	ground.class_picker.select(1);ground._refresh_class();ground.gear_picker.select(4);ground._update_details();ground.apply_build()
 	await process_frame;await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://build/testing_ground_editor_1280x720.png")
+	root.get_texture().get_image().save_png("res://build/testing_ground_walk_in_armory_1280x720.png")
 	root.size=Vector2i(960,540)
 	await process_frame;await process_frame;await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://build/testing_ground_editor_960x540.png")
-	# Inspect the actual item tab as well as the build controls at the smaller size.
-	ground.loot_checks.values()[0].button_pressed=true
-	var tab_container: TabContainer=ground.loot_checks.values()[0].get_parent().get_parent().get_parent().get_parent()
-	tab_container.current_tab=1
-	await process_frame;await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://build/testing_ground_items_960x540.png")
-	tab_container.current_tab=0
+	root.get_texture().get_image().save_png("res://build/testing_ground_walk_in_armory_960x540.png")
+	# Configure a Pyromancer programmatically for the combat-effect captures; the
+	# player-facing room no longer exposes the legacy build form.
+	ground.class_picker.select(1);ground._refresh_class();ground.gear_picker.select(4);ground._update_details();ground.apply_build()
 	root.size=Vector2i(1280,720)
 	ground.set_editor_visible(false)
 	await physics_frame;await process_frame

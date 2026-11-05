@@ -132,7 +132,8 @@ func on_external_hit(target:SlasherEnemy,attack:Dictionary,was_dead:bool)->void:
 		var share:=maxi(1,int(round(float(attack.get("damage",1))*0.35)))
 		for state in heart_marks.values():
 			if not state is Dictionary:continue
-			var other:SlasherEnemy=state.get("target")
+			var stored_other:Variant=state.get("target")
+			var other:SlasherEnemy=stored_other as SlasherEnemy if is_instance_valid(stored_other) and stored_other is SlasherEnemy else null
 			if is_instance_valid(other) and other!=target and not other.dead:_hit(other,share,String(attack.get("damage_type","aether")),{"damage_source":"heartbreaker_shared","heartbreaker_shared":true,"neutral_secondary":true})
 	if item_id=="war_horn_of_valor" and valor_time>0.0 and not was_dead:actor.heal(maxi(1,int(round(float(attack.get("damage",1))*0.15))))
 
@@ -268,7 +269,7 @@ func _add_pressure(target:SlasherEnemy)->void:
 
 func _rupture_pressure()->void:
 	for id in pressure.keys().duplicate():
-		var state:Dictionary=pressure[id];var target:SlasherEnemy=state.get("target");var stacks:=int(state.get("stacks",0))
+		var state:Dictionary=pressure[id];var stored_target:Variant=state.get("target");var target:SlasherEnemy=stored_target as SlasherEnemy if is_instance_valid(stored_target) and stored_target is SlasherEnemy else null;var stacks:=int(state.get("stacks",0))
 		if is_instance_valid(target) and not target.dead:
 			target.damage=int(state.get("original_damage",target.damage));_hit(target,_base(0.65*stacks),"aether",{"damage_source":"abyssal_pressure_rupture","knockback":55.0*stacks,"hit_stun_duration":0.12*stacks,"neutral_secondary":true})
 		pressure.erase(id)
@@ -353,7 +354,7 @@ func _tick_maps(delta:float)->void:
 		if float(state.left)<=0.0 or not is_instance_valid(state.get("target")):frost.erase(id)
 		else:frost[id]=state
 	for id in pressure.keys().duplicate():
-		var state:Dictionary=pressure[id];state.left=float(state.left)-delta;var target:SlasherEnemy=state.get("target")
+		var state:Dictionary=pressure[id];state.left=float(state.left)-delta;var stored_target:Variant=state.get("target");var target:SlasherEnemy=stored_target as SlasherEnemy if is_instance_valid(stored_target) and stored_target is SlasherEnemy else null
 		if float(state.left)<=0.0 or not is_instance_valid(target):
 			if is_instance_valid(target):target.damage=int(state.get("original_damage",target.damage))
 			pressure.erase(id)
@@ -413,7 +414,7 @@ func _draw()->void:
 		for ring in 3:draw_arc(Vector2.ZERO,46.0+ring*25.0+fmod(visual_clock*35.0,25.0),0,TAU,40,Color(0.9,0.5,0.9,0.35-float(ring)*0.07),3.0,true)
 		for i in 4:var p:=Vector2.from_angle(TAU*i/4.0-visual_clock)*62.0;draw_circle(p,4.0,Color("#7be0ef"));draw_line(p,p+Vector2(0,13),Color("#f49bdc"),2.0,true)
 	for state in frost.values():
-		var target:SlasherEnemy=state.get("target")
+		var stored_target:Variant=state.get("target");var target:SlasherEnemy=stored_target as SlasherEnemy if is_instance_valid(stored_target) and stored_target is SlasherEnemy else null
 		if is_instance_valid(target):
 			var p:=target.global_position-actor.global_position
 			for i in 6:var q:=p+Vector2.from_angle(TAU*i/6.0+visual_clock)*25.0;draw_line(q-Vector2(4,0),q+Vector2(4,0),Color("#d9f7ff"),2.0,true);draw_line(q-Vector2(0,4),q+Vector2(0,4),Color("#79c8ee"),2.0,true)
@@ -437,14 +438,14 @@ func _draw()->void:
 	if item_id=="blood_ruby_gem" and is_held():
 		for i in mini(_blood_charges(),16):draw_circle(Vector2.from_angle(TAU*i/maxf(1.0,mini(_blood_charges(),16))+visual_clock)*48.0,5.0,Color("#d8294b"))
 	for state in pressure.values():
-		var target:SlasherEnemy=state.get("target")
+		var stored_target:Variant=state.get("target");var target:SlasherEnemy=stored_target as SlasherEnemy if is_instance_valid(stored_target) and stored_target is SlasherEnemy else null
 		if is_instance_valid(target):
 			var p:=target.global_position-actor.global_position;var stacks:=int(state.get("stacks",0))
 			for i in stacks:draw_arc(p,18.0+i*3.0,visual_clock*i,visual_clock*i+4.8,18,Color(0.2,0.65,1.0,0.6),2.0,true)
 	if not heart_marks.is_empty():
 		var points:Array[Vector2]=[]
 		for state in heart_marks.values():
-			var target:SlasherEnemy=state.get("target")
+			var stored_target:Variant=state.get("target");var target:SlasherEnemy=stored_target as SlasherEnemy if is_instance_valid(stored_target) and stored_target is SlasherEnemy else null
 			if is_instance_valid(target):points.append(target.global_position-actor.global_position)
 		for a in points:
 			for b in points:if a!=b:draw_line(a,b,Color(1.0,0.25,0.45,0.35),2.0,true)

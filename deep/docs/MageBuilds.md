@@ -1,6 +1,6 @@
 # Mage prototypes in the testing ground
 
-Open **Armory → Enter testing ground → Mage**. The equipment picker contains the four existing standard-kit weapons plus five alternate kits: **Tome of the Pyromancer**, **Winterglass Codex**, **Stormbringer's Grimoire**, **Grimoire of Gravity**, and **Mirrorbound Manuscript**. All are unlocked here. The original spellbook abilities and combos remain intact on existing weapons.
+Open **Armory → Enter testing ground**, then walk into the **Mage** class podium. The player-facing room now uses physical class podiums and wall-mounted active items rather than a build form. The four existing standard-kit weapons and five alternate kits—**Tome of the Pyromancer**, **Winterglass Codex**, **Stormbringer's Grimoire**, **Grimoire of Gravity**, and **Mirrorbound Manuscript**—remain available to the automated balance harness. The original spellbook abilities and combos remain intact on existing weapons.
 
 These are playable prototypes, not release acquisition or save changes. The [design catalogue](equipment-design/mage.md) keeps its recommended/reserve classifications for later release selection. Both reserve Mage concepts are implemented for comparison. See the [testing-ground guide](TestingGround.md) for controls, build selection, items, and damage measurement.
 

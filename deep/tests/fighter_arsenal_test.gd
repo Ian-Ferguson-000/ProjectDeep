@@ -6,6 +6,7 @@ const KITS:=preload("res://scripts/slasher/slasher_warrior_kits.gd")
 const IDS:=preload("res://scripts/slasher/slasher_fighter_arsenal.gd").WEAPON_IDS
 var ground:Node
 var failures:Array[String]=[]
+var strike_serial:=0
 
 func _initialize() -> void:call_deferred("run")
 func check(value:bool,message:String)->void:
@@ -24,7 +25,8 @@ func equip(id:String,mode:String="cluster")->void:
 	ground.player.set_physics_process(false);ground.player.warrior_combo_effects.set_physics_process(false);ground.player.warrior_kit.set_physics_process(false)
 func clear_cooldowns()->void:ground.player.cooldowns={"basic":0.0,"special":0.0,"defensive":0.0,"movement":0.0}
 func strike(kit:Node,enemy:SlasherEnemy,damage:int=5)->int:
-	return kit.hit(enemy,{"damage":damage,"damage_type":"physical","damage_source":"Test","warrior_kit":kit.weapon_id,"warrior_cast":1,"warrior_resource":false},true)
+	strike_serial+=1
+	return kit.hit(enemy,{"damage":damage,"damage_type":"physical","damage_source":"Test","warrior_kit":kit.weapon_id,"warrior_cast":strike_serial,"warrior_resource":false},true)
 
 func run()->void:
 	ground=GROUND.instantiate();root.add_child(ground);await process_frame
@@ -48,8 +50,8 @@ func test_eldritch()->void:
 func test_demon()->void:
 	await equip("demon_blade","single");var kit:Node=ground.player.warrior_kit;var enemy:SlasherEnemy=foes()[0];var normal_cd:float=kit.tuning("basic").cooldown
 	strike(kit,enemy,2)
-	check(kit.frenzy_left>0 and kit.tuning("basic").cooldown<normal_cd,"Demon Blade blood draw must grant attack speed")
-	check(kit.modify_incoming_damage(7)==14 and kit.attack_for("basic","Test").damage>ground.player._configured_attack(kit.tuning("basic"),"physical").damage,"Demon frenzy must boost damage and double incoming damage")
+	check(kit.frenzy_left>0 and ground.player.effective_attack_interval("basic",normal_cd)<normal_cd,"Demon Blade blood draw must grant attack speed")
+	check(ground.player._attack_data(100,"physical").damage==145 and ground.player.fighter_frenzy_incoming==2.0,"Demon frenzy must boost damage and commit to double incoming damage")
 
 func test_storm()->void:
 	await equip("storm_trident","single");var player:SlasherPlayer=ground.player;var kit:Node=player.warrior_kit;var enemy:SlasherEnemy=foes()[0]
@@ -80,23 +82,22 @@ func test_archon()->void:
 	check(enemies[1].total_damage>enemies[0].total_damage,"Archon bolt damage must grow for each creature speared")
 
 func test_hammer()->void:
-	await equip("divine_hammer","cluster");var kit:Node=ground.player.warrior_kit;var enemies:Array[SlasherEnemy]=foes();var primary:SlasherEnemy=enemies[0];var next:SlasherEnemy=enemies[1]
-	primary.global_position=ground.player.global_position+Vector2(60,0);next.global_position=primary.global_position+Vector2(150,0);primary.dead=true
-	kit.on_direct_hit(primary,{"damage":8,"damage_type":"physical","damage_source":"Test","warrior_kit":"divine_hammer","warrior_resource":false})
-	check(kit.repeat_smashes==1 and next.total_damage>0 and ground.player.cooldowns.basic==0.0,"Divine kill must refresh and instantly repeat on nearest enemy")
+	await equip("divine_hammer","cluster");var kit:Node=ground.player.warrior_kit;var enemies:Array[SlasherEnemy]=foes();var primary:=SlasherEnemy.new();primary.configure(1);ground.combat_root.add_child(primary);primary.set_physics_process(false);var next:SlasherEnemy=enemies[1]
+	primary.global_position=ground.player.global_position+Vector2(60,0);next.global_position=ground.player.global_position+Vector2(160,0);primary.health=1
+	kit._hammer_impact(primary,primary.global_position,{"damage":8,"damage_type":"physical","damage_source":"Test","warrior_kit":"divine_hammer","warrior_cast":991,"warrior_resource":false},0)
+	check(kit.repeat_smashes==1 and not kit.hammer_chain.is_empty() and ground.player.cooldowns.basic==0.0,"Divine kill must refresh and schedule one immediate visible follow-up")
 
 func test_reaver()->void:
 	await equip("grim_reaver","single");var kit:Node=ground.player.warrior_kit;var enemy:SlasherEnemy=foes()[0];enemy.dead=true;kit.on_direct_hit(enemy,{"warrior_kit":"grim_reaver","warrior_resource":false})
 	check(kit.rampage_stacks==1 and kit.rampage_left>0,"Grim Reaver kill must begin stacking rampage")
-	var criticals:=0
-	for index in 80:
-		if kit.attack_for("basic","Rate").get("critical",false):criticals+=1
-	check(criticals>=12,"Grim Reaver must have a materially high critical rate")
+	check(kit.critical_chance()>=0.38,"Grim Reaver must have a materially high critical rate")
 
 func test_shield()->void:
 	await equip("sentinel_shield","single");var player:SlasherPlayer=ground.player
 	var enemy:=SlasherEnemy.new();enemy.configure(1);ground.combat_root.add_child(enemy);await process_frame;enemy.set_physics_process(false)
+	enemy.health=10000;enemy.max_health=10000
 	player.aim_direction=Vector2.RIGHT;enemy.global_position=player.global_position+Vector2(70,0);var before:=enemy.global_position.x;clear_cooldowns();ground.state.class_resource=3;player.use_action("special")
+	player.warrior_kit._physics_process(0.2)
 	check(enemy.global_position.x>before+100,"Sentinel Bash must shove enemies a meaningful distance");enemy.queue_free()
 
 func test_umbral()->void:
@@ -104,4 +105,4 @@ func test_umbral()->void:
 	player.aim_direction=Vector2.RIGHT;enemy.global_position=player.global_position+Vector2(100,0);kit._launch_umbral(kit.attack_for("basic","Shadow"),false)
 	for step in 5:kit._physics_process(0.04)
 	check(kit.leashes.has(enemy.get_instance_id()),"Umbral arrow must leash the enemy shadow")
-	kit._physics_process(0.02);check(enemy.movement_slow<=0.55 and player.kit_buffs.speed_multiplier()>1.0,"Umbral leash must slow the enemy and hasten the fighter")
+	kit._physics_process(0.02);check(enemy.mage_slow_multiplier<=0.55 and player.kit_buffs.speed_multiplier()>1.0,"Umbral leash must slow the enemy and hasten the fighter")

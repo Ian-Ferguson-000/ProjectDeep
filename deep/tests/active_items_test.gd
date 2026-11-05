@@ -154,10 +154,67 @@ func _run() -> void:
 	# a room-local runtime for its persistent mechanics.
 	for id in FIGHTER_ACTIVE_IDS:
 		ActiveItems.give(state,id)
+		scene.player.aim_direction=Vector2.RIGHT
+		var victim:=_dummy(scene,Vector2(90,0))
+		var victim_health:int=victim.health
 		_expect(scene.use_active_item(),"%s did not activate from the active-item slot"%id)
 		_expect(scene.player.get_children().any(func(child):return child.get_meta("fighter_active_weapon_id","")==id),"%s created no persistent combat runtime"%id)
+		var runtime:Node=null
+		for child in scene.player.get_children():
+			if child.get_meta("fighter_active_weapon_id","")==id:runtime=child;break
+		if runtime!=null:
+			_expect(String(scene.player.sprite.animation).begins_with("slash_"),"%s active slot played the conflicting generic special crescent"%id)
+			_expect(absf(scene.player.animation_lock-runtime.presentation_action_duration(0.3))<0.001,"%s active-slot pose duration differs from its attack clock"%id)
+			ActiveItems.give(state,id)
+			_expect(not scene.use_active_item() and ActiveItems.is_ready(state),"%s rejected repeat activation consumed its active-item charge"%id)
+			runtime.set_physics_process(false)
+			# Keep deterministic time while using the real dungeon activation,
+			# cooldown, ownership, room physics, and enemy damage paths.
+			if id=="storm_trident":runtime.trident.destination=victim.global_position
+			for step in 240:runtime._physics_process(1.0/120)
+			_expect(victim.health<victim_health,"%s activated but dealt no damage through the dungeon path"%id)
+			runtime.on_unequipped()
+		victim.queue_free();await _frames(1)
+	# Real room rebuild destroys room-owned projectiles/summons and the player
+	# node, but must not let a committed frenzy shed its damage penalty.
+	scene.player.activate_fighter_frenzy(4,1.45,1.45,2)
+	var previous_player:WeakRef=weakref(scene.player)
+	scene._build_floor();await _frames(2)
+	_expect(previous_player.get_ref()==null,"Room rebuild retained its old combat player")
+	_expect(scene.player.fighter_frenzy_left>0 and scene.player.fighter_frenzy_incoming==2,"Room transition erased Demon frenzy commitment")
+	scene.player.invulnerable=0;scene.player.health=1000;scene.player.max_health=1000
+	scene.player.receive_damage(10,Vector2.ZERO)
+	_expect(scene.player.health==980,"Restored room frenzy failed to double actual incoming damage")
+	scene.player.invulnerable=9999
 	# Elite/boss world drops are acquired immediately, fully charged, replacing
 	# whatever was held just like a treasure pedestal pickup.
+	# Find deterministic successful rolls without changing authored drop rates.
+	# Then kill real scene enemies, proving defeated -> drop roll -> world loot.
+	for boss_drop in [false,true]:
+		for expected_id in FIGHTER_ACTIVE_IDS:
+			var winning_seed:=-1
+			var probe:=RandomNumberGenerator.new()
+			for candidate_seed in 10000:
+				probe.seed=candidate_seed
+				if scene.roll_class_active_item("warrior",not boss_drop,boss_drop,probe)==expected_id:
+					winning_seed=candidate_seed;break
+			_expect(winning_seed>=0,"No authored drop roll can select "+expected_id)
+			if winning_seed<0:continue
+			var drop_victim:=_dummy(scene,Vector2(120,0))
+			drop_victim.elite=not boss_drop;drop_victim.boss=boss_drop;drop_victim.health=1
+			scene.enemies_remaining=maxi(2,scene.enemies_remaining)
+			var loot_before:int=scene.loot_nodes.size()
+			scene.drop_rng().seed=winning_seed
+			drop_victim.receive_attack({"damage":100000,"damage_type":"physical"},scene.player)
+			var actual_drop:Area2D=null
+			for index in range(loot_before,scene.loot_nodes.size()):
+				var candidate:Area2D=scene.loot_nodes[index]
+				if candidate.get_meta("kind","")=="active_item" and candidate.get_meta("item_id","")==expected_id:actual_drop=candidate
+			_expect(drop_victim.dead and actual_drop!=null,"Real %s death did not drop %s"%["boss" if boss_drop else "elite",expected_id])
+			if actual_drop!=null:
+				scene._collect_loot(actual_drop)
+				_expect(ActiveItems.held(state)==expected_id and ActiveItems.is_ready(state),"Enemy-dropped fighter item was not usable: "+expected_id)
+	ActiveItems.give(state,"umbral_bow")
 	scene._spawn_fighter_active_drop(scene.player.global_position,"grim_reaver")
 	var dropped:Area2D=scene.loot_nodes.back();scene._collect_loot(dropped)
 	_expect(ActiveItems.held(state)=="grim_reaver" and ActiveItems.is_ready(state),"Fighter world drop did not enter the charged active slot")
@@ -165,6 +222,22 @@ func _run() -> void:
 	# Dev Mode enemy drops pause play and present three cards. Choosing one
 	# equips it fully charged, while the replaced item remains an exact pickup.
 	game_settings.values["dev_mode"]=true
+	ActiveItems.give(state,"sentinel_shield")
+	var dev_boss:=_dummy(scene,Vector2(140,0));dev_boss.boss=true;dev_boss.health=1
+	scene.enemies_remaining=maxi(2,scene.enemies_remaining)
+	var dev_loot_before:int=scene.loot_nodes.size()
+	dev_boss.receive_attack({"damage":100000,"damage_type":"physical"},scene.player)
+	var dev_boss_drop:Area2D=null
+	for index in range(dev_loot_before,scene.loot_nodes.size()):
+		if scene.loot_nodes[index].get_meta("kind","")=="active_item":dev_boss_drop=scene.loot_nodes[index]
+	_expect(dev_boss_drop!=null,"Dev boss death produced no active-item drop")
+	if dev_boss_drop!=null:
+		_expect(Array(dev_boss_drop.get_meta("choices",[])).size()==3,"Dev boss death did not author three drop choices")
+		scene._collect_loot(dev_boss_drop)
+		_expect(scene.relic_modal.visible and scene.relic_modal.choice_buttons.size()==3,"Actual Dev boss loot did not open three selection cards")
+		if not scene.relic_modal.active_item_choices.is_empty():
+			var dev_boss_choice:String=scene.relic_modal.active_item_choices[0];scene._claim_relic(dev_boss_choice)
+			_expect(ActiveItems.held(state)==dev_boss_choice and ActiveItems.is_ready(state),"Actual Dev boss choice did not equip a charged item")
 	ActiveItems.give(state,"sentinel_shield")
 	# Even a drop without precomputed choice metadata must expand on pickup.
 	scene._spawn_active_item_drop(scene.player.global_position,"demon_blade")
@@ -179,10 +252,18 @@ func _run() -> void:
 	ActiveItems.give(state,"shadow_step")
 	scene.player.invulnerable = 0.0
 	var start: Vector2 = scene.player.global_position
-	scene.player.velocity = Vector2.LEFT * 200.0
+	# Room-rebuild coverage above can leave the hero at an entrance wall.
+	# Test movement along an observed clear lane, not through that wall.
+	var dash_direction:=Vector2.ZERO
+	for direction in [Vector2.LEFT,Vector2.RIGHT,Vector2.UP,Vector2.DOWN]:
+		scene.player.aim_direction=direction
+		if scene.player._safe_destination(start+direction*190).distance_to(start)>150:
+			dash_direction=direction;break
+	_expect(dash_direction!=Vector2.ZERO,"Shadow Step fixture has no clear movement lane")
+	scene.player.velocity = dash_direction * 200.0
 	scene.use_active_item()
 	_expect(scene.player.invulnerable > 0.0,"Shadow Step didn't make the hero untouchable")
-	await _frames(20)
+	for frame in 20:await physics_frame
 	_expect(scene.player.global_position.distance_to(start) > 60.0,"Shadow Step didn't move the hero")
 
 	scene.queue_free(); await _frames(3)

@@ -100,6 +100,7 @@ func _physics_process(delta: float) -> void:
 	if retarget_timer <= 0.0:
 		_retarget_party(); retarget_timer = 0.45
 	if dead or not is_instance_valid(target): return
+	if _process_mage_control(delta): return
 	_shake_glow = maxf(0.0,_shake_glow - delta)
 	for telegraph in telegraphs: telegraph.t = float(telegraph.t) + delta
 	timer -= delta * (_pace() if state != "window" else 1.0)

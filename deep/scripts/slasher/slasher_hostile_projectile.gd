@@ -67,7 +67,7 @@ func _physics_process(delta:float)->void:
 		else:
 			var previous_kind:bool=target._receiving_projectile
 			target._receiving_projectile=true
-			target.receive_damage(damage,direction*95.0,source if is_instance_valid(source) else null)
+			target.receive_damage(damage,direction*95.0,source if is_instance_valid(source) else null,true)
 			if is_instance_valid(target):target._receiving_projectile=previous_kind
 		_finish();return
 	if wall_time!=INF:

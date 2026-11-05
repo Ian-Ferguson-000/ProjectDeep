@@ -1,6 +1,10 @@
 # Curated sound definitions. Streams are preloaded so exports include every cue.
 extends RefCounted
 const EVENTS:Dictionary={
+	"fighter_armor_break":{"streams":[preload("res://assets/audio/kenney/impact/impactWood_heavy_001.ogg")],"bus":"SFX","volume_db":-17.0,"pitch_variation":0.03,"cooldown":0.15,"max_voices":2,"priority":4},
+	"fighter_resisted":{"streams":[preload("res://assets/audio/kenney/impact/impactWood_heavy_000.ogg")],"bus":"SFX","volume_db":-15.0,"pitch_variation":0.03,"cooldown":0.1,"max_voices":3,"priority":4},
+	"fighter_critical":{"streams":[preload("res://assets/audio/kenney/impact/impactPunch_heavy_000.ogg")],"bus":"SFX","volume_db":-13.0,"pitch_variation":0.03,"cooldown":0.08,"max_voices":3,"priority":4},
+	"fighter_metal":{"streams":[preload("res://assets/audio/kenney/impact/impactMetal_light_000.ogg"),preload("res://assets/audio/kenney/impact/impactMetal_light_001.ogg")],"bus":"SFX","volume_db":-14.0,"pitch_variation":0.04,"cooldown":0.08,"max_voices":3,"priority":4},
 	"enemy_attack":{"streams":[preload("res://assets/audio/combat/sword_swing_02.wav")],"bus":"SFX","volume_db":-17.0,"pitch_variation":0.07,"cooldown":0.12,"max_voices":4,"priority":3},
 	"eruption":{"streams":[preload("res://assets/audio/combat/cast_fire_02.wav")],"bus":"SFX","volume_db":-17.0,"pitch_variation":0.07,"cooldown":0.12,"max_voices":4,"priority":3},
 	"impact_fire":{"streams":[preload("res://assets/audio/combat/impact_fire_01.wav"),preload("res://assets/audio/combat/impact_fire_02.wav")],"bus":"SFX","volume_db":-17.0,"pitch_variation":0.07,"cooldown":0.12,"max_voices":4,"priority":3},

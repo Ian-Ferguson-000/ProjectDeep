@@ -111,31 +111,32 @@ static func _fighter_weapon(player: SlasherPlayer,id:String,effect:Dictionary)->
 		runtime.call("configure",player,weapon_id,record.actions);player.add_child(runtime)
 	var result:Dictionary=runtime.call("perform",String(effect.get("slot","special")),{"started":true,"targets_hit":0,"projectiles_deflected":0,"failure":""})
 	if not bool(result.get("started",false)):return false
-	_play_authored_vfx(player,id)
-	_flash(player,SpinFlash.new(),{"radius":52.0,"colour":Color("#d8a6ff")})
+	var duration:float=runtime.presentation_action_duration(0.3)
+	player._play_action_animation(runtime.presentation_animation_state(),duration,duration)
+	player.animation_lock=duration
+	# Fighter runtime draws anticipation and contact on its authoritative clock.
+	# A generic activation burst would falsely imply an immediate damaging hit.
 	AudioCue.play_from(player,"combo")
 	return true
 
 static func _mage_item(player:SlasherPlayer,id:String)->bool:
-	var runtime:Node
-	for child in player.get_children():
-		if child.get_meta("active_item_runtime_id","")==id:runtime=child;break
-	if runtime==null:
-		runtime=MAGE_ACTIVE_ARSENAL.new();runtime.name="Active_%s"%id.to_pascal_case();runtime.set_meta("active_item_runtime_id",id);player.add_child(runtime);runtime.call("configure",player,id)
+	var runtime:=ensure_runtime(player,id)
 	if not bool(runtime.call("activate")):return false
-	_play_authored_vfx(player,id)
 	if bool(runtime.get("defer_spend_once")):player.set_meta("active_item_skip_spend_once",true)
-	_flash(player,SpinFlash.new(),{"radius":52.0,"colour":Color("#8de8ff")})
 	AudioCue.play_from(player,"combo")
 	return true
 
 static func ensure_runtime(player:SlasherPlayer,id:String)->Node:
 	if not is_instance_valid(player) or id.is_empty():return null
+	for child in player.get_children():
+		if child is SlasherMageActiveArsenal and child.item_id!=id:child.cancel()
 	var effect:Dictionary=Dictionary(ActiveItems.item(id).get("effect",{}))
-	if String(effect.get("kind",""))!="neutral_item":return null
+	var kind:=String(effect.get("kind",""))
+	if kind not in ["neutral_item","mage_item"]:return null
 	for child in player.get_children():
 		if child.get_meta("active_item_runtime_id","")==id:return child
-	var runtime:=NEUTRAL_ACTIVE_ARSENAL.new();runtime.name="Active_%s"%id.to_pascal_case();runtime.set_meta("active_item_runtime_id",id);player.add_child(runtime);runtime.configure(player,id);return runtime
+	var runtime:Node= MAGE_ACTIVE_ARSENAL.new() if kind=="mage_item" else NEUTRAL_ACTIVE_ARSENAL.new()
+	runtime.name="Active_%s"%id.to_pascal_case();runtime.set_meta("active_item_runtime_id",id);player.add_child(runtime);runtime.configure(player,id);return runtime
 
 static func _neutral_item(player:SlasherPlayer,id:String)->bool:
 	var runtime:=ensure_runtime(player,id)

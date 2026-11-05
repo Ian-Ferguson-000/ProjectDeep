@@ -12,8 +12,10 @@ var target:SlasherPlayer
 var source:SlasherEnemy
 var repeating:=true
 var tick_cooldown:=0.0
+var enemy_origin:=false
 
 func setup(owner:SlasherEnemy,player:SlasherPlayer,position_value:Vector2,config:Dictionary)->SlasherHellHazard:
+	enemy_origin=is_instance_valid(owner)
 	source=owner;target=player;global_position=position_value;timer=float(config.get("telegraph",0.8));active_time=float(config.get("lifetime",2.5));radius=float(config.get("radius",52.0));damage=maxi(1,int(config.get("damage",2)));repeating=bool(config.get("repeating",true));return self
 
 func _ready()->void:add_to_group("hell_hazard");z_index=2;queue_redraw()
@@ -24,7 +26,7 @@ func _physics_process(delta:float)->void:
 	if phase==Phase.TELEGRAPH and timer<=0.0:phase=Phase.ACTIVE;timer=active_time;queue_redraw()
 	elif phase==Phase.ACTIVE:
 		if is_instance_valid(target) and global_position.distance_to(target.global_position)<=radius and tick_cooldown<=0.0:
-			target.receive_damage(damage,global_position.direction_to(target.global_position)*115.0,source if is_instance_valid(source) else null);tick_cooldown=0.72
+			target.receive_damage(damage,global_position.direction_to(target.global_position)*115.0,source if is_instance_valid(source) else null,enemy_origin);tick_cooldown=0.72
 		if timer<=0.0:
 			if repeating:phase=Phase.COOLDOWN;timer=2.8
 			else:queue_free()

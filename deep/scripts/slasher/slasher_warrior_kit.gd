@@ -75,10 +75,10 @@ func on_direct_hit(target: Node2D, attack: Dictionary) -> void:
 	rewarded_casts[serial]=4.0
 	if gain>0:actor._award_resource(gain);actor.resource_changed.emit(actor.run_state.class_resource,actor.run_state.get_class_resource_max())
 
-func slash(origin: Vector2, direction: Vector2, reach: float, degrees: float, attack: Dictionary, primary: bool=true, line: bool=false, maximum: int=0) -> int:
+func slash(origin: Vector2, direction: Vector2, reach: float, degrees: float, attack: Dictionary, primary: bool=true, line: bool=false, maximum: int=0, show_sweep:bool=true) -> int:
 	var count := 0
 	last_targets.clear()
-	history.append({"origin":origin,"direction":direction,"reach":reach,"degrees":degrees,"line":line,"left":0.28,"duration":0.28,"side":sabre_side if weapon_id=="duelists_paired_sabres" else 0})
+	if show_sweep:history.append({"origin":origin,"direction":direction,"reach":reach,"degrees":degrees,"line":line,"left":0.28,"duration":0.28,"side":sabre_side if weapon_id=="duelists_paired_sabres" else 0})
 	while history.size()>20:history.pop_front()
 	for enemy in enemies():
 		if maximum>0 and count>=maximum:break

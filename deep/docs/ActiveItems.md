@@ -43,6 +43,9 @@ in `scripts/slasher/slasher_active_effects.gd` (`use()`, plus an icon in
 
 ## Code
 
+The mage arsenal's current controls, tuning, limits, and verification are
+documented in [MageActiveItemsProduction.md](MageActiveItemsProduction.md).
+
 - `scripts/game/active_items.gd`: the data, the slot (in `run_stats.active_item`), charging.
 - `scripts/slasher/slasher_active_effects.gd`: what each kind does, and the icons.
 - `SlasherForest.use_active_item / _process_active_item`: Space, timer charge, HUD.
@@ -59,3 +62,31 @@ drop chance, while elite and boss active-item drops are guaranteed. Picking up o
 a three-card choice of unique, class-valid active items. An item swapped onto the
 ground remains an exact pickup instead of generating another choice. Dev Mode is
 disabled by default.
+
+## Armory testing ground
+
+The Hearth armory opens its testing ground directly as a playable level-one
+Fighter with the standard sword-and-shield kit. There is no player-facing build
+form in this room:
+
+- Six podiums along the left wall swap the player to that class's standard,
+  level-one build on contact.
+- Every active item is mounted in floating rows along the upper and lower
+  walls. Walk into a compatible display to equip it; the current item is
+  replaced immediately and fully charged.
+- Neutral items remain equipped across class changes. Class-specific items are
+  cleared when changing to a class that cannot use them.
+- **Space** activates the held item. Testing-ground items refill after 1.25
+  seconds, or immediately with **B**, so repeated mechanical tests do not
+  require clearing rooms.
+- **R** resets the targets without changing the current class or held item.
+- The proving floor is an expanded 1800×900 space with a clamped follow camera.
+  In **Live enemies** mode, each defeated combatant returns at its training
+  point after three seconds without resetting the player or the other enemies.
+- Testing-ground buttons cannot retain keyboard focus, preventing **Space**
+  from accidentally re-triggering Reset or a scenario button instead of the
+  active item.
+
+The detailed form controls still exist off-screen as an automation harness for
+kit and progression regression tests; they are not part of the player-facing
+armory flow.

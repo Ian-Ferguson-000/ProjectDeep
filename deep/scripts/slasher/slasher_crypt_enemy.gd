@@ -26,6 +26,7 @@ func _physics_process(delta:float)->void:
 	retarget_timer-=delta
 	if retarget_timer<=0.0:_retarget_party();retarget_timer=0.4
 	if dead or not is_instance_valid(target):return
+	if _process_mage_control(delta):return
 	activation_delay=maxf(0.0,activation_delay-delta);attack_cooldown=maxf(0.0,attack_cooldown-delta);special_cooldown=maxf(0.0,special_cooldown-delta);state_timer=maxf(0.0,state_timer-delta);transition_time=maxf(0.0,transition_time-delta);pattern_cooldown=maxf(0.0,pattern_cooldown-delta)
 	if activation_delay>0.0 or transition_time>0.0:velocity=Vector2.ZERO;_play_animation("idle");queue_redraw();return
 	match behavior_id:
@@ -61,7 +62,7 @@ func _process_wisp(delta:float)->void:
 	var distance:=global_position.distance_to(target.global_position);var preferred:=float(behavior_tuning.get("preferred_range",190.0));var radial:=global_position.direction_to(target.global_position)
 	if absf(distance-preferred)>35.0:_move_toward(target.global_position-radial*preferred)
 	else:
-		velocity=radial.orthogonal()*strafe_sign*speed;move_and_slide();_play_animation("run")
+		velocity=radial.orthogonal()*strafe_sign*speed*mage_slow_multiplier;move_and_slide();_play_animation("run")
 	if attack_cooldown<=0.0:
 		var predicted:=target.global_position+target.velocity*0.32;_spawn_projectile(global_position,global_position.direction_to(predicted),{"projectile_speed":205.0,"projectile_range":360.0,"hit_radius":10.0,"color":"#66ddff","visual_type":"soul","movement_pattern":"curve","angular_velocity":0.18*strafe_sign});attack_cooldown=float(behavior_tuning.get("cooldown",1.55));strafe_sign*=-1.0
 	if special_cooldown<=0.0:_radial_ring(6,pattern_index*0.22,105.0,0.16,true);pattern_index+=1;special_cooldown=float(behavior_tuning.get("burst_cooldown",5.0))
@@ -154,7 +155,7 @@ class SlasherCryptImpactMarker:
 	func _physics_process(delta:float)->void:
 		timer-=delta;queue_redraw()
 		if timer<=0.0:
-			if is_instance_valid(target) and global_position.distance_to(target.global_position)<=58.0:target.receive_damage(damage,global_position.direction_to(target.global_position)*90.0,source)
+			if is_instance_valid(target) and global_position.distance_to(target.global_position)<=58.0:target.receive_damage(damage,global_position.direction_to(target.global_position)*90.0,source if is_instance_valid(source) else null,true)
 			for index:int in 8:
 				if not is_instance_valid(source):break
 				var direction:=Vector2.RIGHT.rotated(TAU*float(index)/8.0);var projectile_visual:="necrotic_skull" if source.behavior_id=="grave_acolyte" else "soul";var projectile:=HOSTILE_PROJECTILE.new().setup(source,target,global_position,direction,maxi(1,damage/2),{"projectile_speed":145.0,"projectile_range":210.0,"hit_radius":9.0,"color":"#aa74ff","visual_type":projectile_visual});get_parent().add_child(projectile);projectile.add_to_group("crypt_projectile")

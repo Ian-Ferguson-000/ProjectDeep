@@ -14,7 +14,7 @@ const DEFAULTS:Dictionary={
 	"window_mode":"windowed","resolution":Vector2i(1280,720),"vsync":"on","ui_scale":1.0,
 	"slasher_zoom":1.30,"master_volume":1.0,"music_volume":0.8,"sfx_volume":0.9,
 	"master_mute":false,"music_mute":false,"sfx_mute":false,"screen_shake_intensity":1.0,
-	"ambience_volume":0.65,"ui_volume":0.8,"ambience_mute":false,"ui_mute":false,"dev_mode":false
+	"ambience_volume":0.65,"ui_volume":0.8,"ambience_mute":false,"ui_mute":false,"dev_mode":false,"reduced_effects":false
 }
 
 var values:Dictionary={}
@@ -95,7 +95,7 @@ func _sanitize(key:String,value:Variant)->Variant:
 		"slasher_zoom":return clampf(float(value),1.0,1.5)
 		"master_volume","music_volume","sfx_volume","ambience_volume","ui_volume":return clampf(float(value),0.0,1.0)
 		"screen_shake_intensity":return clampf(float(value),0.0,1.5)
-		"master_mute","music_mute","sfx_mute","ambience_mute","ui_mute","dev_mode":return bool(value)
+		"master_mute","music_mute","sfx_mute","ambience_mute","ui_mute","dev_mode","reduced_effects":return bool(value)
 	return DEFAULTS.get(key,value)
 
 func _center_window(resolution:Vector2i)->void:

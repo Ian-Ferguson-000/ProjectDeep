@@ -80,6 +80,7 @@ func _physics_process(delta: float) -> void:
 		_retarget_party()
 		retarget_timer = 0.45
 	if dead or not is_instance_valid(target): return
+	if _process_mage_control(delta): return
 	activation_delay = maxf(0.0,activation_delay - delta)
 	for timer in ["attack_cooldown","animation_lock","hit_stun_timer","status_time","special_cooldown","state_timer"]:
 		set(timer,maxf(0.0,float(get(timer)) - delta))
