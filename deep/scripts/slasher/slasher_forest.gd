@@ -451,7 +451,7 @@ func _process(delta:float)->void:
 	_refresh_hud()
 
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
-	run_state.record_enemy_defeat(enemy.visual_id);enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
+	run_state.record_enemy_defeat(enemy.visual_id,int(enemy.max_health));enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
 	if player.item_runtime:player.item_runtime.handle_event({"trigger":"boss_kill" if enemy.boss else ("elite_kill" if enemy.elite else "enemy_kill"),"enemy":enemy})
 	for unlock in run_state.note_kill(String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)):
 		AudioCue.play_from(self,"reward",false);_show_message("Unlocked: %s · %s"%[String(unlock.name),String(unlock.text)],4.0)
@@ -585,6 +585,10 @@ func _collect_loot(loot:Area2D)->void:
 			if run_state.add_consumable("healing_potion"):AudioCue.play_from(loot,"pickup");_show_message("Healing potion collected.")
 			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
 		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
+		"material":
+			var material_id:=String(loot.get_meta("material_id",""))
+			Materials.add(run_state.materials,material_id);AudioCue.play_from(loot,"pickup")
+			_show_message("%s (%d carried). Banked at the Hearth if you get home."%[Materials.material_name(material_id),int(run_state.materials.get(material_id,0))],2.2)
 		"active_item":
 			var item_id:=String(loot.get_meta("item_id",""));var choices:Array[String]=[];choices.assign(Array(loot.get_meta("choices",[])));var exact_pickup:=bool(loot.get_meta("exact_active_item",false))
 			if GameSettingsService.dev_mode_enabled() and not exact_pickup and relic_modal!=null:
@@ -698,26 +702,33 @@ static func roll_fighter_active_item(is_elite:bool,is_boss:bool,rng:RandomNumber
 	if pool.is_empty() or rng.randf()>=chance:return ""
 	return String(pool[rng.randi_range(0,pool.size()-1)])
 
+## What a kill drops (data/enemy_drops.json): basic enemies only materials;
+## mini bosses their trophy plus a chance of an item; bosses their trophy.
+## Never an active item (those come from treasure-room pedestals).
 func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	if _is_tutorial_expedition() or not is_instance_valid(enemy):return
-	var active_item_id:=roll_class_active_item(run_state.selected_class_id,enemy.elite or enemy.mini_boss,enemy.boss,drop_rng())
-	if not active_item_id.is_empty():
-		var choices:Array[String]=[]
-		if GameSettingsService.dev_mode_enabled():choices=active_item_drop_choices(run_state.selected_class_id,active_item_id,drop_rng())
-		_spawn_active_item_drop(enemy.global_position,active_item_id,choices);return
-	var key:=String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)
-	var kind:=roll_drop(key,enemy.elite or enemy.mini_boss,enemy.boss,Unlocks.drop_luck(run_state.campaign),drop_rng())
-	if kind.is_empty():return
-	if kind=="healing_potion" and not RunState.potions_drop():kind="gold"
-	var spot:=enemy.global_position
-	match kind:
-		"gold":
-			var amount_rules:Dictionary=drop_table().get("gold_amount",{})
-			var amount:=drop_rng().randi_range(int(amount_rules.get("min",1)),int(amount_rules.get("max",3)))+int(run_state.current_floor*float(amount_rules.get("per_floor",0.5)))
-			_spawn_gold_drop(spot,amount)
-		"healing_potion":_spawn_pickup_drop("potion",spot)
-		"key":_spawn_pickup_drop("key",spot)
-		"relic":_spawn_relic_drop(spot)
+	var table:=drop_table();var spot:=enemy.global_position
+	var trophy:=enemy.boss or enemy.mini_boss
+	var material_id:=Materials.for_enemy(String(enemy.visual_id),String(enemy.behavior_id),trophy)
+	if enemy.boss:
+		for index in int(table.get("boss_materials",1)):_spawn_material_drop(spot+Vector2(index*18-9,0),material_id)
+		return
+	if enemy.mini_boss:
+		for index in int(table.get("mini_boss_materials",2)):_spawn_material_drop(spot+Vector2(index*20-10,6),material_id)
+		if drop_rng().randf()<float(table.get("mini_boss_item_chance",0.3))*minf(Unlocks.drop_luck(run_state.campaign),float(table.get("luck_cap",2.5))):_spawn_relic_drop(spot+Vector2(0,-22))
+		return
+	var chance:=float(table.get("basic_material_chance",0.3))*minf(Unlocks.drop_luck(run_state.campaign),float(table.get("luck_cap",2.5)))
+	if not material_id.is_empty() and drop_rng().randf()<chance:_spawn_material_drop(spot,material_id)
+
+## A small pouch of a crafting or quest material (data/materials.json).
+func _spawn_material_drop(world_position:Vector2,material_id:String)->void:
+	if material_id.is_empty():return
+	var area:=Area2D.new();area.name="MaterialDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape)
+	var tint:=Materials.color(material_id)
+	var pouch:=Polygon2D.new();pouch.polygon=PackedVector2Array([Vector2(-7,-4),Vector2(-9,6),Vector2(0,10),Vector2(9,6),Vector2(7,-4),Vector2(0,-8)]);pouch.color=tint.darkened(0.25);area.add_child(pouch)
+	var tie:=Polygon2D.new();tie.polygon=PackedVector2Array([Vector2(-4,-9),Vector2(4,-9),Vector2(3,-5),Vector2(-3,-5)]);tie.color=Color("#5b3c22");area.add_child(tie)
+	var shine:=Polygon2D.new();shine.polygon=PackedVector2Array([Vector2(-4,-1),Vector2(-2,-3),Vector2(-1,3),Vector2(-3,4)]);shine.color=tint.lightened(0.45);area.add_child(shine)
+	area.add_child(_glow(tint,14));area.set_meta("kind","material");area.set_meta("material_id",material_id);actor_layer.add_child(area);loot_nodes.append(area)
 
 var _drop_rng:RandomNumberGenerator
 func drop_rng()->RandomNumberGenerator:
@@ -957,9 +968,9 @@ func abandon_run()->void:
 	_store_active_slasher_state()
 	if controller and controller.has_method("return_to_tavern"):controller.return_to_tavern("retreat","The run is abandoned on floor %d. The company heads home."%run_state.current_floor)
 
-## The pause menu is the main menu: it opens over the codex, shops and relic choices too.
+## Esc opens the pause menu only when no codex, shop or relic choice is up (Esc closes those first).
 func _can_open_pause_menu()->bool:
-	return is_instance_valid(player)
+	return is_instance_valid(player) and not (codex!=null and codex.visible) and not (merchant_shop_panel!=null and merchant_shop_panel.visible) and not (relic_modal!=null and is_instance_valid(relic_modal) and relic_modal.visible)
 
 func _open_codex(input_source:String="system")->void:
 	if codex==null or merchant_shop_panel.visible:return

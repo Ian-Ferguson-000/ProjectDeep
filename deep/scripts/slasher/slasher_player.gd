@@ -177,7 +177,8 @@ func _ensure_input_actions_exist()->void:
 func _refresh_presentation()->void:
 	if sprite==null:sprite=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";add_child(sprite)
 	var tuning:Dictionary=GameBalance.get_slasher_class_tuning(class_id)
-	sprite.sprite_frames=SlasherSpriteLibrary.player_frames(class_id);sprite.position=Vector2(float(tuning.get("sprite_offset_x",0.0)),float(tuning.get("sprite_offset_y",-30.0)));sprite.scale=Vector2.ONE*float(tuning.get("sprite_scale",0.9));presentation_ready=true;_play_animation("idle");queue_redraw()
+	var hero:CharacterRecord=run_state.get_active_character() if run_state!=null else null
+	sprite.sprite_frames=SlasherSpriteLibrary.player_frames(class_id,hero.gender if hero!=null else "");sprite.position=Vector2(float(tuning.get("sprite_offset_x",0.0)),float(tuning.get("sprite_offset_y",-30.0)));sprite.scale=Vector2.ONE*float(tuning.get("sprite_scale",0.9));presentation_ready=true;_play_animation("idle");queue_redraw()
 
 func _physics_process(delta:float)->void:
 	if combo_runtime!=null and combo_runtime.tick(delta):combo_updated.emit({"type":"progress","progress":combo_runtime.feedback()})

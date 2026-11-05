@@ -230,6 +230,9 @@ static func _progress_from(objective: Dictionary, event: Dictionary, visitor_id:
 static func _deliver_text(c: CampaignState, q: Dictionary) -> String:
 	var objective: Dictionary = Dictionary(q.get("objective",{}))
 	if objective.has("gold"): return "Hand over %d gold (you have %d)" % [int(objective.gold),c.banked_gold]
+	if objective.has("material"):
+		var material_id := String(objective.material)
+		return "Hand over %d %s (%d at the Hearth)" % [int(objective.get("count",1)),Materials.material_name(material_id),int(c.materials.get(material_id,0))]
 	var food_id := String(objective.get("food",""))
 	return "Hand over %d %s (%d in the pantry)" % [int(objective.get("count",1)),String(HearthUpkeep.food(food_id).get("name",food_id)),int(c.pantry.get(food_id,0))]
 
@@ -237,6 +240,7 @@ static func can_deliver(c: CampaignState, id: String, quest_id: String) -> bool:
 	var objective: Dictionary = Dictionary(quest(id,quest_id).get("objective",{}))
 	if String(objective.get("type","")) != "deliver": return false
 	if objective.has("gold"): return c.banked_gold >= int(objective.gold)
+	if objective.has("material"): return int(c.materials.get(String(objective.material),0)) >= int(objective.get("count",1))
 	return int(c.pantry.get(String(objective.get("food","")),0)) >= int(objective.get("count",1))
 
 ## Hands the goods over and pays the reward straight away.
@@ -246,6 +250,7 @@ static func deliver(c: CampaignState, id: String, quest_id: String) -> Dictionar
 	if not can_deliver(c,id,quest_id): return {"ok":false,"error":"You don't have enough to hand over."}
 	var objective: Dictionary = Dictionary(quest(id,quest_id).get("objective",{}))
 	if objective.has("gold"): c.banked_gold -= int(objective.gold)
+	elif objective.has("material"): c.materials[String(objective.material)] = int(c.materials.get(String(objective.material),0)) - int(objective.get("count",1))
 	else:
 		var food_id := String(objective.get("food",""))
 		c.pantry[food_id] = int(c.pantry.get(food_id,0)) - int(objective.get("count",1))
@@ -377,6 +382,8 @@ static func validate() -> Array[String]:
 			if not kind in ["kills","reach_floor","clear","return_gold","runs_home","train","contest_win","deliver"]: errors.append("%s/%s has unknown objective %s" % [id,q.get("id",""),kind])
 			for needed in Array(q.get("requires_quests",[])):
 				if not quest_ids.has(String(needed)): errors.append("%s/%s requires unknown quest %s" % [id,q.get("id",""),needed])
+			var deliver_material := String(Dictionary(q.get("objective",{})).get("material",""))
+			if not deliver_material.is_empty() and Materials.material(deliver_material).is_empty(): errors.append("%s/%s asks for unknown material %s" % [id,q.get("id",""),deliver_material])
 			for item_id in Array(Dictionary(q.get("reward",{})).get("items",[])):
 				if HearthCatalog.item(String(item_id)).is_empty(): errors.append("%s/%s rewards unknown item %s" % [id,q.get("id",""),item_id])
 		for value in Array(v.get("shop",[])):

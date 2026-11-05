@@ -17,11 +17,17 @@ The game pauses and the menu offers:
 In the dungeon the menu also shows the run's **seed** with Copy and Save
 buttons (docs/RunSeeds.md).
 
-Esc on a sub-page steps back to the main list. It's the main menu, so it opens
-over **everything**: the codex, shops, relic choices, the Hearth windows and
-dialogue. It catches Esc before anything else does, so Esc no longer closes
-those windows (use their close buttons, M for the codex, or controller B).
-Closing the menu puts you back exactly where you were.
+Esc on a sub-page steps back to the main list. Esc **closes other windows
+first**: with the codex, a shop, a relic choice, a Hearth window or a
+conversation open, Esc closes that and nothing else. The menu only opens when
+no other window is up, so pressing Esc again opens it.
+
+How: `GamePauseMenu._input` decides, before any window sees the key, whether
+this press may open the menu (the scene's `can_open` callback:
+`slasher_forest.gd` / `tavern.gd → _can_open_pause_menu`, which say no while a
+window is open). The window then handles Esc as usual, and the menu opens in
+`_unhandled_input` only if the press was allowed and nothing used it. Test:
+`tests/pause_menu_test.gd` (including a real Esc key over the Hearth).
 
 ## Leaving and saving
 

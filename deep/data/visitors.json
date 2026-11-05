@@ -4,6 +4,7 @@
     "schedule: first_day = the first day they can turn up; every_days = how often they come back; stay_days = how many days they stay each visit. requires (optional): {\"clear\": dungeon_id} or {\"flag\": story_flag} before they ever come.",
     "ranks: favour needed for each rank, lowest first. Favour comes from quest rewards and mini-game wins.",
     "art: portrait/sprite paths. Leave them empty and the game draws a dark silhouette with a question mark (art still to come).",
+    "materials: deliver {material: id, count} asks for crafting/quest materials (data/materials.json) banked at the Hearth.",
     "quest objective types: kills {family, count} (families: sporeling, bandit, undead) · reach_floor {dungeon, floor} · clear {dungeon, class?, max_seconds?, max_potions?} · return_gold {gold} (come home alive carrying at least this much) · runs_home {count} (adventurers coming home alive) · train {count} (training sessions) · contest_win {count} (beat them at their mini-game) · deliver {food: id, count} or {gold: amount} (handed over in person).",
     "quest fields: requires_rank (index into ranks), requires_quests (ids that must be finished first), lines.offer / lines.progress / lines.done (what they say).",
     "reward fields: gold, renown, favour, items (armory item ids), furnishings (lodging furnishing ids), food {id: count}, flag (a story flag other content can check).",
@@ -152,14 +153,14 @@
         {
           "id": "bones_for_steel",
           "title": "Bones for Steel",
-          "summary": "Slay 25 of the risen dead.",
+          "summary": "Bring Tessaly 10 Grave Dust from the risen dead.",
           "requires_rank": 2,
           "requires_quests": ["proven_blade"],
-          "objective": {"type": "kills", "family": "undead", "count": 25},
+          "objective": {"type": "deliver", "material": "grave_dust", "count": 10},
           "reward": {"gold": 60, "favour": 5, "flag": "tessaly_crypt_steel"},
           "lines": {
-            "offer": "Old crypt-bone makes the best quench there is. Don't look at me like that. Put down twenty-five of the dead below the forest and I'll make it worth your while.",
-            "progress": "Twenty-five of the dead. I've got the forge ready.",
+            "offer": "Old crypt-bone makes the best quench there is. Don't look at me like that. Bring me ten handfuls of grave dust from the dead below the forest and I'll make it worth your while.",
+            "progress": "Ten handfuls of grave dust. I've got the forge ready.",
             "done": "Good bone. The holds would call this grave-robbing. The holds can buy their swords elsewhere."
           }
         }
@@ -202,12 +203,12 @@
         {
           "id": "spore_samples",
           "title": "Spore Samples",
-          "summary": "Slay 20 sporelings.",
-          "objective": {"type": "kills", "family": "sporeling", "count": 20},
+          "summary": "Bring Calden 5 Spore Sacs from the forest's sporelings.",
+          "objective": {"type": "deliver", "material": "spore_sac", "count": 5},
           "reward": {"gold": 20, "favour": 3, "food": {"hearty": 4}},
           "lines": {
-            "offer": "The forest spores are spreading into the farms. I need samples, which means someone has to kill the things carrying them. Twenty should do.",
-            "progress": "Twenty sporelings. Burst them from a distance if you can.",
+            "offer": "The forest spores are spreading into the farms. I need samples, which means someone has to kill the things carrying them and bring me their sacs. Five should do.",
+            "progress": "Five spore sacs. Burst the sporelings from a distance if you can, and mind the sacs.",
             "done": "Excellent samples. Disgusting, but excellent. Take some proper food for your people; I insist."
           }
         },

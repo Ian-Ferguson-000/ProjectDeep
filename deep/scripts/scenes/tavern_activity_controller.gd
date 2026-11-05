@@ -126,7 +126,7 @@ func _spawn_visitor(visitor_id:String)->TavernActor:
 func _spawn_adventurer(kind:String,id:String,member:CharacterRecord,entering:bool)->TavernActor:
 	var target:=_claim_anchor(id,["Wait","Wander","Seat"])
 	var actor:=ACTOR_SCENE.instantiate() as TavernActor;actors_root.add_child(actor);actor.global_position=_anchor("Entrance").global_position if entering else target.global_position
-	actor.configure(kind,id,member.display_name,SlasherSpriteLibrary.player_frames(member.class_id),_tavern_actor_scale(member.class_id));actor.conversation_id="candidate_default" if kind=="candidate" else "roster_default";_register(actor)
+	actor.configure(kind,id,member.display_name,SlasherSpriteLibrary.player_frames(member.class_id,member.gender if not member.gender.is_empty() else CharacterRecord.gender_for(member)),_tavern_actor_scale(member.class_id));actor.conversation_id="candidate_default" if kind=="candidate" else "roster_default";_register(actor)
 	if entering:actor.state=TavernActor.ActivityState.ENTERING;actor.set_meta("target_kind",String(target.get_meta("activity_kind","Wait")));actor.move_to(target.global_position)
 	elif String(target.get_meta("activity_kind",""))=="Seat":actor.seat_at(target.global_position);_schedule_next(actor)
 	else:_schedule_next(actor)

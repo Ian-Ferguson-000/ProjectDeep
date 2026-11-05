@@ -67,6 +67,11 @@ func present(summary: Dictionary, state: RunState, fallback: String) -> void:
 		var headline := String(report.get("headline", "Expedition return"))
 		lines.append("[b][color=#ffd36a]%s[/color][/b]  ·  %s%s" % [headline, String(report.get("deployment_type", "manual")).capitalize(), "  ·  Depth %d" % int(report.depth) if report.has("depth") else ""])
 		if reports.size() > 1: lines.append("Gold %d  ·  Company share %d  ·  Banked %d" % [gross, share, int(report.get("net", gross-share))])
+		var banked: Dictionary = report.get("materials", {})
+		if not banked.is_empty():
+			var bits := PackedStringArray()
+			for id in banked: bits.append("%d %s" % [int(banked[id]),Materials.material_name(String(id))])
+			lines.append("Materials banked: %s" % ", ".join(bits))
 		var leavers: Array = report.get("settled_in_town", [])
 		if not leavers.is_empty():
 			lines.append("[color=#ffd36a]The Hearth's cut (%d%%): %d gold.[/color]  %s keeps %d gold and retires to Eros town." % [int(report.get("tavern_cut_percent", 0)), int(report.get("net", gross - share)), ", ".join(leavers), share])

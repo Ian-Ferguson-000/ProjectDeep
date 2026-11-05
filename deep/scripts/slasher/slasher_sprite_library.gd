@@ -18,13 +18,27 @@ static var generated_enemy_build_count:=0
 static var last_generated_enemy_build_ms:=0.0
 static var max_generated_enemy_build_ms:=0.0
 
-static func player_frames(class_id: String) -> SpriteFrames:
+## A class's sprite for a gender (data/adventurer_sprites.json); falls back to
+## the class's current sprite when that gender has no art yet.
+static func player_frames(class_id: String, gender: String = "") -> SpriteFrames:
+	var path := gendered_sprite_path(class_id,gender)
+	if not path.is_empty() and ResourceLoader.exists(path):
+		var gendered := load(path) as SpriteFrames
+		if gendered != null: return gendered
 	if class_id == "warrior":
 		return _warrior_player_frames()
 	var asset_class_id := "phantom" if class_id == "rogue" else class_id
 	var frame_resource_path:="res://assets/classes/%s/player_frames.tres"%asset_class_id
 	if ResourceLoader.exists(frame_resource_path):return load(frame_resource_path) as SpriteFrames
 	return animation_board_frames("res://assets/classes/%s/slasher_sheet.png" % asset_class_id)
+
+static var _gendered_sprites: Dictionary = {}
+static func gendered_sprite_path(class_id: String, gender: String) -> String:
+	if gender.is_empty(): return ""
+	if _gendered_sprites.is_empty():
+		var parsed = JSON.parse_string(FileAccess.get_file_as_string("res://data/adventurer_sprites.json"))
+		_gendered_sprites = Dictionary(Dictionary(parsed).get("classes",{})) if parsed is Dictionary else {"_":{}}
+	return String(Dictionary(_gendered_sprites.get(class_id,{})).get(gender,""))
 
 static func _warrior_player_frames() -> SpriteFrames:
 	const CACHE_KEY := "warrior_player_actions"

@@ -1153,6 +1153,7 @@ func facilities_page() -> void:
 
 func merchant_page() -> void:
 	_pantry_section()
+	_materials_section()
 	_heading("Provisions","Found on expeditions; pack them on the Set Out screen")
 	var provisions := _grid(3)
 	for id in HearthCatalog.data().consumables:
@@ -1199,6 +1200,27 @@ func merchant_page() -> void:
 
 ## The pantry (data/upkeep.json): everyone at home eats one ration a day of the
 ## quality you serve, and each expedition takes rations with it.
+## Crafting and quest materials brought home from runs (Materials).
+func _materials_section() -> void:
+	_heading("Materials","%d banked" % Materials.total(campaign.materials))
+	var held: Array = campaign.materials.keys().filter(func(id): return int(campaign.materials[id]) > 0)
+	if held.is_empty():
+		_empty_state("No materials yet","Basic enemies drop materials; mini bosses and bosses drop trophies. Bring them home alive to bank them. Visitors ask for them, and crafting will use them.")
+		return
+	var grid := _grid(4)
+	for id in held:
+		var tile := PanelContainer.new(); tile.name = "Material_%s" % String(id)
+		var style := THEME.panel(Color("2b1e15"),Materials.color(String(id)).darkened(0.3),6,1); style.set_content_margin_all(8)
+		tile.add_theme_stylebox_override("panel",style)
+		tile.tooltip_text = String(Materials.material(String(id)).get("description",""))
+		var row := HBoxContainer.new(); row.add_theme_constant_override("separation",8); tile.add_child(row)
+		var swatch := ColorRect.new(); swatch.color = Materials.color(String(id)); swatch.custom_minimum_size = Vector2(14,14); swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(swatch)
+		var info := VBoxContainer.new(); row.add_child(info)
+		info.add_child(label("%s ×%d" % [Materials.material_name(String(id)),int(campaign.materials[id])],14,THEME.IVORY))
+		info.add_child(label("Quest material" if String(Materials.material(String(id)).get("kind","")) == "quest" else "Crafting material",11,THEME.MUTED))
+		grid.add_child(tile)
+
 func _pantry_section() -> void:
 	var eaters := HearthUpkeep.diners(campaign).size()
 	_heading("Pantry","%d at the table · %d rations · lasts about %d days" % [eaters,campaign.supplies,HearthUpkeep.days_left(campaign)])

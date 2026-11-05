@@ -967,9 +967,9 @@ func _close_top_modal() -> void:
 	elif expedition_backdrop.visible: _close_modal(expedition_backdrop)
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
 
-## The pause menu is the main menu: it opens over the Hearth, shops and dialogue too.
+## Esc opens the pause menu only from the tavern floor itself (Esc closes any open window first).
 func _can_open_pause_menu() -> bool:
-	return true
+	return not _modal_visible() and not departure_running and not arrivals_running
 
 func _modal_visible() -> bool:
 	return (visitor_panel!=null and visitor_panel.visible) or active_contest!=null or (management != null and management.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)

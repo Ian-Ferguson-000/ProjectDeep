@@ -54,8 +54,8 @@ in `scripts/slasher/slasher_active_effects.gd` (`use()`, plus an icon in
 
 The main screen exposes a persistent **Dev Mode** toggle for combat testing. It
 keeps normal mechanics intact while active-item recharge runs at 5× speed and
-ordinary enemy loot rolls are tripled. Ordinary enemies gain a 25% active-item
-drop chance, while elite and boss active-item drops are guaranteed. Picking up one of these enemy drops opens
+ordinary enemy loot rolls are tripled. Enemies no longer drop active items at all
+(docs/Materials.md); active items come from chests, pedestals and traders. Picking up one opens
 a three-card choice of unique, class-valid active items. An item swapped onto the
 ground remains an exact pickup instead of generating another choice. Dev Mode is
 disabled by default.

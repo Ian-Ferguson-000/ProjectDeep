@@ -40,6 +40,9 @@ var potions: int = 0
 var floor_seed: int = 1001
 ## Set before starting a run to play a chosen seed (0 = random); used once.
 var requested_seed: int = 0
+## Crafting and quest materials picked up this run ({id: count}); banked at the
+## Hearth if the adventurer comes home alive (Materials).
+var materials: Dictionary = {}
 ## Whether the current run was started from a chosen seed.
 var run_seeded := false
 ## The seed the run started with (floor_seed shifts when a run carries on into
@@ -76,6 +79,8 @@ var trader_sold: Dictionary:
 var consumable_items: Array[String] = []
 var pending_shop_consumables: Array[String] = []
 var enemy_defeat_counts:Dictionary={}
+## The most health each enemy has been seen with when defeated (for the bestiary).
+var enemy_health_seen:Dictionary={}
 var slasher_endless_mode:=false
 ## Run clock when no expedition is active (quick play and tests).
 var local_run_seconds:=0.0
@@ -94,7 +99,7 @@ func attach_campaign(value: CampaignState) -> void:
 
 func sync_campaign_runtime() -> void:
 	if campaign == null: return
-	campaign.legacy_runtime = {"completed_dungeons":completed_dungeons.duplicate(true),"forest_cleared":forest_cleared,"completed_runs":completed_runs,"deaths":deaths,"merchant_progress":merchant_progress.duplicate(true),"merchant_offer_stock":merchant_offer_stock.duplicate(true),"purchased_favor_offers":purchased_favor_offers.duplicate(true),"enemy_defeat_counts":enemy_defeat_counts.duplicate(true)}
+	campaign.legacy_runtime = {"completed_dungeons":completed_dungeons.duplicate(true),"forest_cleared":forest_cleared,"completed_runs":completed_runs,"deaths":deaths,"merchant_progress":merchant_progress.duplicate(true),"merchant_offer_stock":merchant_offer_stock.duplicate(true),"purchased_favor_offers":purchased_favor_offers.duplicate(true),"enemy_defeat_counts":enemy_defeat_counts.duplicate(true),"enemy_health_seen":enemy_health_seen.duplicate(true)}
 
 func autosave_on_floor_entry() -> bool:
 	if campaign != null and campaign.expedition.active:
@@ -116,7 +121,7 @@ func run_snapshot() -> Dictionary:
 	return {"floor":current_floor,"floor_seed":floor_seed,"gold":gold,"keys":keys,"potions":potions,"class_resource":class_resource,
 		"field_run":var_to_str(field_run),"starter_reward_claimed":starter_reward_claimed,"slasher_endless_mode":slasher_endless_mode,
 		"slasher_campaign_boss_cleared":slasher_campaign_boss_cleared,"slasher_merchant_interlude":slasher_merchant_interlude,
-		"run_seed":run_seed,"run_seeded":run_seeded}
+		"run_seed":run_seed,"run_seeded":run_seeded,"materials":materials.duplicate()}
 
 ## Puts a saved snapshot back when a saved expedition is continued. Only used
 ## when it belongs to the floor being resumed.
@@ -131,13 +136,14 @@ func restore_run_snapshot(snapshot: Dictionary) -> bool:
 	slasher_campaign_boss_cleared = bool(snapshot.get("slasher_campaign_boss_cleared",slasher_campaign_boss_cleared))
 	slasher_merchant_interlude = bool(snapshot.get("slasher_merchant_interlude",slasher_merchant_interlude))
 	run_seed = int(snapshot.get("run_seed",run_seed)); run_seeded = bool(snapshot.get("run_seeded",run_seeded))
+	materials = Dictionary(snapshot.get("materials",materials)).duplicate()
 	return true
 
 func _restore_campaign_runtime() -> void:
 	if campaign == null or campaign.legacy_runtime.is_empty(): return
 	var data := campaign.legacy_runtime
 	completed_dungeons = Dictionary(data.get("completed_dungeons", {})).duplicate(true); forest_cleared = bool(data.get("forest_cleared", false)); completed_runs = int(data.get("completed_runs", 0)); deaths = int(data.get("deaths", 0))
-	merchant_progress = Dictionary(data.get("merchant_progress", {})).duplicate(true); merchant_offer_stock = Dictionary(data.get("merchant_offer_stock", {})).duplicate(true); purchased_favor_offers = Dictionary(data.get("purchased_favor_offers", {})).duplicate(true); enemy_defeat_counts = Dictionary(data.get("enemy_defeat_counts", {})).duplicate(true)
+	merchant_progress = Dictionary(data.get("merchant_progress", {})).duplicate(true); merchant_offer_stock = Dictionary(data.get("merchant_offer_stock", {})).duplicate(true); purchased_favor_offers = Dictionary(data.get("purchased_favor_offers", {})).duplicate(true); enemy_defeat_counts = Dictionary(data.get("enemy_defeat_counts", {})).duplicate(true); enemy_health_seen = Dictionary(data.get("enemy_health_seen", {})).duplicate(true)
 
 func get_active_party_ids() -> Array[String]:
 	var result:Array[String]=[]
@@ -241,8 +247,9 @@ func _sync_active_profile_to_character() -> void:
 	member.inventory.clear()
 	for item in inventory_items: member.inventory.append(String(item.get("id", "")))
 
-func record_enemy_defeat(enemy_id:String)->int:
+func record_enemy_defeat(enemy_id:String,max_health:int=0)->int:
 	if enemy_id.is_empty():return 0
+	if max_health>int(enemy_health_seen.get(enemy_id,0)):enemy_health_seen[enemy_id]=max_health
 	var count:=int(enemy_defeat_counts.get(enemy_id,0))+1;enemy_defeat_counts[enemy_id]=count
 	var member:=get_active_character()
 	if member!=null:member.kills+=1
@@ -250,6 +257,7 @@ func record_enemy_defeat(enemy_id:String)->int:
 
 func get_enemy_defeat_count(enemy_id:String)->int:return int(enemy_defeat_counts.get(enemy_id,0))
 func is_enemy_discovered(enemy_id:String)->bool:return get_enemy_defeat_count(enemy_id)>0
+func get_enemy_health_seen(enemy_id:String)->int:return int(enemy_health_seen.get(enemy_id,0))
 func get_enemy_journal_snapshot()->Dictionary:return enemy_defeat_counts.duplicate(true)
 
 func _init() -> void:
@@ -324,6 +332,7 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	# rooms, foes, chests, the trader and drops all come from it. Saved with the
 	# expedition so a resumed run keeps its floors. See RunSeed.
 	run_seeded = requested_seed > 0
+	materials = {}
 	floor_seed = requested_seed if run_seeded else RunSeed.random_value()
 	run_seed = floor_seed
 	requested_seed = 0
@@ -515,7 +524,7 @@ func finish_run(outcome: String, message: String) -> void:
 		_clear_permanent_inventory_for_active_class()
 	if campaign != null and campaign.expedition.active:
 		if outcome == "victory": campaign.record_dungeon_clear(active_dungeon_id)
-		campaign.settle_expedition(campaign.expedition.expedition_id, outcome, {"headline":message.split("\n", false)[0] if not message.is_empty() else message})
+		campaign.settle_expedition(campaign.expedition.expedition_id, outcome, {"headline":message.split("\n", false)[0] if not message.is_empty() else message,"materials":materials.duplicate()})
 		if campaign.is_tutorial_complete(): restore_completed_tutorial_health()
 	_sync_crypt_unlock()
 

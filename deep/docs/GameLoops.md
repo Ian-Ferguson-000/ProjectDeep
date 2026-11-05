@@ -37,11 +37,18 @@ them too. Progress shows on the guardian choice screen.
 
 ## Enemy drops (`data/enemy_drops.json`)
 
-Low to begin with: about a 22% chance per kill of anything at all. That's mostly
-small gold piles, with 3% potions, 2% keys and 0.4% relics. Elites drop four
-times as often; sporelings, which come in swarms, less. Bosses don't roll
-(they have their own rewards). Drop luck from unlocks raises everything, up to
-×2.5. A relic drop gives a random relic your class can use from the unlocked pool.
+Enemies drop **materials**, not items (docs/Materials.md):
+
+- **Basic enemies** (including the tougher floor-3+ versions): only a crafting
+  or quest material for their family, 30% of the time (`basic_material_chance`).
+- **Mini bosses**: always two of their trophy, plus a 30% chance of a relic
+  (`mini_boss_item_chance`). Never an active item.
+- **Bosses**: their trophy (`boss_materials`), on top of their own rewards.
+
+Drop luck from unlocks multiplies the chances, up to ×2.5. A relic drop gives a
+random relic your class can use from the unlocked pool. No enemy ever drops an
+active item; those come from chests, pedestals and traders. The older keys in
+the file (gold piles, potions, keys) are no longer read by kills.
 
 ## Guardian choice screen
 
