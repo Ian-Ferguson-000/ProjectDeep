@@ -183,37 +183,22 @@ func _run() -> void:
 	_expect(previous_player.get_ref()==null,"Room rebuild retained its old combat player")
 	_expect(scene.player.fighter_frenzy_left>0 and scene.player.fighter_frenzy_incoming==2,"Room transition erased Demon frenzy commitment")
 	scene.player.invulnerable=0;scene.player.health=1000;scene.player.max_health=1000
+	scene.player.dodge_chance=0.0
 	scene.player.receive_damage(10,Vector2.ZERO)
-	_expect(scene.player.health==980,"Restored room frenzy failed to double actual incoming damage")
+	_expect(scene.player.health==998,"Restored room frenzy failed to double a 1-heart hit to 2 (health %d)"%scene.player.health)
 	scene.player.invulnerable=9999
-	# Elite/boss world drops are acquired immediately, fully charged, replacing
-	# whatever was held just like a treasure pedestal pickup.
-	# Find deterministic successful rolls without changing authored drop rates.
-	# Then kill real scene enemies, proving defeated -> drop roll -> world loot.
-	for boss_drop in [false,true]:
-		for expected_id in FIGHTER_ACTIVE_IDS:
-			var winning_seed:=-1
-			var probe:=RandomNumberGenerator.new()
-			for candidate_seed in 10000:
-				probe.seed=candidate_seed
-				if scene.roll_class_active_item("warrior",not boss_drop,boss_drop,probe)==expected_id:
-					winning_seed=candidate_seed;break
-			_expect(winning_seed>=0,"No authored drop roll can select "+expected_id)
-			if winning_seed<0:continue
+	# Enemies never drop active items (docs/Materials.md): elites, mini bosses and
+	# bosses drop materials (and mini bosses sometimes a relic) instead.
+	for kind in ["elite","mini_boss","boss"]:
+		for attempt in 12:
 			var drop_victim:=_dummy(scene,Vector2(120,0))
-			drop_victim.elite=not boss_drop;drop_victim.boss=boss_drop;drop_victim.health=1
+			drop_victim.elite=kind=="elite";drop_victim.mini_boss=kind=="mini_boss";drop_victim.boss=kind=="boss";drop_victim.health=1
 			scene.enemies_remaining=maxi(2,scene.enemies_remaining)
 			var loot_before:int=scene.loot_nodes.size()
-			scene.drop_rng().seed=winning_seed
 			drop_victim.receive_attack({"damage":100000,"damage_type":"physical"},scene.player)
-			var actual_drop:Area2D=null
+			_expect(drop_victim.dead,"The %s dummy didn't die"%kind)
 			for index in range(loot_before,scene.loot_nodes.size()):
-				var candidate:Area2D=scene.loot_nodes[index]
-				if candidate.get_meta("kind","")=="active_item" and candidate.get_meta("item_id","")==expected_id:actual_drop=candidate
-			_expect(drop_victim.dead and actual_drop!=null,"Real %s death did not drop %s"%["boss" if boss_drop else "elite",expected_id])
-			if actual_drop!=null:
-				scene._collect_loot(actual_drop)
-				_expect(ActiveItems.held(state)==expected_id and ActiveItems.is_ready(state),"Enemy-dropped fighter item was not usable: "+expected_id)
+				_expect(scene.loot_nodes[index].get_meta("kind","")!="active_item","A %s kill dropped an active item"%kind)
 	ActiveItems.give(state,"umbral_bow")
 	scene._spawn_fighter_active_drop(scene.player.global_position,"grim_reaver")
 	var dropped:Area2D=scene.loot_nodes.back();scene._collect_loot(dropped)
@@ -227,17 +212,8 @@ func _run() -> void:
 	scene.enemies_remaining=maxi(2,scene.enemies_remaining)
 	var dev_loot_before:int=scene.loot_nodes.size()
 	dev_boss.receive_attack({"damage":100000,"damage_type":"physical"},scene.player)
-	var dev_boss_drop:Area2D=null
 	for index in range(dev_loot_before,scene.loot_nodes.size()):
-		if scene.loot_nodes[index].get_meta("kind","")=="active_item":dev_boss_drop=scene.loot_nodes[index]
-	_expect(dev_boss_drop!=null,"Dev boss death produced no active-item drop")
-	if dev_boss_drop!=null:
-		_expect(Array(dev_boss_drop.get_meta("choices",[])).size()==3,"Dev boss death did not author three drop choices")
-		scene._collect_loot(dev_boss_drop)
-		_expect(scene.relic_modal.visible and scene.relic_modal.choice_buttons.size()==3,"Actual Dev boss loot did not open three selection cards")
-		if not scene.relic_modal.active_item_choices.is_empty():
-			var dev_boss_choice:String=scene.relic_modal.active_item_choices[0];scene._claim_relic(dev_boss_choice)
-			_expect(ActiveItems.held(state)==dev_boss_choice and ActiveItems.is_ready(state),"Actual Dev boss choice did not equip a charged item")
+		_expect(scene.loot_nodes[index].get_meta("kind","")!="active_item","A boss dropped an active item in Dev Mode")
 	ActiveItems.give(state,"sentinel_shield")
 	# Even a drop without precomputed choice metadata must expand on pickup.
 	scene._spawn_active_item_drop(scene.player.global_position,"demon_blade")
