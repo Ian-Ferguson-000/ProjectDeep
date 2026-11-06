@@ -1,6 +1,8 @@
 extends SceneTree
 
-func _initialize() -> void: call_deferred("_run")
+func _initialize() -> void:
+	RunState.coin_value_override = 1  # cut arithmetic in plain gold
+	call_deferred("_run")
 
 func _run() -> void:
 	# Runs are solo for now (progression.json max_party_size); this test covers the

@@ -416,7 +416,7 @@ func _process(delta:float)->void:
 			elif run_state.keys<=0:_show_message("The chest is locked. Find a key.")
 			else:run_state.keys-=1;nearby_chest.open_chest();_show_message("The key turns. The chest opens.")
 	for loot in loot_nodes.duplicate():
-		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<30:_collect_loot(loot);loot_nodes.erase(loot)
+		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<30 and _can_collect(loot):_collect_loot(loot);loot_nodes.erase(loot)
 	if run_state.slasher_merchant_interlude:
 		for offer_area:Area2D in merchant_offer_nodes:
 			if is_instance_valid(offer_area) and player.global_position.distance_to(offer_area.global_position)<42:
@@ -451,7 +451,10 @@ func _process(delta:float)->void:
 	_refresh_hud()
 
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
-	run_state.record_enemy_defeat(enemy.visual_id,int(enemy.max_health));enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
+	# Isaac style: kills give no coins; champions drop a pickup.
+	run_state.record_enemy_defeat(enemy.visual_id,int(enemy.max_health));enemies_remaining=maxi(0,enemies_remaining-1)
+	if enemy.champion:
+		for i in int(GameBalance.get_slasher_balance("pickups").get("champion_drops",1)):spawn_isaac_pickup(enemy.global_position+Vector2(randf_range(-14,14),randf_range(-10,10)))
 	if player.item_runtime:player.item_runtime.handle_event({"trigger":"boss_kill" if enemy.boss else ("elite_kill" if enemy.elite else "enemy_kill"),"enemy":enemy})
 	for unlock in run_state.note_kill(String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)):
 		AudioCue.play_from(self,"reward",false);_show_message("Unlocked: %s · %s"%[String(unlock.name),String(unlock.text)],4.0)
@@ -584,7 +587,11 @@ func _collect_loot(loot:Area2D)->void:
 		"potion":
 			if run_state.add_consumable("healing_potion"):AudioCue.play_from(loot,"pickup");_show_message("Healing potion collected.")
 			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
-		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
+		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Key collected.")
+		"heart","half_heart":
+			AudioCue.play_from(loot,"heal");player.heal(SimpleCombat.units_per_heart() if String(loot.get_meta("kind"))=="heart" else 1)
+		"soul_heart":
+			AudioCue.play_from(loot,"pickup");run_state.add_soul_hearts(1.0);_refresh_hud()
 		"material":
 			var material_id:=String(loot.get_meta("material_id",""))
 			Materials.add(run_state.materials,material_id);AudioCue.play_from(loot,"pickup")
@@ -726,6 +733,45 @@ func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	if not material_id.is_empty() and drop_rng().randf()<chance:_spawn_material_drop(spot,material_id)
 
 ## A small pouch of a crafting or quest material (data/materials.json).
+# ---------------------------------------------------------------- Isaac pickups
+
+## Red hearts stay on the floor while you're at full health; soul hearts while
+## you're at the heart cap.
+func _can_collect(loot:Area2D)->bool:
+	match String(loot.get_meta("kind","gold")):
+		"heart","half_heart":return player.health<player.max_health
+		"soul_heart":return player.max_health+run_state.soul_health<SimpleCombat.max_health_units()
+	return true
+
+## One random pickup (slasher_balance.json pickups): a coin, a red or half
+## heart, a soul heart or a key. kind forces one.
+func spawn_isaac_pickup(world_position:Vector2,kind:String="")->void:
+	var table:Dictionary=GameBalance.get_slasher_balance("pickups");var rng:=drop_rng()
+	if kind.is_empty():kind=String(_weighted(Dictionary(table.get("weights",{"coin":1})),rng))
+	match kind:
+		"coin":
+			var value:=int(String(_weighted(Dictionary(table.get("coin_values",{"1":1})),rng)))
+			_spawn_gold_drop(world_position,value)
+			if value>1:for node in loot_nodes:
+				if is_instance_valid(node) and node.global_position==world_position:node.scale=Vector2.ONE*(1.15 if value==5 else 1.3);node.modulate=Color("#d7e6ff") if value==5 else Color("#ffe27a")
+		"heart":_spawn_pickup_drop("half_heart" if rng.randf()<float(table.get("half_heart_chance",0.4)) else "heart",world_position)
+		_:_spawn_pickup_drop(kind,world_position)
+
+## Clearing a fight: a chance of one pickup (more with luck).
+func roll_room_clear_pickup(world_position:Vector2)->void:
+	var table:Dictionary=GameBalance.get_slasher_balance("pickups")
+	var luck:float=player.item_runtime.conversion("luck") if is_instance_valid(player) and player.item_runtime else 0.0
+	if drop_rng().randf()<float(table.get("room_clear_chance",0.6))+luck*float(table.get("luck_per_point",0.05)):spawn_isaac_pickup(world_position)
+
+static func _weighted(weights:Dictionary,rng:RandomNumberGenerator)->Variant:
+	var total:=0.0
+	for key in weights:total+=float(weights[key])
+	var roll:=rng.randf()*total
+	for key in weights:
+		roll-=float(weights[key])
+		if roll<=0.0:return key
+	return weights.keys().back() if not weights.is_empty() else ""
+
 ## The champion roll for a foe, from the floor seed, room and spot.
 func _champion_roll(world_position:Vector2)->float:
 	var rng:=RandomNumberGenerator.new();rng.seed=hash("%d:%d:%d:%s:champion"%[run_state.get_current_floor_seed(),run_state.current_floor,int(run_state.field_run.get("current_room",0)) if run_state.field_run is Dictionary else 0,str(world_position.round())])
@@ -828,6 +874,8 @@ func _show_floor_banner()->void:
 
 func _refresh_hud()->void:
 	if not is_instance_valid(player) or objective_label==null:return
+	# A heart bought from the trader heals the adventurer.
+	if run_state.pending_heal>0:var bought:=run_state.pending_heal;run_state.pending_heal=0;player.heal(bought)
 	_store_active_slasher_state();_refresh_party_strip()
 	var depth_text:String="ENDLESS CYCLE %d · FLOOR %d"%[run_state.get_slasher_cycle_number(),run_state.current_floor] if run_state.slasher_endless_mode else "FLOOR %d/%d"%[run_state.current_floor,run_state.max_floors]
 	var encounter_text:String="BOSS" if bool(layout.get("is_boss_floor",false)) else ("ELITE GUARDIAN" if bool(layout.get("is_elite_floor",false)) else ("GATE OPEN" if exit_open else "%d FOES"%enemies_remaining))

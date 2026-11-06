@@ -528,9 +528,8 @@ func _mark_room_cleared(fought: bool) -> void:
 		# Clearing a fight charges the active item by one pip.
 		ActiveItems.add_room_charge(run_state,1)
 		_refresh_active_hud()
-		# TUNING: a small purse for every room fought through, on top of enemy rewards.
-		var amount := run_state.apply_reward_bonus(int(Dictionary(Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{})).get("room_count",{})).get("room_clear_gold",3)),"gold")
-		run_state.gold += amount
+		# Isaac style: a chance of one pickup in the middle of the room.
+		roll_room_clear_pickup(sanitize_player_position(_world(Vector2i(layout.get("center",layout.start)))))
 
 ## Loot caches appear once a room is safe and stay collected when you come back.
 func _spawn_loot() -> void:

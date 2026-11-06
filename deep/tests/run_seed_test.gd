@@ -12,7 +12,9 @@ const FOREST := preload("res://scenes/slasher/SlasherForest.tscn")
 const SLOT := 3
 var failures: Array[String] = []
 
-func _initialize() -> void: _run.call_deferred()
+func _initialize() -> void:
+	RunState.coin_value_override = 1  # secured-gold arithmetic in plain gold
+	_run.call_deferred()
 
 func _expect(ok: bool, message: String) -> void:
 	if not ok: failures.append(message)

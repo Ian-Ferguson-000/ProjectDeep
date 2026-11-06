@@ -1416,5 +1416,24 @@
       "sprite_offset_y": -30,
       "sprite_scale": 1.2
     }
+  },
+  "pickups": {
+    "how_to_edit": "Isaac-style pickups. Clearing a room has room_clear_chance (+luck_per_point for each point of luck) to drop one pickup, picked by weights. Champions always drop one. coin_values: odds of a penny (1), nickel (5) or dime (10). heart: a red heart heals 1 heart, a half heart half; red hearts stay on the floor while you're at full health. soul_heart: +1 soul heart. Run coins bank at the Hearth at gold_per_coin each.",
+    "room_clear_chance": 0.6,
+    "luck_per_point": 0.05,
+    "weights": {
+      "coin": 45,
+      "heart": 22,
+      "soul_heart": 7,
+      "key": 14
+    },
+    "coin_values": {
+      "1": 85,
+      "5": 12,
+      "10": 3
+    },
+    "half_heart_chance": 0.4,
+    "champion_drops": 1,
+    "gold_per_coin": 10
   }
 }

@@ -37,6 +37,8 @@ var current_health: int = 12
 ## Soul hearts, in half hearts: extra health on top of your red hearts that
 ## takes damage first and can't be healed back (SimpleCombat).
 var soul_health: int = 0
+## Healing bought from the trader, applied by the dungeon to the adventurer.
+var pending_heal: int = 0
 var max_health: int = 12
 var gold: int = 0
 var keys: int = 0
@@ -790,6 +792,14 @@ func get_contextual_item_modifier(stat_id: String, context: Dictionary = {}) -> 
 			total += int(floor(float(context.get("range_bonus", 0)) * float(effect["penetration_from_range"])))
 	return total
 
+## Run coins are scarce (Isaac style); each is worth this much gold when banked
+## at the Hearth (slasher_balance.json pickups.gold_per_coin).
+static func coin_value() -> int:
+	if coin_value_override > 0: return coin_value_override
+	return maxi(1,int(GameBalance.get_slasher_balance("pickups").get("gold_per_coin",1)))
+## Tests of the Hearth's cut arithmetic set this to 1 (a coin = 1 gold).
+static var coin_value_override := 0
+
 func apply_reward_bonus(base_amount: int, reward_type: String) -> int:
 	var modifier_id := "%s_bonus_percent" % reward_type
 	var bonus_percent: int = get_active_item_modifier_value(modifier_id)
@@ -907,7 +917,15 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 		var sold := trader_sold.has(offer_id)
 		result.append({"offer_id":offer_id,"kind":"item","item_id":item_id,"gold":SimpleCombat.price(int(prices.get(slots[index],100)),int(get_stats().get("cha",10))),"base_gold":int(prices.get(slots[index],100)),"favor":0,"min_rank":0,"unlocked":true,"claimed":false,
 			"name":String(item.get("name",item_id)),"description":String(item.get("description","")),"rules_text":_sentence(GameBalance.get_slasher_item_rules_text(item_id).trim_prefix("Slasher: ")),"rarity":String(item.get("rarity",slots[index])),
-			"max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":index + 1,"bonus_slot":index >= int(settings.get("common_slots",3))})
+			"max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":index + 1,"bonus_slot":index >= int(settings.get("base_slots",settings.get("common_slots",3)))})
+	# Isaac shop pickups: always a red heart and a key on the counter.
+	var pickup_index := 0
+	for pickup in Array(settings.get("pickup_offers",[])):
+		var offer_id := "trader:%d:pickup%d" % [seed_value,pickup_index]; pickup_index += 1
+		var sold := trader_sold.has(offer_id)
+		var price := int(Dictionary(pickup).get("price",5))
+		result.append({"offer_id":offer_id,"kind":String(Dictionary(pickup).get("kind","key")),"item_id":"","gold":SimpleCombat.price(price,int(get_stats().get("cha",10))),"base_gold":price,"favor":0,"min_rank":0,"unlocked":true,"claimed":false,
+			"name":String(Dictionary(pickup).get("name","Pickup")),"description":"","rules_text":"","rarity":"pickup","max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":slots.size() + pickup_index,"bonus_slot":false})
 	return result
 
 func get_merchant_offers(merchant_id: String, location: String) -> Array[Dictionary]:
@@ -1004,6 +1022,8 @@ func purchase_merchant_offer(merchant_id: String, offer_id: String, location: St
 		"key":
 			if location == "tavern": pending_shop_keys += 1
 			else: keys += 1
+		"heart":
+			pending_heal += SimpleCombat.units_per_heart()
 		_:
 			var item_id := String(chosen.get("item_id", ""))
 			if location == "tavern": pending_shop_items.append(item_id)

@@ -669,10 +669,10 @@ func settle_expedition(run_id:int,outcome:String,result_data:Dictionary={}) -> D
 	if expedition.expedition_id!=run_id:return {"ok":false,"error":"The expedition ID does not match.","logs":[]}
 	var tutorial_run:=expedition.tutorial_run;var party:=expedition.party_ids.duplicate();var dungeon_id:=expedition.dungeon_id;var resolved_depth:=expedition.floor;var logs:Array[String]=[];var retired_names:Array[String]=[];var returned_names:Array[String]=[]
 	if outcome=="victory":
-		banked_gold+=expedition.carried_gold;relic_essence+=expedition.carried_relic_essence;lifetime_relic_essence+=expedition.carried_relic_essence
+		banked_gold+=expedition.carried_gold*(1 if expedition.deployment_type=="automated" else RunState.coin_value());relic_essence+=expedition.carried_relic_essence;lifetime_relic_essence+=expedition.carried_relic_essence
 		for relic_id in expedition.carried_relics:
 			if not banked_relics.has(relic_id):banked_relics.append(relic_id)
-		logs.append("Banked %d gold and %d relic essence."%[expedition.carried_gold,expedition.carried_relic_essence])
+		logs.append("Banked %d gold and %d relic essence."%[expedition.carried_gold*(1 if expedition.deployment_type=="automated" else RunState.coin_value()),expedition.carried_relic_essence])
 		if not expedition.carried_relics.is_empty():logs.append("Banked relics: %s."%", ".join(expedition.carried_relics))
 	contribution+=expedition.carried_contribution
 	for character_id in party:

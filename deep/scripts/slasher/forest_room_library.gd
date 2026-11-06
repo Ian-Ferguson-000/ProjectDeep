@@ -176,7 +176,7 @@ static func build_layout(template_data: Dictionary, open_doors: Array, seed_valu
 		"enemy_markers":enemy_markers,"elite_markers":elite_markers,"loot_spawns":loot_spawns,
 		"enemy_spawns":[],
 		"doors":doors,"door_slots":slots,
-		"start":Vector2i(markers.get("start",center)),
+		"start":Vector2i(markers.get("start",center)),"center":center,
 		"exit":Vector2i(markers.get("gate",Vector2i(-100,-100))),
 		"merchant":Vector2i(markers.get("merchant",Vector2i(-100,-100))),
 		"treasure":Vector2i(markers.get("treasure",Vector2i(-100,-100))),

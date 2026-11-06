@@ -2,7 +2,9 @@ extends SceneTree
 
 var failures: Array[String] = []
 
-func _initialize() -> void: call_deferred("run")
+func _initialize() -> void:
+	RunState.coin_value_override = 1  # this test checks the cut arithmetic in plain gold
+	call_deferred("run")
 
 func check(value: bool, message: String) -> void:
 	if not value: failures.append(message)
