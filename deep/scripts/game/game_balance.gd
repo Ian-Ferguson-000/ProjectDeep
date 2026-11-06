@@ -271,6 +271,10 @@ static func get_slasher_item_effects(item_id:String)->Dictionary:
 			"range":conversions["range_pixels"]=value*48.0
 			"move_speed":conversions["speed_multiplier"]=float(conversions.get("speed_multiplier",1.0))*(1.0+value/100.0)
 			"attack_speed":conversions["attack_speed"]=value
+			# Real-time stats (docs/Items.md).
+			"damage","boss_damage","block_percent","dodge_percent":conversions[key]=float(conversions.get(key,0.0))+value
+			"cooldown_percent":conversions["cooldown_reduction"]=minf(0.35,float(conversions.get("cooldown_reduction",0.0))+value/100.0)
+			"precision_hits":conversions["precision_hits"]=value
 			_:conversions[key]=value
 	var authored_conversions:Dictionary=Dictionary(record.get("conversions",{}));authored_conversions.merge(conversions,true);record["conversions"]=authored_conversions
 	if not record.has("rules"):
@@ -294,15 +298,19 @@ static func _conversion_phrase(key:String,value:float)->String:
 		"cooldown_reduction":return "abilities recharge %s faster" % pct.call(value)
 		"speed_multiplier":return "move %s faster" % pct.call(value-1.0)
 		"mobility_multiplier","defense_window_bonus":return ""
-		"precision_hits":return "every %s attack lands a precision hit (+25%% damage)" % _ordinal(int(value))
 		"elite_damage_multiplier":return "+%s damage to elites and bosses" % pct.call(value-1.0)
 		"range_pixels":return "longer reach and spell range"
 		"attack_speed":return "basic attacks %d%% faster" % int(value)
 		"potion_heal_bonus":return "potions heal %d more" % int(value)
 		"max_health":return "+%d heart%s" % [int(value),"" if int(value)==1 else "s"]
 		"dex":return "+%d Dexterity (you move faster)" % int(value)
+		"damage":return "+%d damage on every hit" % int(value)
+		"boss_damage":return "+%d damage to elites and bosses" % int(value)
+		"block_percent":return "%d%% chance to block a hit" % int(value)
+		"dodge_percent":return "+%d%% dodge chance" % int(value)
+		"precision_hits":return "every %s hit does +1 damage" % _ordinal(int(value))
 		"gold_bonus_percent":return "+%d%% gold found" % int(value)
-		"xp_bonus_percent":return ""
+		"xp_bonus_percent":return "+%d%% XP (only while levelling is on)" % int(value)
 		"armor_class":return "+%d armor" % int(value)
 	return "%s %+d" % [key.replace("_"," ").capitalize(),int(value)]
 
@@ -657,6 +665,10 @@ static func _load_pickup_items(source: Dictionary) -> void:
 	_slasher_item_effects = Dictionary(source.get("drop_settings", {})).duplicate(true)
 	_slasher_item_effects["items"] = combat
 	_class_groups = Dictionary(source.get("class_groups", {})).duplicate(true)
+	# Items described only by their stats read those stats in real-time terms.
+	for item_id in catalog:
+		if String(Dictionary(catalog[item_id]).get("rules_text","")).is_empty():
+			catalog[item_id]["rules_text"] = get_slasher_item_rules_text(String(item_id)).trim_prefix("Slasher: ")
 
 ## "melee" or "ranged" for a class, from pickup_items.json class_groups.
 static func get_class_item_group(class_id: String) -> String:

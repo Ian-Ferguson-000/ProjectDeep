@@ -560,7 +560,8 @@ func refresh_dexterity()->void:
 	dexterity=int(run_state.get_stats().get("dex",10))+int(run_state.get_active_item_modifiers().get("dex",0))
 	if not SimpleCombat.enabled():return
 	speed=SimpleCombat.move_speed(dexterity)
-	dodge_chance=SimpleCombat.dodge_chance(dexterity)
+	# Dodge from Dexterity, plus items' dodge_percent (all capped at 50%).
+	dodge_chance=minf(0.5,SimpleCombat.dodge_chance(dexterity)+(item_runtime.conversion("dodge_percent")/100.0 if item_runtime else 0.0))
 
 ## Hit size for an attack: its own damage_stat (a summon's WIS), else the weapon's.
 func simple_base_for(attack:Dictionary)->int:
@@ -623,11 +624,13 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null,enem
 		prevented+=int(mage_kit.absorb_damage(maxi(0,amount-prevented)))
 	if is_instance_valid(mage_combo_effects):prevented+=mage_combo_effects.absorb_damage(maxi(0,amount-prevented))
 	if is_instance_valid(kit_buffs):prevented+=kit_buffs.absorb_damage(maxi(0,amount-prevented))
-	if consumable_aegis>0:
+	if consumable_aegis>0 and not SimpleCombat.enabled():
 		var aegis_prevented:int=mini(consumable_aegis,maxi(0,amount-prevented));consumable_aegis-=aegis_prevented;prevented+=aegis_prevented
 	var final:=maxi(0,amount-prevented)
 	# Simple combat: anything that gets through does exactly one heart.
 	if final>0 and SimpleCombat.enabled():final=SimpleCombat.enemy_hit_damage()
+	# Warding draughts: each point blocks one whole hit.
+	if final>0 and SimpleCombat.enabled() and consumable_aegis>0:consumable_aegis-=1;prevented+=final;final=0
 	if item_runtime:
 		var mitigation:Dictionary=item_runtime.mitigate_damage(final);prevented+=int(mitigation.prevented);final=int(mitigation.damage)
 	# All incoming combat/environmental damage is doubled after mitigation;
@@ -808,7 +811,7 @@ func apply_consumable(effects:Dictionary)->void:
 	if int(effects.get("extra_actions",0))>0:
 		for key:Variant in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-1.0)
 	if float(effects.get("next_attack_damage_multiplier",1.0))>1.0:next_attack_multiplier=float(effects.next_attack_damage_multiplier)
-	if int(effects.get("next_attack_accuracy",0))>0 and item_runtime:item_runtime.precision_count=maxi(item_runtime.precision_count,5)
+	if int(effects.get("next_attack_accuracy",0))>0 and item_runtime:item_runtime.force_precision=true
 	resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
 
 func apply_movement_slow(multiplier:float,duration:float)->void:

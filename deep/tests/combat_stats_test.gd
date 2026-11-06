@@ -28,7 +28,8 @@ func _initialize() -> void:
 		_expect(not seen_rules.has(rules), "%s repeats another item's rules" % item_id, failures)
 		seen_rules[rules] = item_id
 		var has_turn_effect: bool = item.get("effects", []) is Array and not item.get("effects", []).is_empty()
-		var has_combat_effect: bool = not GameBalance.get_slasher_item_effects(String(item_id)).get("procs", []).is_empty() or not item.get("modifiers", {}).is_empty()
+		var record: Dictionary = GameBalance.get_slasher_item_effects(String(item_id))
+		var has_combat_effect: bool = not record.get("procs", []).is_empty() or not item.get("modifiers", {}).is_empty() or String(record.get("trigger","passive")) != "passive" or bool(record.get("room_ward",false))
 		_expect(has_turn_effect or has_combat_effect, "%s has no mechanical effect" % item_id, failures)
 		var modifiers: Dictionary = item.get("modifiers", {})
 		for removed_stat in ["attack_bonus", "spell_power", "defense", "block_bonus"]:
@@ -36,14 +37,16 @@ func _initialize() -> void:
 	var quickstep := RunState.new()
 	quickstep.add_inventory_item("quickstep_charm", 1)
 	_expect(int(quickstep.get_active_item_modifiers().get("dex",0)) == 1, "Quickstep should add 1 Dexterity (walking speed)", failures)
-	_expect(quickstep.get_contextual_item_modifier("evasion", {"moved":true}) == 2, "Quickstep moved Evasion effect failed", failures)
+	# Real-time stats (turn-based rules are gone).
 	var keen := RunState.new()
 	keen.add_inventory_item("keen_edge_oil", 1)
-	_expect(keen.get_derived_stat("penetration") == 1, "Keen Edge static Penetration failed", failures)
-	_expect(keen.get_contextual_item_modifier("penetration", {"attack_index":0}) == 2, "Keen Edge first-attack Penetration failed", failures)
+	_expect(int(keen.get_active_item_modifiers().get("boss_damage",0)) == 1, "Keen Edge Oil should add +1 damage against elites and bosses", failures)
 	var mantle := RunState.new()
 	mantle.add_inventory_item("wyvernscale_mantle", 1)
-	_expect(mantle.get_derived_stat("aegis_poison") == 4, "Wyvernscale typed Aegis failed", failures)
+	_expect(int(mantle.get_active_item_modifiers().get("block_percent",0)) == 22, "Wyvernscale Mantle should give a 22% block chance", failures)
+	for item_id in items.keys():
+		for dead_stat in ["armor_class","threshold","accuracy","penetration","evasion","initiative_modifier","attack_power","spell_potency","aegis_fire","aegis_lightning","aegis_physical","aegis_poison"]:
+			_expect(not Dictionary(items[item_id].get("modifiers",{})).has(dead_stat), "%s still uses the turn-based stat %s" % [item_id,dead_stat], failures)
 	if failures.is_empty():
 		print("Layered combat stats and 52-item uniqueness validation passed.")
 		quit(0)

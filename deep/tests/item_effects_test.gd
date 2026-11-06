@@ -95,8 +95,9 @@ func _run() -> void:
 	# Elite bonus damage now applies (Giant-Bane Grip).
 	await _fresh_player("warrior",["giant_bane_grip"])
 	var elite := _enemy(Vector2(40,0)); elite.elite = true
-	var adjusted: Dictionary = player.item_runtime.adjust_for_target({"damage":100},elite)
-	_expect(int(adjusted.damage) > 100,"Elite damage bonus not applied")
+	var plain_foe := _enemy(Vector2(-40,0))
+	_expect(player.item_runtime.flat_bonus(elite,{}) == 2 and player.item_runtime.flat_bonus(plain_foe,{}) == 1,"Giant-Bane Grip should add +1 damage, +2 against elites")
+	_expect(player.item_runtime.flat_bonus(elite,{"item_proc":true}) == 0,"Item procs shouldn't get flat item damage")
 	_expect(int(player.item_runtime.adjust_for_target({"damage":100},_enemy(Vector2(0,200))).damage) == 100,"Elite bonus applied to a normal enemy")
 
 	# Periodic relics now tick (Chronomancer's Pin).
@@ -106,6 +107,38 @@ func _run() -> void:
 	player.item_runtime._process(8.1)
 	player.item_runtime._process(0.0)
 	_expect(float(player.cooldowns.special) < 5.0,"Chronomancer's Pin never shaved a cooldown")
+
+	# Real hits: +damage items add to the 1-4 hit, block items stop whole hits,
+	# Warding Draught soaks exactly one hit, True-Strike adds +1 to the next hit.
+	await _fresh_player("warrior",[])
+	var dummy := _enemy(Vector2(40,0)); dummy.max_health = 100; dummy.health = 100
+	dummy.receive_attack({"damage":player.simple_reference},player)
+	var plain_damage: int = 100 - dummy.health
+	await _fresh_player("warrior",["veterans_whetstone"])
+	var dummy2 := _enemy(Vector2(40,0)); dummy2.max_health = 100; dummy2.health = 100
+	dummy2.receive_attack({"damage":player.simple_reference},player)
+	_expect(100 - dummy2.health == plain_damage + 1,"Veteran's Whetstone didn't add +1 to a real hit (%d vs %d)" % [100 - dummy2.health,plain_damage])
+	player.apply_consumable({"next_attack_accuracy":8})
+	var struck: Dictionary = player.item_runtime.transform_attack({"damage":player.simple_reference},"basic")
+	_expect(bool(struck.get("precision_hit",false)),"True-Strike Tonic didn't make the next attack a precision hit")
+	await _fresh_player("warrior",["wyvernscale_mantle"])
+	player.item_runtime.conversions["block_percent"] = 100.0  # capped at 50%
+	player.dodge_chance = 0.0
+	var blocked := 0
+	for i in 200:
+		player.health = 3; player.invulnerable = 0
+		player.receive_damage(5,Vector2.ZERO)
+		if player.health == 3: blocked += 1
+	_expect(blocked > 60 and blocked < 140,"Block chance should block about half the hits at the 50%% cap (%d of 200)" % blocked)
+	await _fresh_player("warrior",[])
+	player.dodge_chance = 0.0; player.health = 3; player.invulnerable = 0
+	player.apply_consumable({"temporary_aegis":1})
+	player.receive_damage(5,Vector2.ZERO); player.invulnerable = 0
+	_expect(player.health == 3,"Warding Draught didn't block the next hit")
+	player.receive_damage(5,Vector2.ZERO)
+	_expect(player.health == 2,"Warding Draught blocked more than one hit")
+	await _fresh_player("warrior",["chronomancers_pin"])
+	_expect(player.dodge_chance >= 0.05,"Chronomancer's Pin didn't add dodge")
 
 	# Deft Hands: attacks recover 10% faster.
 	await _fresh_player("warrior",["deft_hands"])

@@ -566,7 +566,7 @@ func _use_potion()->bool:
 	var consumables:=run_state.get_consumables();var index:=consumables.find("healing_potion")
 	if index<0:_show_message("No healing potion available.");return false
 	AudioCue.play_from(player,"potion")
-	run_state.remove_consumable_at(index);run_state.note_potion();player.heal(6+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
+	run_state.remove_consumable_at(index);run_state.note_potion();player.heal(int(Dictionary(GameBalance.get_consumable("healing_potion").get("effects",{})).get("heal",1))+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
 	return true
 
 func _use_consumable_slot(index:int)->bool:

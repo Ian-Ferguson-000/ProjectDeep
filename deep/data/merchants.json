@@ -19,8 +19,8 @@
         {"offer_id":"tavern_potion","kind":"consumable","consumable_id":"healing_potion","name":"Healing Potion","description":"Begin the next expedition with one Healing Potion.","gold":8,"min_rank":0,"location":"tavern"},
         {"offer_id":"tavern_focus_tonic","kind":"consumable","consumable_id":"focus_tonic","name":"Focus Tonic","description":"Begin the next expedition with one Focus Tonic.","gold":13,"min_rank":1,"location":"tavern"},
         {"offer_id":"tavern_greater_potion","kind":"consumable","consumable_id":"greater_healing_potion","name":"Greater Healing Potion","description":"Begin the next expedition with one Greater Healing Potion.","gold":19,"min_rank":2,"location":"tavern"},
-        {"offer_id":"tavern_haste_potion","kind":"consumable","consumable_id":"haste_potion","name":"Potion of Haste","description":"Double remaining movement and gain an additional action this turn.","gold":24,"min_rank":2,"location":"tavern"},
-        {"offer_id":"tavern_resource_elixir","kind":"consumable","consumable_id":"resource_elixir","name":"Resource Elixir","description":"Completely fill the class resource meter.","gold":21,"min_rank":2,"location":"tavern"},
+        {"offer_id":"tavern_haste_potion","kind":"consumable","consumable_id":"haste_potion","name":"Potion of Haste","description":"Move twice as fast for 6 seconds, and take a second off every cooldown.","gold":24,"min_rank":2,"location":"tavern"},
+        {"offer_id":"tavern_resource_elixir","kind":"consumable","consumable_id":"resource_elixir","name":"Resource Elixir","description":"Completely fill your class resource.","gold":21,"min_rank":2,"location":"tavern"},
         {"offer_id":"tavern_key","kind":"key","name":"Iron Key","description":"Begin the next expedition with one key.","gold":12,"min_rank":0,"location":"tavern"},
         {"offer_id":"quickstep_charm","kind":"item","item_id":"quickstep_charm","gold":15,"min_rank":0,"location":"tavern"},
         {"offer_id":"keen_edge_oil","kind":"item","item_id":"keen_edge_oil","gold":16,"min_rank":0,"location":"tavern"},
@@ -40,7 +40,7 @@
         {"offer_id":"forest_potion","kind":"consumable","consumable_id":"healing_potion","name":"Bitterleaf Tonic","description":"Gain one Healing Potion immediately.","gold":6,"min_rank":0,"location":"both"},
         {"offer_id":"forest_smoke","kind":"consumable","consumable_id":"smoke_vial","name":"Briar-Smoke Vial","description":"Gain one Smoke Vial.","gold":11,"min_rank":1,"location":"both"},
         {"offer_id":"forest_fleet","kind":"consumable","consumable_id":"fleet_draught","name":"Fleet Draught","description":"Gain one Fleet Draught.","gold":13,"min_rank":2,"location":"both"},
-        {"offer_id":"forest_true_strike","kind":"consumable","consumable_id":"true_strike_tonic","name":"True-Strike Tonic","description":"Gain +8 Accuracy on the next attack.","gold":17,"min_rank":2,"location":"both"},
+        {"offer_id":"forest_true_strike","kind":"consumable","consumable_id":"true_strike_tonic","name":"True-Strike Tonic","description":"Your next hit does +1 damage.","gold":17,"min_rank":2,"location":"both"},
         {"offer_id":"ironroot_ring","kind":"item","item_id":"ironroot_ring","gold":16,"min_rank":0,"location":"both"},
         {"offer_id":"brambleguard_clasp","kind":"item","item_id":"brambleguard_clasp","gold":28,"min_rank":1,"location":"both"},
         {"offer_id":"wayfinders_compass","kind":"item","item_id":"wayfinders_compass","gold":30,"min_rank":2,"location":"both"},
@@ -58,7 +58,7 @@
       "stock": [
         {"offer_id":"farmstead_potion","kind":"consumable","consumable_id":"healing_potion","name":"Emberroot Tonic","description":"Gain one Healing Potion immediately.","gold":7,"min_rank":0,"location":"both"},
         {"offer_id":"farmstead_firebreak","kind":"consumable","consumable_id":"firebreak_draught","name":"Firebreak Draught","description":"Gain a Firebreak Draught.","gold":13,"min_rank":1,"location":"both"},
-        {"offer_id":"farmstead_haste","kind":"consumable","consumable_id":"haste_potion","name":"Harvest Haste","description":"Double remaining movement and gain an action.","gold":24,"min_rank":2,"location":"both"},
+        {"offer_id":"farmstead_haste","kind":"consumable","consumable_id":"haste_potion","name":"Harvest Haste","description":"Move twice as fast for 6 seconds, and take a second off every cooldown.","gold":24,"min_rank":2,"location":"both"},
         {"offer_id":"charred_horseshoe","kind":"item","item_id":"charred_horseshoe","gold":18,"min_rank":0,"location":"both"},
         {"offer_id":"deft_hands","kind":"item","item_id":"deft_hands","gold":31,"min_rank":1,"location":"both"},
         {"offer_id":"kingsroad_aegis","kind":"item","item_id":"kingsroad_aegis","favor":55,"min_rank":4,"location":"favor"}

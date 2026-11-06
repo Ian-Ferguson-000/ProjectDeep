@@ -21,6 +21,44 @@
   that make you faster add Dexterity: `"dex": 1` is +1 DEX. An item with a
   percentage move-speed bonus counts as +1.
 
+## Item stats (real-time only)
+
+Turn-based rules are gone from every item. These are the stats items use, and
+what each does in a fight:
+
+| Stat | Does |
+| --- | --- |
+| `dex` | +1 Dexterity: faster walking (and a little dodge) |
+| `max_health` | +1 heart each |
+| `damage` | +N damage on every hit, added after the 1–4 hit |
+| `boss_damage` | +N more against elites, mini bosses and bosses |
+| `block_percent` | Chance to block an enemy hit completely (all items together cap at 50%) |
+| `dodge_percent` | More dodge chance on top of Dexterity's (cap 50%) |
+| `attack_speed` | % faster basic attacks |
+| `cooldown_percent` | % faster ability recharge (cap 35%) |
+| `precision_hits` | Every Nth hit does +1 damage |
+| `gold_bonus_percent` | % more gold from kills, piles and rooms |
+| `potion_heal_bonus` | Potions heal this many more hearts |
+| `xp_bonus_percent` | XP only; does nothing while levelling is off, so these items don't drop |
+
+Item procs (crescents, lightning, burning, chill, novas) carry their own damage
+and don't get `damage`, `boss_damage` or precision on top.
+
+How the old turn-based stats were converted: attack/spell power 1–2 became +1
+`damage`, 3–5 became +2; penetration became `boss_damage` one for one (and
+Giant-Bane Grip's +16% against elites became +1); armour and threshold became 5%
+`block_percent` a point, and elemental aegis 2% a point; evasion became 5%
+`dodge_percent` a point; accuracy N became `precision_hits` 7 − N (Duelist Gloves
+5); initiative became `cooldown_percent` (2.5% a point).
+
+**Consumables** now read in real-time terms: healing potions restore hearts (5 or
+9, plus potion healing); Warding and Firebreak Draughts block the next hit
+completely; Fleet Draught is 30% faster for 6 s; Potion of Haste is double speed
+for 6 s and a second off every cooldown; Potion of Fury doubles your next attack;
+True-Strike Tonic gives your next hit +1 damage; Smoke Vial hides you for 5 s;
+Focus Tonic and Resource Elixir restore your class resource. Drinking a potion with
+the potion key now heals the potion's own amount (it healed 6 regardless).
+
 ## Any-class items (29)
 
 | Item | Rarity | Does |
@@ -32,11 +70,11 @@
 | Scavenger's Token | Uncommon | +10% gold |
 | Amulet of Vigor | Uncommon | +1 heart |
 | Apothecary's Cup | Uncommon | +3 potion healing |
-| Brambleguard Clasp | Uncommon | +1 armour, +2 hearts |
+| Brambleguard Clasp | Uncommon | +2 hearts, 5% block |
 | **Deft Hands** (new) | Uncommon | Weapon recovers 10% faster (attack speed +10%) |
 | Cutpurse's Favor | Uncommon | Each hit has a 1% chance to knock 2–5 coins loose |
 | Lucky Coin | Uncommon | +20% gold |
-| Wayfinder's Compass | Uncommon | +2 initiative (shorter cooldowns) |
+| Wayfinder's Compass | Uncommon | Abilities recharge 5% faster |
 | Windrunner Boots | Uncommon | +1 Dexterity |
 | Blackoak Ward | Rare | Blocks the first hit you take in each room |
 | Boots of the Hare | Rare | +2 Dexterity |
@@ -44,11 +82,11 @@
 | Quicksilver Locket | Rare | Basic attacks 12% faster, +1 Dexterity |
 | Saint's Phial | Rare | +3 hearts, +3 potion healing |
 | Rimefrost Chain | Rare | 35% of hits chill (slow) for 1.6 s |
-| War Scholar's Codex | Rare | +20% xp |
+| War Scholar's Codex | Rare | +20% XP (out of the drop pool while levelling is off) |
 | Cinder Brand | Rare | 25% of hits set the enemy burning |
 | Deepdelver's Lantern | Very Rare | +40% gold |
 | Bursting Spore Sac | Very Rare | Kills burst into a damaging spore cloud |
-| Kingsroad Aegis | Very Rare | +2 armour, +1 threshold, +4 hearts |
+| Kingsroad Aegis | Very Rare | +4 hearts, 15% block |
 | Sunward Periapt | Very Rare | +2 hearts, +2 Dexterity |
 | Thunderheart Amulet | Very Rare | Kills have a 50% chance to chain lightning through up to 4 foes |
 | Aegis of the Last King | Legendary | Survive one lethal hit per floor |

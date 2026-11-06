@@ -76,14 +76,29 @@ func adjust_for_target(attack:Dictionary,target:Node)->Dictionary:
 func conversion(key:String,fallback:float=0.0)->float:return float(conversions.get(key,fallback))
 func cooldown_multiplier()->float:return clampf(1.0-conversion("cooldown_reduction"),0.55,1.0)
 
+## True-Strike Tonic: the next attack is a precision hit.
+var force_precision:=false
+
+## Extra damage added to a hit after it's on the 1-4 scale: "damage" on every
+## hit, "boss_damage" against elites, mini bosses and bosses, and +1 for a
+## precision hit (every Nth hit with an accuracy item). Item procs (waves,
+## lightning) carry their own damage and get none of this.
+func flat_bonus(target:Node,attack:Dictionary)->int:
+	if bool(attack.get("item_proc",false)):return 0
+	var bonus:=int(conversion("damage"))
+	var elite:bool=("elite" in target and bool(target.get("elite"))) or ("boss" in target and bool(target.get("boss"))) or ("mini_boss" in target and bool(target.get("mini_boss")))
+	if elite:bonus+=int(conversion("boss_damage"))
+	if bool(attack.get("precision_hit",false)):bonus+=1
+	return bonus
+
 func transform_attack(attack:Dictionary,slot:String)->Dictionary:
 	var result:Dictionary=attack.duplicate(true);var cadence:int=0
 	if conversions.has("precision_hits"):cadence=maxi(2,int(conversion("precision_hits")))
 	for record:Dictionary in records:
 		if record.has("precision_hits"):cadence=int(record.precision_hits) if cadence==0 else mini(cadence,int(record.precision_hits))
 	if cadence>0:precision_count+=1
-	if cadence>0 and precision_count>=cadence:
-		precision_count=0;result["damage"]=maxi(1,int(round(float(result.get("damage",1))*1.25)));result["precision_hit"]=true;effect_activated.emit("Precision impact!")
+	if force_precision or cadence>0 and precision_count>=cadence:
+		precision_count=0;force_precision=false;result["precision_hit"]=true;effect_activated.emit("Precision impact!")
 	for record:Dictionary in records:
 		if slot=="special" and record.has("special_damage_multiplier"):result["damage"]=maxi(1,int(round(float(result.damage)*float(record.special_damage_multiplier))))
 		if record.has("area_radius_bonus"):result["area_radius"]=float(result.get("area_radius",0.0))+float(record.area_radius_bonus)
@@ -98,6 +113,10 @@ func mitigate_damage(amount:int)->Dictionary:
 			if bool(record.get("room_ward",false)):
 				room_ward_used=true;effect_activated.emit("%s blocks the blow."%String(GameBalance.get_item(String(record.get("item_id",""))).get("name","Ward")))
 				return {"damage":0,"prevented":amount}
+	# block_percent: a chance to block a hit completely (capped at 50%).
+	if amount>0 and randf()*100.0<minf(50.0,conversion("block_percent")):
+		effect_activated.emit("Blocked!")
+		return {"damage":0,"prevented":amount}
 	var reduction:float=clampf(conversion("damage_reduction"),0.0,0.65);var prevented:int=int(round(amount*reduction))+int(conversion("flat_prevention"));return {"damage":maxi(0,amount-prevented),"prevented":mini(amount,prevented)}
 
 func try_prevent_lethal(final_damage:int,current_health:int)->bool:

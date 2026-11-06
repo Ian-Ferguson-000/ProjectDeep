@@ -5,11 +5,10 @@
     "class_groups says which classes count as melee and ranged.",
     "name: shown to players. rarity: uncommon, rare, very_rare or legendary (there's no common tier; drop rates by rarity are in loot_tables.json).",
     "lasts: every item lasts the whole run (lost when the expedition ends).",
-    "stats: flat bonuses such as dex (Dexterity: each point is faster movement, see slasher_balance.json simple_combat.move_speed_*), max_health (hearts), attack_speed, gold_bonus_percent, xp_bonus_percent, potion_heal_bonus, defense, armor_class.",
+    "stats (real-time combat): dex (+1 Dexterity = faster walking), max_health (hearts), damage (+N on every hit), boss_damage (+N against elites, mini bosses and bosses), block_percent (chance to block a hit, 50% cap), dodge_percent, attack_speed (% faster basic attacks), cooldown_percent (% faster ability recharge), precision_hits (every Nth hit does +1 damage), gold_bonus_percent, potion_heal_bonus. xp_bonus_percent only matters with levelling on.",
     "combat.room_ward: true blocks the first hit taken in each room. Proc types drop_potion (a healing potion) and drop_gold (amount_min..amount_max coins) put loot on the floor; use them with on: kill or on: hit and a chance.",
     "To add an item, copy an existing block, give it a new unique id (lowercase_with_underscores) and change its fields.",
     "combat (optional): how the item behaves in real-time combat. 'rules' is the text players read; 'trigger' is passive, hit, potion_use, floor_entry, action_complete, lethal_damage and so on; other numbers tune the effect.",
-    "stats also take attack_speed (percent faster basic attacks, e.g. 15 = 15% faster, capped at 100) and move_speed (percent faster movement).",
     "combat.procs (optional): a list of special effects. Each has a type and 'on' (when it happens: swing = basic attack, special, dash, hit = you strike an enemy, kill = you kill one).",
     "Proc options for every type: chance (0-1, default 1), every (only every Nth time, e.g. 3 = every third swing), cooldown (seconds between triggers), message (optional popup text).",
     "type wave: a crescent that flies forward through enemies. element (fire, wind, lightning, ice, poison, arcane), damage_percent (of the attack that caused it), damage (flat), range, speed, width, count + spread_degrees (fan of several), color (hex), burn / chill (same options as below, applied to everything it hits).",
@@ -18,7 +17,6 @@
     "type nova: a burst around the target (or you, for swing/special/dash). damage_percent, damage, radius, element, knockback.  type heal: amount.",
     "See docs/ItemEffects.md for worked examples.",
     "drops: false keeps an item out of chests and shops without deleting it. note: a reminder for the team, not shown in game.",
-    "turn_based (optional): rules for the older turn-based combat mode. Leave it alone unless you are working on that mode.",
     "Run tests/pickup_items_test.gd after editing to check the file."
   ],
   "class_groups": {
@@ -81,21 +79,7 @@
         "farmstead",
         "movement"
       ],
-      "icon": "movement",
-      "turn_based": {
-        "rules_text": "After crossing a Field-room doorway, gain +1 Evasion until your next turn.",
-        "effects": [
-          {
-            "trigger": "field_room_enter",
-            "modifiers": {
-              "evasion": 1
-            }
-          }
-        ]
-      },
-      "combat": {
-        "rules": "+1 Dexterity: you move faster."
-      }
+      "icon": "movement"
     },
     "healers_brooch": {
       "name": "Healer's Brooch",
@@ -117,17 +101,7 @@
         "healing",
         "loot"
       ],
-      "icon": "potion",
-      "turn_based": {
-        "rules_text": "Drinking a potion also clears Slow and restores 1 class resource.",
-        "effects": [
-          {
-            "trigger": "potion",
-            "cleanse": "slow",
-            "resource": 1
-          }
-        ]
-      }
+      "icon": "potion"
     },
     "ironroot_ring": {
       "name": "Ironroot Ring",
@@ -141,25 +115,7 @@
         "defense",
         "health"
       ],
-      "icon": "defense",
-      "turn_based": {
-        "rules_text": "Reduce forced movement by 1 tile and gain +1 physical Aegis.",
-        "effects": [
-          {
-            "trigger": "forced_move",
-            "reduce_tiles": 1
-          },
-          {
-            "condition": "always",
-            "modifiers": {
-              "aegis_physical": 1
-            }
-          }
-        ]
-      },
-      "combat": {
-        "rules": "+1 heart."
-      }
+      "icon": "defense"
     },
     "quickstep_charm": {
       "name": "Quickstep Charm",
@@ -169,24 +125,13 @@
       "stats": {
         "dex": 1
       },
-      "combat": {
-        "rules": "+1 Dexterity: quicker on your feet."
-      },
       "tags": [
         "movement",
         "utility"
       ],
       "icon": "move",
-      "turn_based": {
-        "rules_text": "After using a movement ability, gain +2 Evasion until your next turn.",
-        "effects": [
-          {
-            "condition": "moved",
-            "modifiers": {
-              "evasion": 2
-            }
-          }
-        ]
+      "combat": {
+        "rules": "+1 Dexterity: quicker on your feet."
       }
     },
     "scavengers_token": {
@@ -201,16 +146,7 @@
         "loot",
         "luck"
       ],
-      "icon": "gold",
-      "turn_based": {
-        "rules_text": "Clearing a floor grants 3 additional gold for each unopened chest or cache.",
-        "effects": [
-          {
-            "trigger": "floor_clear",
-            "gold_per_unopened_secret": 3
-          }
-        ]
-      }
+      "icon": "gold"
     },
     "amulet_of_vigor": {
       "name": "Amulet of Vigor",
@@ -224,17 +160,6 @@
         "health"
       ],
       "icon": "health",
-      "turn_based": {
-        "rules_text": "Below half health, gain another +2 Threshold.",
-        "effects": [
-          {
-            "condition": "low_health",
-            "modifiers": {
-              "threshold": 2
-            }
-          }
-        ]
-      },
       "combat": {
         "rules": "+1 heart of vigour."
       }
@@ -251,16 +176,7 @@
         "healing",
         "utility"
       ],
-      "icon": "potion",
-      "turn_based": {
-        "rules_text": "Potions cannot overheal; unused healing becomes temporary Aegis, up to 3.",
-        "effects": [
-          {
-            "trigger": "overheal",
-            "temporary_aegis_cap": 3
-          }
-        ]
-      }
+      "icon": "potion"
     },
     "brambleguard_clasp": {
       "name": "Brambleguard Clasp",
@@ -268,24 +184,14 @@
       "lasts": "run",
       "description": "Bronze thorns punish anything that presses into the wearer's guard.",
       "stats": {
-        "armor_class": 1,
-        "max_health": 2
+        "max_health": 2,
+        "block_percent": 5
       },
       "tags": [
         "defense",
         "health"
       ],
-      "icon": "defense",
-      "turn_based": {
-        "rules_text": "When a melee defensive reaction triggers, deal 1 physical damage to the attacker.",
-        "effects": [
-          {
-            "trigger": "melee_reaction",
-            "retaliate": 1,
-            "damage_type": "physical"
-          }
-        ]
-      }
+      "icon": "defense"
     },
     "deft_hands": {
       "name": "Deft Hands",
@@ -294,9 +200,6 @@
       "description": "Soft, close-fitting gloves that never catch on a grip.",
       "stats": {
         "attack_speed": 10
-      },
-      "combat": {
-        "rules": "Your weapon recovers 10% faster: quicker attacks."
       },
       "tags": [
         "speed",
@@ -315,15 +218,6 @@
         "luck"
       ],
       "icon": "gold",
-      "turn_based": {
-        "rules_text": "Defeating an enemy while at full health grants 2 additional gold.",
-        "effects": [
-          {
-            "trigger": "kill_at_full_health",
-            "gold": 2
-          }
-        ]
-      },
       "combat": {
         "rules": "Each hit has a 1% chance to knock coins loose from the enemy.",
         "procs": [
@@ -349,17 +243,7 @@
         "loot",
         "luck"
       ],
-      "icon": "gold",
-      "turn_based": {
-        "rules_text": "Once per turn, an attack that misses by 2 or less gains +2 Accuracy.",
-        "effects": [
-          {
-            "trigger": "near_miss",
-            "accuracy": 2,
-            "limit": "turn"
-          }
-        ]
-      }
+      "icon": "gold"
     },
     "wayfinders_compass": {
       "name": "Wayfinder's Compass",
@@ -367,28 +251,13 @@
       "lasts": "run",
       "description": "Its needle points toward the safest useful square.",
       "stats": {
-        "initiative_modifier": 2
+        "cooldown_percent": 5
       },
       "tags": [
         "movement",
         "utility"
       ],
-      "icon": "move",
-      "turn_based": {
-        "rules_text": "Movement abilities gain +1 Range; landing unengaged restores 1 class resource.",
-        "effects": [
-          {
-            "condition": "movement_ability",
-            "modifiers": {
-              "range": 1
-            }
-          },
-          {
-            "trigger": "land_unengaged",
-            "resource": 1
-          }
-        ]
-      }
+      "icon": "move"
     },
     "windrunner_boots": {
       "name": "Windrunner Boots",
@@ -398,14 +267,14 @@
       "stats": {
         "dex": 1
       },
-      "combat": {
-        "rules": "+1 Dexterity: the wind at your heels."
-      },
       "tags": [
         "movement",
         "speed"
       ],
-      "icon": "movement"
+      "icon": "movement",
+      "combat": {
+        "rules": "+1 Dexterity: the wind at your heels."
+      }
     },
     "blackoak_ward": {
       "name": "Blackoak Ward",
@@ -418,16 +287,6 @@
         "health"
       ],
       "icon": "defense",
-      "turn_based": {
-        "rules_text": "Physical damage stopped by Threshold restores 1 class resource.",
-        "effects": [
-          {
-            "trigger": "threshold_block",
-            "damage_type": "physical",
-            "resource": 1
-          }
-        ]
-      },
       "combat": {
         "rules": "Blocks the first hit you take in each room.",
         "room_ward": true
@@ -445,21 +304,7 @@
         "movement",
         "speed"
       ],
-      "icon": "move",
-      "turn_based": {
-        "rules_text": "While adjacent to two or more enemies, gain +2 Evasion.",
-        "effects": [
-          {
-            "condition": "surrounded",
-            "modifiers": {
-              "evasion": 2
-            }
-          }
-        ]
-      },
-      "combat": {
-        "rules": "+2 Dexterity: you move faster."
-      }
+      "icon": "move"
     },
     "gilded_beetle": {
       "name": "Gilded Beetle",
@@ -473,17 +318,7 @@
         "loot",
         "luck"
       ],
-      "icon": "gold",
-      "turn_based": {
-        "rules_text": "Gold pickups of 10 or more restore 1 class resource.",
-        "effects": [
-          {
-            "trigger": "large_gold_pickup",
-            "resource": 1,
-            "minimum": 10
-          }
-        ]
-      }
+      "icon": "gold"
     },
     "quicksilver_locket": {
       "name": "Quicksilver Locket",
@@ -493,9 +328,6 @@
       "stats": {
         "attack_speed": 12,
         "dex": 1
-      },
-      "combat": {
-        "rules": "Basic attacks are 12% faster, and +1 Dexterity: you move faster."
       },
       "tags": [
         "speed"
@@ -515,16 +347,7 @@
         "healing",
         "health"
       ],
-      "icon": "potion",
-      "turn_based": {
-        "rules_text": "After drinking a potion, gain 2 Aegis against the next damage type received.",
-        "effects": [
-          {
-            "trigger": "potion",
-            "temporary_aegis": 2
-          }
-        ]
-      }
+      "icon": "potion"
     },
     "rimefrost_chain": {
       "name": "Rimefrost Chain",
@@ -564,18 +387,8 @@
         "arcane"
       ],
       "icon": "mode",
-      "turn_based": {
-        "rules_text": "After first hitting an enemy, gain +1 Attack Power and Spell Potency against that enemy.",
-        "effects": [
-          {
-            "condition": "studied_target",
-            "modifiers": {
-              "attack_power": 1,
-              "spell_potency": 1
-            }
-          }
-        ]
-      }
+      "drops": false,
+      "note": "Only grants XP, which does nothing while levelling is switched off (data/progression.json). Out of the drop pool until levelling returns."
     },
     "cinder_brand": {
       "name": "Cinder Brand",
@@ -615,17 +428,8 @@
         "utility"
       ],
       "icon": "gold",
-      "turn_based": {
-        "rules_text": "Against undiscovered enemy types, gain +2 Accuracy and +2 Armor Class.",
-        "effects": [
-          {
-            "condition": "first_enemy_type",
-            "modifiers": {
-              "accuracy": 2,
-              "armor_class": 2
-            }
-          }
-        ]
+      "combat": {
+        "rules": "Deepdelver's light: +40% gold found."
       }
     },
     "bursting_spore_sac": {
@@ -660,26 +464,14 @@
       "lasts": "run",
       "description": "A royal ward turns the first wound of every battle into a glancing blow.",
       "stats": {
-        "armor_class": 2,
-        "threshold": 1,
-        "max_health": 4
+        "max_health": 4,
+        "block_percent": 15
       },
       "tags": [
         "defense",
         "health"
       ],
-      "icon": "defense",
-      "turn_based": {
-        "rules_text": "The first damaging hit each combat gains 3 Aegis against its damage type.",
-        "effects": [
-          {
-            "condition": "first_incoming_hit",
-            "modifiers": {
-              "aegis_all": 3
-            }
-          }
-        ]
-      }
+      "icon": "defense"
     },
     "sunward_periapt": {
       "name": "Sunward Periapt",
@@ -694,19 +486,7 @@
         "health",
         "healing"
       ],
-      "icon": "health",
-      "turn_based": {
-        "rules_text": "Healing at full health grants 2 temporary Aegis against all damage.",
-        "effects": [
-          {
-            "trigger": "overheal",
-            "temporary_aegis": 2
-          }
-        ]
-      },
-      "combat": {
-        "rules": "+2 hearts, and +2 Dexterity: you move faster."
-      }
+      "icon": "health"
     },
     "thunderheart_amulet": {
       "name": "Thunderheart Amulet",
@@ -749,17 +529,7 @@
         "defense",
         "health"
       ],
-      "icon": "defense",
-      "turn_based": {
-        "rules_text": "A triggered reaction doubles Aegis against that attack and heals 2 afterward.",
-        "effects": [
-          {
-            "trigger": "reaction",
-            "double_aegis": true,
-            "heal": 2
-          }
-        ]
-      }
+      "icon": "defense"
     },
     "fortune_eaters_idol": {
       "name": "Fortune-Eater's Idol",
@@ -775,20 +545,7 @@
         "xp",
         "luck"
       ],
-      "icon": "gold",
-      "turn_based": {
-        "rules_text": "Natural 20s grant 3 gold; natural 1s consume 3 gold to reroll when possible.",
-        "effects": [
-          {
-            "trigger": "critical_hit",
-            "gold": 3
-          },
-          {
-            "trigger": "critical_miss",
-            "spend_gold_reroll": 3
-          }
-        ]
-      }
+      "icon": "gold"
     },
     "heartwood_crown": {
       "name": "Heartwood Crown",
@@ -807,19 +564,7 @@
         "legendary",
         "health"
       ],
-      "icon": "health",
-      "turn_based": {
-        "rules_text": "If you have not moved this turn, gain +3 Armor Class and +2 Threshold.",
-        "effects": [
-          {
-            "condition": "stationary",
-            "modifiers": {
-              "armor_class": 3,
-              "threshold": 2
-            }
-          }
-        ]
-      }
+      "icon": "health"
     }
   },
   "melee_only": {
@@ -832,22 +577,12 @@
         "xp_bonus_percent": 8
       },
       "drops": false,
-      "note": "Only grants XP, which does nothing while levelling is switched off.",
+      "note": "Only grants XP, which does nothing while levelling is switched off (data/progression.json). Out of the drop pool until levelling returns.",
       "tags": [
         "xp",
         "martial"
       ],
-      "icon": "mode",
-      "turn_based": {
-        "rules_text": "A triggered defensive reaction grants 2 bonus XP and 1 class resource.",
-        "effects": [
-          {
-            "trigger": "reaction",
-            "xp": 2,
-            "resource": 1
-          }
-        ]
-      }
+      "icon": "mode"
     },
     "keen_edge_oil": {
       "name": "Keen Edge Oil",
@@ -855,29 +590,13 @@
       "lasts": "run",
       "description": "Its first clean cut parts armor before the oil burns away.",
       "stats": {
-        "penetration": 1
-      },
-      "combat": {
-        "rules": "Slasher: gain attack power for its remaining floors.",
-        "trigger": "passive"
+        "boss_damage": 1
       },
       "tags": [
         "martial",
         "weapon"
       ],
-      "icon": "attack",
-      "turn_based": {
-        "rules_text": "Your first attack each combat gains +2 Penetration and +1 Attack Power.",
-        "effects": [
-          {
-            "condition": "first_attack",
-            "modifiers": {
-              "penetration": 2,
-              "attack_power": 1
-            }
-          }
-        ]
-      }
+      "icon": "attack"
     },
     "sparkwire_wrap": {
       "name": "Sparkwire Wrap",
@@ -885,23 +604,13 @@
       "lasts": "run",
       "description": "Copper wire discharges into the first target struck each round.",
       "stats": {
-        "accuracy": 1
+        "precision_hits": 6
       },
       "tags": [
         "martial",
         "weapon"
       ],
-      "icon": "attack",
-      "turn_based": {
-        "rules_text": "Your first hit each round deals 2 additional lightning damage.",
-        "effects": [
-          {
-            "trigger": "first_hit_round",
-            "bonus_damage": 2,
-            "damage_type": "lightning"
-          }
-        ]
-      }
+      "icon": "attack"
     },
     "duelist_gloves": {
       "name": "Duelist Gloves",
@@ -909,25 +618,13 @@
       "lasts": "run",
       "description": "The gloves guide a blade toward whichever opening appears first.",
       "stats": {
-        "accuracy": 1
+        "precision_hits": 5
       },
       "tags": [
         "martial",
         "speed"
       ],
-      "icon": "attack",
-      "turn_based": {
-        "rules_text": "Against an isolated enemy, gain +2 Accuracy and +1 Penetration.",
-        "effects": [
-          {
-            "condition": "isolated_target",
-            "modifiers": {
-              "accuracy": 2,
-              "penetration": 1
-            }
-          }
-        ]
-      }
+      "icon": "attack"
     },
     "veterans_whetstone": {
       "name": "Veteran's Whetstone",
@@ -935,26 +632,14 @@
       "lasts": "run",
       "description": "A scarred whetstone favors repeated blows against the same foe.",
       "stats": {
-        "attack_power": 1,
-        "penetration": 1
+        "damage": 1,
+        "boss_damage": 1
       },
       "tags": [
         "martial",
         "weapon"
       ],
-      "icon": "attack",
-      "turn_based": {
-        "rules_text": "Consecutive attacks against the same target gain +1 Accuracy and +1 Penetration.",
-        "effects": [
-          {
-            "condition": "repeated_target",
-            "modifiers": {
-              "accuracy": 1,
-              "penetration": 1
-            }
-          }
-        ]
-      }
+      "icon": "attack"
     },
     "giant_bane_grip": {
       "name": "Giant-Bane Grip",
@@ -962,30 +647,15 @@
       "lasts": "run",
       "description": "The grip tightens around weapons raised against oversized or elite prey.",
       "stats": {
-        "attack_power": 2,
-        "max_health": 3
-      },
-      "combat": {
-        "rules": "Slasher: deal 16% more damage to elites and bosses.",
-        "trigger": "hit",
-        "elite_damage_multiplier": 1.16
+        "max_health": 3,
+        "damage": 1,
+        "boss_damage": 1
       },
       "tags": [
         "martial",
         "weapon"
       ],
-      "icon": "attack",
-      "turn_based": {
-        "rules_text": "Against elite and boss enemies, gain +3 Penetration.",
-        "effects": [
-          {
-            "condition": "elite_target",
-            "modifiers": {
-              "penetration": 3
-            }
-          }
-        ]
-      }
+      "icon": "attack"
     },
     "runebound_bracer": {
       "name": "Runebound Bracer",
@@ -993,25 +663,14 @@
       "lasts": "run",
       "description": "A warm rune divides its loyalty between blade and guard.",
       "stats": {
-        "attack_power": 2,
-        "armor_class": 1
+        "damage": 1,
+        "block_percent": 5
       },
       "tags": [
         "martial",
         "defense"
       ],
-      "icon": "attack",
-      "turn_based": {
-        "rules_text": "After a defensive reaction triggers, your next martial attack gains +2 Accuracy.",
-        "effects": [
-          {
-            "trigger": "reaction",
-            "next_attack": {
-              "accuracy": 2
-            }
-          }
-        ]
-      }
+      "icon": "attack"
     },
     "titanblood_torc": {
       "name": "Titanblood Torc",
@@ -1020,26 +679,14 @@
       "description": "A bronze second pulse turns pain into crushing force.",
       "stats": {
         "max_health": 9,
-        "attack_power": 2,
-        "threshold": 1
+        "damage": 1,
+        "block_percent": 5
       },
       "tags": [
         "health",
         "martial"
       ],
-      "icon": "health",
-      "turn_based": {
-        "rules_text": "Below half health, gain +3 Attack Power but lose 1 Evasion.",
-        "effects": [
-          {
-            "condition": "low_health",
-            "modifiers": {
-              "attack_power": 3,
-              "evasion": -1
-            }
-          }
-        ]
-      }
+      "icon": "health"
     },
     "wyvernscale_mantle": {
       "name": "Wyvernscale Mantle",
@@ -1047,27 +694,13 @@
       "lasts": "run",
       "description": "Overlapping scales turn poison and blades in different ways.",
       "stats": {
-        "armor_class": 2,
-        "aegis_physical": 2,
-        "aegis_poison": 4
+        "block_percent": 22
       },
       "tags": [
         "defense",
         "martial"
       ],
-      "icon": "defense",
-      "turn_based": {
-        "rules_text": "When poison damage is fully absorbed, gain +2 Attack Power next turn.",
-        "effects": [
-          {
-            "trigger": "absorbed_attack",
-            "damage_type": "poison",
-            "next_attack": {
-              "attack_power": 2
-            }
-          }
-        ]
-      }
+      "icon": "defense"
     },
     "worldbreaker_gauntlet": {
       "name": "Worldbreaker Gauntlet",
@@ -1075,12 +708,12 @@
       "lasts": "run",
       "description": "Its runes turn excess force into fractures that outlast the blow.",
       "stats": {
-        "attack_power": 5,
-        "penetration": 3,
-        "threshold": 2
+        "damage": 2,
+        "boss_damage": 3,
+        "block_percent": 10
       },
       "combat": {
-        "rules": "Slasher: impacts gain power, knockback, and area.",
+        "rules": "+2 damage on every hit and +3 against elites and bosses, a 10% chance to block a hit, and your impacts hit harder, wider and with more knockback.",
         "trigger": "hit",
         "area_radius_bonus": 20.0
       },
@@ -1089,16 +722,7 @@
         "martial",
         "power"
       ],
-      "icon": "attack",
-      "turn_based": {
-        "rules_text": "Martial hits reduce the target's Threshold by 1 for the rest of combat.",
-        "effects": [
-          {
-            "trigger": "martial_hit",
-            "shred_threshold": 1
-          }
-        ]
-      }
+      "icon": "attack"
     },
     "emberwind_edge": {
       "name": "Emberwind Edge",
@@ -1195,9 +819,6 @@
       "stats": {
         "attack_speed": 15
       },
-      "combat": {
-        "rules": "Basic attacks are 15% faster."
-      },
       "tags": [
         "speed",
         "martial"
@@ -1244,24 +865,13 @@
       "lasts": "run",
       "description": "The rune can be broken to force a spell through resistant wards.",
       "stats": {
-        "spell_potency": 1
+        "damage": 1
       },
       "tags": [
         "arcane",
         "spell"
       ],
-      "icon": "spell",
-      "turn_based": {
-        "rules_text": "Your first spell each floor gains +3 Penetration.",
-        "effects": [
-          {
-            "condition": "first_spell_floor",
-            "modifiers": {
-              "penetration": 3
-            }
-          }
-        ]
-      }
+      "icon": "spell"
     },
     "embershard_focus": {
       "name": "Embershard Focus",
@@ -1269,31 +879,14 @@
       "lasts": "run",
       "description": "A disposable ember lens stretches fire beyond its natural reach.",
       "stats": {
-        "spell_potency": 1,
-        "aegis_fire": 1
-      },
-      "combat": {
-        "rules": "Slasher: gain spell power for its remaining floors.",
-        "trigger": "passive"
+        "damage": 1,
+        "block_percent": 2
       },
       "tags": [
         "arcane",
         "spell"
       ],
-      "icon": "spell",
-      "turn_based": {
-        "rules_text": "Fire attacks gain +1 Range and +1 Spell Potency.",
-        "effects": [
-          {
-            "condition": "damage_type",
-            "damage_type": "fire",
-            "modifiers": {
-              "range": 1,
-              "spell_potency": 1
-            }
-          }
-        ]
-      }
+      "icon": "spell"
     },
     "scholars_lens": {
       "name": "Scholar's Lens",
@@ -1304,23 +897,12 @@
         "xp_bonus_percent": 15
       },
       "drops": false,
-      "note": "Only grants XP, which does nothing while levelling is switched off.",
+      "note": "Only grants XP, which does nothing while levelling is switched off (data/progression.json). Out of the drop pool until levelling returns.",
       "tags": [
         "xp",
         "arcane"
       ],
-      "icon": "mode",
-      "turn_based": {
-        "rules_text": "After an attack is stopped by Threshold or Aegis, gain +1 Penetration for the next attack.",
-        "effects": [
-          {
-            "trigger": "absorbed_attack",
-            "next_attack": {
-              "penetration": 1
-            }
-          }
-        ]
-      }
+      "icon": "mode"
     },
     "stormglass_bead": {
       "name": "Stormglass Bead",
@@ -1328,27 +910,14 @@
       "lasts": "run",
       "description": "A captive storm leaps farther after movement.",
       "stats": {
-        "spell_potency": 1,
-        "aegis_lightning": 2
+        "damage": 1,
+        "block_percent": 4
       },
       "tags": [
         "arcane",
         "lightning"
       ],
-      "icon": "spell",
-      "turn_based": {
-        "rules_text": "After moving, lightning attacks gain +1 Range and +2 Spell Potency.",
-        "effects": [
-          {
-            "condition": "moved",
-            "damage_type": "lightning",
-            "modifiers": {
-              "range": 1,
-              "spell_potency": 2
-            }
-          }
-        ]
-      }
+      "icon": "spell"
     },
     "wand_of_cinders": {
       "name": "Wand of Cinders",
@@ -1356,30 +925,14 @@
       "lasts": "run",
       "description": "The wand banks heat until magic finds clustered prey.",
       "stats": {
-        "spell_potency": 2
-      },
-      "combat": {
-        "rules": "Slasher: spell hits build precision; the cadence hit deals 25% bonus damage.",
-        "trigger": "hit",
-        "precision_bonus": 0.25,
+        "damage": 1,
         "precision_hits": 6
       },
       "tags": [
         "arcane",
         "fire"
       ],
-      "icon": "spell",
-      "turn_based": {
-        "rules_text": "Spell attacks that can hit multiple tiles gain +1 Range.",
-        "effects": [
-          {
-            "condition": "area_attack",
-            "modifiers": {
-              "range": 1
-            }
-          }
-        ]
-      }
+      "icon": "spell"
     },
     "aether_prism": {
       "name": "Aether Prism",
@@ -1387,26 +940,16 @@
       "lasts": "run",
       "description": "Each facet converts one school of harm into another angle of force.",
       "stats": {
-        "spell_potency": 2,
-        "penetration": 1
+        "damage": 1,
+        "boss_damage": 1
       },
       "tags": [
         "arcane",
         "spell"
       ],
       "icon": "spell",
-      "turn_based": {
-        "rules_text": "Arcane attacks gain +1 Range and ignore 1 additional Aegis.",
-        "effects": [
-          {
-            "condition": "damage_type",
-            "damage_type": "arcane",
-            "modifiers": {
-              "range": 1,
-              "penetration": 1
-            }
-          }
-        ]
+      "combat": {
+        "rules": "+1 damage on every spell and +1 more against elites and bosses."
       }
     },
     "glass_magus_eye": {
@@ -1415,23 +958,14 @@
       "lasts": "run",
       "description": "The lens exposes the thinnest seam in magical resistance.",
       "stats": {
-        "spell_potency": 2,
-        "accuracy": 1
+        "precision_hits": 6,
+        "damage": 1
       },
       "tags": [
         "arcane",
         "spell"
       ],
-      "icon": "spell",
-      "turn_based": {
-        "rules_text": "Spell attacks gain Penetration equal to half their Range bonus.",
-        "effects": [
-          {
-            "condition": "spell_attack",
-            "penetration_from_range": 0.5
-          }
-        ]
-      }
+      "icon": "spell"
     },
     "chronomancers_pin": {
       "name": "Chronomancer's Pin",
@@ -1439,11 +973,11 @@
       "lasts": "run",
       "description": "Its hands twitch backward at the instant an action goes wrong.",
       "stats": {
-        "initiative_modifier": 4,
-        "evasion": 1
+        "cooldown_percent": 10,
+        "dodge_percent": 5
       },
       "combat": {
-        "rules": "Slasher: periodically shave 0.4 seconds from active cooldowns.",
+        "rules": "Abilities recharge 10% faster, every 8 seconds 0.4 seconds comes off every cooldown, and +5% dodge chance.",
         "trigger": "periodic",
         "internal_cooldown": 8.0,
         "cooldown_flat": 0.4
@@ -1452,17 +986,7 @@
         "speed",
         "arcane"
       ],
-      "icon": "special",
-      "turn_based": {
-        "rules_text": "Once per combat, reroll a missed attack and keep the new result.",
-        "effects": [
-          {
-            "trigger": "miss",
-            "reroll": true,
-            "limit": "combat"
-          }
-        ]
-      }
+      "icon": "special"
     },
     "flameheart_talisman": {
       "name": "Flameheart Talisman",
@@ -1470,11 +994,11 @@
       "lasts": "run",
       "description": "The talisman rewards spellcasters who stand close enough to feel the heat.",
       "stats": {
-        "spell_potency": 3,
-        "aegis_fire": 3
+        "damage": 2,
+        "block_percent": 6
       },
       "combat": {
-        "rules": "Slasher: spell impacts gain an 18-pixel area burst.",
+        "rules": "+2 damage on every hit, a 6% chance to block a hit, and spell impacts burst over a wider area.",
         "trigger": "hit",
         "area_radius_bonus": 18.0,
         "internal_cooldown": 1.5
@@ -1483,20 +1007,7 @@
         "arcane",
         "fire"
       ],
-      "icon": "spell",
-      "turn_based": {
-        "rules_text": "Fire attacks made within 2 tiles gain +2 Spell Potency and +1 Penetration.",
-        "effects": [
-          {
-            "condition": "close_spell",
-            "damage_type": "fire",
-            "modifiers": {
-              "spell_potency": 2,
-              "penetration": 1
-            }
-          }
-        ]
-      }
+      "icon": "spell"
     },
     "phoenix_ash_reliquary": {
       "name": "Phoenix-Ash Reliquary",
@@ -1504,11 +1015,11 @@
       "lasts": "run",
       "description": "Uncooling ash kindles when healing would otherwise be too late.",
       "stats": {
-        "spell_potency": 3,
-        "aegis_fire": 3
+        "damage": 2,
+        "block_percent": 6
       },
       "combat": {
-        "rules": "Slasher: survive one lethal hit per floor at 1 health.",
+        "rules": "+2 damage on every hit, a 6% chance to block a hit, and survive one lethal hit per floor at 1 heart.",
         "trigger": "lethal_damage",
         "once_per_floor": true
       },
@@ -1517,19 +1028,7 @@
         "fire",
         "healing"
       ],
-      "icon": "spell",
-      "turn_based": {
-        "rules_text": "Once per floor, lethal damage leaves you at 1 health and ignites adjacent enemies.",
-        "effects": [
-          {
-            "trigger": "lethal_damage",
-            "survive": 1,
-            "retaliate": 3,
-            "damage_type": "fire",
-            "limit": "floor"
-          }
-        ]
-      }
+      "icon": "spell"
     },
     "crown_of_the_first_flame": {
       "name": "Crown of the First Flame",
@@ -1537,12 +1036,12 @@
       "lasts": "run",
       "description": "The first flame refuses resistance and feeds on fallen magic.",
       "stats": {
-        "spell_potency": 5,
-        "penetration": 2,
-        "aegis_fire": 5
+        "damage": 2,
+        "boss_damage": 2,
+        "block_percent": 10
       },
       "combat": {
-        "rules": "Slasher: specials gain 30% damage and a wider impact.",
+        "rules": "+2 damage on every hit and +2 against elites and bosses, a 10% chance to block a hit, and specials hit 30% harder over a wider area.",
         "trigger": "action_start",
         "special_damage_multiplier": 1.3,
         "area_radius_bonus": 28.0
@@ -1552,17 +1051,7 @@
         "arcane",
         "fire"
       ],
-      "icon": "special",
-      "turn_based": {
-        "rules_text": "Fire attacks convert half of prevented damage into bonus damage on the next spell.",
-        "effects": [
-          {
-            "trigger": "absorbed_attack",
-            "damage_type": "fire",
-            "store_prevented_spell_damage": 0.5
-          }
-        ]
-      }
+      "icon": "special"
     },
     "conductors_rod": {
       "name": "Conductor's Rod",
@@ -1598,14 +1087,14 @@
       "stats": {
         "attack_speed": 15
       },
-      "combat": {
-        "rules": "Basic casts are 15% faster."
-      },
       "tags": [
         "speed",
         "arcane"
       ],
-      "icon": "spell"
+      "icon": "spell",
+      "combat": {
+        "rules": "Spells cast 15% faster."
+      }
     },
     "pyre_lantern": {
       "name": "Pyre Lantern",

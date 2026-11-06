@@ -30,8 +30,11 @@ func _run() -> void:
 			if String(item.get("lasts","")) == "temporary": _expect(int(item.get("floors",0)) > 0,"%s is temporary but has no floors" % item_id)
 	_expect(seen.size() >= 52 and GameBalance.get_items().size() == seen.size(),"Items went missing from pickup_items.json")
 	var giant: Dictionary = GameBalance.get_item("giant_bane_grip")
-	_expect(String(giant.usable_by) == "melee_only" and int(Dictionary(giant.modifiers).get("attack_power",0)) == 2,"Item stats did not survive the move")
-	_expect(is_equal_approx(float(GameBalance.get_slasher_item_effects("giant_bane_grip").get("elite_damage_multiplier",0)),1.16),"Combat rules did not survive the move")
+	_expect(String(giant.usable_by) == "melee_only" and int(Dictionary(giant.modifiers).get("damage",0)) == 1 and int(Dictionary(giant.modifiers).get("boss_damage",0)) == 1,"Item stats did not survive the move")
+	# Real-time only: no item carries turn-based rules any more.
+	for group in ["any_class","melee_only","ranged_only"]:
+		for item_id in Dictionary(source.get(group,{})):
+			_expect(not Dictionary(source[group][item_id]).has("turn_based"),"%s still has turn-based rules" % item_id)
 	# Class groups decide what drops.
 	for class_id in ["warrior","rogue","tank","mage","healer","summoner"]:
 		var state := RunState.new()
