@@ -23,6 +23,7 @@ func _physics_process(delta:float)->void:
 	if behavior_id not in BEHAVIORS:super._physics_process(delta);return
 	retarget_timer-=delta;if retarget_timer<=0.0:_retarget_party();retarget_timer=0.35
 	if dead or not is_instance_valid(target):return
+	if _process_mage_control(delta):return
 	activation_delay=maxf(0.0,activation_delay-delta);attack_cooldown=maxf(0.0,attack_cooldown-delta);special_cooldown=maxf(0.0,special_cooldown-delta);state_timer=maxf(0.0,state_timer-delta);pattern_cooldown=maxf(0.0,pattern_cooldown-delta);trail_cooldown=maxf(0.0,trail_cooldown-delta)
 	if activation_delay>0.0:velocity=Vector2.ZERO;return
 	match behavior_id:
@@ -61,7 +62,7 @@ func _process_stalker()->void:
 
 func _process_charger(delta:float)->void:
 	if ai_state=="charge":
-		var step:=charge_direction*460.0*delta;global_position=_safe_point(global_position+step)
+		var step:=charge_direction*460.0*delta*mage_slow_multiplier;global_position=_safe_point(global_position+step)
 		if trail_cooldown<=0.0:hell_effect_requested.emit("flame_trail",global_position,{"radius":30.0,"lifetime":3.2,"telegraph":0.12,"damage":maxi(1,damage/2),"repeating":false});trail_cooldown=0.12
 		charge_remaining-=step.length()
 		if global_position.distance_to(target.global_position)<30.0 and not action_landed:target.receive_damage(damage,charge_direction*190.0,self);action_landed=true

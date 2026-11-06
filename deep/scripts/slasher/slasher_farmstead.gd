@@ -132,12 +132,12 @@ func _on_farmstead_effect(kind:String,origin:Vector2,payload:Dictionary)->void:
 			var cap:=int(Dictionary(GameBalance.get_dungeon("ashen_farmstead").get("slasher",{})).get("summon_cap",5));var available:=maxi(0,cap-get_tree().get_nodes_in_group("farmstead_summon").size())
 			for index in mini(available,int(payload.get("count",2))):
 				var rat:=_spawn_enemy(sanitize_player_position(origin+Vector2.RIGHT.rotated(TAU*index/maxf(1.0,float(available)))*75.0),"ash_rat","ash_rat");rat.add_to_group("farmstead_summon")
-		"fire_patch","scorched_zone":_spawn_fire_hazard(origin,float(payload.get("radius",42.0)),float(payload.get("lifetime",4.0)))
+		"fire_patch","scorched_zone":_spawn_fire_hazard(origin,float(payload.get("radius",42.0)),float(payload.get("lifetime",4.0)),true)
 		"ash_burst":
-			if player.global_position.distance_to(origin)<125.0:player.receive_damage(int(payload.get("damage",2)),origin.direction_to(player.global_position)*75.0,null)
+			if player.global_position.distance_to(origin)<125.0:player.receive_damage(int(payload.get("damage",2)),origin.direction_to(player.global_position)*75.0,null,true)
 
-func _spawn_fire_hazard(position_value:Vector2,radius:float,lifetime:float)->void:
-	var area:=Area2D.new();area.position=position_value;area.set_meta("life",lifetime);area.set_meta("tick",0.0);var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=radius;shape.shape=circle;area.add_child(shape);var visual:=Polygon2D.new();var points:=PackedVector2Array();for i in 24:points.append(Vector2.RIGHT.rotated(TAU*i/24.0)*radius);visual.polygon=points;visual.color=Color(0.95,0.22,0.04,0.28);area.add_child(visual);actor_layer.add_child(area);active_hazards.append(area)
+func _spawn_fire_hazard(position_value:Vector2,radius:float,lifetime:float,enemy_origin:bool=false)->void:
+	var area:=Area2D.new();area.position=position_value;area.set_meta("enemy_origin",enemy_origin);area.set_meta("life",lifetime);area.set_meta("tick",0.0);var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=radius;shape.shape=circle;area.add_child(shape);var visual:=Polygon2D.new();var points:=PackedVector2Array();for i in 24:points.append(Vector2.RIGHT.rotated(TAU*i/24.0)*radius);visual.polygon=points;visual.color=Color(0.95,0.22,0.04,0.28);area.add_child(visual);actor_layer.add_child(area);active_hazards.append(area)
 
 func _process_hazards(delta:float)->void:
 	for index in range(active_hazards.size()-1,-1,-1):
@@ -145,7 +145,7 @@ func _process_hazards(delta:float)->void:
 		if not is_instance_valid(hazard):active_hazards.remove_at(index);continue
 		hazard.set_meta("life",float(hazard.get_meta("life"))-delta);hazard.set_meta("tick",maxf(0.0,float(hazard.get_meta("tick"))-delta))
 		if float(hazard.get_meta("life"))<=0.0:hazard.queue_free();active_hazards.remove_at(index)
-		elif float(hazard.get_meta("tick"))<=0.0 and player.global_position.distance_to(hazard.global_position)<=float((hazard.get_child(0) as CollisionShape2D).shape.radius):player.receive_damage(2,Vector2.ZERO,null);hazard.set_meta("tick",0.75)
+		elif float(hazard.get_meta("tick"))<=0.0 and player.global_position.distance_to(hazard.global_position)<=float((hazard.get_child(0) as CollisionShape2D).shape.radius):player.receive_damage(2,Vector2.ZERO,null,bool(hazard.get_meta("enemy_origin",false)));hazard.set_meta("tick",0.75)
 
 func _check_door_transition()->void:
 	if transition_cooldown>0.0 or not exit_open:return

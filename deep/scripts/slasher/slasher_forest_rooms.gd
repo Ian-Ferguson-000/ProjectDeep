@@ -710,10 +710,15 @@ func _on_game_setting_changed(key: String, value: Variant) -> void:
 
 func _snapshot_player() -> Dictionary:
 	if not is_instance_valid(player): return {}
-	return {"cooldowns":player.cooldowns.duplicate(),"invulnerable":player.invulnerable,"defense_window":player.defense_window,"defense_kind":player.defense_kind,"consumable_speed_time":player.consumable_speed_time,"consumable_speed_multiplier":player.consumable_speed_multiplier}
+	return {"cooldowns":player.cooldowns.duplicate(),"invulnerable":player.invulnerable,"defense_window":player.defense_window,"defense_kind":player.defense_kind,"consumable_speed_time":player.consumable_speed_time,"consumable_speed_multiplier":player.consumable_speed_multiplier,"fighter_frenzy":{"left":player.fighter_frenzy_left,"damage":player.fighter_frenzy_damage,"haste":player.fighter_frenzy_haste,"incoming":player.fighter_frenzy_incoming}}
 
 func _restore_player(snapshot: Dictionary) -> void:
 	if snapshot.is_empty(): return
+	# Room transitions rebuild the player even outside campaign expeditions.
+	# Preserve both sides of the frenzy commitment, not only its offensive half.
+	if snapshot.has("fighter_frenzy"):
+		var frenzy:Dictionary=snapshot.fighter_frenzy
+		player.activate_fighter_frenzy(float(frenzy.left),float(frenzy.damage),float(frenzy.haste),float(frenzy.incoming))
 	player.cooldowns = Dictionary(snapshot.get("cooldowns",player.cooldowns)); player.invulnerable = float(snapshot.get("invulnerable",0)); player.defense_window = float(snapshot.get("defense_window",0)); player.defense_kind = String(snapshot.get("defense_kind","")); player.consumable_speed_time = float(snapshot.get("consumable_speed_time",0)); player.consumable_speed_multiplier = float(snapshot.get("consumable_speed_multiplier",1))
 
 # ---------------------------------------------------------------- HUD

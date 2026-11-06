@@ -1,0 +1,254 @@
+{
+  "_shared": {
+    "special_damage_multiplier": 1.1,
+    "melee_contact_padding_degrees": 4
+  },
+  "eldritch_bowstaff": {
+    "summon_emergence": 0.18,
+    "summon_windup": 0.12,
+    "summon_dissolve": 0.4,
+    "summon_damage_coefficient": 0.45,
+    "summon_attack_interval": 0.7,
+    "summon_speed": 190,
+    "summon_search_range": 600,
+    "summon_search_interval": 0.2,
+    "summon_attack_range": 48,
+    "summon_engage_range": 42,
+    "curse_cap": 6,
+    "curse_duration": 8,
+    "summon_cap": 24,
+    "summon_lifetime": 12,
+    "basic_reach": 175,
+    "special_reach": 225,
+    "basic_arc": 150,
+    "special_arc": 260,
+    "windup_fraction": 0.25,
+    "active_fraction": 0.5,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 3.25,
+        "cooldown": 0.2
+      },
+      "special": {
+        "damage_coefficient": 7.5,
+        "cooldown": 0.9
+      }
+    }
+  },
+  "demon_blade": {
+    "frenzy_duration": 4,
+    "damage_multiplier": 1.45,
+    "haste_multiplier": 1.45,
+    "incoming_multiplier": 2,
+    "basic_reach": 155,
+    "special_reach": 205,
+    "basic_arc": 120,
+    "special_arc": 210,
+    "windup_fraction": 0.25,
+    "active_fraction": 0.5,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 3.8,
+        "cooldown": 0.2
+      },
+      "special": {
+        "damage_coefficient": 9,
+        "cooldown": 0.9
+      }
+    }
+  },
+  "storm_trident": {
+    "basic_reach": 235,
+    "basic_arc": 24,
+    "windup_fraction": 0.25,
+    "active_fraction": 0.5,
+    "range": 410,
+    "radius": 115,
+    "pin_duration": 2.6,
+    "boss_control_multiplier": 0.3,
+    "immune_slow_multiplier": 0.65,
+    "retrieve_radius": 44,
+    "windup": 0.22,
+    "flight_speed": 720,
+    "flight_arc_height": 55,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 3.4,
+        "cooldown": 0.18
+      },
+      "special": {
+        "damage_coefficient": 6.5,
+        "cooldown": 0.45
+      }
+    }
+  },
+  "valkyrian_sling": {
+    "projectile_radius": 8,
+    "return_approach_factor": 0.5,
+    "approach_factor": 0.5,
+    "speed": 660,
+    "range": 560,
+    "bounce_range": 320,
+    "impacts": 4,
+    "empowered_impacts": 6,
+    "lifetime": 12,
+    "parry_cap": 6,
+    "parry_radius": 105,
+    "catch_radius": 16,
+    "parry_window": 0.18,
+    "turn_rate": 12,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 3,
+        "cooldown": 0.42
+      },
+      "special": {
+        "damage_coefficient": 5,
+        "cooldown": 0.9
+      }
+    },
+    "release_fraction": 0.35
+  },
+  "dragonbone_dagger": {
+    "followup_damage_multiplier": 0.55,
+    "stack_cap": 6,
+    "duration": 4,
+    "armor_per_stack": 12,
+    "armor_floor": -60,
+    "basic_reach": 115,
+    "special_reach": 115,
+    "basic_arc": 105,
+    "special_arc": 190,
+    "windup_fraction": 0.25,
+    "active_fraction": 0.5,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 2.65,
+        "cooldown": 0.12
+      },
+      "special": {
+        "damage_coefficient": 6.5,
+        "cooldown": 0.9
+      }
+    }
+  },
+  "archon_crossbow": {
+    "projectile_radius": 7,
+    "carry_offset": 20,
+    "carry_spacing": 18,
+    "speed": 760,
+    "range": 510,
+    "empowered_range": 650,
+    "carry_cap": 6,
+    "carry_resistance_threshold": 0.5,
+    "pierce_bonus": 0.35,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 4,
+        "cooldown": 0.48
+      },
+      "special": {
+        "damage_coefficient": 7.5,
+        "cooldown": 0.9
+      }
+    },
+    "projectile_cap": 4,
+    "release_fraction": 0.35
+  },
+  "divine_hammer": {
+    "windup": 0.18,
+    "contact_reach": 145,
+    "initial_arc": 160,
+    "empty_impact_distance": 75,
+    "chain_lunge": 105,
+    "chain_stop_distance": 85,
+    "recovery": 0.2,
+    "splash_radius": 105,
+    "splash_multiplier": 0.45,
+    "chain_range": 190,
+    "chain_cap": 8,
+    "repeat_windup": 0.12,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 4.2,
+        "cooldown": 0.3
+      },
+      "special": {
+        "damage_coefficient": 9.5,
+        "cooldown": 0.9
+      }
+    }
+  },
+  "grim_reaver": {
+    "base_critical": 0.28,
+    "critical_per_stack": 0.1,
+    "critical_cap": 0.88,
+    "critical_damage": 1.75,
+    "stack_cap": 6,
+    "duration": 6,
+    "basic_reach": 205,
+    "special_reach": 250,
+    "basic_arc": 245,
+    "special_arc": 360,
+    "windup_fraction": 0.25,
+    "active_fraction": 0.5,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 4,
+        "cooldown": 0.24
+      },
+      "special": {
+        "damage_coefficient": 9,
+        "cooldown": 0.9
+      }
+    }
+  },
+  "sentinel_shield": {
+    "windup": 0.12,
+    "stagger_duration": 0.12,
+    "basic_reach": 110,
+    "basic_arc": 100,
+    "basic_shove": 95,
+    "recovery": 0.14,
+    "reach": 150,
+    "arc": 130,
+    "shove": 280,
+    "lunge": 35,
+    "heavy_displacement_multiplier": 0.15,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 3.2,
+        "cooldown": 0.18
+      },
+      "special": {
+        "damage_coefficient": 6,
+        "cooldown": 0.65
+      }
+    }
+  },
+  "umbral_bow": {
+    "projectile_radius": 5,
+    "duration": 4,
+    "slow_multiplier": 0.55,
+    "steal_fraction": 0.45,
+    "haste_cap": 0.6,
+    "break_distance": 750,
+    "actions": {
+      "basic": {
+        "damage_coefficient": 3.1,
+        "cooldown": 0.38
+      },
+      "special": {
+        "damage_coefficient": 5.5,
+        "cooldown": 0.9
+      }
+    },
+    "speed": 700,
+    "range": 480,
+    "empowered_range": 620,
+    "pierces": 1,
+    "empowered_pierces": 3,
+    "projectile_cap": 4,
+    "release_fraction": 0.35
+  }
+}

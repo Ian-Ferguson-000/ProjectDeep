@@ -20,10 +20,12 @@ var traveled:=0.0
 var piercing:=false
 var impacted:=false
 var hit_ids: Dictionary = {}
+var enemy_hit := false
 var sprite: AnimatedSprite2D
 
 func setup(owner:SlasherPlayer,origin:Vector2,aim:Vector2,attack_data:Dictionary)->SlasherProjectile:
 	source=owner;global_position=origin;direction=aim.normalized() if not aim.is_zero_approx() else Vector2.RIGHT;attack=attack_data.duplicate(true)
+	attack["projectile_id"]=str(get_instance_id())
 	speed=float(attack.get("speed",520.0));max_range=float(attack.get("range",320.0));piercing=bool(attack.get("piercing",false));return self
 
 func _ready()->void:
@@ -78,9 +80,12 @@ func _damage_target(target:Node2D)->void:
 	var target_id:int=target.get_instance_id()
 	if hit_ids.has(target_id) or not target.has_method("receive_attack"):return
 	hit_ids[target_id]=true
+	var is_enemy:=target.is_in_group("slasher_enemy")
 	var strike:Dictionary=source.item_runtime.adjust_for_target(attack,target) if is_instance_valid(source) and source.item_runtime and target.is_in_group("slasher_enemy") else attack
 	if is_instance_valid(source):strike=source.adjust_active_weapon_attack(target,strike)
-	target.call("receive_attack",strike,source);hit_landed.emit(target,traveled)
+	var dealt:Variant=target.call("receive_attack",strike,source)
+	if is_enemy and (dealt is int or dealt is float) and float(dealt)>0:enemy_hit=true
+	hit_landed.emit(target,traveled)
 
 func _spawn_splash_visual(radius:float)->void:
 	var effect:=AnimatedSprite2D.new();var frames:=SpriteFrames.new();frames.remove_animation("default");frames.add_animation("splash");frames.set_animation_speed("splash",20.0);frames.set_animation_loop("splash",false)
@@ -92,7 +97,7 @@ func _spawn_splash_visual(radius:float)->void:
 func _impact(apply_splash:bool)->void:
 	if impacted:return
 	if apply_splash:_damage_impact()
-	if hit_ids.is_empty() and is_instance_valid(source) and source.has_method("notify_active_projectile_miss"):source.notify_active_projectile_miss(attack)
+	if not enemy_hit and is_instance_valid(source) and source.has_method("notify_active_projectile_miss"):source.notify_active_projectile_miss(attack)
 	impacted=true;impact_resolved.emit(global_position,attack.duplicate(true));sprite.play("impact")
 
 func _on_animation_finished()->void:

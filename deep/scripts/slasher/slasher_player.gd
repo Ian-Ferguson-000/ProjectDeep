@@ -90,6 +90,53 @@ var next_attack_multiplier:=1.0
 var active_buff_time:=0.0
 var active_buff_damage:=1.0
 var active_buff_haste:=1.0
+## Frenzy is a player commitment, not owned by an equipped weapon node.
+var fighter_frenzy_left:=0.0
+var fighter_frenzy_damage:=1.45
+var fighter_frenzy_haste:=1.45
+var fighter_frenzy_incoming:=2.0
+var fighter_frenzy_refresh_flash:=0.0
+var fighter_frenzy_hurt_flash:=0.0
+var fighter_frenzy_end_smoke:=0.0
+var fighter_frenzy_label:Label
+
+func _refresh_fighter_frenzy_label()->void:
+	if fighter_frenzy_left>0 and not is_instance_valid(fighter_frenzy_label):
+		fighter_frenzy_label=Label.new();fighter_frenzy_label.position=Vector2(-95,-79);fighter_frenzy_label.size=Vector2(190,18)
+		fighter_frenzy_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;fighter_frenzy_label.mouse_filter=Control.MOUSE_FILTER_IGNORE
+		fighter_frenzy_label.z_index=100;fighter_frenzy_label.add_theme_font_size_override("font_size",11)
+		fighter_frenzy_label.add_theme_color_override("font_color",Color("#ff9588"))
+		fighter_frenzy_label.add_theme_color_override("font_outline_color",Color("#170909"));fighter_frenzy_label.add_theme_constant_override("outline_size",3)
+		add_child(fighter_frenzy_label)
+	if is_instance_valid(fighter_frenzy_label):
+		fighter_frenzy_label.visible=fighter_frenzy_left>0 and health>0
+		fighter_frenzy_label.text="FRENZY %.1fs | HURT x%s"%[fighter_frenzy_left,str(fighter_frenzy_incoming)]
+
+func activate_fighter_frenzy(duration:float,outgoing:float,haste:float,incoming:float)->void:
+	fighter_frenzy_left=duration
+	fighter_frenzy_damage=outgoing;fighter_frenzy_haste=haste;fighter_frenzy_incoming=incoming
+	if duration>0:fighter_frenzy_refresh_flash=0.25;fighter_frenzy_end_smoke=0
+	_refresh_fighter_frenzy_label()
+	queue_redraw()
+
+func tick_fighter_frenzy(delta:float)->void:
+	if fighter_frenzy_left>0 or fighter_frenzy_refresh_flash>0 or fighter_frenzy_hurt_flash>0 or fighter_frenzy_end_smoke>0:queue_redraw()
+	var was_active:=fighter_frenzy_left>0
+	fighter_frenzy_refresh_flash=maxf(0,fighter_frenzy_refresh_flash-delta)
+	fighter_frenzy_hurt_flash=maxf(0,fighter_frenzy_hurt_flash-delta)
+	fighter_frenzy_end_smoke=maxf(0,fighter_frenzy_end_smoke-delta)
+	fighter_frenzy_left=0.0 if health<=0 else maxf(0,fighter_frenzy_left-delta)
+	if was_active and fighter_frenzy_left<=0 and health>0:fighter_frenzy_end_smoke=0.4
+	if health<=0:fighter_frenzy_refresh_flash=0;fighter_frenzy_hurt_flash=0;fighter_frenzy_end_smoke=0
+	_refresh_fighter_frenzy_label()
+
+func effective_attack_interval(slot:String,base:float)->float:
+	var interval:=base*(item_runtime.cooldown_multiplier() if item_runtime else 1.0)
+	if slot=="basic":
+		if item_runtime:interval/=item_runtime.attack_speed_multiplier()
+		if active_buff_time>0:interval/=maxf(0.1,active_buff_haste)
+		if fighter_frenzy_left>0:interval/=maxf(0.1,fighter_frenzy_haste)
+	return interval
 var mage_combo_effects: Node2D
 var combo_runtime
 var resolving_combo:Dictionary={}
@@ -109,11 +156,14 @@ var lunge_left:=0.0
 
 func snapshot_party_state()->Dictionary:
 	var state:={"cooldowns":cooldowns.duplicate(true),"invulnerable":invulnerable,"defense_window":defense_window,"defense_kind":defense_kind,"empowered":empowered,"is_hidden":is_hidden,"hidden_time":hidden_time,"retribution_stored":retribution_stored,"consumable_aegis":consumable_aegis,"consumable_speed_time":consumable_speed_time,"consumable_speed_multiplier":consumable_speed_multiplier,"movement_debuff_time":movement_debuff_time,"movement_debuff_multiplier":movement_debuff_multiplier,"next_attack_multiplier":next_attack_multiplier,"last_fireball_attack":last_fireball_attack.duplicate(true),"warrior_slash_chain":warrior_slash_chain,"warrior_slash_chain_time":warrior_slash_chain_time,"last_direction":[last_direction.x,last_direction.y],"aim_direction":[aim_direction.x,aim_direction.y],"marked_enemy_instance_id":marked_enemy.get_instance_id() if is_instance_valid(marked_enemy) else 0}
+	state["fighter_frenzy"]={"left":fighter_frenzy_left,"damage":fighter_frenzy_damage,"haste":fighter_frenzy_haste,"incoming":fighter_frenzy_incoming}
 	if combo_runtime!=null:state["combo"]=combo_runtime.snapshot()
 	if item_runtime!=null:state["item_runtime"]={"cooldowns":item_runtime.cooldowns.duplicate(true),"floor_uses":item_runtime.floor_uses.duplicate(true),"precision_count":item_runtime.precision_count}
 	return state
 
 func restore_party_state(state:Dictionary)->void:
+	var frenzy:Dictionary=state.get("fighter_frenzy",{})
+	activate_fighter_frenzy(float(frenzy.get("left",0)),float(frenzy.get("damage",1.45)),float(frenzy.get("haste",1.45)),float(frenzy.get("incoming",2)))
 	cooldowns=Dictionary(state.get("cooldowns",{"basic":0.0,"special":0.0,"defensive":0.0,"movement":0.0})).duplicate(true);invulnerable=float(state.get("invulnerable",0.0));defense_window=float(state.get("defense_window",0.0));defense_kind=String(state.get("defense_kind",""));empowered=bool(state.get("empowered",false));is_hidden=bool(state.get("is_hidden",false));hidden_time=float(state.get("hidden_time",0.0));retribution_stored=int(state.get("retribution_stored",0));consumable_aegis=int(state.get("consumable_aegis",0));consumable_speed_time=float(state.get("consumable_speed_time",0.0));consumable_speed_multiplier=float(state.get("consumable_speed_multiplier",1.0));movement_debuff_time=float(state.get("movement_debuff_time",0.0));movement_debuff_multiplier=float(state.get("movement_debuff_multiplier",1.0));next_attack_multiplier=float(state.get("next_attack_multiplier",1.0));last_fireball_attack=Dictionary(state.get("last_fireball_attack",{})).duplicate(true);warrior_slash_chain=int(state.get("warrior_slash_chain",0));warrior_slash_chain_time=float(state.get("warrior_slash_chain_time",0.0))
 	var direction:Array=state.get("last_direction",[]);if direction.size()>=2:last_direction=Vector2(float(direction[0]),float(direction[1]))
 	var aim:Array=state.get("aim_direction",[]);if aim.size()>=2:aim_direction=Vector2(float(aim[0]),float(aim[1]))
@@ -129,13 +179,20 @@ func setup(state:RunState)->void:
 	weapon_trails=null
 	if class_id in ["warrior","rogue","tank"]:
 		weapon_trails=preload("res://scripts/slasher/slasher_weapon_trails.gd").new();weapon_trails.z_index=7;add_child(weapon_trails)
-	if is_instance_valid(warrior_kit):remove_child(warrior_kit);warrior_kit.queue_free()
+	if is_instance_valid(warrior_kit):
+		if warrior_kit.has_method("on_unequipped"):warrior_kit.on_unequipped()
+		else:remove_child(warrior_kit);warrior_kit.queue_free()
 	if is_instance_valid(warrior_combo_effects):remove_child(warrior_combo_effects);warrior_combo_effects.queue_free()
 	if is_instance_valid(kit_buffs):remove_child(kit_buffs);kit_buffs.queue_free()
 	warrior_kit=null;warrior_combo_effects=null
 	kit_buffs=preload("res://scripts/slasher/slasher_combat_buffs.gd").new();kit_buffs.actor=self;add_child(kit_buffs)
 	if class_id=="warrior" and state.selected_gear!=null and WARRIOR_KITS.has_kit(state.selected_gear.id):
-		warrior_kit=WARRIOR_KITS.script_for(state.selected_gear.id).new();warrior_kit.configure(self,state.selected_gear.id,WARRIOR_KITS.data_for(state.selected_gear.id).actions);add_child(warrior_kit)
+		for child in get_children():
+			if child.get_meta("fighter_active_weapon_id","")==state.selected_gear.id and not child.is_queued_for_deletion():warrior_kit=child;break
+		if not is_instance_valid(warrior_kit):
+			warrior_kit=WARRIOR_KITS.script_for(state.selected_gear.id).new();warrior_kit.configure(self,state.selected_gear.id,WARRIOR_KITS.data_for(state.selected_gear.id).actions);add_child(warrior_kit)
+			if warrior_kit.has_method("on_unequipped"):
+				warrior_kit.set_meta("fighter_active_weapon_id",state.selected_gear.id);warrior_kit.set_meta("active_item_runtime_id",state.selected_gear.id)
 	if class_id=="warrior":
 		warrior_combo_effects=preload("res://scripts/slasher/slasher_warrior_combo_effects.gd").new();warrior_combo_effects.configure(self,state.selected_gear.id if uses_warrior_kit() else "standard",{});add_child(warrior_combo_effects)
 	if is_instance_valid(mage_kit):
@@ -181,6 +238,7 @@ func _refresh_presentation()->void:
 	sprite.sprite_frames=SlasherSpriteLibrary.player_frames(class_id,hero.gender if hero!=null else "");sprite.position=Vector2(float(tuning.get("sprite_offset_x",0.0)),float(tuning.get("sprite_offset_y",-30.0)));sprite.scale=Vector2.ONE*float(tuning.get("sprite_scale",0.9));presentation_ready=true;_play_animation("idle");queue_redraw()
 
 func _physics_process(delta:float)->void:
+	tick_fighter_frenzy(delta)
 	if combo_runtime!=null and combo_runtime.tick(delta):combo_updated.emit({"type":"progress","progress":combo_runtime.feedback()})
 	warrior_slash_chain_time=maxf(0.0,warrior_slash_chain_time-delta)
 	if active_buff_time>0.0:
@@ -267,12 +325,15 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	result.started=true
 	var combo_context: Dictionary=mage_combo_effects.capture() if is_instance_valid(mage_combo_effects) else warrior_combo_effects.capture() if is_instance_valid(warrior_combo_effects) else {}
 	active_action_slot=slot
+	set_meta("mage_attack_serial",int(get_meta("mage_attack_serial",0))+1)
 	var active_weapon_handled:=false
 	if slot=="defensive":
 		for child in get_children():
 			if not String(child.get_meta("fighter_active_weapon_id","")).is_empty() and child.has_method("can_active_parry") and child.call("can_active_parry"):
 				result=child.call("perform",slot,result);active_weapon_handled=true;break
 	if active_weapon_handled:pass
+	elif slot=="basic" and _mage_active_basic():
+		pass
 	elif uses_warrior_kit():
 		result=warrior_kit.perform(slot,result)
 	elif uses_mage_kit():
@@ -304,11 +365,15 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	_play_ability_sound(slot)
 	if result.has("combo_id"):AudioCue.play_from(self,"combo")
 	result.resource_spent=resource_cost
-	cooldowns[slot]=float(result.get("cooldown_override",tuning.get("cooldown",0.4 if slot=="basic" else 3.0)))*(item_runtime.cooldown_multiplier() if item_runtime else 1.0)
-	if slot=="basic" and item_runtime:cooldowns[slot]=float(cooldowns[slot])/item_runtime.attack_speed_multiplier()
-	if slot=="basic" and active_buff_time>0.0:cooldowns[slot]=float(cooldowns[slot])/maxf(0.1,active_buff_haste)
+	cooldowns[slot]=effective_attack_interval(slot,float(result.get("cooldown_override",tuning.get("cooldown",0.4 if slot=="basic" else 3.0))))
 	_after_item_action(slot)
-	resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());_play_action_animation(_action_animation_state(slot),float(cooldowns[slot]));animation_lock=minf(float(tuning.get("animation_lock",0.32)),float(cooldowns[slot]));ability_resolved.emit(result);return result
+	resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
+	var fighter_duration:float=warrior_kit.presentation_action_duration(float(cooldowns[slot])) if is_instance_valid(warrior_kit) and warrior_kit.has_method("presentation_action_duration") and slot in ["basic","special"] else -1.0
+	var animation_state:=_action_animation_state(slot)
+	if fighter_duration>0 and warrior_kit.has_method("presentation_animation_state"):animation_state=String(warrior_kit.presentation_animation_state())
+	_play_action_animation(animation_state,float(cooldowns[slot]),fighter_duration)
+	animation_lock=fighter_duration if fighter_duration>0 else minf(float(tuning.get("animation_lock",0.32)),float(cooldowns[slot]))
+	ability_resolved.emit(result);return result
 
 func _play_ability_sound(slot:String)->void:
 	if slot=="movement":AudioCue.play_from(self,"dash");return
@@ -494,7 +559,7 @@ func _show_dodge()->void:
 	label.position=Vector2(-26,-70);label.z_index=40;add_child(label)
 	var tween:=label.create_tween();tween.tween_property(label,"position:y",label.position.y-26.0,0.6);tween.parallel().tween_property(label,"modulate:a",0.0,0.6);tween.tween_callback(label.queue_free)
 
-func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->void:
+func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null,enemy_origin:bool=false)->void:
 	if is_instance_valid(warrior_kit) and warrior_kit.has_method("modify_incoming_damage"):amount=warrior_kit.modify_incoming_damage(amount)
 	for child in get_children():
 		var active_weapon_id:=String(child.get_meta("fighter_active_weapon_id",""))
@@ -553,15 +618,20 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null)->vo
 	if final>0 and SimpleCombat.enabled():final=SimpleCombat.enemy_hit_damage()
 	if item_runtime:
 		var mitigation:Dictionary=item_runtime.mitigate_damage(final);prevented+=int(mitigation.prevented);final=int(mitigation.damage)
-		if item_runtime.try_prevent_lethal(final,health):final=maxi(0,health-1)
+	# All incoming combat/environmental damage is doubled after mitigation;
+	# healing and resource/health costs do not pass through this damage path.
+	if fighter_frenzy_left>0:final=roundi(final*fighter_frenzy_incoming)
+	if item_runtime and item_runtime.try_prevent_lethal(final,health):final=maxi(0,health-1)
 	health=maxi(0,health-final);run_state.current_health=health
+	if final>0 and fighter_frenzy_left>0:fighter_frenzy_hurt_flash=0.2
 	if prevented>0:AudioCue.play_from(self,"block")
 	if final>0:AudioCue.play_from(self,"player_hurt")
 	if health<=0:AudioCue.play_from(self,"death",false)
 	if final>0:add_impact_shake(minf(9.0+float(final)*0.75,12.0),0.24)
 	if final>0:
 		for child in get_children():
-			if not String(child.get_meta("active_item_runtime_id","")).is_empty() and child.has_method("on_owner_damaged"):child.call("on_owner_damaged",final)
+			if child is SlasherMageActiveArsenal:child.on_owner_damaged(final,is_instance_valid(attacker) or enemy_origin)
+			elif not String(child.get_meta("active_item_runtime_id","")).is_empty() and child.has_method("on_owner_damaged"):child.call("on_owner_damaged",final)
 	move_and_collide(knockback*(0.25 if prevented>0 else 1.0));_enforce_field_bounds()
 	if defense_kind=="recover" and final>0:heal(int(ceil(final*float(tuning.get("recover_fraction",0.5)))))
 	if defense_kind=="retribution_ready" and retribution_stored>0:_area_attack(global_position,float(tuning.get("release_radius",80.0)),_attack_data(retribution_stored,"physical",{"knockback":float(tuning.get("release_knockback",30.0))}));retribution_stored=0
@@ -688,7 +758,8 @@ func _deflect_projectiles(reach:float,arc_degrees:float)->int:
 
 func _attack_data(damage:int,damage_type:String,extra:Dictionary={})->Dictionary:
 	if active_buff_time>0.0 and active_buff_damage>1.0:damage=maxi(1,int(round(float(damage)*active_buff_damage)))
-	var data:={"damage":damage,"damage_type":damage_type,"knockback":0.0,"status":"","status_duration":0.0}
+	if fighter_frenzy_left>0:damage=maxi(1,roundi(damage*fighter_frenzy_damage))
+	var data:={"damage":damage,"damage_type":damage_type,"knockback":0.0,"status":"","status_duration":0.0,"action_slot":active_action_slot,"attack_id":"%d:%d"%[get_instance_id(),int(get_meta("mage_attack_serial",0))]}
 	for key in extra:data[key]=extra[key]
 	return data
 
@@ -806,6 +877,11 @@ func adjust_active_weapon_attack(target:Node2D,attack:Dictionary)->Dictionary:
 		if (not String(child.get_meta("fighter_active_weapon_id","")).is_empty() or not String(child.get_meta("active_item_runtime_id","")).is_empty()) and child.has_method("adjust_external_attack"):result=child.call("adjust_external_attack",target,result)
 	return result
 
+func _mage_active_basic()->bool:
+	for child in get_children():
+		if child is SlasherMageActiveArsenal and child.fire_basic():return true
+	return false
+
 func notify_active_weapon_hit(target:SlasherEnemy,attack:Dictionary,was_dead:bool)->void:
 	for child in get_children():
 		if (not String(child.get_meta("fighter_active_weapon_id","")).is_empty() or not String(child.get_meta("active_item_runtime_id","")).is_empty()) and child.has_method("on_external_hit"):child.call("on_external_hit",target,attack,was_dead)
@@ -866,6 +942,23 @@ func _update_screen_shake(delta:float)->void:
 	var falloff:=screen_shake_time/maxf(0.001,screen_shake_duration)
 	camera.offset=Vector2(randf_range(-1.0,1.0),randf_range(-1.0,1.0))*screen_shake_strength*falloff
 func _draw()->void:
+	if fighter_frenzy_left>0:
+		var pulse:=0.65+sin(Time.get_ticks_msec()*0.012)*0.15
+		pulse*=clampf(fighter_frenzy_left,0.25,1)
+		draw_arc(Vector2.ZERO,35,0,TAU,28,Color(0.95,0.22,0.17,pulse),2.5,true)
+	if fighter_frenzy_refresh_flash>0:
+		var strength:=fighter_frenzy_refresh_flash/0.25
+		draw_arc(Vector2.ZERO,35+(1-strength)*8,0,TAU,24,Color(1,0.35,0.25,strength),3,true)
+	if fighter_frenzy_hurt_flash>0:
+		var progress:=1-fighter_frenzy_hurt_flash/0.2
+		for i in 6:
+			var direction:=Vector2.from_angle(i*TAU/6)
+			draw_polyline(PackedVector2Array([direction*(30+progress*12),direction.rotated(0.12)*(40+progress*12),direction*(48+progress*12)]),Color(1,0.45,0.35,1-progress),2,true)
+	if fighter_frenzy_end_smoke>0:
+		var progress:=1-fighter_frenzy_end_smoke/0.4
+		for i in 5:
+			var point:=Vector2.from_angle(i*TAU/5)*(30+progress*14)+Vector2(0,-progress*18)
+			draw_circle(point,4*(1-progress),Color(0.55,0.1,0.12,1-progress))
 	if is_instance_valid(kit_buffs) and kit_buffs.ward_amount()>0:
 		draw_arc(Vector2.ZERO,45,0,TAU,48,Color("#ffdc93"),3)
 		draw_string(ThemeDB.fallback_font,Vector2(-45,-83),"WARD %d"%kit_buffs.ward_amount(),HORIZONTAL_ALIGNMENT_CENTER,90,12,Color("#ffdc93"))
@@ -879,9 +972,36 @@ func _play_animation(state:String)->void:
 	var animation:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,state,facing_name)
 	if not animation.is_empty() and sprite.animation!=animation:sprite.play(animation)
 
-func _play_action_animation(state:String,cooldown:float)->void:
+func retarget_action_facing(direction:Vector2)->void:
+	aim_direction=direction
+	var next_facing:=SlasherSpriteLibrary.direction_name(direction,facing_name)
+	if next_facing==facing_name:return
+	facing_name=next_facing
 	if sprite==null or sprite.sprite_frames==null:return
-	if state=="slash":
+	var current:=String(sprite.animation)
+	var state:=""
+	for facing:String in SlasherSpriteLibrary.DIRECTIONS:
+		var suffix:="_"+facing
+		if current.ends_with(suffix):state=current.trim_suffix(suffix);break
+	if state.is_empty():return
+	var next:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,state,facing_name)
+	if next.is_empty() or next==sprite.animation:return
+	var frames:=sprite.sprite_frames
+	var old_count:=frames.get_frame_count(sprite.animation)
+	var new_count:=frames.get_frame_count(next)
+	var progress:float=(sprite.frame+sprite.frame_progress)/maxf(1,old_count)
+	var speed:float=sprite.get_playing_speed()/maxf(0.001,sprite.speed_scale)
+	# Preserve normalized pose and total duration even if directional strips
+	# differ in frame count/FPS. This is a turn, not a new attack.
+	speed*=float(new_count)/maxf(1,old_count)*frames.get_animation_speed(sprite.animation)/maxf(0.001,frames.get_animation_speed(next))
+	sprite.play(next,speed)
+	var frame_position:=progress*new_count
+	sprite.set_frame_and_progress(mini(new_count-1,int(frame_position)),fmod(frame_position,1.0))
+
+func _play_action_animation(state:String,cooldown:float,authoritative_duration:float=-1.0)->void:
+	if sprite==null or sprite.sprite_frames==null:return
+	if authoritative_duration>0:cooldown=authoritative_duration
+	if state=="slash" and authoritative_duration<=0:
 		cooldown=minf(0.18,cooldown)
 		if is_instance_valid(weapon_trails):weapon_trails.sync_fighter_duration(cooldown)
 	var animation:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,state,facing_name)
@@ -890,5 +1010,6 @@ func _play_action_animation(state:String,cooldown:float)->void:
 	var base_fps:float=sprite.sprite_frames.get_animation_speed(animation)
 	var natural_duration:float=float(frame_count)/maxf(0.001,base_fps)
 	var playback_scale:float=maxf(1.0,natural_duration/maxf(0.001,cooldown))
+	if authoritative_duration>0:playback_scale=natural_duration/maxf(0.001,authoritative_duration)
 	# Action playback always restarts so every successfully resolved attack gets a full swing.
 	sprite.stop();sprite.play(animation,playback_scale)

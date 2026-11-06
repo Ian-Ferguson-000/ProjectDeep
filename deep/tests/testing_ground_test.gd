@@ -29,7 +29,33 @@ func _run() -> void:
 	root.add_child(ground)
 	await process_frame
 	_expect(ground.class_picker.item_count==6,"All six classes must be available")
-	_expect(ground.editor.visible and ground.combat_root.process_mode==Node.PROCESS_MODE_DISABLED,"Build editor must pause combat")
+	_expect(not ground.editor.visible and ground.combat_root.process_mode==Node.PROCESS_MODE_INHERIT,"Armory must open directly into playable combat")
+	_expect(ground.state.selected_class_id=="warrior" and ground.state.get_level()==1 and ground.state.selected_gear.id==CampaignState.BASIC_GEAR.warrior,"Armory must default to a standard level-one Fighter")
+	_expect(ground.FLOOR.size.x>=1800.0 and ground.FLOOR.size.y>=900.0,"Expanded armory floor is still using the old compact dimensions")
+	_expect(ground.class_podiums.size()==6,"Walk-in armory must provide one podium for every class")
+	_expect(ground.item_displays.size()==ActiveItems.items().size(),"Walk-in armory must mount every active item along its walls")
+	_expect(ground.find_children("*","Button",true,false).all(func(button):return button.focus_mode==Control.FOCUS_NONE),"Testing HUD buttons can retain keyboard focus and turn Space into an accidental reset")
+	var tattoo_display:Node2D=ground.item_displays.filter(func(node):return node.item_id=="vibranium_tattoo")[0]
+	ground.player.global_position=tattoo_display.global_position;ground._process_armory_interactions()
+	_expect(ActiveItems.held(ground.state)=="vibranium_tattoo" and ActiveItems.is_ready(ground.state),"Walking into a compatible item did not equip it fully charged")
+	var mage_podium:Node2D=ground.class_podiums.filter(func(node):return node.class_id=="mage")[0]
+	ground.interaction_lock=null;ground.player.global_position=mage_podium.global_position;ground._process_armory_interactions()
+	_expect(ground.state.selected_class_id=="mage" and ground.state.get_level()==1 and ground.state.selected_gear.id==CampaignState.BASIC_GEAR.mage,"Walking into the Mage podium did not apply its standard build")
+	_expect(ActiveItems.held(ground.state)=="vibranium_tattoo","Class podium discarded a compatible neutral item")
+	var orb_display:Node2D=ground.item_displays.filter(func(node):return node.item_id=="michaels_orb")[0]
+	ground.interaction_lock=null;ground.player.global_position=orb_display.global_position;ground._process_armory_interactions()
+	_expect(ActiveItems.held(ground.state)=="michaels_orb","Walking into a class item did not swap the active slot")
+	_expect(ground.use_active_item() and ground.player.get_children().any(func(node):return node.get_meta("active_item_runtime_id","")=="michaels_orb"),"Michael's Orb crashed or failed through the walk-in armory activation path")
+	ground.interaction_lock=null;var warrior_podium:Node2D=ground.class_podiums.filter(func(node):return node.class_id=="warrior")[0];ground.player.global_position=warrior_podium.global_position;ground._process_armory_interactions()
+	_expect(ground.state.selected_class_id=="warrior" and ActiveItems.held(ground.state).is_empty(),"Class swap retained an incompatible active item")
+	for id in preload("res://scripts/slasher/slasher_fighter_arsenal.gd").WEAPON_IDS:
+		var display:Node2D=ground.item_displays.filter(func(node):return node.item_id==id)[0]
+		ground.interaction_lock=null;ground.player.global_position=display.global_position
+		ground._process_armory_interactions()
+		_expect(ActiveItems.held(ground.state)==id and ActiveItems.is_ready(ground.state),id+": walk-in display must equip a charged fighter item")
+		_expect(ground.use_active_item() and not ActiveItems.is_ready(ground.state),id+": wall pickup must activate and spend through the armory input path")
+	ground._equip_active_item("whirlwind");_expect(ground.use_active_item() and not ActiveItems.is_ready(ground.state),"Testing Ground did not activate and spend a wall item")
+	ground._process(ground.TRAINING_RECHARGE_SECONDS+0.01);_expect(ActiveItems.is_ready(ground.state),"Testing Ground did not rapidly recharge the active item")
 	var expected_loot:=GameBalance.get_items().size()
 	for id in HearthCatalog.data().items:
 		if HearthCatalog.item(id).get("slot","")=="relic" and not GameBalance.get_items().has(id):expected_loot+=1
@@ -130,6 +156,21 @@ func _run() -> void:
 	var live: SlasherEnemy=ground.combat_root.get_child(1)
 	live.receive_attack({"damage":7,"damage_type":"arcane"},ground.player)
 	_expect(int(ground.damage_by_type.get("arcane",0))==7,"Live enemies must also report typed damage")
+	var live_root:Node2D=ground.combat_root;Input.action_press("slasher_special");ground._process(0.016);Input.action_release("slasher_special")
+	_expect(ground.combat_root==live_root and ground.combat_root.get_children().filter(func(node):return node is SlasherEnemy and not node.dead).size()==3,"Space rebuilt the live arena instead of activating the held item")
+	live.receive_attack({"damage":1000,"damage_type":"physical"},ground.player);await process_frame
+	_expect(ground.live_respawns.size()==1 and ground.combat_root.get_children().filter(func(node):return node is SlasherEnemy and not node.dead).size()==2,"Defeated live enemy did not enter the respawn queue")
+	ground._process_live_respawns(2.9);_expect(ground.combat_root.get_children().filter(func(node):return node is SlasherEnemy and not node.dead).size()==2,"Live enemy respawned before three seconds")
+	ground._process_live_respawns(0.11);_expect(ground.live_respawns.is_empty() and ground.combat_root.get_children().filter(func(node):return node is SlasherEnemy and not node.dead).size()==3,"Live enemy did not respawn naturally after three seconds")
+	var jade_victim:SlasherEnemy=ground.combat_root.get_children().filter(func(node):return node is SlasherEnemy and not node.dead)[0];jade_victim.global_position=ground.player.global_position+Vector2(160,0);jade_victim.health=1;var jade_victim_id:=jade_victim.get_instance_id();ground.player.aim_direction=Vector2.RIGHT;ground._equip_active_item("jade_serpent_staff")
+	_expect(ground.use_active_item(),"Jade Serpent Staff did not activate against a live training enemy")
+	var jade_runtime:Node=ground.player.get_children().filter(func(node):return node.get_meta("active_item_runtime_id","")=="jade_serpent_staff")[0]
+	jade_runtime.set_physics_process(false)
+	for step in 60:jade_runtime._step(1.0/60.0)
+	_expect(jade_victim.dead,"Traveling Jade dart did not kill the live training enemy")
+	await process_frame;await process_frame
+	jade_runtime._process_poison(0.1);jade_runtime._process_missiles(0.1)
+	_expect(not jade_runtime.poison.has(jade_victim_id) and not jade_runtime.marked.has(jade_victim_id),"Jade Serpent Staff retained its freed live-enemy victim")
 	ground.queue_free();await process_frame;await process_frame
 	var main_script := load("res://scripts/main.gd")
 	var main: Node=main_script.new()

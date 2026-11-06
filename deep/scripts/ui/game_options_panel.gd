@@ -32,6 +32,7 @@ func setup(show_close_button:bool=true)->void:
 	_add_option(grid,"UI Scale",["75%","100%","125%","150%"],[0.75,1.0,1.25,1.5],"ui_scale")
 	_add_slider(grid,"Slasher Camera Zoom","slasher_zoom",1.0,1.5,0.05,"%.2f×")
 	_add_slider(grid,"Screen Shake","screen_shake_intensity",0.0,1.5,0.05,"%d%%",true)
+	_add_option(grid,"Combat Effects",["Normal","Reduced"],[false,true],"reduced_effects")
 	_add_audio_row(grid,"Master","master");_add_audio_row(grid,"Music","music");_add_audio_row(grid,"SFX","sfx")
 	_add_audio_row(grid,"Ambience","ambience");_add_audio_row(grid,"UI","ui")
 	var controls:=Label.new();controls.text="CONTROLS\nKeyboard: WASD move · Left click attack · Shift+click defend · Right click dodge · Space active item · Q potion · E interact · M codex · Esc menu\nController: D-pad move · A attack/interact · Y defend · B dodge · X active item · L3 potion · Start codex · Back menu";controls.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;controls.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;controls.add_theme_color_override("font_color",Color("cbbd9b"));options_body.add_child(controls)

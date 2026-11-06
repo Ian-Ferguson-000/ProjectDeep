@@ -20,16 +20,25 @@ static func spawn(target: Node2D, amount: int, kind: String = "physical", source
 func _show(target: Node2D, amount: int, kind: String, source: String, critical: bool) -> void:
 	var target_id := target.get_instance_id()
 	var active := _live_popups(target_id)
-	while active.size() >= MAX_PER_TARGET:
+	var compact:bool=POPUP.is_compact_source(source)
+	if compact:
+		for reference in active:
+			var existing:Node=reference.get_ref()
+			if existing.compact and existing.damage_type==kind and existing.age<0.22:
+				existing.amount+=amount
+				existing.critical=existing.critical or critical
+				existing.queue_redraw()
+				return
+	while active.size() >= (2 if compact else MAX_PER_TARGET):
 		var oldest: Node = active.pop_front().get_ref()
 		if is_instance_valid(oldest): oldest.queue_free()
 	var ordinal := int(popup_counts.get(target_id, 0))
-	var lane := ordinal % 3
+	var lane := 1 if compact else ordinal % 3
 	popup_counts[target_id] = ordinal + 1
 	var popup := POPUP.new()
 	popup.setup(amount, kind, source, critical, lane)
 	add_child(popup)
-	popup.global_position = target.global_position + Vector2((lane - 1) * 60, -66)
+	popup.global_position = target.global_position + Vector2((lane - 1) * 60, -58 if compact else -66)
 	active.append(weakref(popup))
 	target_popups[target_id] = active
 
