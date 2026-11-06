@@ -1,0 +1,22 @@
+{
+  "how_to_edit": [
+    "Crafting and quest materials. Basic enemies drop only these (data/enemy_drops.json → basic_material_chance). Mini bosses and bosses always drop their trophy. Read by scripts/game/materials.gd.",
+    "Materials are carried during a run and banked at the Hearth when the adventurer comes home alive; a death loses them. Visitors can ask for them (deliver quests: {\"material\": id, \"count\": n}). Crafting will use them later.",
+    "by_family: which material each enemy family drops (families come from scripts/game/unlocks.gd FAMILIES). by_enemy: trophies for specific mini bosses and bosses, which win over the family.",
+    "color: the pouch colour on the floor and in lists (hex)."
+  ],
+  "materials": {
+    "kobold_fang": {"name": "Kobold Fang", "description": "A yellowed fang from a kobold bandit. Smiths set them in hilts for luck.", "color": "e8dcc0", "kind": "crafting"},
+    "spore_sac": {"name": "Spore Sac", "description": "A swollen sac from a sporeling, still puffing. Physicians want them.", "color": "9fd39a", "kind": "crafting"},
+    "grave_dust": {"name": "Grave Dust", "description": "Fine grey dust from the risen dead. Some forges quench steel in it.", "color": "b8b4ad", "kind": "crafting"},
+    "wolf_pelt": {"name": "Wolf Pelt", "description": "A thick forest wolf pelt.", "color": "8a7766", "kind": "crafting"},
+    "beast_hide": {"name": "Beast Hide", "description": "Tough hide from a forest beast.", "color": "a5794f", "kind": "crafting"},
+    "briar_heart": {"name": "Briar Heart", "description": "The thorny core of a Briar Guardian. It still twitches.", "color": "6fbf73", "kind": "quest"},
+    "cutthroats_sash": {"name": "Cutthroat's Sash", "description": "A kobold champion's red sash, knotted with stolen rings.", "color": "d0574a", "kind": "quest"},
+    "lords_signet": {"name": "Crypt Lord's Signet", "description": "A tarnished signet with a crest no herald recognises.", "color": "c9a36a", "kind": "quest"},
+    "heartwood_seed": {"name": "Heartwood Seed", "description": "A seed from the Heartwood Colossus, warm to the touch.", "color": "e0b04a", "kind": "quest"},
+    "crown_shard": {"name": "Crown Shard", "description": "A shard of Big Skelly Boi's crown. Wardens wore crowns like this.", "color": "d9d2ff", "kind": "quest"}
+  },
+  "by_family": {"bandit": "kobold_fang", "sporeling": "spore_sac", "undead": "grave_dust", "wolf": "wolf_pelt", "beast": "beast_hide"},
+  "by_enemy": {"briar_guardian": "briar_heart", "elite_guardian": "briar_heart", "bandit_cutthroat": "cutthroats_sash", "crypt_lord": "lords_signet", "crypt_boss": "lords_signet", "heartwood_colossus": "heartwood_seed", "colossus": "heartwood_seed", "charnel_king": "crown_shard"}
+}

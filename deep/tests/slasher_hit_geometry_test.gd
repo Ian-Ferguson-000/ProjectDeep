@@ -7,7 +7,9 @@ class Dummy extends Node2D:
 	func receive_attack(_data:Dictionary,_source:Node=null)->int:hits+=1;return 1
 
 var failures:Array[String]=[]
-func _initialize()->void:call_deferred("_run")
+func _initialize() -> void:
+	SimpleCombat.dodge_override = 0.0  # every hit must land in this test
+	call_deferred("_run")
 func check(condition:bool,message:String)->void:
 	if not condition:failures.append(message)
 func _player(id:String)->SlasherPlayer:

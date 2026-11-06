@@ -6,7 +6,9 @@ func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
 const COMBOS:=preload("res://scripts/slasher/slasher_combo_runtime.gd")
 const CODEX:=preload("res://scripts/slasher/slasher_codex_menu.gd")
 
-func _initialize()->void:call_deferred("_run")
+func _initialize() -> void:
+	SimpleCombat.dodge_override = 0.0  # every hit must land in this test
+	call_deferred("_run")
 
 func _run()->void:
 	var failures:Array[String]=[]

@@ -23,7 +23,7 @@ func run() -> void:
 		counts[item.slot] = int(counts.get(item.slot,0))+1
 		check(not item.sources.is_empty() and FileAccess.file_exists(item.icon),"Missing source/icon: "+id)
 		check(not GameBalance.get_item(id).is_empty() and not GameBalance.get_slasher_item_effects(id).is_empty(),"Missing mode support: "+id)
-	check(counts=={"weapon":34,"armor":12,"accessory":16,"relic":12},"Catalog count mismatch")
+	check(counts=={"weapon":35,"armor":12,"accessory":16,"relic":12},"Catalog count mismatch: %s" % [counts])
 	check(HearthCatalog.data().legacy_item_audit.size()==52,"Legacy audit incomplete")
 	var c := company()
 	var first: CharacterRecord=c.living_roster()[0]

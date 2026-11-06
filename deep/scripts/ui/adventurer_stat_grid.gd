@@ -56,7 +56,8 @@ func _clear() -> void:
 		child.queue_free()
 
 func _add_row(stat: String, span: Vector2i, value_text: String, exact: bool) -> void:
-	var tooltip := "%s — %s\nMost useful for: %s" % [STAT_NAMES[stat], STAT_HINTS[stat], _classes_using(stat)]
+	var hint := SimpleCombat.describe(stat) if SimpleCombat.enabled() and not SimpleCombat.describe(stat).is_empty() else String(STAT_HINTS[stat])
+	var tooltip := "%s — %s\nMost useful for: %s" % [STAT_NAMES[stat], hint, _classes_using(stat)]
 	var name_label := Label.new()
 	name_label.text = stat.to_upper() if compact else STAT_NAMES[stat]
 	name_label.tooltip_text = tooltip

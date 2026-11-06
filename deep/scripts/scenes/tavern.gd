@@ -97,6 +97,8 @@ var activity_controller:TavernActivityController
 var departure_running:=false
 var pause_menu: GamePauseMenu
 var tavern_tour: TavernTour
+var visitor_panel: VisitorPanel
+var contest_visitor_id := ""
 var active_living_actor_id:=""
 var tavern_dialogue_service:TavernDialogueService
 var actor_dialogue:DialogueChat
@@ -133,6 +135,12 @@ func _ready() -> void:
 	_build_story_dialogue()
 	actor_dialogue=DIALOGUE_CHAT.new();actor_dialogue.name="ActorDialogue";actor_dialogue.conversation_finished.connect(_on_actor_dialogue_finished);ui_root.add_child(actor_dialogue)
 	_setup_merchant_shops()
+	visitor_panel = VisitorPanel.new(); ui_root.add_child(visitor_panel)
+	visitor_panel.changed.connect(func(): _save_tavern_progress(); _refresh_ui())
+	visitor_panel.closed.connect(func():
+		if activity_controller != null: activity_controller.populate_from_campaign(run_state)
+		_restore_hub_focus())
+	visitor_panel.contest_requested.connect(_open_visitor_minigame)
 	pause_menu = GamePauseMenu.new().setup(controller,run_state,"tavern"); pause_menu.can_open = _can_open_pause_menu; pause_menu.before_leave = _save_tavern_progress; pause_menu.guide = start_tavern_tour; add_child(pause_menu)
 	management = preload("res://scenes/ui/hearth/Company.tscn").instantiate()
 	ui_root.add_child(management)
@@ -221,6 +229,7 @@ func _on_living_actor_interaction(kind:String,id:String)->void:
 		"candidate":_open_candidate_with_dialogue(id)
 		"roster":_open_recruited_summary(id)
 		"merchant":_open_merchant_shop(id)
+		"visitor":open_visitor(id)
 
 func _open_candidate_with_dialogue(candidate_id:String)->void:
 	if tavern_dialogue_service==null or actor_dialogue==null:
@@ -466,6 +475,7 @@ func _build_armory_modal() -> void:
 	var testing := Button.new(); testing.name="OpenTestingGround"; testing.text="Enter testing ground"; testing.tooltip_text="Try every class, weapon, item, and relic with free build swapping."; testing.pressed.connect(func():
 		if controller != null and controller.has_method("open_testing_ground"):controller.open_testing_ground())
 	_style_button(testing); body.add_child(testing)
+	testing.visible = GameSettingsService.dev_mode_available  # a dev tool, hidden in the demo
 	var close := Button.new(); close.text = "Close"; close.pressed.connect(_close_modal.bind(armory_backdrop)); _style_button(close); body.add_child(close)
 
 func _build_expedition_modal() -> void:
@@ -957,12 +967,12 @@ func _close_top_modal() -> void:
 	elif expedition_backdrop.visible: _close_modal(expedition_backdrop)
 	elif armory_backdrop.visible: _close_modal(armory_backdrop)
 
-## The pause menu is the main menu: it opens over the Hearth, shops and dialogue too.
+## Esc opens the pause menu only from the tavern floor itself (Esc closes any open window first).
 func _can_open_pause_menu() -> bool:
-	return true
+	return not _modal_visible() and not departure_running and not arrivals_running
 
 func _modal_visible() -> bool:
-	return active_contest!=null or (management != null and management.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
+	return (visitor_panel!=null and visitor_panel.visible) or active_contest!=null or (management != null and management.visible) or (merchant_shop_panel != null and merchant_shop_panel.visible) or (recruitment_dialogue!=null and recruitment_dialogue.visible) or (options_backdrop!=null and options_backdrop.visible) or (calendar_backdrop!=null and calendar_backdrop.visible) or (armory_backdrop != null and armory_backdrop.visible) or (expedition_backdrop != null and expedition_backdrop.visible) or (results_backdrop != null and results_backdrop.visible) or (company_backdrop!=null and company_backdrop.visible)
 
 func _restore_hub_focus() -> void:
 	if activity_controller!=null and not _modal_visible() and not departure_running:
@@ -973,6 +983,44 @@ func _restore_hub_focus() -> void:
 	if expedition_button!=null and expedition_button.visible and not expedition_button.disabled:expedition_button.grab_focus()
 	else:ui_root.grab_focus()
 	call_deferred("_maybe_start_tavern_tour")
+
+# ---------------------------------------------------------------- visitors of merit
+
+## Talk to a visitor of merit (data/visitors.json) who's in today.
+func open_visitor(visitor_id: String, message: String = "") -> void:
+	if visitor_panel == null or run_state == null or not VisitorService.is_present(run_state.campaign,visitor_id): return
+	if keeper != null: keeper.set_modal_paused(true)
+	if activity_controller != null: activity_controller.set_paused(true)
+	visitor_panel.open(run_state.campaign,visitor_id,message)
+
+## Their mini-game, using the visitor contests (a win once per visit = favour).
+func _open_visitor_minigame(visitor_id: String, contest_id: String) -> void:
+	if active_contest != null or not VisitorContestRules.CONTESTS.has(contest_id): return
+	var scene := load("res://scenes/minigames/%s.tscn" % contest_id) as PackedScene
+	if scene == null: return
+	var data := VisitorService.visitor(visitor_id)
+	active_contest = scene.instantiate() as VisitorContest
+	contest_visitor_id = visitor_id
+	active_contest.setup({"visitor_name":String(data.get("name",visitor_id)),"portrait":"","portrait_texture":PlaceholderArt.visitor_portrait(data),"attribute":int(VisitorService.minigame(visitor_id).get("stat",12)),"learning_potential":"steady","attribute_known_exact":true,"seed":hash("%s:%d:%d" % [visitor_id,run_state.campaign.calendar_day,run_state.campaign.calendar_shift])})
+	active_contest.completed.connect(_complete_visitor_minigame)
+	active_contest.cancelled.connect(_return_from_visitor_minigame)
+	visitor_panel.hide()
+	ui_root.add_child(active_contest); active_contest.move_to_front()
+
+func _complete_visitor_minigame(result: Dictionary) -> void:
+	var outcome := String(result.get("outcome",""))
+	var counted := VisitorService.can_contest(run_state.campaign,contest_visitor_id)
+	VisitorService.record_contest(run_state.campaign,contest_visitor_id,outcome)
+	if outcome == "win" and counted: active_contest.feedback.text += "  ·  +%d favour" % int(VisitorService.minigame(contest_visitor_id).get("favour_per_win",1))
+	_save_tavern_progress()
+
+func _return_from_visitor_minigame() -> void:
+	if active_contest == null: return
+	active_contest.hide(); active_contest.set_process_input(false); active_contest.queue_free(); active_contest = null
+	var visitor_id := contest_visitor_id
+	contest_visitor_id = ""
+	if not visitor_id.is_empty(): open_visitor(visitor_id)
+	else: _restore_hub_focus()
 
 # ---------------------------------------------------------------- tavern guide
 

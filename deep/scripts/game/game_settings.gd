@@ -27,7 +27,13 @@ func get_float(key:String,fallback:float=0.0)->float:return float(get_value(key,
 func get_bool(key:String,fallback:bool=false)->bool:return bool(get_value(key,fallback))
 func get_string(key:String,fallback:String="")->String:return String(get_value(key,fallback))
 
+## Dev Mode (fast recharge, boosted drops) is hidden for the friends demo: no
+## toggle on the start screen, and a saved "dev_mode" setting is ignored.
+## Set to true to bring it back; tests that check Dev Mode turn it on.
+static var dev_mode_available:=false
+
 static func dev_mode_enabled()->bool:
+	if not dev_mode_available:return false
 	var loop:=Engine.get_main_loop()
 	if loop is SceneTree:
 		var service:Node=loop.root.get_node_or_null("GameSettings")

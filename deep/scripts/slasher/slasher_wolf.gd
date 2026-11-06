@@ -18,7 +18,7 @@ func setup(value:SlasherPlayer,character_id:String="")->void:
 func _ready() -> void:
 	if tuning.is_empty():tuning=GameBalance.get_slasher_companion_tuning("wolf")
 	var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=float(tuning.get("collision_radius",10.0));shape.shape=circle;add_child(shape)
-	sprite=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";sprite.sprite_frames=SlasherSpriteLibrary.companion_frames();sprite.position=Vector2(0,-23);sprite.scale=Vector2(0.58,0.58);add_child(sprite);_play_animation("idle")
+	sprite=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";sprite.sprite_frames=SlasherSpriteLibrary.companion_frames();sprite.position=Vector2(0,-23);sprite.scale=Vector2(0.72,0.72);add_child(sprite);_play_animation("idle")
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(owner_player):queue_free();return
 	attack_cooldown=maxf(0,attack_cooldown-delta)
@@ -44,7 +44,7 @@ func _physics_process(delta: float) -> void:
 func _attack_damageable(target:Node2D)->void:
 	AudioCue.play_from(self,"enemy_attack")
 	var power:int=owner_spell_power if String(tuning.get("power_stat","attack_power"))=="spell_power" else owner_attack_power
-	var damage:int=maxi(1,int(round(power*float(tuning.get("damage_coefficient",1.0))))+int(tuning.get("flat_damage",0)));target.call("receive_attack",{"damage":damage,"damage_type":"physical","knockback":0.0},owner_player);attack_cooldown=float(tuning.get("attack_cooldown",0.8));_play_animation("attack");animation_lock=float(tuning.get("animation_lock",0.3))
+	var damage:int=maxi(1,int(round(power*float(tuning.get("damage_coefficient",1.0))))+int(tuning.get("flat_damage",0)));target.call("receive_attack",{"damage":damage,"damage_type":"physical","knockback":0.0,"damage_stat":"wis"},owner_player);attack_cooldown=float(tuning.get("attack_cooldown",0.8));_play_animation("attack");animation_lock=float(tuning.get("animation_lock",0.3))
 
 func _grant_owner_resource(amount:int)->void:
 	if amount<=0 or not is_instance_valid(owner_player) or owner_player.run_state==null:return

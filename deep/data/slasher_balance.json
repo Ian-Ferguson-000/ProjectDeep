@@ -1,8 +1,9 @@
 {
+  "run_start": {"how_to_edit": "starter_relic: true gives a free relic choice when a run begins (floor 1). false: runs start with no relic.", "starter_relic": false},
   "generation": {"width": 44, "height": 28, "base_rooms": 6, "room_growth_per_floor": 1, "room_growth_cap": 3, "room_width_min": 9, "room_width_max": 14, "room_height_min": 7, "room_height_max": 11, "corridor_width": 2, "tile_size": 48, "decoration_density": 0.16, "edge_decoration_density": 0.48, "solid_prop_density": 0.025, "spawn_clearance_cells": 2,"enemy_count_per_room_cap":7},
   "rewards": {"floor_xp_base":45,"floor_xp_per_depth":5,"elite_floor_bonus":55,"campaign_boss_bonus":70,"endless_xp_multiplier":0.35,"loot_gold_base":5},
   "boss_durability": {"max_damage_fraction":0.05,"shield_reduction":0.75,"shield_duration":0.5,"shield_color":"#8fd8ff"},
-  "input": {"held_basic_cooldown_multiplier": 2.25},
+  "input": {"held_basic_cooldown_multiplier": 2.25, "held_basic_cooldown_multiplier_by_class": {"warrior": 1.0}, "buffer_window": 0.25, "buffered_slots": ["basic", "special", "movement", "secondary"]},
   "combos": {
 	"mage": [
 	  {"id":"spellstorm_volley","name":"Spellstorm Volley","description":"Weave two missiles through a Blink, then release a three-fireball fan.","steps":["action:basic","action:basic","action:movement","action:special"],"step_labels":["Missile","Missile","Blink","Fireball"],"window":2.5,"priority":30,"effect":{"projectiles":3,"spread_degrees":12,"damage_multiplier":0.45}},
@@ -16,12 +17,13 @@
 	  {"id":"vengeful_spiral","name":"Vengeful Spiral","description":"Parry, Charge, and Cleave twice in a vengeful spiral.","steps":["confirm:parry_success","action:movement","action:special"],"step_labels":["Successful Parry","Charge","Cleave"],"window":2.5,"priority":40,"effect":{"damage_multiplier":1.25,"arc_degrees":360,"echo_damage_multiplier":0.60,"echo_delay":0.18,"resource_refund":1}}
 	]
   },
-  "hud": {"health_per_heart": 4},
+  "hud": {"health_per_heart": 1},
+  "simple_combat": {"enabled": true, "con_per_heart": 4, "min_hearts": 1, "stat_per_damage": 5, "min_damage": 1, "max_damage": 4, "enemy_hit_damage": 1, "enemy_health_scale": 0.5, "damage_stat_by_class": {"warrior": "str", "tank": "str", "rogue": "dex", "mage": "int", "healer": "wis", "summoner": "wis"}, "weapon_stats": {"borderkeepers_spear": "str", "sword_shield": "str", "spear_shield": "str", "greatsword": "str", "dawn_bastion": "str", "demon_blade": "str", "storm_trident": "str", "divine_hammer": "str", "grim_reaver": "str", "sentinel_shield": "str", "tower_shield": "str", "iron_porter": "str", "oathwall": "str", "citadel_heart": "str", "eldritch_bowstaff": "dex", "valkyrian_sling": "dex", "dragonbone_dagger": "dex", "archon_crossbow": "dex", "umbral_bow": "dex", "spectral_dagger": "dex", "fox_teeth": "dex", "moon_stiletto": "dex", "last_whisper": "dex", "magic_missile_shield": "int", "fireball_fire_shield": "int", "lightning_flash_step": "int", "astral_covenant": "int", "sunwood_staff": "int", "pilgrim_staff": "int", "mercy_branch": "int", "solstice_crook": "int", "bond_staff": "wis", "pack_call": "wis", "wild_covenant": "wis", "ancient_bond": "wis"}, "dodge_per_dex_point": 0.01, "dodge_max": 0.15, "charisma_price_per_point": 0.03, "charisma_price_limits": [0.7, 1.3], "charisma_training_per_point": 2, "untrainable_stats": ["cha"], "stat_descriptions": {"str": "Damage with strength weapons: swords, spears, hammers, greatswords and shields.", "dex": "Damage with dexterity weapons: daggers, bows, slings and crossbows. Also a small chance to dodge any hit.", "con": "Health: every 4 points is a heart (CON 20 = 5 hearts).", "int": "Magic strength: fireballs, missiles, lightning and other spells.", "wis": "Summon strength: how hard your bonded creatures hit.", "cha": "Better prices from traders, and better odds on every training session at the Hearth. Can't be trained."}},
   "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28, "hollow_chance": 0.4}, "coffin": {"health": 10, "collision_radius": 17, "break_duration": 0.26, "hollow_chance": 0.4}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
   "classes": {
 	"warrior": {
 	  "speed": 285, "collision_radius": 18, "sprite_scale": 1.42, "sprite_offset_y": -27,
-	  "basic": {"cooldown": 0.18, "combo_finisher_cooldown": 0.90, "combo_reset_window": 0.70, "resource_cost": 0, "resource_gain": 2, "power_stat": "attack_power", "damage_coefficient": 3.0, "flat_damage": 0, "reach": 118, "arc_degrees": 92, "knockback": 10, "deflect_reach": 82, "deflect_arc_degrees": 56, "animation_lock": 0.32},
+	  "basic": {"cooldown": 0.18, "combo_finisher_cooldown": 0.42, "combo_reset_window": 0.85, "lunge": [10, 10, 22], "lunge_time": 0.09, "finisher_knockback_multiplier": 1.8, "finisher_arc_bonus": 24, "resource_cost": 0, "resource_gain": 2, "power_stat": "attack_power", "damage_coefficient": 3.0, "flat_damage": 0, "reach": 118, "arc_degrees": 92, "knockback": 10, "deflect_reach": 82, "deflect_arc_degrees": 56, "animation_lock": 0.32},
 	  "movement": {"cooldown": 0.2, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 2.0, "flat_damage": 0, "movement_distance": 355, "dash_speed": 1120, "landing_invulnerability": 0.08, "destination_clearance": 22, "path_radius": 36, "invulnerability": 0.38, "reach": 58, "arc_degrees": 75, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
 	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 4.0, "flat_damage": 0, "reach": 208, "arc_degrees": 140, "knockback": 30, "animation_lock": 0.32},
 	  "defensive": {"cooldown": 3.5, "resource_cost": 0, "resource_gain": 0, "effect_duration": 0.65, "mitigation": 1.0, "counter_coefficient": 1.0, "counter_flat_damage": 0, "counter_knockback": 35, "animation_lock": 0.32}
@@ -101,12 +103,12 @@
   },
   "wolfmaster": {"root_cooldown":6.5,"enraged_root_cooldown":4.25,"root_windup":0.85,"root_radius":74,"root_damage_multiplier":0.8,"root_slow_multiplier":0.5,"root_slow_duration":1.4,"howl_cooldown":8.5,"howl_radius":300,"heal_fraction":0.12,"speed_boost":1.22,"speed_boost_duration":3.0,"reinforcement_cap":5},
   "enemy_visuals": {
-	"feral_wolf": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.7},
-	"wolf_vanguard": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.74},
-	"wolf_lurker": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.67},
-	"wolf_charger": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.78},
-	"wolf_hunter": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.7},
-	"wolf_howler": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.66},
+	"feral_wolf": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.81},
+	"wolf_vanguard": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.91},
+	"wolf_lurker": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.77},
+	"wolf_charger": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.94},
+	"wolf_hunter": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.82},
+	"wolf_howler": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.83},
 	"thornback_boar": {"sprite_offset_x": 0, "sprite_offset_y": -10, "sprite_scale": 0.78},
 	"briar_guardian": {"sprite_offset_x": 0, "sprite_offset_y": -12, "sprite_scale": 0.74},
 	"poison_ranger": {"sprite_offset_x": 0, "sprite_offset_y": -18, "sprite_scale": 0.7},

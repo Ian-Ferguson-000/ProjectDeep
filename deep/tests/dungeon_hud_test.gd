@@ -21,7 +21,7 @@ func _run() -> void:
 	_expect(hud != null,"No dungeon HUD")
 	if hud != null:
 		var viewport_height: float = root.get_visible_rect().size.y
-		_expect(hud.heart_count() == int(ceil(scene.player.max_health / 4.0)),"Heart count does not follow max health")
+		_expect(hud.heart_count() == int(ceil(scene.player.max_health / float(hud.health_per_heart))),"Heart count does not follow max health")
 		_expect(hud._hearts_top() > viewport_height * 0.7,"Hearts are not along the bottom")
 		_expect(hud._counters.position.y > viewport_height * 0.7 and hud._counters.position.x < 100,"Coins and keys are not bottom left")
 		_expect(hud.active_slot.position.x < 60 and hud.active_slot.position.y > viewport_height * 0.8,"Active slot is not in the bottom-left corner")

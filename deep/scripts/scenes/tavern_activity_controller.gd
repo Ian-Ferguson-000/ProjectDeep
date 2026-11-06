@@ -30,6 +30,8 @@ func populate(enter_candidates:bool)->void:
 	_spawn_merchant("tavern")
 	for merchant_id in GameBalance.get_merchants():
 		if merchant_id!="tavern" and run_state.is_merchant_recruited(String(merchant_id)):_spawn_merchant(String(merchant_id))
+	# Visitors of merit who are in today (VisitorService); "!" when they have news.
+	for visitor_id in VisitorService.present(run_state.campaign):_spawn_visitor(visitor_id)
 	var count:=0
 	for candidate in run_state.campaign.get_candidates():
 		if count>=visible_adventurer_cap:break
@@ -112,10 +114,19 @@ func _spawn_merchant(merchant_id:String)->TavernActor:
 	var frames:=SlasherSpriteLibrary.static_enemy_frames(String(data.get("portrait","")))
 	actor.configure("merchant",merchant_id,String(data.get("name",merchant_id.capitalize())),frames,Vector2(0.82,0.82));actor.conversation_id="merchant_default";_register(actor);return actor
 
+func _spawn_visitor(visitor_id:String)->TavernActor:
+	var data:=VisitorService.visitor(visitor_id)
+	var anchor:=_claim_anchor(visitor_id,["Seat","Wait","Merchant"])
+	if data.is_empty() or anchor==null:return null
+	var actor:=ACTOR_SCENE.instantiate() as TavernActor;actors_root.add_child(actor);actor.global_position=anchor.global_position
+	var label:=String(data.get("name",visitor_id))+("  !" if VisitorService.has_news(run_state.campaign,visitor_id) else "")
+	actor.configure("visitor",visitor_id,label,PlaceholderArt.visitor_frames(data),Vector2(1.0,1.0));actor.conversation_id="visitor";_register(actor)
+	return actor
+
 func _spawn_adventurer(kind:String,id:String,member:CharacterRecord,entering:bool)->TavernActor:
 	var target:=_claim_anchor(id,["Wait","Wander","Seat"])
 	var actor:=ACTOR_SCENE.instantiate() as TavernActor;actors_root.add_child(actor);actor.global_position=_anchor("Entrance").global_position if entering else target.global_position
-	actor.configure(kind,id,member.display_name,SlasherSpriteLibrary.player_frames(member.class_id),_tavern_actor_scale(member.class_id));actor.conversation_id="candidate_default" if kind=="candidate" else "roster_default";_register(actor)
+	actor.configure(kind,id,member.display_name,SlasherSpriteLibrary.player_frames(member.class_id,member.gender if not member.gender.is_empty() else CharacterRecord.gender_for(member)),_tavern_actor_scale(member.class_id));actor.conversation_id="candidate_default" if kind=="candidate" else "roster_default";_register(actor)
 	if entering:actor.state=TavernActor.ActivityState.ENTERING;actor.set_meta("target_kind",String(target.get_meta("activity_kind","Wait")));actor.move_to(target.global_position)
 	elif String(target.get_meta("activity_kind",""))=="Seat":actor.seat_at(target.global_position);_schedule_next(actor)
 	else:_schedule_next(actor)

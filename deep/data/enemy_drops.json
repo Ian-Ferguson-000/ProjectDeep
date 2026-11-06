@@ -1,11 +1,10 @@
 {
   "how_to_edit": [
-    "Chance that a defeated enemy drops something you can pick up. Kept low to begin with; unlocks raise 'drop luck', which multiplies every chance below.",
-    "chances: per kill, rolled rarest first; an enemy drops at most one thing. 0.05 = 5%.",
-    "enemy_multipliers: scales all chances for some enemies (elites drop more, swarming sporelings less). Keys not listed use 'default'.",
-    "active_item_drops: separate elite and boss roll using the current class pool. Picking one up fills the active slot and fully charges it.",
-    "gold_amount: coins in a gold drop: min-max, plus per_floor for each floor deeper.",
-    "luck_cap: the most drop luck can multiply chances by."
+    "What defeated enemies drop. Every kill also pays its gold reward straight into the purse; that isn't a drop.",
+    "Basic enemies drop only materials (data/materials.json): basic_material_chance per kill (× drop luck, up to luck_cap).",
+    "Mini bosses (gate guardians, elite champions) always drop their trophy material (mini_boss_materials of them) and have mini_boss_item_chance of also dropping an item (a relic for your class). Never an active item: those come from treasure-room pedestals.",
+    "Bosses always drop their trophy material.",
+    "chances / enemy_multipliers / gold_amount / active_item_drops are no longer used by enemy kills (kept for reference)."
   ],
   "chances": {
     "relic": 0.004,
@@ -25,9 +24,47 @@
     "elite_chance": 0.35,
     "boss_chance": 0.65,
     "class_pools": {
-      "warrior": ["eldritch_bowstaff", "demon_blade", "storm_trident", "valkyrian_sling", "dragonbone_dagger", "archon_crossbow", "divine_hammer", "grim_reaver", "sentinel_shield", "umbral_bow"],
-      "mage": ["michaels_orb", "gulthias_staff", "skyblinder_staff", "dragonstaff_of_ahghairon", "jade_serpent_staff", "arachne_staff", "tome_of_toth", "shangos_shatterer", "solar_scepter", "drumamus_bargain"],
-      "neutral": ["siren_song_lyre", "witherbloom_brooche", "white_dragon_mask", "black_titan_crown", "dissonant_whisper_jar", "mahoragan_adaption_wheel", "pandoras_paradoxical_compass", "vibranium_tattoo", "shadowfell_brand", "blood_ruby_gem", "abyssal_sapphire_gem", "feywild_shawl", "bramble_vine_snare", "heartbreaker_amulet", "war_horn_of_valor"]
+      "warrior": [
+        "eldritch_bowstaff",
+        "demon_blade",
+        "storm_trident",
+        "valkyrian_sling",
+        "dragonbone_dagger",
+        "archon_crossbow",
+        "divine_hammer",
+        "grim_reaver",
+        "sentinel_shield",
+        "umbral_bow"
+      ],
+      "mage": [
+        "michaels_orb",
+        "gulthias_staff",
+        "skyblinder_staff",
+        "dragonstaff_of_ahghairon",
+        "jade_serpent_staff",
+        "arachne_staff",
+        "tome_of_toth",
+        "shangos_shatterer",
+        "solar_scepter",
+        "drumamus_bargain"
+      ],
+      "neutral": [
+        "siren_song_lyre",
+        "witherbloom_brooche",
+        "white_dragon_mask",
+        "black_titan_crown",
+        "dissonant_whisper_jar",
+        "mahoragan_adaption_wheel",
+        "pandoras_paradoxical_compass",
+        "vibranium_tattoo",
+        "shadowfell_brand",
+        "blood_ruby_gem",
+        "abyssal_sapphire_gem",
+        "feywild_shawl",
+        "bramble_vine_snare",
+        "heartbreaker_amulet",
+        "war_horn_of_valor"
+      ]
     }
   },
   "gold_amount": {
@@ -35,5 +72,9 @@
     "max": 3,
     "per_floor": 0.5
   },
-  "luck_cap": 2.5
+  "luck_cap": 2.5,
+  "basic_material_chance": 0.3,
+  "mini_boss_item_chance": 0.3,
+  "mini_boss_materials": 2,
+  "boss_materials": 1
 }
