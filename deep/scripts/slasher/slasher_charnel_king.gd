@@ -190,7 +190,14 @@ func _mouth() -> Vector2:
 
 # ---------------------------------------------------------------- drawing
 
+## False in the 3D crypt: the body is a 3D model, and only the arms and hands
+## (which sweep across the floor) are drawn here.
+var draw_body := true
+
 func _draw() -> void:
+	if not draw_body:
+		_draw_arms()
+		return
 	if body_texture != null:
 		draw_texture(body_texture,-body_texture.get_size() * 0.5)
 		_draw_arms()

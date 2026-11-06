@@ -10,7 +10,7 @@ const SlasherMineScene := preload("res://scenes/slasher/SlasherMine.tscn")
 const SlasherFoundryScene := preload("res://scenes/slasher/SlasherFoundry.tscn")
 const SlasherGroveScene := preload("res://scenes/slasher/SlasherGrove.tscn")
 const SlasherArchiveScene := preload("res://scenes/slasher/SlasherArchive.tscn")
-const SlasherCryptScene := preload("res://scenes/slasher/SlasherCrypt.tscn")
+const SlasherCryptScene := preload("res://scenes/crypt3d/Crypt3D.tscn")
 const SlasherHellScene := preload("res://scenes/slasher/SlasherHell.tscn")
 const SlasherProgressionOverlay := preload("res://scripts/slasher/slasher_progression_overlay.gd")
 const DialogueChatScene := preload("res://scripts/ui/dialogue_chat.gd")
@@ -257,19 +257,26 @@ func _on_slasher_progression_closed(screen_layer:CanvasLayer,on_complete:Callabl
 	if is_instance_valid(screen_layer):screen_layer.queue_free()
 	if on_complete.is_valid():on_complete.call()
 
+## The scene a dungeon runtime plays in. The tavern, forest and crypt are 3D;
+## the 2D scenes they're built on stay in scenes/tavern and scenes/slasher as
+## references (docs/Scenes.md). The others are still 2D and are Coming Soon,
+## and tests/live_scenes_test.gd fails if an open dungeon would load a 2D scene.
+static func dungeon_scene(runtime:String)->PackedScene:
+	match runtime:
+		"forest": return SlasherForestScene
+		"crypt": return SlasherCryptScene
+		"balors_hell": return SlasherHellScene
+		"ashen_farmstead": return SlasherFarmsteadScene
+		"sunken_mine": return SlasherMineScene
+		"ember_foundry": return SlasherFoundryScene
+		"moonlit_grove": return SlasherGroveScene
+		"abyssal_archive": return SlasherArchiveScene
+	return null
+
 func _load_active_dungeon() -> void:
 	_clear_scene()
-	var scene: PackedScene
-	match String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)):
-		"forest": scene = SlasherForestScene
-		"crypt": scene = SlasherCryptScene
-		"balors_hell": scene = SlasherHellScene
-		"ashen_farmstead": scene = SlasherFarmsteadScene
-		"sunken_mine": scene = SlasherMineScene
-		"ember_foundry": scene = SlasherFoundryScene
-		"moonlit_grove": scene = SlasherGroveScene
-		"abyssal_archive": scene = SlasherArchiveScene
-		_: show_tavern("That expedition is not available."); return
+	var scene: PackedScene = dungeon_scene(String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)))
+	if scene == null: show_tavern("That expedition is not available."); return
 	AudioCue.context_from(self,run_state.active_dungeon_id)
 	var dungeon := scene.instantiate(); current_scene = dungeon; dungeon.setup(self, run_state); add_child(dungeon)
 

@@ -6,6 +6,8 @@ const EFFECT_LAYER := 1 << 19
 const HIDDEN_LAYER := 1 << 20
 const UNIT := 48.0
 var dungeon: Node2D
+## "forest" or "crypt": picks the art kit's theme and the lighting.
+var theme := "forest"
 var camera: Camera3D
 var effects: SubViewport
 var art: Node3D
@@ -30,12 +32,13 @@ func _ready() -> void:
 	_build_environment()
 	art = ART.new()
 	art.world = self
+	art.theme = theme
 	art.name = "RoomGeometry"
 	add_child(art)
 	art.build(dungeon.layout)
 	_build_effects_pass()
 	camera = Camera3D.new()
-	camera.name = "ForestCamera"
+	camera.name = "CryptCamera" if theme == "crypt" else "ForestCamera"
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.near = 0.1
 	camera.far = 150.0
@@ -48,9 +51,10 @@ func _ready() -> void:
 func _build_environment() -> void:
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color("172b26")
+	var crypt := theme == "crypt"
+	environment.background_color = Color("0b0910") if crypt else Color("172b26")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("b8d2b1")
+	environment.ambient_light_color = Color("a7a4b8") if crypt else Color("b8d2b1")
 	environment.ambient_light_energy = 0.42
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.ssao_enabled = true
@@ -61,8 +65,8 @@ func _build_environment() -> void:
 	add_child(holder)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-52,-28,0)
-	sun.light_color = Color("ffe4b0")
-	sun.light_energy = 1.15
+	sun.light_color = Color("d4d2e6") if crypt else Color("ffe4b0")
+	sun.light_energy = 0.75 if crypt else 1.15
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 90
 	add_child(sun)
@@ -103,7 +107,7 @@ func _sync_objects() -> void:
 	# keep their existing lifetimes. Procedural effects stay in the shared pass.
 	for source in dungeon.actor_layer.get_children():
 		if source.name == "ColossusRemains":
-			if not actors.has(source): actors[source] = art.stump(to_world(source.global_position))
+			if not actors.has(source): actors[source] = art.bone_heap(to_world(source.global_position)) if theme == "crypt" else art.stump(to_world(source.global_position))
 			source.self_modulate.a = 0.0
 		elif source is SlasherBreakableProp:
 			if not props.has(source): props[source] = art.make_prop(source.prop_kind,to_world(source.global_position))
@@ -117,7 +121,12 @@ func _sync_objects() -> void:
 			var source_sprite = source.get("sprite")
 			if source_sprite is AnimatedSprite2D:
 				if not actors.has(source):
-					if source is SlasherColossus:
+					if source is SlasherCharnelKing:
+						actors[source] = art.charnel_king(to_world(source.global_position))
+						# Its arms and sweeping hands stay drawn on the floor.
+						source.draw_body = false
+						source.queue_redraw()
+					elif source is SlasherColossus:
 						actors[source] = art.colossus(to_world(source.global_position))
 						source.self_modulate.a = 0.0
 					else:
@@ -130,7 +139,9 @@ func _sync_objects() -> void:
 						add_child(proxy)
 						actors[source] = proxy
 				if actors[source] is Sprite3D: _sync_sprite(source,source_sprite,actors[source])
-				else: actors[source].visible = source.visible and not source.dead
+				else:
+					actors[source].visible = source.visible and not source.dead
+					if source is SlasherCharnelKing: _pose_charnel_king(source,actors[source])
 	for source in actors.keys():
 		if not is_instance_valid(source):
 			actors[source].queue_free()
@@ -156,6 +167,7 @@ func _sync_objects() -> void:
 				actors[source] = proxy
 				original.visibility_layer = HIDDEN_LAYER
 	for direction in dungeon.door_nodes:
+		if not is_instance_valid(dungeon.door_nodes[direction]): continue
 		var source: Node2D = dungeon.door_nodes[direction]
 		if not doors.has(direction): doors[direction] = art.door(to_world(source.global_position),direction)
 		var barrier := source.get_node_or_null("Brambles")
@@ -181,7 +193,8 @@ func _sync_sprite(source: Node2D, original: AnimatedSprite2D, proxy: Sprite3D) -
 		var bounds := reference.get_image().get_used_rect()
 		var height := 1.65 if source is SlasherPlayer else 1.0
 		if source is SlasherEnemy:
-			var sizes := {"sporeling":0.65,"bandit_cutthroat":1.3,"bandit_knifethrower":1.3,"thornback_boar":1.05,"briar_guardian":1.9,"spore_beast":1.5,"dark_druid":1.9,"ice_mage":1.65}
+			var sizes := {"sporeling":0.65,"bandit_cutthroat":1.3,"bandit_knifethrower":1.3,"thornback_boar":1.05,"briar_guardian":1.9,"spore_beast":1.5,"dark_druid":1.9,"ice_mage":1.65,
+				"skeleton":1.6,"skeletal_archer":1.6,"grave_rat":0.55,"ghoul":1.45,"gravedigger":1.55,"revenant":1.7,"tomb_guard":1.8,"necromancer":1.7,"soul_wisp":1.0,"crypt_boss":2.2}
 			height = float(sizes.get(source.visual_id,0.95 if source.visual_id.contains("wolf") else 1.5))
 			if source.elite: height *= 1.15
 		proxy.set_meta("bounds",bounds)
@@ -192,6 +205,21 @@ func _sync_sprite(source: Node2D, original: AnimatedSprite2D, proxy: Sprite3D) -
 	proxy.position = to_world(source.global_position,0.03)
 	proxy.offset = Vector2(texture.get_width()*.5-bounds.get_center().x,bounds.end.y-texture.get_height()*.5)
 	proxy.scale = Vector3(absf(original.scale.x/base_scale.x),absf(original.scale.y/base_scale.y),1.0)
+
+## The skull's jaw drops for the Soul Wail; its eyes burn red when it roars.
+func _pose_charnel_king(king: SlasherCharnelKing, model: Node3D) -> void:
+	var jaw := model.get_node_or_null("Skull/Jaw") as Node3D
+	var wailing := king.pattern == "soul_wail" and king.state in ["telegraph","attack"]
+	if jaw != null: jaw.position.y = lerpf(jaw.position.y,-1.15-(0.55 if wailing else 0.0),0.2)
+	var colour := Color("ff4a3a") if king.state == "roar" else (Color("7fe0ff") if wailing else Color("9fd8ff"))
+	for eye_name in ["Skull/Eye","Skull/Eye2"]:
+		var eye := model.get_node_or_null(eye_name) as MeshInstance3D
+		if eye != null and eye.mesh.material is StandardMaterial3D:
+			if not eye.has_meta("own"):
+				eye.set_meta("own",true); eye.material_override = (eye.mesh.material as StandardMaterial3D).duplicate()
+			(eye.material_override as StandardMaterial3D).albedo_color = colour; (eye.material_override as StandardMaterial3D).emission = colour
+	var glow := model.get_node_or_null("EyeGlow") as OmniLight3D
+	if glow != null: glow.light_color = colour
 
 func _update_camera(delta: float) -> void:
 	var size := get_viewport().get_visible_rect().size

@@ -1,6 +1,6 @@
 # Verdant Forest: 3D rooms
 
-Normal forest expeditions now load `scenes/forest3d/Forest3D.tscn` from Main. Run the project with F5, then enter the forest through the tavern. Other dungeons keep their existing presentation. The forest's authored maps, seeded room graph, encounters, checkpoints and campaign saves remain compatible.
+Normal forest expeditions now load `scenes/forest3d/Forest3D.tscn` from Main. Run the project with F5, then enter the forest through the tavern. The Stone Crypt uses the same presentation with a stone theme (docs/Crypt3D.md). The dungeons still marked Coming Soon keep their 2D presentation until they get a 3D one (docs/Scenes.md). The forest's authored maps, seeded room graph, encounters, checkpoints and campaign saves remain compatible.
 
 ## Presentation
 

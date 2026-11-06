@@ -1,7 +1,11 @@
 extends Node3D
-## Deterministic low-poly forest kit. One map cell = one metre. Shared static
+## Deterministic low-poly room kit. One map cell = one metre. Shared static
 ## primitives are instanced by material; destructible props remain independent.
+## theme "forest": grass, hedges and trees. theme "crypt": flagstones, stone
+## walls and pillars, bones, candles, iron-barred doors and stairs down.
 var world: Node3D
+var theme := "forest"
+var torches := 0
 var rng := RandomNumberGenerator.new()
 var materials: Dictionary = {}
 var batches: Dictionary = {}
@@ -61,6 +65,9 @@ func build(layout: Dictionary) -> void:
 	var body: Dictionary = layout.get("colossus_cells",{})
 	var all := cells.duplicate()
 	all.merge(thicket); all.merge(body)
+	if theme == "crypt":
+		_build_crypt(layout,cells,paths,cobbles,water,thicket,all)
+		return
 	for value in all:
 		var cell: Vector2i = value
 		var point := Vector3(cell.x+0.5,-0.32,cell.y+0.5)
@@ -116,6 +123,127 @@ func build(layout: Dictionary) -> void:
 	build_landmarks(layout)
 	flush()
 
+# ---------------------------------------------------------------- crypt
+
+## Room-map decoration names (forest names) -> crypt dressing, as slasher_crypt.gd.
+const CRYPT_DECOR := {"mossy_rock":"rubble","pebbles":"bone_pile","mushrooms":"candles","low_bush_a":"urn","low_bush_b":"tombstone","rounded_bush":"grave_cross"}
+
+func _build_crypt(layout: Dictionary, cells: Dictionary, paths: Dictionary, cobbles: Dictionary, water: Dictionary, thicket: Dictionary, all: Dictionary) -> void:
+	for value in all:
+		var cell: Vector2i = value
+		var point := Vector3(cell.x+0.5,-0.32,cell.y+0.5)
+		primitive("box","2a2830",point,Vector3(1.005,0.64,1.005))
+		if water.has(cell) or thicket.has(cell): continue
+		# Flagstones with dark grout; worn paths are darker and smoother.
+		var color: String = ["66646c","625f68","6a6770","5f5c66"][posmod(cell.x*7+cell.y*13,4)]
+		if paths.has(cell) or cobbles.has(cell): color = ["55525c","59565f"][posmod(cell.x+cell.y,2)]
+		primitive("box",color,point+Vector3(0,.31,0),Vector3(.95,.04,.95))
+		if cells.has(cell) and rng.randf() < 0.05:
+			primitive("orb","6b6574",point+Vector3(rng.randf_range(-.3,.3),.36,rng.randf_range(-.3,.3)),Vector3(.22,.1,.16),null,Vector3(0,rng.randf()*TAU,0))
+	for value in water:
+		var cell: Vector2i = value
+		primitive("box","120f18",Vector3(cell.x+.5,-.44,cell.y+.5),Vector3(1.005,.40,1.005))
+		primitive("box","2a3340",Vector3(cell.x+.5,-.18,cell.y+.5),Vector3(1.005,.04,1.005))
+	# Walls: tall at the back, cut down in front so they never hide a fight.
+	for value in thicket:
+		var cell: Vector2i = value
+		var point := Vector3(cell.x+.5,0,cell.y+.5)
+		var near := cell.y > dimensions.y*.65
+		var height := 0.55 if near else 2.3
+		if not near and (cell.x<2 or cell.x>dimensions.x-3): height = 1.6
+		primitive("box",["4f4d56","4a4851","53515a"][posmod(cell.x+cell.y*3,3)],point+Vector3(0,height*.5,0),Vector3(1.005,height,1.005))
+		primitive("box","66636e",point+Vector3(0,height+.04,0),Vector3(1.03,.08,1.03))
+		if not near and posmod(cell.x,5) == 0 and posmod(cell.y,2) == 0:
+			primitive("trunk","3d3946",point+Vector3(0,height*.5+.15,0),Vector3(.62,height+.3,.62))
+		if not near and torches < 6 and posmod(cell.x*3+cell.y,11) == 0 and cells.has(cell+Vector2i.DOWN):
+			torches += 1
+			primitive("box","2b2630",point+Vector3(0,1.5,.55),Vector3(.10,.32,.10))
+			primitive("orb","b9a2ff",point+Vector3(0,1.75,.58),Vector3(.18,.26,.18),null,Vector3.ZERO,true)
+			light(point+Vector3(0,1.9,.9),Color("a58cff"),5.0)
+	if thicket.is_empty():
+		var boundary := {}
+		for value in cells:
+			for direction in [Vector2i.UP,Vector2i.DOWN,Vector2i.LEFT,Vector2i.RIGHT]:
+				var cell: Vector2i = Vector2i(value)+direction
+				if not cells.has(cell): boundary[cell] = true
+		for value in boundary:
+			var cell: Vector2i = value
+			primitive("box","4a4553",Vector3(cell.x+.5,.4,cell.y+.5),Vector3(1.005,.8,1.005))
+	for record in layout.get("decorations",[]):
+		var point: Vector3 = world.to_world(world.dungeon._world(Vector2i(record.cell)))
+		crypt_decor(String(CRYPT_DECOR.get(String(record.kind),String(record.kind))),point)
+	build_landmarks(layout)
+	flush()
+
+func crypt_decor(kind: String, point: Vector3, parent: Node3D = null) -> void:
+	match kind:
+		"candles":
+			for i in 3:
+				var offset := Vector3(rng.randf_range(-.22,.22),0,rng.randf_range(-.22,.22))
+				var tall := rng.randf_range(.14,.30)
+				primitive("trunk","d8d0b8",point+offset+Vector3(0,tall*.5,0),Vector3(.07,tall,.07),parent)
+				primitive("orb","ffcf7a",point+offset+Vector3(0,tall+.04,0),Vector3(.05,.08,.05),parent,Vector3.ZERO,true)
+		"bone_pile":
+			for i in 4:
+				primitive("box","c9c1ae",point+Vector3(rng.randf_range(-.25,.25),.05,rng.randf_range(-.25,.25)),Vector3(.34,.06,.07),parent,Vector3(0,rng.randf()*TAU,0))
+			if rng.randf() < .5: primitive("orb","d6cfbd",point+Vector3(.08,.1,0),Vector3(.17,.15,.17),parent)
+		"urn":
+			primitive("trunk","6d5546",point+Vector3(0,.22,0),Vector3(.32,.44,.32),parent)
+			primitive("orb","7c6352",point+Vector3(0,.30,0),Vector3(.42,.34,.42),parent)
+		"tombstone":
+			primitive("box","767180",point+Vector3(0,.36,0),Vector3(.55,.72,.16),parent,Vector3(0,0,rng.randf_range(-.08,.08)))
+			primitive("orb","767180",point+Vector3(0,.72,0),Vector3(.55,.24,.16),parent)
+		"grave_cross":
+			primitive("box","6b6676",point+Vector3(0,.45,0),Vector3(.12,.9,.12),parent)
+			primitive("box","6b6676",point+Vector3(0,.66,0),Vector3(.5,.12,.12),parent)
+		_:
+			primitive("orb","5d5868",point+Vector3(0,.1,0),Vector3(.38,.22,.3),parent,Vector3(0,rng.randf()*TAU,0))
+
+## The Charnel King: a giant crowned skeleton sunk to the chest in the floor.
+func charnel_king(point: Vector3) -> Node3D:
+	var root := Node3D.new()
+	root.name = "CharnelKing"
+	root.position = point
+	add_child(root)
+	primitive("trunk","0d0a11",Vector3(0,.02,.6),Vector3(6.8,.04,3.2),root)
+	for i in 10:
+		var angle := PI*.05+PI*.9*i/9.0
+		primitive("box","3a3640",Vector3(cos(angle)*3.2,.12,.6+sin(angle)*1.5),Vector3(.5,.24,.36),root,Vector3(0,angle,0))
+	for rib in 4:
+		var width := 2.4-rib*.3
+		for side in [-1.0,1.0]:
+			primitive("box","c9c1ae",Vector3(side*width*.5,.75-rib*.08,.2+rib*.45),Vector3(width,.22,.22),root,Vector3(0,0,side*-.55))
+	primitive("box","9b9483",Vector3(0,.7,.9),Vector3(.3,.5,2.2),root)
+	var skull := Node3D.new(); skull.name = "Skull"; skull.position = Vector3(0,2.2,-1.0); root.add_child(skull)
+	primitive("orb","d0c8b4",Vector3.ZERO,Vector3(2.9,2.6,2.6),skull)
+	for side in [-1.0,1.0]:
+		primitive("orb","120d16",Vector3(side*.55,.05,1.12),Vector3(.7,.75,.4),skull)
+		var eye := primitive("orb","9fd8ff",Vector3(side*.55,.05,1.3),Vector3(.24,.24,.18),skull,Vector3.ZERO,true)
+		eye.name = "Eye" if side < 0 else "Eye2"
+	primitive("box","120d16",Vector3(0,-.45,1.25),Vector3(.25,.3,.2),skull)
+	var jaw := primitive("box","bdb5a1",Vector3(0,-1.15,.75),Vector3(1.8,.45,1.1),skull)
+	jaw.name = "Jaw"
+	for spike in 5:
+		var x := -1.0+spike*.5
+		primitive("box","a8873e",Vector3(x,1.4+(.22 if spike==2 else 0.0),0),Vector3(.2,.55+(.3 if spike==2 else 0.0),.2),skull,Vector3(0,PI*.25,0))
+	primitive("trunk","a8873e",Vector3(0,1.2,0),Vector3(2.5,.22,2.3),skull)
+	primitive("orb","c2453c",Vector3(0,1.25,1.12),Vector3(.18,.18,.12),skull,Vector3.ZERO,true)
+	var glow := OmniLight3D.new(); glow.name = "EyeGlow"; glow.position = Vector3(0,2.3,.6); glow.light_color = Color("7fe0ff"); glow.omni_range = 6.0; glow.light_energy = 1.2; root.add_child(glow)
+	return root
+
+func bone_heap(point: Vector3) -> Node3D:
+	var root := Node3D.new()
+	root.name = "FallenCharnelKing"
+	root.position = point
+	add_child(root)
+	var heap := RandomNumberGenerator.new(); heap.seed = 777
+	for i in 30:
+		primitive("box","c9c1ae",Vector3(heap.randf_range(-2.6,2.6),heap.randf_range(.05,.35),heap.randf_range(-1.4,1.6)),Vector3(heap.randf_range(.5,1.0),.12,.14),root,Vector3(heap.randf_range(-.3,.3),heap.randf()*TAU,0))
+	primitive("orb","b5ad99",Vector3(-.2,.6,0),Vector3(2.2,1.4,2.0),root,Vector3(0,0,.5))
+	for side in [-1.0,1.0]: primitive("orb","120d16",Vector3(side*.45-.2,.75,.85),Vector3(.5,.5,.3),root)
+	primitive("trunk","8a7038",Vector3(1.6,.2,.9),Vector3(1.8,.18,1.6),root,Vector3(.5,0,.3))
+	return root
+
 func grass(point: Vector3) -> void:
 	for i in 3:
 		var offset := Vector3(rng.randf_range(-.35,.35),.12,rng.randf_range(-.35,.35))
@@ -145,6 +273,17 @@ func make_prop(kind: String, point: Vector3) -> Node3D:
 	root.name = kind.to_pascal_case()
 	root.position = point
 	add_child(root)
+	if theme == "crypt" and kind != "chest":
+		match kind:
+			"coffin","tree_large","tree_small","tree":
+				primitive("box","4a3528",Vector3(0,.22,0),Vector3(.62,.44,1.25),root)
+				primitive("box","5c4332",Vector3(0,.47,0),Vector3(.66,.08,1.3),root)
+				primitive("box","8a7a5a",Vector3(0,.52,-.1),Vector3(.06,.02,.6),root)
+				primitive("box","8a7a5a",Vector3(0,.52,-.2),Vector3(.32,.02,.06),root)
+			_:
+				primitive("orb","5d5868",Vector3(0,.28,0),Vector3(.85,.6,.7),root,Vector3(.1,.5,.1))
+				primitive("orb","6b6574",Vector3(-.19,.45,.1),Vector3(.45,.24,.36),root)
+		return root
 	match kind:
 		"tree_large","tree_small","tree": tree(Vector3.ZERO,2.7,root)
 		"chest":
@@ -170,6 +309,17 @@ func door(point: Vector3, direction: String) -> Node3D:
 	root.position = point
 	if direction in ["east","west"]: root.rotation.y = PI*.5
 	add_child(root)
+	if theme == "crypt":
+		for x in [-.72,.72]:
+			primitive("box","5f5a69",Vector3(x,.75,0),Vector3(.34,1.5,.4),root)
+			primitive("orb","b9a2ff",Vector3(x,1.6,0),Vector3(.15,.15,.15),root,Vector3.ZERO,true)
+		primitive("box","5f5a69",Vector3(0,1.55,0),Vector3(1.8,.24,.42),root)
+		var bars := Node3D.new()
+		bars.name = "Brambles"
+		root.add_child(bars)
+		for i in 5: primitive("trunk","3a3640",Vector3(-.48+i*.24,.72,0),Vector3(.06,1.44,.06),bars)
+		for y in [.4,1.1]: primitive("box","3a3640",Vector3(0,y,0),Vector3(1.15,.07,.07),bars)
+		return root
 	for x in [-.68,.68]:
 		primitive("trunk","6b654a",Vector3(x,.62,0),Vector3(.27,1.24,.31),root)
 		primitive("orb","a5bd75",Vector3(x,1.31,0),Vector3(.16,.16,.16),root,Vector3.ZERO,true)
@@ -186,6 +336,25 @@ func build_landmarks(layout: Dictionary) -> void:
 		var cell: Vector2i = layout.get(key,Vector2i(-100,-100))
 		if cell.x<0: continue
 		var point := Vector3(cell.x+.5,0,cell.y+.5)
+		if theme == "crypt" and key in ["campfire","exit","treasure"]:
+			match key:
+				"campfire":
+					primitive("trunk","4a4553",point+Vector3(0,.3,0),Vector3(.5,.6,.5))
+					primitive("trunk","5f5a69",point+Vector3(0,.66,0),Vector3(.9,.14,.9))
+					primitive("orb","8fd7ff",point+Vector3(0,.88,0),Vector3(.42,.6,.42),null,Vector3.ZERO,true)
+					primitive("orb","e6f7ff",point+Vector3(0,.8,.05),Vector3(.2,.32,.2),null,Vector3.ZERO,true)
+					light(point+Vector3(0,1.3,0),Color("8fd7ff"),4.0)
+				"exit":
+					primitive("box","07050a",point+Vector3(0,.29,0),Vector3(1.9,.04,1.6))
+					for i in 4: primitive("box","3d3946",point+Vector3(0,.24-i*.16,-.6+i*.32),Vector3(1.6,.12,.3))
+					for x in [-1.05,1.05]: primitive("box","5f5a69",point+Vector3(x,.35,0),Vector3(.22,.7,1.7))
+					primitive("orb","a58cff",point+Vector3(0,.2,0),Vector3(.8,.12,.6),null,Vector3.ZERO,true)
+					light(point+Vector3(0,.8,0),Color("a58cff"),3.5)
+				"treasure":
+					primitive("box","5f5a69",point+Vector3(0,.2,0),Vector3(.95,.4,.95))
+					primitive("box","767180",point+Vector3(0,.42,0),Vector3(.75,.06,.75))
+					light(point+Vector3(0,1,0),Color("d9bb71"),2.0)
+			continue
 		match key:
 			"campfire":
 				for i in 8:
