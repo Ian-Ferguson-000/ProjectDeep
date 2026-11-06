@@ -150,6 +150,12 @@ func _sync_objects() -> void:
 		if not is_instance_valid(source):
 			props[source].queue_free()
 			props.erase(source)
+	for name in ["TavernPortal","HiddenWay"]:
+		var source := dungeon.actor_layer.get_node_or_null(name) as Node2D
+		if source == null or actors.has(source): continue
+		actors[source] = art.tavern_portal(to_world(source.global_position)) if name == "TavernPortal" else art.hidden_way(to_world(source.global_position))
+		source.visibility_layer = HIDDEN_LAYER
+		for child in source.get_children(): if child is CanvasItem: child.visibility_layer = HIDDEN_LAYER
 	for source in dungeon.actor_layer.get_children():
 		if source.name not in ["CampMerchant","InterludeMerchant"]: continue
 		if actors.has(source): continue
@@ -228,12 +234,21 @@ func _update_camera(delta: float) -> void:
 	# Small rooms fit on screen; larger rooms follow the player without changing
 	# the north-up controls. This also keeps colossus arenas comfortably readable.
 	var view_zoom: float = zoom * 1.3 / maxf(0.5,dungeon._settings().get_float("slasher_zoom",1.3))
+	# Guardian arenas pull back (dungeons.json slasher.guardian_camera_zoom) so the goliath fits.
+	if bool(dungeon.layout.get("exit_under_body",false)):
+		var pull := float(Dictionary(GameBalance.get_dungeon(dungeon.run_state.active_dungeon_id).get("slasher",{})).get("guardian_camera_zoom",0.72))
+		view_zoom /= clampf(pull,0.72,1.0)
+	var arena := bool(dungeon.layout.get("exit_under_body",false))
 	var width := minf(room_size.x+6.0,33.0) * view_zoom
 	camera.size = maxf(width/maxf(aspect,0.5),(minf(room_size.y,22.0)*0.80+7.0)*view_zoom)
 	var half_x := camera.size*aspect*0.5-1.0
 	var half_z := camera.size*0.5/0.80-1.5
 	target.x = room_size.x*0.5 if room_size.x<half_x*2 else clampf(target.x,half_x,room_size.x-half_x)
-	target.z = room_size.y*0.5 if room_size.y<half_z*2 else clampf(target.z,half_z,room_size.y-half_z)
+	# Guardian arenas: the goliath towers past the north wall, so the camera may
+	# look that far north too.
+	var top := -7.5 if arena else 0.0
+	var span := room_size.y-top
+	target.z = top+span*0.5 if span<half_z*2 else clampf(target.z,top+half_z,room_size.y-half_z)
 	focus = focus.lerp(target,1.0-exp(-delta*8.0))
 	var shake: Vector2 = dungeon.player.camera.offset / UNIT
 	camera.position = focus + Vector3(10+shake.x,23,18+shake.y)

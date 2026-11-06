@@ -23,6 +23,8 @@ func _run() -> void:
 			for index in 4:
 				if mask & (1 << index): open.append(directions[index])
 			var layout := ROOMS.build_layout(template,open,mask)
+			# Guardian arenas seal the north door when there's another way in.
+			if Array(template.get("roles",[])).has("guardian") and open.size() > 1: open.erase("north")
 			for direction in directions:
 				var slot: Vector2i = layout.door_slots[direction]
 				_expect(layout.cells.has(slot) == open.has(direction),"%s: %s door should be %s" % [template.id,direction,"open" if open.has(direction) else "sealed"])

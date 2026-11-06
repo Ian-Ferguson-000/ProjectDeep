@@ -275,6 +275,7 @@ static func dungeon_scene(runtime:String)->PackedScene:
 
 func _load_active_dungeon() -> void:
 	_clear_scene()
+	guardian_choice = ""
 	var scene: PackedScene = dungeon_scene(String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("runtime", run_state.active_dungeon_id)))
 	if scene == null: show_tavern("That expedition is not available."); return
 	AudioCue.context_from(self,run_state.active_dungeon_id)
@@ -306,9 +307,26 @@ func _after_slasher_floor_progression(cycle_boss:bool,favor_logs:Array[String])-
 		return
 	_hearth_checkpoint(func(): run_state.continue_expedition();run_state.advance_slasher_floor();run_state.autosave_on_floor_entry();_load_active_dungeon())
 
-## After a guardian falls: show what the adventurer is carrying and let the
-## player return to the Hearth or press on to the next dungeon on the route.
+## Set by the guardian's arena: "onward" when the player walked through the
+## fallen guardian's body, "home" when they took the portal. Empty: ask.
+var guardian_choice := ""
+
+## Whether there's a dungeon after this one on the route that can be entered.
+func can_press_on() -> bool:
+	if run_state == null: return false
+	var next_id := NarrativeContent.next_route_stage(run_state.active_dungeon_id)
+	return not next_id.is_empty() and RunState.dungeon_available(next_id)
+
+## After a guardian falls: the player chose in the arena (through the body =
+## press on, the portal = home). Without a choice, show what the adventurer is
+## carrying and let them pick.
 func _guardian_crossroads(completion_logs:Array[String], return_message:String) -> void:
+	var choice := guardian_choice; guardian_choice = ""
+	if choice == "home":
+		return_to_tavern("victory",return_message); return
+	if choice == "onward":
+		if _continue_connected_expedition(completion_logs): return
+		return_to_tavern("victory",return_message); return
 	if campaign == null or campaign.expedition.tutorial_run:
 		if _continue_connected_expedition(completion_logs): return
 		return_to_tavern("victory",return_message); return

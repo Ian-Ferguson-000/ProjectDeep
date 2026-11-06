@@ -43,9 +43,29 @@ static func generate(seed_value: int, minimum_rooms: int = 10, maximum_rooms: in
 	for room in rooms:
 		if int(room["id"]) != 0 and Dictionary(room["neighbors"]).size() == 1: dead_ends.append(int(room["id"]))
 	dead_ends.sort_custom(func(a: int, b: int): return int(distances.get(a, 0)) > int(distances.get(b, 0)))
-	var boss_id := dead_ends[0] if not dead_ends.is_empty() else _farthest_room(distances, [0])
+	# The boss room is never entered from the north: its guardian fills the north
+	# wall. Prefer the deepest dead end whose way in isn't from the north.
+	var boss_id := -1
+	for id in dead_ends:
+		if not Dictionary(rooms[id]["neighbors"]).has("north"): boss_id = id; break
+	if boss_id < 0:
+		var by_depth: Array = distances.keys()
+		by_depth.sort_custom(func(a, b): return int(distances[a]) > int(distances[b]))
+		for id in by_depth:
+			if int(id) != 0 and not Dictionary(rooms[int(id)]["neighbors"]).has("north"): boss_id = int(id); break
+	if boss_id < 0:
+		# Every room has a room north of it: add one above the topmost room.
+		var top := 0
+		for i in range(rooms.size()):
+			if Vector2i(rooms[i]["position"]).y < Vector2i(rooms[top]["position"]).y: top = i
+		boss_id = rooms.size()
+		var spot: Vector2i = Vector2i(rooms[top]["position"]) + Vector2i.UP
+		rooms.append({"id":boss_id,"position":spot,"neighbors":{"south":top},"role":"combat","visited":false,"cleared":false,"reward_claimed":false,"chest_opened":false})
+		rooms[top]["neighbors"]["north"] = boss_id
+		distances = _distances(rooms, 0)
+	dead_ends.erase(boss_id)
 	rooms[boss_id]["role"] = "boss"
-	var treasure_id := dead_ends[1] if dead_ends.size() > 1 else _farthest_room(distances, [0, boss_id])
+	var treasure_id := dead_ends[0] if not dead_ends.is_empty() else _farthest_room(distances, [0, boss_id])
 	rooms[treasure_id]["role"] = "treasure"
 	rooms[treasure_id]["cleared"] = true
 	var shop_id := _closest_to_distance(rooms, distances, maxi(2, int(distances.get(boss_id, 4)) / 2), [0, boss_id, treasure_id])

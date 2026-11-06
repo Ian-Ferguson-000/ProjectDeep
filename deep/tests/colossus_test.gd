@@ -14,7 +14,11 @@ func _run() -> void:
 	var arena := ForestRoomLibrary.template("heartwood_throne")
 	_expect(Array(arena.get("roles",[])) == ["guardian"],"Arena should be a guardian room")
 	var built := ForestRoomLibrary.build_layout(arena,["north","south","east","west"])
-	_expect(Dictionary(built.colossus_cells).size() == 35 and not Dictionary(built.cells).has(Vector2i(built.colossus)),"Colossus body should block a 7x5 block")
+	_expect(Dictionary(built.colossus_cells).size() == 91 and not Dictionary(built.cells).has(Vector2i(built.colossus)),"Colossus body should block a goliath 13x7 block")
+	_expect(Vector2i(built.colossus).y == 3,"The colossus should stand against the north wall")
+	_expect(not Dictionary(built.doors).has("north"),"The arena's north door should be sealed")
+	_expect(Vector2i(built.exit) == Vector2i(built.colossus) and bool(built.exit_under_body),"The way on should be hidden in the colossus's body")
+	_expect(Vector2i(built.portal).x >= 0 and Dictionary(built.cells).has(Vector2i(built.portal)),"There's no portal home beside the colossus")
 	_expect(Vector2i(built.exit).x >= 0,"Arena has no gate")
 
 	var state := RunState.new()

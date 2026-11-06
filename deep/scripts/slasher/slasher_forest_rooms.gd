@@ -126,12 +126,15 @@ func _assign_rest_room() -> void:
 		if String(value.role) == "boss": gate_distance = int(distances.get(int(value.id),0))
 	var best := -1
 	var best_score := 999
-	for value in rooms:
-		if String(value.role) != "combat": continue
-		var distance := int(distances.get(int(value.id),0))
-		if distance < 2: continue
-		var score: int = absi(distance - maxi(2,gate_distance/2))
-		if score < best_score: best = int(value.id); best_score = score
+	# Prefer a fighting room two or more rooms in; on a cramped floor, settle for one.
+	for nearest in [2,1]:
+		for value in rooms:
+			if String(value.role) != "combat": continue
+			var distance := int(distances.get(int(value.id),0))
+			if distance < nearest: continue
+			var score: int = absi(distance - maxi(2,gate_distance/2))
+			if score < best_score: best = int(value.id); best_score = score
+		if best >= 0: break
 	if best >= 0:
 		run_state.update_field_room(best,{"role":"rest","cleared":true})
 
@@ -163,6 +166,8 @@ func _room_layout() -> Dictionary:
 		# Playtesting a fight: walk in through a door rather than appearing among the foes.
 		built.start = ROOMS.arrival_cell(built,String(Dictionary(built.doors).keys()[0]))
 	built.enemy_spawns = [] if bool(room.get("cleared",false)) else _encounter(built)
+	if bool(built.get("exit_under_body",false)) and bool(room.get("cleared",false)) and can_press_on():
+		for cell in Array(built.passage_cells): built.cells[cell] = true
 	return built
 
 func _neighbor_template_ids() -> Array:
@@ -315,6 +320,11 @@ func _build_landmarks() -> void:
 		return
 	var gate := Vector2i(layout.exit)
 	exit_position = _world(gate) if gate.x >= 0 else Vector2(-99999,-99999)
+	if bool(layout.get("exit_under_body",false)):
+		# The way on is hidden in the guardian's body; it opens when it falls.
+		exit_position = Vector2(-99999,-99999)
+		if bool(room.get("cleared",false)) or not bool(layout.get("is_boss_floor",false)): _open_guardian_ways(false)
+		gate = Vector2i(-100,-100)
 	if gate.x >= 0:
 		var theme := _room_theme()
 		var exit_root := Node2D.new(); exit_root.name = "RootGate"; exit_root.position = exit_position; exit_root.z_index = 12; exit_root.add_child(_glow(Color(String(theme.exit_glow)),34))
@@ -421,7 +431,9 @@ func _reveal_secret_door() -> void:
 
 func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
 	super._on_enemy_defeated(enemy,reward)
-	if rooms_active and enemy is SlasherColossus: _build_colossus_remains()
+	if rooms_active and enemy is SlasherColossus:
+		_build_colossus_remains()
+		_open_guardian_ways(true)
 	# The guardian's fall ends the fight, Isaac style: its pack scatters and the gate opens.
 	if rooms_active and room_role == "boss" and enemies_remaining > 0 and _is_room_guardian(enemy): _scatter_remaining_foes()
 	if rooms_active and enemies_remaining == 0:
@@ -429,6 +441,60 @@ func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
 		_set_doors_open(true)
 		_spawn_loot()
 		_show_message(String(_room_theme().gate_open) if Vector2i(layout.exit).x >= 0 else String(_room_theme().room_clear))
+
+# ---------------------------------------------------------------- the fallen guardian
+
+## Whether there's a dungeon beyond this one to press on to. When there isn't,
+## the passage through the body stays shut and only the portal home opens.
+func can_press_on() -> bool:
+	if controller != null and controller.has_method("can_press_on"): return bool(controller.call("can_press_on"))
+	return true
+
+## After the guardian falls: a passage opens through its body to the way on
+## (walk through the remains to continue), and a portal showing the Hearth
+## appears beside it (walk in to go home).
+func _open_guardian_ways(live: bool) -> void:
+	if not bool(layout.get("exit_under_body",false)): return
+	if can_press_on():
+		var cells: Dictionary = layout.cells
+		var changed := false
+		for cell in Array(layout.passage_cells):
+			if not cells.has(cell): cells[cell] = true; changed = true
+		exit_position = _world(Vector2i(layout.exit))
+		if changed and live:
+			wall_topology = wall_generator.generate(cells,[],ORIGIN)
+			pathfinder = GRID_PATHFINDER.new().configure(cells,Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
+		if actor_layer.get_node_or_null("HiddenWay") == null:
+			var way := Node2D.new(); way.name = "HiddenWay"; way.position = exit_position; way.add_child(_glow(Color(String(_room_theme().exit_glow)),30)); actor_layer.add_child(way)
+	var portal_cell := Vector2i(layout.get("portal",Vector2i(-100,-100)))
+	if portal_cell.x >= 0 and actor_layer.get_node_or_null("TavernPortal") == null:
+		var portal := TavernPortal.new(); portal.name = "TavernPortal"; portal.position = _world(portal_cell); actor_layer.add_child(portal)
+	if live: _show_message("The guardian falls · walk through it to go on, or take the portal home.",4.0)
+
+func _take_portal_home() -> void:
+	if floor_reward_claimed: return
+	if controller != null and "guardian_choice" in controller: controller.guardian_choice = "home"
+	_complete_floor()
+
+func _complete_floor() -> void:
+	if bool(layout.get("exit_under_body",false)) and controller != null and "guardian_choice" in controller and String(controller.guardian_choice).is_empty():
+		controller.guardian_choice = "onward"
+	super._complete_floor()
+
+## A shimmering ring with a glimpse of the Hearth in it: the way home.
+class TavernPortal extends Node2D:
+	var t := 0.0
+	func _process(delta: float) -> void:
+		t += delta; queue_redraw()
+	func _draw() -> void:
+		var pulse := 0.5 + 0.5 * sin(t * 2.4)
+		draw_set_transform(Vector2(0,-34),0.0,Vector2(0.62,1.0))
+		draw_circle(Vector2.ZERO,40,Color(1.0,0.78,0.42,0.18 + pulse * 0.12))
+		draw_circle(Vector2.ZERO,31,Color("#3a2414"))
+		draw_rect(Rect2(-16,-2,32,18),Color("#a8673a")); draw_colored_polygon(PackedVector2Array([Vector2(-20,-2),Vector2(0,-18),Vector2(20,-2)]),Color("#6b3b22"))
+		draw_rect(Rect2(-4,6,8,10),Color("#ffd27a")); draw_rect(Rect2(-13,2,6,5),Color("#ffd27a")); draw_rect(Rect2(7,2,6,5),Color("#ffd27a"))
+		draw_arc(Vector2.ZERO,36,0,TAU,40,Color(1.0,0.86,0.5,0.85),5.0)
+		draw_set_transform(Vector2.ZERO)
 
 ## The foe whose death decides the gate room: the boss on boss floors, the
 ## elite guardian on elite floors.
@@ -573,6 +639,8 @@ func _process(delta: float) -> void:
 	transition_cooldown = maxf(0.0,transition_cooldown-delta)
 	if player.input_locked or (relic_modal != null and relic_modal.visible): return
 	if treasure_area != null and is_instance_valid(treasure_area) and player.global_position.distance_to(treasure_area.global_position) < 40: _open_treasure()
+	var portal := actor_layer.get_node_or_null("TavernPortal") if is_instance_valid(actor_layer) else null
+	if portal != null and player.global_position.distance_to(portal.global_position) < 42: _take_portal_home(); return
 	if room_role == "rest" and player.global_position.distance_to(campfire_position) < 70: _offer_rest()
 	if is_instance_valid(active_pedestal): _check_active_pedestal()
 	_check_doors()
