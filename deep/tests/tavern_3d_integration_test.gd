@@ -31,6 +31,7 @@ func _expect(condition:bool,message:String) -> void:
 func _run() -> void:
 	root.size=Vector2i(1600,1000)
 	var settings := root.get_node("GameSettings")
+	GameSettingsService.dev_mode_available = true  # Dev Mode is hidden in the demo build
 	var previous_dev: bool = settings.get_bool("dev_mode",false)
 	settings.values["dev_mode"] = false
 	var state:=RunState.new()

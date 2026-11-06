@@ -107,7 +107,7 @@ func _run() -> void:
 	menu.show_page("confirm_abandon"); await process_frame
 	(menu.body.find_child("Confirm",true,false) as Button).pressed.emit()
 	await _frames(6)
-	_expect(String(main.current_scene.name) == "Tavern","Abandoning didn't go back to the tavern (%s)" % main.current_scene.name)
+	_expect(String(main.current_scene.name) in ["Tavern","Tavern3D"],"Abandoning didn't go back to the tavern (%s)" % main.current_scene.name)
 	_expect(not campaign.expedition.active,"The expedition is still active after abandoning")
 	_expect(not paused,"The game was left paused")
 	_expect(campaign.memorial.filter(func(m): return String(m.get("id","")) == hero.id).is_empty() and campaign.retired_heroes.any(func(r): return String(r.get("id","")) == hero.id),"The adventurer died instead of coming home and retiring")
