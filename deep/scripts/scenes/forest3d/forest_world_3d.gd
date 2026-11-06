@@ -1,0 +1,227 @@
+extends Node3D
+## One physical-looking diorama per authored room. Gameplay stays on the shared
+## combat plane; a transparent effects pass preserves every existing telegraph.
+const ART := preload("res://scripts/scenes/forest3d/forest_room_art.gd")
+const EFFECT_LAYER := 1 << 19
+const HIDDEN_LAYER := 1 << 20
+const UNIT := 48.0
+var dungeon: Node2D
+var camera: Camera3D
+var effects: SubViewport
+var art: Node3D
+var actors: Dictionary = {}
+var props: Dictionary = {}
+var doors: Dictionary = {}
+var focus := Vector3.ZERO
+var room_size := Vector2.ZERO
+var zoom := 1.0
+
+func to_world(point: Vector2, height: float = 0.0) -> Vector3:
+	return Vector3((point.x-dungeon.ORIGIN.x)/UNIT,height,(point.y-dungeon.ORIGIN.y)/UNIT)
+
+func _ready() -> void:
+	room_size = Vector2(dungeon.layout.width,dungeon.layout.height)
+	dungeon.visibility_layer |= EFFECT_LAYER
+	get_viewport().canvas_cull_mask &= ~(EFFECT_LAYER | HIDDEN_LAYER)
+	# Shared canvas, separate render masks: HUD remains in the main viewport.
+	for child in dungeon.get_children():
+		if child is CanvasItem and child != self:
+			child.visibility_layer = EFFECT_LAYER if child == dungeon.actor_layer else HIDDEN_LAYER
+	_build_environment()
+	art = ART.new()
+	art.world = self
+	art.name = "RoomGeometry"
+	add_child(art)
+	art.build(dungeon.layout)
+	_build_effects_pass()
+	camera = Camera3D.new()
+	camera.name = "ForestCamera"
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.near = 0.1
+	camera.far = 150.0
+	add_child(camera)
+	camera.make_current()
+	focus = to_world(dungeon.player.global_position)
+	_sync_objects()
+	_update_camera(1.0)
+
+func _build_environment() -> void:
+	var environment := Environment.new()
+	environment.background_mode = Environment.BG_COLOR
+	environment.background_color = Color("172b26")
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	environment.ambient_light_color = Color("b8d2b1")
+	environment.ambient_light_energy = 0.42
+	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.ssao_enabled = true
+	environment.ssao_radius = 1.5
+	environment.ssao_intensity = 1.2
+	var holder := WorldEnvironment.new()
+	holder.environment = environment
+	add_child(holder)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-52,-28,0)
+	sun.light_color = Color("ffe4b0")
+	sun.light_energy = 1.15
+	sun.shadow_enabled = true
+	sun.directional_shadow_max_distance = 90
+	add_child(sun)
+
+func _build_effects_pass() -> void:
+	effects = SubViewport.new()
+	effects.name = "CombatEffects"
+	effects.size = Vector2i(room_size * UNIT + dungeon.ORIGIN * 2)
+	effects.transparent_bg = true
+	effects.disable_3d = true
+	effects.canvas_cull_mask = 1 | EFFECT_LAYER
+	effects.world_2d = get_viewport().world_2d
+	effects.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(effects)
+	var plane := MeshInstance3D.new()
+	plane.name = "CombatTelegraphs"
+	var mesh := PlaneMesh.new()
+	mesh.size = Vector2(effects.size) / UNIT
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_texture = effects.get_texture()
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mesh.material = material
+	plane.mesh = mesh
+	plane.position = to_world(Vector2(effects.size)*0.5,0.045)
+	plane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(plane)
+
+func _process(delta: float) -> void:
+	if not is_instance_valid(dungeon.player): return
+	_sync_objects()
+	_update_camera(delta)
+
+func _sync_objects() -> void:
+	# Scan only actors: dynamically spawned summons, projectiles, loot and props
+	# keep their existing lifetimes. Procedural effects stay in the shared pass.
+	for source in dungeon.actor_layer.get_children():
+		if source.name == "ColossusRemains":
+			if not actors.has(source): actors[source] = art.stump(to_world(source.global_position))
+			source.self_modulate.a = 0.0
+		elif source is SlasherBreakableProp:
+			if not props.has(source): props[source] = art.make_prop(source.prop_kind,to_world(source.global_position))
+			var model: Node3D = props[source]
+			model.visible = source.visible and not source.destroyed
+			if is_instance_valid(source.sprite): source.sprite.visibility_layer = HIDDEN_LAYER
+			if source.is_open and not model.has_meta("opened"):
+				model.set_meta("opened",true)
+				art.open_chest(model)
+		elif source is CharacterBody2D:
+			var source_sprite = source.get("sprite")
+			if source_sprite is AnimatedSprite2D:
+				if not actors.has(source):
+					if source is SlasherColossus:
+						actors[source] = art.colossus(to_world(source.global_position))
+						source.self_modulate.a = 0.0
+					else:
+						var proxy := Sprite3D.new()
+						proxy.name = "Actor_" + source.name
+						proxy.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+						proxy.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+						proxy.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+						proxy.shaded = false
+						add_child(proxy)
+						actors[source] = proxy
+				if actors[source] is Sprite3D: _sync_sprite(source,source_sprite,actors[source])
+				else: actors[source].visible = source.visible and not source.dead
+	for source in actors.keys():
+		if not is_instance_valid(source):
+			actors[source].queue_free()
+			actors.erase(source)
+	for source in props.keys():
+		if not is_instance_valid(source):
+			props[source].queue_free()
+			props.erase(source)
+	for source in dungeon.actor_layer.get_children():
+		if source.name not in ["CampMerchant","InterludeMerchant"]: continue
+		if actors.has(source): continue
+		for original in source.get_children():
+			if original is Sprite2D:
+				var proxy := Sprite3D.new()
+				proxy.texture = original.texture
+				proxy.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+				proxy.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+				proxy.shaded = false
+				proxy.pixel_size = absf(original.scale.x)/UNIT
+				proxy.position = to_world(source.global_position,0.02)
+				proxy.offset.y = -original.position.y/maxf(.001,original.scale.x)
+				add_child(proxy)
+				actors[source] = proxy
+				original.visibility_layer = HIDDEN_LAYER
+	for direction in dungeon.door_nodes:
+		var source: Node2D = dungeon.door_nodes[direction]
+		if not doors.has(direction): doors[direction] = art.door(to_world(source.global_position),direction)
+		var barrier := source.get_node_or_null("Brambles")
+		doors[direction].get_node("Brambles").visible = is_instance_valid(barrier) and barrier.visible
+		# Three-dimensional posts/gate replace the old bushes; retain door hints.
+		if is_instance_valid(barrier): barrier.visibility_layer = HIDDEN_LAYER
+
+func _sync_sprite(source: Node2D, original: AnimatedSprite2D, proxy: Sprite3D) -> void:
+	if original.sprite_frames == null: return
+	var texture := original.sprite_frames.get_frame_texture(original.animation,original.frame)
+	if texture == null: return
+	original.visibility_layer = HIDDEN_LAYER
+	proxy.texture = texture
+	proxy.visible = source.visible and original.visible
+	proxy.flip_h = original.flip_h
+	proxy.modulate = source.modulate * original.modulate
+	# A neutral-pose silhouette sets scale, never transparent sheet padding.
+	# Keep intended species differences while matching the tavern's human scale.
+	if not proxy.has_meta("frames") or proxy.get_meta("frames") != original.sprite_frames:
+		proxy.set_meta("frames",original.sprite_frames)
+		var idle := SlasherSpriteLibrary.resolved_animation(original.sprite_frames,"idle","down")
+		var reference := original.sprite_frames.get_frame_texture(idle,0)
+		var bounds := reference.get_image().get_used_rect()
+		var height := 1.65 if source is SlasherPlayer else 1.0
+		if source is SlasherEnemy:
+			var sizes := {"sporeling":0.65,"bandit_cutthroat":1.3,"bandit_knifethrower":1.3,"thornback_boar":1.05,"briar_guardian":1.9,"spore_beast":1.5,"dark_druid":1.9,"ice_mage":1.65}
+			height = float(sizes.get(source.visual_id,0.95 if source.visual_id.contains("wolf") else 1.5))
+			if source.elite: height *= 1.15
+		proxy.set_meta("bounds",bounds)
+		proxy.set_meta("base_scale",original.scale)
+		proxy.pixel_size = height/maxf(1.0,bounds.size.y)
+	var bounds: Rect2i = proxy.get_meta("bounds")
+	var base_scale: Vector2 = proxy.get_meta("base_scale")
+	proxy.position = to_world(source.global_position,0.03)
+	proxy.offset = Vector2(texture.get_width()*.5-bounds.get_center().x,bounds.end.y-texture.get_height()*.5)
+	proxy.scale = Vector3(absf(original.scale.x/base_scale.x),absf(original.scale.y/base_scale.y),1.0)
+
+func _update_camera(delta: float) -> void:
+	var size := get_viewport().get_visible_rect().size
+	var aspect := size.x/maxf(1.0,size.y)
+	var target := to_world(dungeon.player.global_position)
+	# Small rooms fit on screen; larger rooms follow the player without changing
+	# the north-up controls. This also keeps colossus arenas comfortably readable.
+	var view_zoom: float = zoom * 1.3 / maxf(0.5,dungeon._settings().get_float("slasher_zoom",1.3))
+	var width := minf(room_size.x+6.0,33.0) * view_zoom
+	camera.size = maxf(width/maxf(aspect,0.5),(minf(room_size.y,22.0)*0.80+7.0)*view_zoom)
+	var half_x := camera.size*aspect*0.5-1.0
+	var half_z := camera.size*0.5/0.80-1.5
+	target.x = room_size.x*0.5 if room_size.x<half_x*2 else clampf(target.x,half_x,room_size.x-half_x)
+	target.z = room_size.y*0.5 if room_size.y<half_z*2 else clampf(target.z,half_z,room_size.y-half_z)
+	focus = focus.lerp(target,1.0-exp(-delta*8.0))
+	var shake: Vector2 = dungeon.player.camera.offset / UNIT
+	camera.position = focus + Vector3(10+shake.x,23,18+shake.y)
+	camera.look_at(focus)
+	# Orthographic projection is affine on the combat plane. Keep Godot's canvas
+	# inverse identical, so all existing mouse-aim spells hit the rendered point.
+	var origin := camera.unproject_position(to_world(Vector2.ZERO))
+	var x_axis := camera.unproject_position(to_world(Vector2.RIGHT))-origin
+	var y_axis := camera.unproject_position(to_world(Vector2.DOWN))-origin
+	get_viewport().canvas_transform = Transform2D(x_axis,y_axis,origin)
+	var inverse := Transform2D(x_axis,y_axis,Vector2.ZERO).affine_inverse()
+	dungeon.player.spatial_input_basis = inverse
+	effects.canvas_transform = Transform2D.IDENTITY
+
+func _unhandled_input(event: InputEvent) -> void:
+	if dungeon.player.input_locked or get_tree().paused: return
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP: zoom = maxf(0.65,zoom-0.08)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN: zoom = minf(1.35,zoom+0.08)

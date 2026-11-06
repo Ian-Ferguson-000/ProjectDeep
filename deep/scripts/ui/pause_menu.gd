@@ -16,6 +16,7 @@ signal closed
 
 ## "dungeon" or "tavern".
 var context := "dungeon"
+var extra_controls: Array = []
 ## Returns false only while the scene can't be paused (e.g. mid scene change).
 var can_open: Callable = func() -> bool: return true
 ## Called before returning to the title (the tavern saves here).
@@ -237,7 +238,7 @@ func _controls_page() -> void:
 	grid.add_theme_constant_override("h_separation",28); grid.add_theme_constant_override("v_separation",8)
 	body.add_child(grid)
 	for heading in ["","KEYBOARD & MOUSE","CONTROLLER"]: grid.add_child(_label(heading,12,THEME.MUTED))
-	for row in (TAVERN_CONTROLS if context=="tavern" else CONTROLS):
+	for row in (TAVERN_CONTROLS if context=="tavern" else CONTROLS) + extra_controls:
 		grid.add_child(_label(String(row[0]),15,THEME.IVORY))
 		grid.add_child(_label(String(row[1]),15,THEME.HIGHLIGHT_GOLD))
 		grid.add_child(_label(String(row[2]),15,THEME.HIGHLIGHT_GOLD))
