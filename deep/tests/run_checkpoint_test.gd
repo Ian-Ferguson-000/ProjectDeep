@@ -9,7 +9,9 @@ func _init() -> void: GameBalance.set_actions_override(GameBalance.ALL_ACTIONS)
 const SLOT := 3
 var failures: Array[String] = []
 
-func _initialize() -> void: _run.call_deferred()
+func _initialize() -> void:
+	SimpleCombat.dodge_override = 0.0  # every hit must land in this test
+	_run.call_deferred()
 
 func _expect(ok: bool, message: String) -> void:
 	if not ok: failures.append(message)

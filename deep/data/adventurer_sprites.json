@@ -1,0 +1,15 @@
+{
+  "how_to_edit": [
+    "Which sprite an adventurer uses, by class and gender (genders are assigned when a recruit arrives: female or male).",
+    "Each value is a SpriteFrames .tres (same animation names as the class's current player_frames). Leave a value empty to use the class's current sprite for that gender.",
+    "Used for the dungeon player and the adventurer walking about the tavern (SlasherSpriteLibrary.player_frames)."
+  ],
+  "classes": {
+    "warrior": {"female": "", "male": ""},
+    "tank": {"female": "", "male": ""},
+    "rogue": {"female": "", "male": ""},
+    "mage": {"female": "", "male": ""},
+    "healer": {"female": "", "male": ""},
+    "summoner": {"female": "", "male": ""}
+  }
+}

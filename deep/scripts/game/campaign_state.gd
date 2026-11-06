@@ -24,6 +24,9 @@ const TAVERN_OPEN := "open"
 const TAVERN_EXPEDITION := "expedition"
 const WEEKDAYS := ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 const SEASONS := ["Spring","Summer","Autumn","Winter"]
+## A class's starting weapons: a recruit arrives with one of these (a Fighter
+## with a sword or a spear, never both).
+const STARTER_WEAPONS := {"warrior":["sword_shield","borderkeepers_spear"]}
 const BASIC_GEAR := {"warrior":"sword_shield","mage":"magic_missile_shield","healer":"sunwood_staff","tank":"tower_shield","rogue":"spectral_dagger","summoner":"bond_staff"}
 const ADVENTURERS:=preload("res://scripts/game/adventurer_content.gd")
 const COMPATIBILITY:=preload("res://scripts/game/party_compatibility.gd")
@@ -133,6 +136,10 @@ var consumable_stock: Dictionary = {}
 var reputation:=0
 var used_curated_ids:Array[String]=[]
 var lineage_registry:Dictionary={}
+## Visitors of merit: favour, quests, purchases and story flags (VisitorService).
+var visitor_state:Dictionary={}
+## Crafting and quest materials banked at the Hearth ({id: count}, Materials).
+var materials:Dictionary={}
 ## Hearth rooms (see HearthLodging): [{id, quality, furnishings, occupant}].
 var rooms:Array[Dictionary]=[]
 ## Furnishings taken out of rooms, waiting to be placed again: {id: count}.
@@ -224,7 +231,7 @@ func apply_post_tutorial_state(outcome: String) -> void:
 	banked_relics.clear()
 	successful_levels = 0
 	completed_dungeons.clear()
-	reputation=0;used_curated_ids.clear();lineage_registry.clear();rooms.clear();furnishing_storage.clear();lodging_migrated_from_capacity=false
+	reputation=0;used_curated_ids.clear();lineage_registry.clear();rooms.clear();furnishing_storage.clear();visitor_state.clear();materials.clear();lodging_migrated_from_capacity=false
 	clues.clear()
 	unlocked_classes = ["warrior", "mage"]
 	tavern_upgrades = {"recovery":0,"roster_services":0,"starting_supplies":0,"item_rarity":0,"merchant_stock":0,"relic_capacity":0,"secret_research":0,"replacement_quality":0}
@@ -460,7 +467,7 @@ func _generate_character(class_id:String="") -> CharacterRecord:
 	# Fame: better-known recruits cost more and come stronger (data/tavern_cut.json).
 	HearthCut.apply_fame(character,HearthCut.roll_fame(establishment_tier,_rng(seed^0xfa3e)),GameBalance.leveling_enabled())
 	var health:=BUILDS.max_health_for(class_id,character.level,character.attributes)
-	character.max_health = maxi(1, health); character.current_health = character.max_health;character.gear_id=String(BASIC_GEAR.get(class_id,""))
+	character.max_health = maxi(1, health); character.current_health = character.max_health;character.gear_id=starter_weapon(class_id,seed)
 	next_character_number += 1;return character
 
 func _generate_candidate_wave(first_wave:bool=false) -> void:
@@ -503,11 +510,23 @@ func _rng(seed:int)->RandomNumberGenerator:var rng:=RandomNumberGenerator.new();
 func _character_from_definition(definition:Dictionary)->CharacterRecord:
 	var trait_data:Dictionary=ADVENTURERS.trait_definition(String(definition.get("trait","stalwart")));var id:="hero_%06d"%next_character_number;var member:=CharacterRecord.create(id,String(definition.get("name","Adventurer")),String(definition.get("class","warrior")),trait_data,int(definition.get("portrait",0)))
 	member.definition_id=String(definition.get("id",""));member.family_name=String(definition.get("family",""));member.pronouns=String(definition.get("pronouns","they/them"));member.origin=String(definition.get("origin","Unknown"));member.nation_id=String(definition.get("nation_id",ADVENTURERS.nation_for_definition(member.definition_id)));member.faith_id=String(definition.get("faith_id",ADVENTURERS.faith_for_definition(member.definition_id)));member.age_band=String(definition.get("age","Prime"));member.occupation=String(definition.get("occupation","Adventurer"));member.personality=String(definition.get("personality","Reserved"));member.preference=String(definition.get("preference","A fair contract"));member.biography=String(definition.get("biography","A traveler seeking work."));member.career_limit=clampi(int(definition.get("career",8))+int(trait_data.get("career",0)),6,10);member.lineage_id=id;member.arrival_year=get_calendar_date().year
+	member.gender=String(definition.get("gender",CharacterRecord.gender_for(member)))
 	member.doctrine_id=String(definition.get("doctrine_id",ADVENTURERS.doctrine_for_definition(member.definition_id,member.nation_id)))
 	if not member.definition_id.is_empty() and not used_curated_ids.has(member.definition_id):used_curated_ids.append(member.definition_id)
 	return member
 func _generic_character(class_id:String,seed:int)->CharacterRecord:
-	var rng:=_rng(seed);var names:Array=ADVENTURERS.pool("names");var families:Array=ADVENTURERS.pool("family_names");var traits:Array=ADVENTURERS.pool("traits");var trait_data:Dictionary=traits[rng.randi_range(0,traits.size()-1)];var member:=CharacterRecord.create("hero_%06d"%next_character_number,String(names[rng.randi_range(0,names.size()-1)]),class_id,trait_data,rng.randi_range(0,3));member.family_name=String(families[rng.randi_range(0,families.size()-1)]);member.pronouns=String(ADVENTURERS.pool("pronouns")[rng.randi_range(0,ADVENTURERS.pool("pronouns").size()-1)]);member.origin=String(ADVENTURERS.pool("origins")[rng.randi_range(0,ADVENTURERS.pool("origins").size()-1)]);var nations:=ADVENTURERS.pool("nation_ids");member.nation_id=String(nations[rng.randi_range(0,nations.size()-1)]) if not nations.is_empty() else "crossroads";member.age_band=String(ADVENTURERS.pool("age_bands")[rng.randi_range(0,ADVENTURERS.pool("age_bands").size()-1)]);member.occupation=String(ADVENTURERS.pool("occupations")[rng.randi_range(0,ADVENTURERS.pool("occupations").size()-1)]);member.preference=String(ADVENTURERS.pool("preferences")[rng.randi_range(0,ADVENTURERS.pool("preferences").size()-1)]);member.personality="Practical, guarded, and accustomed to uncertain roads.";member.biography="A %s from %s. %s"%[member.occupation,member.origin,String(ADVENTURERS.pool("hooks")[rng.randi_range(0,ADVENTURERS.pool("hooks").size()-1)])];member.career_limit=clampi(rng.randi_range(6,10)+int(trait_data.get("career",0)),6,10);member.lineage_id=member.id;member.arrival_year=get_calendar_date().year;member.generation=member.arrival_year;return member
+	var rng:=_rng(seed);var names:Array=ADVENTURERS.pool("names");var families:Array=ADVENTURERS.pool("family_names");var traits:Array=ADVENTURERS.pool("traits");var trait_data:Dictionary=traits[rng.randi_range(0,traits.size()-1)];var member:=CharacterRecord.create("hero_%06d"%next_character_number,String(names[rng.randi_range(0,names.size()-1)]),class_id,trait_data,rng.randi_range(0,3));member.family_name=String(families[rng.randi_range(0,families.size()-1)]);member.pronouns=String(ADVENTURERS.pool("pronouns")[rng.randi_range(0,ADVENTURERS.pool("pronouns").size()-1)]);member.origin=String(ADVENTURERS.pool("origins")[rng.randi_range(0,ADVENTURERS.pool("origins").size()-1)]);var nations:=ADVENTURERS.pool("nation_ids");member.nation_id=String(nations[rng.randi_range(0,nations.size()-1)]) if not nations.is_empty() else "crossroads";member.age_band=String(ADVENTURERS.pool("age_bands")[rng.randi_range(0,ADVENTURERS.pool("age_bands").size()-1)]);member.occupation=String(ADVENTURERS.pool("occupations")[rng.randi_range(0,ADVENTURERS.pool("occupations").size()-1)]);member.preference=String(ADVENTURERS.pool("preferences")[rng.randi_range(0,ADVENTURERS.pool("preferences").size()-1)]);member.personality="Practical, guarded, and accustomed to uncertain roads.";member.biography="A %s from %s. %s"%[member.occupation,member.origin,String(ADVENTURERS.pool("hooks")[rng.randi_range(0,ADVENTURERS.pool("hooks").size()-1)])];member.career_limit=clampi(rng.randi_range(6,10)+int(trait_data.get("career",0)),6,10);member.lineage_id=member.id;member.arrival_year=get_calendar_date().year;member.generation=member.arrival_year
+	_assign_gender(member,seed)
+	return member
+## A new recruit's gender (female or male, which picks their sprite), with a
+## first name and pronouns to match (data/adventurers.json names_by_gender).
+func _assign_gender(member:CharacterRecord,seed_value:int)->void:
+	var rng:=_rng(seed_value^0x6e7d)
+	member.gender="female" if rng.randi()%2==0 else "male"
+	var names:Array=Array(Dictionary(ADVENTURERS.data().get("names_by_gender",{})).get(member.gender,[]))
+	if not names.is_empty():member.display_name=String(names[rng.randi_range(0,names.size()-1)])
+	member.pronouns=String(Dictionary(ADVENTURERS.data().get("pronouns_by_gender",{})).get(member.gender,member.pronouns))
+
 ## Rolls a class-independent stat block. The build leans toward the adventurer's
 ## calling `aligned_chance` of the time (negative = curated 85%, generic 65%).
 func _apply_attributes(member:CharacterRecord,quality:int,seed:int,aligned_chance:float=-1.0)->void:
@@ -530,7 +549,7 @@ func _try_add_descendant()->void:
 		if bool(state.get("descendant_created",false)) or calendar_day-int(state.get("retired_day",calendar_day))<112:continue
 		var checks:=int(state.get("checks",0))+1;state.checks=checks;var rng:=_rng(parent_id.hash()^candidate_wave_id^0x5de5);var appears:=checks>=4 or rng.randf()<(0.35+0.15*(checks-1));lineage_registry[parent_id]=state;parent.descendant_checks=checks;retired_heroes[index]=parent
 		if not appears:continue
-		var parent_class:=String(parent.get("class_id","warrior"));var class_id:=parent_class if rng.randf()<0.55 else String(unlocked_classes[rng.randi_range(0,unlocked_classes.size()-1)]);var child:=_generic_character(class_id,parent_id.hash()+calendar_day*97);child.parent_id=parent_id;child.lineage_id=String(parent.get("lineage_id",parent_id));child.family_name=String(parent.get("family_name",parent.get("name","Vale")));child.generation=maxi(2,int(parent.get("generation",1))+1);child.biography="A descendant of %s, who served the Hearth before them. %s comes carrying family stories of %s."%[String(parent.get("name","a former hero")),child.display_name,String(parent.get("dungeon_id","the old roads")).replace("_"," ")];_apply_attributes(child,35,parent_id.hash()+calendar_day);child.gear_id=String(BASIC_GEAR.get(class_id,""));next_character_number+=1
+		var parent_class:=String(parent.get("class_id","warrior"));var class_id:=parent_class if rng.randf()<0.55 else String(unlocked_classes[rng.randi_range(0,unlocked_classes.size()-1)]);var child:=_generic_character(class_id,parent_id.hash()+calendar_day*97);child.parent_id=parent_id;child.lineage_id=String(parent.get("lineage_id",parent_id));child.family_name=String(parent.get("family_name",parent.get("name","Vale")));child.generation=maxi(2,int(parent.get("generation",1))+1);child.biography="A descendant of %s, who served the Hearth before them. %s comes carrying family stories of %s."%[String(parent.get("name","a former hero")),child.display_name,String(parent.get("dungeon_id","the old roads")).replace("_"," ")];_apply_attributes(child,35,parent_id.hash()+calendar_day);child.gear_id=starter_weapon(class_id,parent_id.hash()+calendar_day);next_character_number+=1
 		if candidate_pool.size()>=7:var ordinary:CandidateRecord=get_candidates().back();candidate_pool.erase(ordinary.id)
 		var descendant:=CandidateRecord.create(child,calendar_day,candidate_wave_id,"I grew up hearing what the Hearth made possible. Now I want a story of my own.",false);descendant.quality_seed=child.id.hash()^candidate_wave_id;descendant.quality_score=_quality_from_attributes(child);candidate_pool[child.id]=descendant;state.descendant_created=true;lineage_registry[parent_id]=state;parent.descendant_created=true;retired_heroes[index]=parent;_add_calendar_event("lineage","%s %s, descendant of %s, arrives at the Hearth."%[child.display_name,child.family_name,String(parent.get("name","a former hero"))]);return
 
@@ -557,6 +576,12 @@ func reassign_class(character_id:String,class_id:String)->Dictionary:
 	HearthArmory.ensure_starter(self,member)
 	_add_calendar_event("retraining","%s retrains from %s to %s."%[member.display_name,_class_name(previous),_class_name(class_id)])
 	return {"ok":true,"character_id":member.id,"class_id":class_id,"message":"%s is now a %s. %s fit."%[member.display_name,_class_name(class_id),BUILDS.class_fit(member.attributes,class_id)]}
+
+## The weapon a new recruit of this class arrives with (picked by seed).
+static func starter_weapon(class_id:String,seed_value:int)->String:
+	var options:Array=Array(STARTER_WEAPONS.get(class_id,[]))
+	if options.is_empty():return String(BASIC_GEAR.get(class_id,""))
+	return String(options[posmod(hash("%d:weapon"%seed_value),options.size())])
 
 func _set_class(member:CharacterRecord,class_id:String)->void:
 	class_id=GameBalance.normalize_class_id(class_id)
@@ -704,7 +729,7 @@ func to_dict() -> Dictionary:
 	for value in roster.values(): if value is CharacterRecord: encoded_roster.append(value.to_dict())
 	var encoded_candidates:Array[Dictionary]=[]
 	for value in candidate_pool.values():if value is CandidateRecord:encoded_candidates.append(value.to_dict())
-	return {"ending_state":ending_state.duplicate(true),"world_crisis":world_crisis.duplicate(true),"active_boons":active_boons.duplicate(true),"divine_obligations":divine_obligations.duplicate(true),"dungeon_ecology":dungeon_ecology.duplicate(true),"armory":armory.duplicate(true),"next_item_id":next_item_id,"establishment_tier":establishment_tier,"construction":construction.duplicate(true),"dispatches":dispatches.duplicate(true),"settled_expeditions":settled_expeditions.duplicate(true),"return_reports":return_reports.duplicate(true),"market_stock":market_stock.duplicate(true),"consumable_stock":consumable_stock.duplicate(true),"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"keeper_journal_unlocked":keeper_journal_unlocked,"contribution":contribution,"faction_standing":faction_standing.duplicate(true),"divine_favor":divine_favor.duplicate(true),"story_event_history":story_event_history.duplicate(true),"keeper_memory":keeper_memory.duplicate(true),"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"calendar_shift":calendar_shift,"period_elapsed_shifts":period_elapsed_shifts,"period_completed_runs":period_completed_runs,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"pending_story_event_id":pending_story_event_id,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeons":completed_dungeons.duplicate(true),"clear_records":clear_records.duplicate(true),"unlocks_earned":unlocks_earned.duplicate(true),"lifetime_stats":lifetime_stats.duplicate(true),"bounties":bounties.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"pantry":pantry.duplicate(),"served_food":served_food,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true),"rooms":rooms.duplicate(true),"furnishing_storage":furnishing_storage.duplicate(true)}
+	return {"ending_state":ending_state.duplicate(true),"world_crisis":world_crisis.duplicate(true),"active_boons":active_boons.duplicate(true),"divine_obligations":divine_obligations.duplicate(true),"dungeon_ecology":dungeon_ecology.duplicate(true),"armory":armory.duplicate(true),"next_item_id":next_item_id,"establishment_tier":establishment_tier,"construction":construction.duplicate(true),"dispatches":dispatches.duplicate(true),"settled_expeditions":settled_expeditions.duplicate(true),"return_reports":return_reports.duplicate(true),"market_stock":market_stock.duplicate(true),"consumable_stock":consumable_stock.duplicate(true),"version":SAVE_VERSION,"save_slot":save_slot,"last_saved_unix":last_saved_unix,"tutorial_phase":tutorial_phase,"tutorial_outcome":tutorial_outcome,"tutorial_history":tutorial_history.duplicate(true),"tutorial_keepsake_id":tutorial_keepsake_id,"tutorial_letter_unlocked":tutorial_letter_unlocked,"keeper_journal_unlocked":keeper_journal_unlocked,"contribution":contribution,"faction_standing":faction_standing.duplicate(true),"divine_favor":divine_favor.duplicate(true),"story_event_history":story_event_history.duplicate(true),"keeper_memory":keeper_memory.duplicate(true),"post_tutorial_initialized":post_tutorial_initialized,"former_keeper_encounter_pending":former_keeper_encounter_pending,"former_keeper_encounter_seen":former_keeper_encounter_seen,"calendar_day":calendar_day,"calendar_shift":calendar_shift,"period_elapsed_shifts":period_elapsed_shifts,"period_completed_runs":period_completed_runs,"tavern_phase":tavern_phase,"candidate_wave_id":candidate_wave_id,"candidate_pool":encoded_candidates,"last_presented_wave_id":last_presented_wave_id,"calendar_history":calendar_history.duplicate(true),"retired_heroes":retired_heroes.duplicate(true),"first_company_ids":first_company_ids.duplicate(),"first_company_recruited":first_company_recruited,"first_normal_launch_completed":first_normal_launch_completed,"next_expedition_id":next_expedition_id,"last_settled_expedition_id":last_settled_expedition_id,"pending_settlement_summary":pending_settlement_summary.duplicate(true),"pending_story_context":pending_story_context,"pending_story_event_id":pending_story_event_id,"roster":encoded_roster,"memorial":memorial.duplicate(true),"unlocked_classes":unlocked_classes.duplicate(),"completed_dungeons":completed_dungeons.duplicate(true),"clear_records":clear_records.duplicate(true),"unlocks_earned":unlocks_earned.duplicate(true),"lifetime_stats":lifetime_stats.duplicate(true),"bounties":bounties.duplicate(true),"banked_gold":banked_gold,"supplies":supplies,"pantry":pantry.duplicate(),"served_food":served_food,"relic_essence":relic_essence,"lifetime_relic_essence":lifetime_relic_essence,"banked_relics":banked_relics.duplicate(),"successful_levels":successful_levels,"tavern_upgrades":tavern_upgrades.duplicate(true),"tavern_dialogue_flags":tavern_dialogue_flags.duplicate(true),"clues":clues.duplicate(true),"next_character_number":next_character_number,"expedition":expedition.to_dict(),"legacy_runtime":legacy_runtime.duplicate(true),"reputation":reputation,"used_curated_ids":used_curated_ids.duplicate(),"lineage_registry":lineage_registry.duplicate(true),"rooms":rooms.duplicate(true),"furnishing_storage":furnishing_storage.duplicate(true),"visitor_state":visitor_state.duplicate(true),"materials":materials.duplicate(),"simple_hearts":SimpleCombat.enabled()}
 
 func save_atomic() -> bool:
 	last_save_error = "";save_slot=clampi(save_slot,1,SAVE_SLOT_COUNT);last_saved_unix=int(Time.get_unix_time_from_system());var temporary:=temp_save_path(save_slot);var destination:=save_path(save_slot);var backup:=backup_save_path(save_slot);var file := FileAccess.open(temporary, FileAccess.WRITE)
@@ -821,6 +846,8 @@ func _load_dict(data: Dictionary) -> void:
 	for value in Array(data.get("rooms",[])):
 		if value is Dictionary: rooms.append(Dictionary(value).duplicate(true))
 	furnishing_storage = Dictionary(data.get("furnishing_storage",{})).duplicate(true)
+	visitor_state = Dictionary(data.get("visitor_state",{})).duplicate(true)
+	materials = Dictionary(data.get("materials",{})).duplicate()
 	lodging_migrated_from_capacity = not data.has("rooms")
 	construction = Dictionary(data.get("construction",{})).duplicate(true)
 	dispatches = Dictionary(data.get("dispatches",{})).duplicate(true)
@@ -866,7 +893,21 @@ func _load_dict(data: Dictionary) -> void:
 		expedition.departure_day = calendar_day
 		expedition.due_day = calendar_day+7
 	HearthMigration.upgrade(self,data)
+	if not bool(data.get("simple_hearts",false)): _simplify_roster_health()
+	HearthArmory.drop_unknown_items(self)
 	ECOLOGY.ensure(self);ECOLOGY.advance_to_day(self,calendar_day);CRISIS.ensure(self)
+
+## Simple combat: adventurers saved under the old health numbers get hearts
+## from their Constitution, keeping roughly how hurt they were. Runs once, for
+## saves made before hearts ("simple_hearts" in the save).
+func _simplify_roster_health() -> void:
+	if not SimpleCombat.enabled(): return
+	for member in roster.values():
+		var hearts := BUILDS.max_health_for(member.class_id,member.level,member.attributes)
+		if member.max_health == hearts: continue
+		var fraction := float(member.current_health) / float(maxi(1,member.max_health))
+		member.max_health = hearts
+		member.current_health = clampi(int(ceil(hearts * fraction)),1 if member.current_health > 0 else 0,hearts)
 
 func _convert_legacy_first_company() -> void:
 	if roster.size()!=2:return

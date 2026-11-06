@@ -8,6 +8,8 @@ const SLASHER_RESOURCE_HUD := preload("res://assets/slasher/ui/slasher_resource_
 const SETTINGS_SERVICE:=preload("res://scripts/game/game_settings.gd")
 
 func _initialize() -> void:
+	SimpleCombat.dodge_override = 0.0  # every hit must land in this test
+	
 	call_deferred("_run")
 
 func _run() -> void:

@@ -30,7 +30,7 @@ func _run()->void:
 	var continue_button:Button=screen.find_child("ContinueButton",true,false);var new_button:Button=screen.find_child("NewGameButton",true,false);var dev_toggle:CheckButton=screen.find_child("DevModeToggle",true,false)
 	_expect(continue_button!=null and not continue_button.disabled,"Continue must enable when a recoverable slot exists",failures)
 	_expect(new_button!=null and not new_button.disabled,"New Game must always be available",failures)
-	_expect(dev_toggle!=null and dev_toggle.button_pressed==root.get_node("GameSettings").get_bool("dev_mode",false),"Main screen Dev Mode toggle is missing or does not reflect the saved setting",failures)
+	_expect(dev_toggle==null,"The Dev Mode toggle should be hidden in the demo",failures)
 	screen._open_slot_picker(false);await process_frame
 	var picker:=screen.get_node("SlotPickerOverlay");var slot_buttons:Array[Button]=[]
 	for node in picker.find_children("*","Button",true,false):

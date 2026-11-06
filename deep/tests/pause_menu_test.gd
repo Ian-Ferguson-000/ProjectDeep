@@ -31,6 +31,7 @@ func _frames(count: int) -> void:
 func _press_escape(menu: GamePauseMenu) -> void:
 	var event := InputEventAction.new(); event.action = GamePauseMenu.ACTION; event.pressed = true
 	menu._input(event)
+	if not menu.visible: menu._unhandled_input(event)
 	await process_frame
 
 func _buttons(menu: GamePauseMenu) -> Array:
@@ -56,9 +57,7 @@ func _run() -> void:
 	# Not while the codex is open.
 	forest.codex.open(state,forest.player)
 	await _press_escape(menu)
-	_expect(menu.visible and paused and forest.codex.visible,"The pause menu didn't open over the codex")
-	await _press_escape(menu)
-	_expect(not menu.visible and paused and forest.codex.visible,"Closing the menu should leave the codex open and paused")
+	_expect(not menu.visible,"The pause menu opened over the codex (Esc should close the codex first)")
 	forest.codex.close(); paused = false
 	await _press_escape(menu)
 	_expect(menu.visible and paused,"Esc didn't open and pause the dungeon menu")
@@ -96,7 +95,20 @@ func _run() -> void:
 		var tavern_fake := FakeController.new(); root.add_child(tavern_fake); tavern_menu.controller = tavern_fake
 		tavern._open_hearth("Company"); await process_frame
 		await _press_escape(tavern_menu)
-		_expect(tavern_menu.visible and tavern.management.visible,"The pause menu didn't open over the Hearth window")
+		_expect(not tavern_menu.visible,"The pause menu opened over the Hearth window")
+		tavern.management.hide(); await process_frame
+		await _press_escape(tavern_menu)
+		_expect(tavern_menu.visible,"Esc didn't open the tavern menu once the Hearth was closed")
+		tavern_menu.close(); await process_frame
+		# A real Esc key: the first press closes the Hearth only; the next opens the menu.
+		tavern._open_hearth("Company"); await process_frame
+		var key := InputEventKey.new(); key.physical_keycode = KEY_ESCAPE; key.keycode = KEY_ESCAPE; key.pressed = true
+		root.push_input(key); await process_frame
+		var release := InputEventKey.new(); release.physical_keycode = KEY_ESCAPE; release.keycode = KEY_ESCAPE; release.pressed = false
+		root.push_input(release); await process_frame
+		_expect(not tavern.management.visible and not tavern_menu.visible,"One Esc should close the Hearth without opening the menu (hearth %s, menu %s)" % [tavern.management.visible,tavern_menu.visible])
+		root.push_input(key.duplicate()); await process_frame
+		_expect(tavern_menu.visible,"The next Esc should open the menu")
 		_expect(not _buttons(tavern_menu).has("Codex"),"The tavern menu shouldn't offer the dungeon codex")
 		var saves_before := tavern_state.saves
 		tavern_menu.return_to_title()

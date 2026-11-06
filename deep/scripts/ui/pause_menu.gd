@@ -99,8 +99,12 @@ func close() -> void:
 	AudioCue.play_from(self,"ui_close",false)
 	closed.emit()
 
-## _input runs before any window's own Esc handling, so the menu opens over
-## everything (the codex, shops, the Hearth, dialogue) and nothing else sees the key.
+## Esc closes whatever window is open first; the menu only opens when nothing
+## else is up (can_open). Whether it may open is decided in _input, before any
+## window handles the key, so the press that closes a window doesn't also open
+## the menu.
+var _may_open_on_this_press := false
+
 func _input(event: InputEvent) -> void:
 	if not event.is_action_pressed(ACTION): return
 	if visible:
@@ -108,7 +112,13 @@ func _input(event: InputEvent) -> void:
 		if page == "main": close()
 		else: show_page("main")
 		get_viewport().set_input_as_handled()
-	elif can_open.call():
+		return
+	_may_open_on_this_press = can_open.call()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed(ACTION) or visible: return
+	if _may_open_on_this_press:
+		_may_open_on_this_press = false
 		open()
 		get_viewport().set_input_as_handled()
 

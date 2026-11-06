@@ -17,7 +17,7 @@ const THEME = preload("res://scripts/ui/tavern_ui_theme.gd")
 const SECTIONS = ["Company","Training","Lodgings","Expeditions","Bounties","Facilities","Armory","Merchants","Calendar","Reports","Best Times","Unlocks"]
 const GROUPS = [
 	{"id":"Company","label":"Company","icon":"roster","pages":["Company","Training","Lodgings"]},
-	{"id":"Expeditions","label":"Expeditions","icon":"expedition","pages":["Expeditions","Bounties"]},
+	{"id":"Expeditions","label":"Expeditions","icon":"expedition","pages":["Expeditions","Bounties","Quests"]},
 	{"id":"Facilities","label":"Facilities","icon":"hearth","pages":["Facilities","Armory","Merchants"]},
 	{"id":"Records","label":"Records","icon":"ledger","pages":["Calendar","Reports","Best Times","Unlocks"]},
 ]
@@ -31,6 +31,7 @@ const PAGES = {
 	"Merchants":{"title":"Suppliers","tab":"Suppliers","icon":"merchants","hint":"Feed the company and buy equipment. Better food keeps adventurers happy."},
 	"Calendar":{"title":"Calendar","tab":"Calendar","icon":"calendar","hint":"What has happened at the Hearth, and what is coming."},
 	"Reports":{"title":"Expedition Reports","tab":"Reports","icon":"ledger","hint":"Every return: gold, losses, and what was recovered."},
+	"Quests":{"title":"Visitors & Quests","tab":"Quests","icon":"ledger","hint":"People of note who call at the Hearth. Take their jobs when they visit, finish them on expeditions or at home, and collect your reward next time they're in. Their favour opens up their wares."},
 	"Bounties":{"title":"Bounty Board","tab":"Bounties","icon":"ledger","hint":"Contracts posted at the Hearth. Meet one on an expedition and get home alive to collect. Unfinished bounties come down after a few days."},
 	"Unlocks":{"title":"Unlocks","tab":"Unlocks","icon":"ledger","hint":"Goals that permanently add new relics to the drop pool, raise drop luck, or put more bounties on the board."},
 	"Best Times":{"title":"Best Times","tab":"Best Times","icon":"ledger","hint":"Dungeons are never finished. Each guardian you defeat sets a clear time: beat the record, and the best for every class."},
@@ -251,7 +252,7 @@ func refresh() -> void:
 			tab.add_theme_constant_override("icon_max_width",20)
 			tab.pressed.connect(show_section.bind(page))
 			tabs.add_child(tab)
-	testing_ground_button.visible = section == "Armory"
+	testing_ground_button.visible = section == "Armory" and GameSettingsService.dev_mode_available  # dev tool, hidden in the demo
 	testing_ground_button.disabled = campaign.expedition.active
 	advance_button.text = "Advance to Late Shift" if campaign.calendar_shift == 0 else "End Day"
 	advance_button.disabled = campaign.expedition.active or not campaign.first_company_recruited or not campaign.pending_story_event_id.is_empty() or not campaign.ending_state.is_empty()
@@ -276,6 +277,7 @@ func refresh() -> void:
 		"Reports": reports_page()
 		"Best Times": best_times_page()
 		"Bounties": bounties_page()
+		"Quests": quests_page()
 		"Unlocks": unlocks_page()
 		"Calendar":
 			var calendar := preload("res://scripts/ui/hearth_calendar_view.gd").new()
@@ -920,7 +922,11 @@ func training_page() -> void:
 		odds.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		odds.add_theme_constant_override("separation",0)
 		row.add_child(odds)
-		if value >= cap:
+		if not SimpleCombat.trainable(stat):
+			odds.add_child(label("Can't be trained",14,THEME.MUTED))
+			var charm := SimpleCombat.training_bonus(value)
+			odds.add_child(label("Gives %+d%% on every other session" % charm,11,THEME.MUTED))
+		elif value >= cap:
 			odds.add_child(label("Mastered for now",14,THEME.MUTED))
 		else:
 			var chance := HearthLodging.training_chance(campaign,member,stat)
@@ -929,7 +935,7 @@ func training_page() -> void:
 			var parts: Array = chance.parts
 			odds.add_child(label(", ".join(parts) if not parts.is_empty() else "No bonuses yet",11,THEME.MUTED))
 		var check := HearthLodging.can_train(campaign,member,stat)
-		var drill := button(row,"Mastered" if value >= cap else "Train · %dg" % HearthLodging.training_cost(member,stat),func(): act(HearthLodging.train(campaign,member.id,stat)),bool(check.ok))
+		var drill := button(row,"Natural" if not SimpleCombat.trainable(stat) else ("Mastered" if value >= cap else "Train · %dg" % HearthLodging.training_cost(member,stat)),func(): act(HearthLodging.train(campaign,member.id,stat)),bool(check.ok))
 		drill.custom_minimum_size = Vector2(108,36)
 		if not bool(check.ok): drill.tooltip_text = String(check.get("error",""))
 
@@ -1147,6 +1153,7 @@ func facilities_page() -> void:
 
 func merchant_page() -> void:
 	_pantry_section()
+	_materials_section()
 	_heading("Provisions","Found on expeditions; pack them on the Set Out screen")
 	var provisions := _grid(3)
 	for id in HearthCatalog.data().consumables:
@@ -1193,6 +1200,27 @@ func merchant_page() -> void:
 
 ## The pantry (data/upkeep.json): everyone at home eats one ration a day of the
 ## quality you serve, and each expedition takes rations with it.
+## Crafting and quest materials brought home from runs (Materials).
+func _materials_section() -> void:
+	_heading("Materials","%d banked" % Materials.total(campaign.materials))
+	var held: Array = campaign.materials.keys().filter(func(id): return int(campaign.materials[id]) > 0)
+	if held.is_empty():
+		_empty_state("No materials yet","Basic enemies drop materials; mini bosses and bosses drop trophies. Bring them home alive to bank them. Visitors ask for them, and crafting will use them.")
+		return
+	var grid := _grid(4)
+	for id in held:
+		var tile := PanelContainer.new(); tile.name = "Material_%s" % String(id)
+		var style := THEME.panel(Color("2b1e15"),Materials.color(String(id)).darkened(0.3),6,1); style.set_content_margin_all(8)
+		tile.add_theme_stylebox_override("panel",style)
+		tile.tooltip_text = String(Materials.material(String(id)).get("description",""))
+		var row := HBoxContainer.new(); row.add_theme_constant_override("separation",8); tile.add_child(row)
+		var swatch := ColorRect.new(); swatch.color = Materials.color(String(id)); swatch.custom_minimum_size = Vector2(14,14); swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(swatch)
+		var info := VBoxContainer.new(); row.add_child(info)
+		info.add_child(label("%s ×%d" % [Materials.material_name(String(id)),int(campaign.materials[id])],14,THEME.IVORY))
+		info.add_child(label("Quest material" if String(Materials.material(String(id)).get("kind","")) == "quest" else "Crafting material",11,THEME.MUTED))
+		grid.add_child(tile)
+
 func _pantry_section() -> void:
 	var eaters := HearthUpkeep.diners(campaign).size()
 	_heading("Pantry","%d at the table · %d rations · lasts about %d days" % [eaters,campaign.supplies,HearthUpkeep.days_left(campaign)])
@@ -1216,6 +1244,33 @@ func _pantry_section() -> void:
 		if serving: THEME.apply_button(serve,true,14,Vector2(0,34))
 
 # ---------------------------------------------------------------- records
+
+## Visitors of merit: who's in, who's coming, and every job in hand.
+func quests_page() -> void:
+	var jobs := VisitorService.active_quests(campaign)
+	_heading("Jobs in hand","%d active" % jobs.size())
+	if jobs.is_empty(): _empty_state("No jobs yet","Talk to visitors of note in the tavern to take on their work.")
+	for entry in jobs:
+		var v := VisitorService.visitor(String(entry.visitor))
+		var q := VisitorService.quest(String(entry.visitor),String(entry.quest))
+		var content := card(String(q.get("title","")),String(q.get("summary","")),null,Color("8fd48a") if String(entry.state) == "ready" else THEME.GOLD)
+		content.add_child(label("For %s · %s" % [String(v.get("name","")),VisitorService.progress_text(campaign,String(entry.visitor),String(entry.quest))],13,GOOD if String(entry.state) == "ready" else THEME.MUTED))
+	_heading("Visitors","Their favour opens their wares")
+	var grid := _grid(2)
+	for id in VisitorService.ids():
+		var v := VisitorService.visitor(id)
+		var known := bool(VisitorService.state(campaign,id).get("met",false)) or VisitorService.is_present(campaign,id)
+		var unlocked := VisitorService.unlocked(campaign,id)
+		var content := card(String(v.get("name",id)) if known else "Someone unknown",String(v.get("title","")) if known else "",grid,THEME.GOLD if unlocked else THEME.MUTED)
+		var row := HBoxContainer.new(); row.add_theme_constant_override("separation",10); content.add_child(row)
+		var face := TextureRect.new(); face.custom_minimum_size = Vector2(48,60); face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		face.texture = PlaceholderArt.visitor_portrait(v); face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		row.add_child(face)
+		var info := VBoxContainer.new(); row.add_child(info)
+		var next := VisitorService.next_visit_day(campaign,id)
+		var when := "In the tavern now" if VisitorService.is_present(campaign,id) else ("Next visit: Day %d" % next if next > 0 else "Not yet seen at the Hearth")
+		info.add_child(label(when,14,GOOD if VisitorService.is_present(campaign,id) else THEME.IVORY))
+		if known: info.add_child(label("%s · %d favour" % [VisitorService.rank_name(campaign,id),VisitorService.favour(campaign,id)],13,THEME.MUTED))
 
 func bounties_page() -> void:
 	BountyBoard.refresh(campaign)

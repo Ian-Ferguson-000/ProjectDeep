@@ -50,8 +50,10 @@ func _build_ui() -> void:
 
 	var new_button:=Button.new();new_button.name="NewGameButton";new_button.text="New Game";new_button.custom_minimum_size=Vector2(320,58);new_button.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;new_button.pressed.connect(_open_slot_picker.bind(true));_style_button(new_button);root.add_child(new_button)
 
-	var dev_toggle:=CheckButton.new();dev_toggle.name="DevModeToggle";dev_toggle.text="DEV MODE · Fast recharge + boosted drops";dev_toggle.tooltip_text="Testing mode: active items recharge 5× faster, ordinary enemies have a 25% active-item chance, and elite/boss active-item drops are guaranteed. Each active drop offers three choices.";dev_toggle.custom_minimum_size=Vector2(430,44);dev_toggle.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;dev_toggle.add_theme_font_size_override("font_size",18);dev_toggle.add_theme_color_override("font_color",Color("#f1d98a"))
-	var settings:=get_node_or_null("/root/GameSettings");dev_toggle.set_pressed_no_signal(settings.get_bool("dev_mode",false) if settings!=null else false);dev_toggle.toggled.connect(_toggle_dev_mode);root.add_child(dev_toggle)
+	# Dev Mode is hidden for the demo (GameSettingsService.dev_mode_available).
+	if GameSettingsService.dev_mode_available:
+		var dev_toggle:=CheckButton.new();dev_toggle.name="DevModeToggle";dev_toggle.text="DEV MODE · Fast recharge + boosted drops";dev_toggle.tooltip_text="Testing mode: active items recharge 5× faster, ordinary enemies have a 25% active-item chance, and elite/boss active-item drops are guaranteed. Each active drop offers three choices.";dev_toggle.custom_minimum_size=Vector2(430,44);dev_toggle.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;dev_toggle.add_theme_font_size_override("font_size",18);dev_toggle.add_theme_color_override("font_color",Color("#f1d98a"))
+		var settings:=get_node_or_null("/root/GameSettings");dev_toggle.set_pressed_no_signal(settings.get_bool("dev_mode",false) if settings!=null else false);dev_toggle.toggled.connect(_toggle_dev_mode);root.add_child(dev_toggle)
 
 	var options_button:=Button.new()
 	options_button.text="Options";options_button.custom_minimum_size=Vector2(320,52);options_button.size_flags_horizontal=Control.SIZE_SHRINK_CENTER;options_button.pressed.connect(_open_options);_style_button(options_button);root.add_child(options_button)

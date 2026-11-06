@@ -6,7 +6,9 @@ const FOREST := preload("res://scenes/slasher/SlasherForest.tscn")
 
 var failures: Array[String] = []
 
-func _initialize() -> void: _run.call_deferred()
+func _initialize() -> void:
+	SimpleCombat.dodge_override = 0.0  # every hit must land in this test
+	_run.call_deferred()
 
 func _run() -> void:
 	# Art builds with every animation the enemy code asks for.

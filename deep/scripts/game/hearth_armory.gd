@@ -8,6 +8,16 @@ static func grant(c: CampaignState, item_id: String, bound: bool = false) -> Str
 	c.armory[id] = {"item_id":item_id, "owner":"", "bound":bound}
 	return id
 
+## Drops armory items whose catalog entry no longer exists (e.g. the short-lived
+## sidearm spears), unequipping them first.
+static func drop_unknown_items(c: CampaignState) -> void:
+	for instance_id in c.armory.keys():
+		if not HearthCatalog.item(String(c.armory[instance_id].get("item_id",""))).is_empty(): continue
+		for member in c.roster.values():
+			for slot in member.equipment.keys():
+				if String(member.equipment[slot]) == String(instance_id): member.equipment.erase(slot)
+		c.armory.erase(instance_id)
+
 static func equip(c: CampaignState, character_id: String, instance_id: String) -> Dictionary:
 	var member := c.character(character_id)
 	if member == null or member.status != CharacterRecord.STATUS_AVAILABLE: return fail("Only adventurers at home can change equipment.")

@@ -35,7 +35,11 @@ func _run() -> void:
 	var labels: Array[String] = []
 	for node in panel._descendants(panel):
 		if node is Label: labels.append(node.text)
-	_expect(" ".join(labels).contains("LB party") and not " ".join(labels).contains("extract"),"Options must teach party controls without an extraction shortcut",failures)
+	# Runs are solo now: Options teach the Esc menu and the active item, and
+	# mention neither party controls nor an extraction shortcut.
+	var text := " ".join(labels)
+	_expect(text.contains("Esc menu") and text.contains("active item") and not text.contains("party") and not text.contains("extract"),"Options must teach the current controls (Esc menu, active item) with no party or extraction controls",failures)
+	_expect(not GameSettingsService.dev_mode_available and not GameSettingsService.dev_mode_enabled(),"Dev Mode must be unavailable in the demo build",failures)
 	main.free();panel.queue_free();await process_frame
 	if failures.is_empty():print("RELEASE_READINESS_TESTS_PASSED");quit(0);return
 	for failure in failures:push_error(failure)

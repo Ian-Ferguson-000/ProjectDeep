@@ -229,6 +229,24 @@
     }
   },
   "items": {
+    "borderkeepers_spear": {
+      "name": "Borderkeeper's Spear",
+      "slot": "weapon",
+      "tier": 0,
+      "rarity": "common",
+      "price": 30,
+      "description": "A long two-handed spear: a weapon of its own. Measured Thrust strikes far down a line (the tip hits hardest), Hold the Pass plants a lane enemies won't cross unhurt, Yielding Guard steps back behind the shaft, and Flank March slips sideways.",
+      "modifiers": {},
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "class_id": "warrior",
+      "damage": 2,
+      "block": false,
+      "defense_id": "guard"
+    },
     "sword_shield": {
       "name": "Sword and Shield",
       "slot": "weapon",

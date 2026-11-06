@@ -205,6 +205,16 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 			var survivor:=c.character(id)
 			if survivor!=null:represented_nations[survivor.nation_id]=true
 		for nation_id in represented_nations:c.faction_standing[nation_id]=int(c.faction_standing.get(nation_id,0))+1
+	# Materials picked up on the run are banked if anyone comes home.
+	var banked_materials: Dictionary = {}
+	if outcome != "death":
+		var carried: Dictionary = Dictionary(extra.get("materials",{}))
+		for id in carried:
+			Materials.add(c.materials,String(id),int(carried[id])); Materials.add(banked_materials,String(id),int(carried[id]))
+	# Visitors' quests: coming home (with how much gold).
+	var quests_done: Array = []
+	if manual:
+		for id in survivors: quests_done.append_array(VisitorService.notify(c,{"type":"return","outcome":outcome,"gold":roundi(gross / float(maxi(1,survivors.size())))}))
 	var retired:Array[String]=[]
 	var settled_in_town: Array[String] = []
 	if manual and outcome != "death":
@@ -253,7 +263,7 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 		e.run_stats["unlocked"] = names
 	BountyBoard.refresh(c)
 	var divine_result := DIVINE.record_expedition_outcome(c,e,outcome)
-	var report := {"expedition_id":e.expedition_id,"outcome":outcome,"headline":"%s: %s" % [e.dungeon_id.capitalize(),outcome.capitalize()],"dungeon":e.dungeon_id,"deployment_type":e.deployment_type,"depth":e.floor,"gold":gross,"share":share,"net":gross-share,"tavern_cut_percent":cut_percent,"settled_in_town":settled_in_town.duplicate(),"essence":essence,"contribution":contribution,"returned":returned,"retired":retired,"lost":lost,"items":rewards,"events":extra.get("events",[]),"divine":divine_result}
+	var report := {"expedition_id":e.expedition_id,"outcome":outcome,"headline":"%s: %s" % [e.dungeon_id.capitalize(),outcome.capitalize()],"dungeon":e.dungeon_id,"deployment_type":e.deployment_type,"depth":e.floor,"gold":gross,"share":share,"net":gross-share,"tavern_cut_percent":cut_percent,"settled_in_town":settled_in_town.duplicate(),"quests_done":quests_done.duplicate(),"materials":banked_materials.duplicate(),"essence":essence,"contribution":contribution,"returned":returned,"retired":retired,"lost":lost,"items":rewards,"events":extra.get("events",[]),"divine":divine_result}
 	report["bounties"] = completed_bounties.map(func(bounty): return "%s (+%s)" % [String(bounty.text),BountyBoard.reward_text(bounty.reward)])
 	report["unlocks"] = Array(e.run_stats.get("unlocked",[])).duplicate()
 	c.return_reports.append(report)

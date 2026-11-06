@@ -145,6 +145,14 @@ var combo_cast_serial:=0
 var combo_proc_targets:Dictionary={}
 var warrior_slash_chain:=0
 var warrior_slash_chain_time:=0.0
+## Input buffer: a press that lands just before an action is ready fires the
+## moment it is (slasher_balance.json input.buffer_window).
+var buffered_slot:=""
+var buffered_source:=""
+var buffered_left:=0.0
+## A short forward step with each Fighter swing.
+var lunge_velocity:=Vector2.ZERO
+var lunge_left:=0.0
 
 func snapshot_party_state()->Dictionary:
 	var state:={"cooldowns":cooldowns.duplicate(true),"invulnerable":invulnerable,"defense_window":defense_window,"defense_kind":defense_kind,"empowered":empowered,"is_hidden":is_hidden,"hidden_time":hidden_time,"retribution_stored":retribution_stored,"consumable_aegis":consumable_aegis,"consumable_speed_time":consumable_speed_time,"consumable_speed_multiplier":consumable_speed_multiplier,"movement_debuff_time":movement_debuff_time,"movement_debuff_multiplier":movement_debuff_multiplier,"next_attack_multiplier":next_attack_multiplier,"last_fireball_attack":last_fireball_attack.duplicate(true),"warrior_slash_chain":warrior_slash_chain,"warrior_slash_chain_time":warrior_slash_chain_time,"last_direction":[last_direction.x,last_direction.y],"aim_direction":[aim_direction.x,aim_direction.y],"marked_enemy_instance_id":marked_enemy.get_instance_id() if is_instance_valid(marked_enemy) else 0}
@@ -204,6 +212,7 @@ func setup(state:RunState)->void:
 	var tuning:Dictionary=GameBalance.get_slasher_class_tuning(class_id)
 	speed=float(tuning.get("speed",speed));max_health=state.max_health;health=state.current_health
 	attack_power=maxi(2,state.get_derived_stat("attack_power")+(state.selected_gear.damage if state.selected_gear else 1))
+	_setup_simple_combat(state)
 	spell_power=maxi(2,state.get_derived_stat("spell_potency")+(state.selected_gear.damage if state.selected_gear else 1))
 	if item_runtime!=null:item_runtime.setup(state,self)
 	var hitbox:=get_node_or_null("PlayerHitbox") as CollisionShape2D
@@ -225,7 +234,8 @@ func _ensure_input_actions_exist()->void:
 func _refresh_presentation()->void:
 	if sprite==null:sprite=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";add_child(sprite)
 	var tuning:Dictionary=GameBalance.get_slasher_class_tuning(class_id)
-	sprite.sprite_frames=SlasherSpriteLibrary.player_frames(class_id);sprite.position=Vector2(float(tuning.get("sprite_offset_x",0.0)),float(tuning.get("sprite_offset_y",-30.0)));sprite.scale=Vector2.ONE*float(tuning.get("sprite_scale",0.9));presentation_ready=true;_play_animation("idle");queue_redraw()
+	var hero:CharacterRecord=run_state.get_active_character() if run_state!=null else null
+	sprite.sprite_frames=SlasherSpriteLibrary.player_frames(class_id,hero.gender if hero!=null else "");sprite.position=Vector2(float(tuning.get("sprite_offset_x",0.0)),float(tuning.get("sprite_offset_y",-30.0)));sprite.scale=Vector2.ONE*float(tuning.get("sprite_scale",0.9));presentation_ready=true;_play_animation("idle");queue_redraw()
 
 func _physics_process(delta:float)->void:
 	tick_fighter_frenzy(delta)
@@ -241,6 +251,13 @@ func _physics_process(delta:float)->void:
 		if resource_regen_accumulator>=1.0:
 			var restored:=floori(resource_regen_accumulator);resource_regen_accumulator-=restored;run_state.gain_class_resource(restored);resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
 	for key in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-delta)
+	lunge_left=maxf(0.0,lunge_left-delta)
+	if buffered_left>0.0:
+		buffered_left-=delta
+		if buffered_left<=0.0:buffered_slot=""
+		elif float(cooldowns.get(buffered_slot,0.0))<=0.0 and not input_locked:
+			var slot_to_fire:=buffered_slot;var source:=buffered_source;buffered_slot="";buffered_left=0.0
+			use_action(slot_to_fire,source)
 	var was_invulnerable:=invulnerable>0.0
 	invulnerable=maxf(0.0,invulnerable-delta);defense_window=maxf(0.0,defense_window-delta);animation_lock=maxf(0.0,animation_lock-delta);hidden_time=maxf(0.0,hidden_time-delta)
 	if was_invulnerable or invulnerable>0.0:queue_redraw()
@@ -258,7 +275,9 @@ func _physics_process(delta:float)->void:
 	var direction:=Input.get_vector("slasher_left","slasher_right","slasher_up","slasher_down")
 	if direction.length()>0.1:last_direction=direction.normalized()
 	var kit_speed: float=mage_kit.movement_speed_multiplier() if is_instance_valid(mage_kit) and mage_kit.has_method("movement_speed_multiplier") else 1.0
-	velocity=direction*speed*kit_speed*(kit_buffs.speed_multiplier() if is_instance_valid(kit_buffs) else 1.0)*consumable_speed_multiplier*movement_debuff_multiplier*(item_runtime.conversion("speed_multiplier",1.0) if item_runtime else 1.0);move_and_slide()
+	velocity=direction*speed*kit_speed*(kit_buffs.speed_multiplier() if is_instance_valid(kit_buffs) else 1.0)*consumable_speed_multiplier*movement_debuff_multiplier*(item_runtime.conversion("speed_multiplier",1.0) if item_runtime else 1.0)
+	if lunge_left>0.0:velocity+=lunge_velocity
+	move_and_slide()
 	_enforce_field_bounds()
 	if animation_lock<=0.0:_play_animation("run" if direction.length()>0.1 else "idle")
 	if Input.is_action_just_pressed("slasher_controller_basic"):use_action("basic", "controller")
@@ -268,7 +287,8 @@ func _physics_process(delta:float)->void:
 	if Input.is_action_just_pressed("slasher_defend"):use_action("defensive", "controller")
 	if basic_mouse_held and not Input.is_key_pressed(KEY_SHIFT) and float(cooldowns.get("basic",0.0))<=0.0:
 		var held_result:Dictionary=use_action("basic", "mouse")
-		if bool(held_result.get("started",false)):cooldowns.basic=float(cooldowns.basic)*float(GameBalance.get_slasher_balance("input").get("held_basic_cooldown_multiplier",2.25))
+		var input_rules:Dictionary=GameBalance.get_slasher_balance("input")
+		if bool(held_result.get("started",false)):cooldowns.basic=float(cooldowns.basic)*float(Dictionary(input_rules.get("held_basic_cooldown_multiplier_by_class",{})).get(class_id,input_rules.get("held_basic_cooldown_multiplier",2.25)))
 
 func _unhandled_input(event:InputEvent)->void:
 	if input_locked:return
@@ -287,7 +307,9 @@ func use_action(slot:String,input_source:String="system")->Dictionary:
 	var result:={"started":false,"slot":slot,"class_id":class_id,"input_source":input_source,"targets_hit":0,"projectiles_deflected":0,"resource_gained":0,"resource_spent":0,"damage_prevented":0,"failure":""}
 	# Actions switched off in progression.json "enabled_actions" do nothing.
 	if not GameBalance.action_enabled(slot):result.failure="disabled";return result
-	if float(cooldowns.get(slot,0.0))>0.0:result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
+	if float(cooldowns.get(slot,0.0))>0.0:
+		_buffer(slot,input_source)
+		result.failure="%s is cooling down."%_action_name(slot);ability_resolved.emit(result);return result
 	var tuning:Dictionary=_ability_tuning(slot)
 	var default_cost:=2 if slot=="special" else (int(run_state.get_class_resource_rules(class_id).get("movement_cost",1)) if slot=="movement" else 0)
 	var resource_cost:=int(tuning.get("resource_cost",default_cost))
@@ -387,7 +409,12 @@ func _basic(result:Dictionary)->Dictionary:
 			if class_id=="warrior":
 				if warrior_slash_chain_time<=0.0:warrior_slash_chain=0
 				warrior_slash_chain+=1
-				if warrior_slash_chain>=3:result["cooldown_override"]=float(tuning.get("combo_finisher_cooldown",0.90));result["basic_chain_complete"]=true;warrior_slash_chain=0;warrior_slash_chain_time=0.0
+				var swing:=warrior_slash_chain
+				_lunge(tuning,swing)
+				if warrior_slash_chain>=3:
+					result["cooldown_override"]=float(tuning.get("combo_finisher_cooldown",0.90));result["basic_chain_complete"]=true;warrior_slash_chain=0;warrior_slash_chain_time=0.0
+					# The third swing lands heavier and wider.
+					attack.knockback=float(attack.get("knockback",0.0))*float(tuning.get("finisher_knockback_multiplier",1.0));attack.arc_degrees=float(attack.get("arc_degrees",70.0))+float(tuning.get("finisher_arc_bonus",0.0))
 				else:result["cooldown_override"]=float(tuning.get("cooldown",0.18));warrior_slash_chain_time=float(tuning.get("combo_reset_window",0.70))
 			if class_id=="warrior" and String(resolving_combo.get("id",""))=="crosscut":
 				var effect:Dictionary=Dictionary(resolving_combo.get("effect",{}));attack.damage=maxi(1,int(round(float(attack.damage)*float(effect.get("damage_multiplier",2.0)))));attack.knockback=float(attack.get("knockback",0.0))*float(effect.get("knockback_multiplier",2.0));attack.screen_shake_multiplier=float(effect.get("screen_shake_multiplier",1.6));attack.critical=true;result.critical=true
@@ -504,6 +531,34 @@ func _defensive(result:Dictionary)->Dictionary:
 		"summoner":_ensure_companion();defense_kind="cover"
 	return result
 
+## Simple combat (SimpleCombat): this player's hit size from their main stat
+## (the Fighter's Strength), and the ordinary swing it's measured against.
+var simple_base:=1
+var simple_reference:=1
+## Hit size for each damage stat (str, dex, int, wis); the weapon picks which.
+var simple_bases:Dictionary={}
+var weapon_stat:="str"
+var dodge_chance:=0.0
+## Dodge rolls come from the run's seed, so a seeded run dodges the same way.
+var dodge_rng:=RandomNumberGenerator.new()
+func _setup_simple_combat(state:RunState)->void:
+	var stats:Dictionary=state.get_stats()
+	for stat in ["str","dex","int","wis"]:simple_bases[stat]=SimpleCombat.damage_for(int(stats.get(stat,10)))
+	weapon_stat=SimpleCombat.weapon_stat(state.selected_gear.id if state.selected_gear else "",state.selected_class_id)
+	simple_base=int(simple_bases.get(weapon_stat,1))
+	simple_reference=maxi(1,_scaled_damage(_ability_tuning("basic")))
+	dodge_chance=SimpleCombat.dodge_chance(int(stats.get("dex",10))) if SimpleCombat.enabled() else 0.0
+	dodge_rng.seed=hash("%d:%d:dodge"%[state.get_current_floor_seed(),state.current_floor])
+
+## Hit size for an attack: its own damage_stat (a summon's WIS), else the weapon's.
+func simple_base_for(attack:Dictionary)->int:
+	return int(simple_bases.get(String(attack.get("damage_stat","")),simple_base))
+
+func _show_dodge()->void:
+	var label:=Label.new();label.text="Dodge!";label.add_theme_font_size_override("font_size",16);label.add_theme_color_override("font_color",Color("#9fe0ff"));label.add_theme_color_override("font_outline_color",Color("#10202a"));label.add_theme_constant_override("outline_size",5)
+	label.position=Vector2(-26,-70);label.z_index=40;add_child(label)
+	var tween:=label.create_tween();tween.tween_property(label,"position:y",label.position.y-26.0,0.6);tween.parallel().tween_property(label,"modulate:a",0.0,0.6);tween.tween_callback(label.queue_free)
+
 func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null,enemy_origin:bool=false)->void:
 	if is_instance_valid(warrior_kit) and warrior_kit.has_method("modify_incoming_damage"):amount=warrior_kit.modify_incoming_damage(amount)
 	for child in get_children():
@@ -518,6 +573,9 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null,enem
 			_award_resource(int(tuning.get("resource_gain",1)));resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max());defense_kind="";defense_window=0.0
 			if is_instance_valid(attacker) and Array(tuning.get("progression_flags",[])).has("evade_counter"):attacker.receive_attack(_configured_attack(tuning,"physical"),self)
 		return
+	# Dexterity: a small chance to sidestep the hit entirely.
+	if amount>0 and dodge_chance>0.0 and dodge_rng.randf()<dodge_chance:
+		_show_dodge();AudioCue.play_from(self,"block");return
 	var prevented:=0
 	if defense_window>0.0:
 		match defense_kind:
@@ -556,6 +614,8 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null,enem
 	if consumable_aegis>0:
 		var aegis_prevented:int=mini(consumable_aegis,maxi(0,amount-prevented));consumable_aegis-=aegis_prevented;prevented+=aegis_prevented
 	var final:=maxi(0,amount-prevented)
+	# Simple combat: anything that gets through does exactly one heart.
+	if final>0 and SimpleCombat.enabled():final=SimpleCombat.enemy_hit_damage()
 	if item_runtime:
 		var mitigation:Dictionary=item_runtime.mitigate_damage(final);prevented+=int(mitigation.prevented);final=int(mitigation.damage)
 	# All incoming combat/environmental damage is doubled after mitigation;
@@ -638,6 +698,21 @@ func _standard_weapon_visual(origin: Vector2, direction: Vector2, reach: float, 
 
 func combat_hurtbox()->Dictionary:
 	return SlasherHitGeometry.sprite_body(sprite,global_position,18.0,true)
+
+## Remember a press made while an action is cooling down, if it's nearly ready.
+func _buffer(slot:String,source:String)->void:
+	var rules:Dictionary=GameBalance.get_slasher_balance("input")
+	if not Array(rules.get("buffered_slots",["basic"])).has(slot):return
+	var window:=float(rules.get("buffer_window",0.0))
+	if window<=0.0 or float(cooldowns.get(slot,0.0))>window:return
+	buffered_slot=slot;buffered_source=source;buffered_left=window
+
+## A small step toward the aim with each swing (lunge distances per chain step).
+func _lunge(tuning:Dictionary,swing:int)->void:
+	var steps:Array=Array(tuning.get("lunge",[]))
+	if steps.is_empty():return
+	var distance:=float(steps[clampi(swing-1,0,steps.size()-1)]);var time:=maxf(0.02,float(tuning.get("lunge_time",0.09)))
+	lunge_velocity=aim_direction.normalized()*distance/time;lunge_left=time
 
 func _melee_attack(data:Dictionary)->int:
 	# Snapshot once: on-hit effects can move actors, but cannot move this strike.
