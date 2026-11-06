@@ -12,7 +12,7 @@ func _run() -> void:
 	var failures: Array[String] = []
 	var tutorial_campaign:=CampaignState.new();var tutorial_starter:=tutorial_campaign.create_character("warrior");_expect(tutorial_campaign.begin_expedition([tutorial_starter.id], "forest", true),"tutorial expedition did not begin",failures)
 	var tutorial_run:=RunState.new();tutorial_run.attach_campaign(tutorial_campaign);tutorial_run.active_character_id=tutorial_starter.id;tutorial_run.start_new_run(null, "forest")
-	_expect(tutorial_run.max_health==3 and tutorial_run.current_health==3 and tutorial_starter.max_health==3 and tutorial_starter.current_health==3,"tutorial starter health was not capped at 3",failures)
+	_expect(tutorial_run.max_health==RunState.TUTORIAL_MAX_HEALTH and tutorial_run.current_health==RunState.TUTORIAL_MAX_HEALTH and tutorial_starter.max_health==RunState.TUTORIAL_MAX_HEALTH and tutorial_starter.current_health==RunState.TUTORIAL_MAX_HEALTH,"tutorial starter health was not capped at 3 hearts",failures)
 	tutorial_run.finish_run("victory", "Tutorial clear")
 	tutorial_campaign.tutorial_phase=CampaignState.TUTORIAL_COMPLETE;tutorial_campaign.ensure_roster(); tutorial_campaign.first_company_recruited = true;tutorial_run.restore_completed_tutorial_health()
 	_expect(tutorial_starter.max_health>3 and tutorial_starter.current_health==tutorial_starter.max_health,"tutorial survivor retained the temporary health cap",failures)

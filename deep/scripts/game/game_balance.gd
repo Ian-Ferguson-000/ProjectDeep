@@ -301,7 +301,7 @@ static func _conversion_phrase(key:String,value:float)->String:
 		"elite_damage_multiplier":return "+%s damage to elites and bosses" % pct.call(value-1.0)
 		"range_pixels":return "longer reach and spell range"
 		"attack_speed":return "basic attacks %d%% faster" % int(value)
-		"potion_heal_bonus":return "potions heal %d more" % int(value)
+		"potion_heal_bonus":return "potions heal %s more" % ("half a heart" if int(value)==1 else "%s hearts" % str(value/2.0).trim_suffix(".0"))
 		"max_health":return "+%d heart%s" % [int(value),"" if int(value)==1 else "s"]
 		"dex":return "+%d Dexterity (you move faster)" % int(value)
 		"damage":return "+%d damage on every hit" % int(value)

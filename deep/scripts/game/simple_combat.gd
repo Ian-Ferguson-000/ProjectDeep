@@ -24,6 +24,25 @@ static func rules() -> Dictionary:
 static func enabled() -> bool:
 	return bool(rules().get("enabled",false))
 
+## Isaac-style health: health is counted in half hearts (units_per_heart = 2).
+## Ordinary hits take half a heart (enemy_hit_damage), hits from bosses, mini
+## bosses and champions (elites) a full heart (strong_hit_damage). Soul hearts
+## sit on top and take damage first. Everything together caps at max_total_hearts.
+static func units_per_heart() -> int:
+	return maxi(1,int(rules().get("units_per_heart",1)))
+
+## Health (in half hearts) from Constitution.
+static func health_for(constitution: int) -> int:
+	return hearts_for(constitution) * units_per_heart()
+
+static func max_health_units() -> int:
+	return int(rules().get("max_total_hearts",12)) * units_per_heart()
+
+## How much one enemy hit takes: half a heart, or a full heart from the big ones.
+static func hit_from(attacker: Node) -> int:
+	var strong: bool = is_instance_valid(attacker) and (("boss" in attacker and bool(attacker.get("boss"))) or ("mini_boss" in attacker and bool(attacker.get("mini_boss"))) or ("elite" in attacker and bool(attacker.get("elite"))))
+	return int(rules().get("strong_hit_damage",2)) if strong else enemy_hit_damage()
+
 ## Hearts from Constitution.
 static func hearts_for(constitution: int) -> int:
 	var r := rules()

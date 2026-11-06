@@ -170,7 +170,7 @@
       "lasts": "run",
       "description": "Impossible measuring marks make every draught exact rather than merely strong.",
       "stats": {
-        "potion_heal_bonus": 3
+        "potion_heal_bonus": 1
       },
       "tags": [
         "healing",
@@ -341,7 +341,7 @@
       "description": "The empty phial preserves the echo of healing for the next wound.",
       "stats": {
         "max_health": 3,
-        "potion_heal_bonus": 3
+        "potion_heal_bonus": 1
       },
       "tags": [
         "healing",
@@ -558,7 +558,7 @@
       "combat": {
         "rules": "+1 heart, and recover 1 heart on each floor entry.",
         "trigger": "floor_entry",
-        "heal": 1
+        "heal": 2
       },
       "tags": [
         "legendary",

@@ -627,8 +627,9 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null,enem
 	if consumable_aegis>0 and not SimpleCombat.enabled():
 		var aegis_prevented:int=mini(consumable_aegis,maxi(0,amount-prevented));consumable_aegis-=aegis_prevented;prevented+=aegis_prevented
 	var final:=maxi(0,amount-prevented)
-	# Simple combat: anything that gets through does exactly one heart.
-	if final>0 and SimpleCombat.enabled():final=SimpleCombat.enemy_hit_damage()
+	# Simple combat: anything that gets through takes half a heart, or a full
+	# heart from bosses, mini bosses and champions.
+	if final>0 and SimpleCombat.enabled():final=SimpleCombat.hit_from(attacker)
 	# Warding draughts: each point blocks one whole hit.
 	if final>0 and SimpleCombat.enabled() and consumable_aegis>0:consumable_aegis-=1;prevented+=final;final=0
 	if item_runtime:
@@ -636,6 +637,9 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null,enem
 	# All incoming combat/environmental damage is doubled after mitigation;
 	# healing and resource/health costs do not pass through this damage path.
 	if fighter_frenzy_left>0:final=roundi(final*fighter_frenzy_incoming)
+	# Soul hearts take the hit first.
+	if final>0 and run_state.soul_health>0:
+		var soaked:=mini(run_state.soul_health,final);run_state.soul_health-=soaked;final-=soaked;health_changed.emit(health,max_health)
 	if item_runtime and item_runtime.try_prevent_lethal(final,health):final=maxi(0,health-1)
 	health=maxi(0,health-final);run_state.current_health=health
 	if final>0 and fighter_frenzy_left>0:fighter_frenzy_hurt_flash=0.2

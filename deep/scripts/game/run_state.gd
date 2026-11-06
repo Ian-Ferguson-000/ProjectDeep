@@ -1,7 +1,8 @@
 extends RefCounted
 class_name RunState
 
-const TUTORIAL_MAX_HEALTH := 3
+## Three hearts (health is in half hearts).
+const TUTORIAL_MAX_HEALTH := 6
 const MAX_HERO_LEVEL := 20
 const FALLBACK_XP_THRESHOLDS := [0, 0, 100, 220, 380, 580, 820, 1100, 1420, 1780, 2180, 2620, 3100, 3620, 4180, 4780, 5420, 6100, 6820, 7580, 8380]
 const FALLBACK_CLASS_STATS := {
@@ -33,6 +34,9 @@ var selected_class_id: String = "warrior"
 var selected_class_name: String = "Warrior"
 var class_resource: int = 0
 var current_health: int = 12
+## Soul hearts, in half hearts: extra health on top of your red hearts that
+## takes damage first and can't be healed back (SimpleCombat).
+var soul_health: int = 0
 var max_health: int = 12
 var gold: int = 0
 var keys: int = 0
@@ -121,7 +125,7 @@ func run_snapshot() -> Dictionary:
 	return {"floor":current_floor,"floor_seed":floor_seed,"gold":gold,"keys":keys,"potions":potions,"class_resource":class_resource,
 		"field_run":var_to_str(field_run),"starter_reward_claimed":starter_reward_claimed,"slasher_endless_mode":slasher_endless_mode,
 		"slasher_campaign_boss_cleared":slasher_campaign_boss_cleared,"slasher_merchant_interlude":slasher_merchant_interlude,
-		"run_seed":run_seed,"run_seeded":run_seeded,"materials":materials.duplicate()}
+		"run_seed":run_seed,"run_seeded":run_seeded,"materials":materials.duplicate(),"soul_health":soul_health}
 
 ## Puts a saved snapshot back when a saved expedition is continued. Only used
 ## when it belongs to the floor being resumed.
@@ -137,6 +141,7 @@ func restore_run_snapshot(snapshot: Dictionary) -> bool:
 	slasher_merchant_interlude = bool(snapshot.get("slasher_merchant_interlude",slasher_merchant_interlude))
 	run_seed = int(snapshot.get("run_seed",run_seed)); run_seeded = bool(snapshot.get("run_seeded",run_seeded))
 	materials = Dictionary(snapshot.get("materials",materials)).duplicate()
+	soul_health = int(snapshot.get("soul_health",soul_health))
 	return true
 
 func _restore_campaign_runtime() -> void:
@@ -333,6 +338,7 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	# expedition so a resumed run keeps its floors. See RunSeed.
 	run_seeded = requested_seed > 0
 	materials = {}
+	soul_health = 0
 	floor_seed = requested_seed if run_seeded else RunSeed.random_value()
 	run_seed = floor_seed
 	requested_seed = 0
@@ -617,6 +623,13 @@ func get_xp_to_next_level() -> int:
 	if level >= _max_level():
 		return 0
 	return _xp_required_for_level(level + 1) - int(profile["xp"])
+
+## Soul hearts: +hearts of soul health (in half hearts), within the total cap.
+func add_soul_hearts(hearts: float) -> int:
+	var room: int = maxi(0,SimpleCombat.max_health_units() - max_health - soul_health)
+	var added: int = mini(room,int(round(hearts * SimpleCombat.units_per_heart())))
+	soul_health += added
+	return added
 
 func get_stats() -> Dictionary:
 	var profile: Dictionary = _active_profile()
@@ -1496,7 +1509,7 @@ func _derive_stats(class_id: String, level: int, stats: Dictionary) -> Dictionar
 	legacy["range"] = 0
 	legacy["critical_range"] = 20
 	# Simple combat: health is hearts from Constitution (CON 20 = 5).
-	if SimpleCombat.enabled(): legacy["max_health"] = SimpleCombat.hearts_for(int(stats.get("con",10)))
+	if SimpleCombat.enabled(): legacy["max_health"] = SimpleCombat.health_for(int(stats.get("con",10)))
 	return legacy
 
 func _apply_inventory_modifiers_to_derived(derived_stats: Dictionary) -> void:
@@ -1504,7 +1517,12 @@ func _apply_inventory_modifiers_to_derived(derived_stats: Dictionary) -> void:
 	for key in modifiers.keys():
 		if String(key).ends_with("_bonus_percent"):
 			continue
-		_apply_derived_modifier(derived_stats, String(key), int(modifiers[key]))
+		var amount := int(modifiers[key])
+		# Items' max_health is in whole hearts (Health Up = one heart container).
+		if String(key) == "max_health" and SimpleCombat.enabled(): amount *= SimpleCombat.units_per_heart()
+		_apply_derived_modifier(derived_stats, String(key), amount)
+	if SimpleCombat.enabled() and derived_stats.has("max_health"):
+		derived_stats["max_health"] = clampi(int(derived_stats["max_health"]), SimpleCombat.units_per_heart(), SimpleCombat.max_health_units())
 
 func _apply_progression_modifiers_to_derived(profile: Dictionary, derived_stats: Dictionary) -> void:
 	var modifiers: Dictionary = _selected_progression_modifiers(profile)

@@ -49,6 +49,11 @@ const TEXT := Color("#f4ecd8")
 
 var health_per_heart := 4
 var health := 0
+## Soul hearts (in the same units as health), drawn blue after the red ones.
+var soul := 0
+const SOUL := Color("#5a7fe0")
+const SOUL_LIGHT := Color("#a9c2ff")
+const SOUL_DARK := Color("#2c437f")
 var max_health := 1
 var resource := 0
 var resource_max := 0
@@ -197,7 +202,18 @@ func show_resource_pips(current: int, maximum: int, color: Color, visible_value:
 	queue_redraw()
 
 func heart_count() -> int:
+	return int(ceil(float(max_health) / float(health_per_heart))) + soul_count()
+
+func red_count() -> int:
 	return int(ceil(float(max_health) / float(health_per_heart)))
+
+func soul_count() -> int:
+	return int(ceil(float(soul) / float(health_per_heart)))
+
+## Soul hearts after the red ones; a hit on them flashes the hearts too.
+func show_soul(units: int) -> void:
+	if units < soul: _flash = 0.35; _shake = 0.3
+	if units != soul: soul = maxi(0,units); queue_redraw()
 
 func heart_rows() -> int:
 	return int(ceil(float(heart_count()) / float(HEARTS_PER_ROW)))
@@ -238,11 +254,15 @@ func _draw() -> void:
 		var row := index / HEARTS_PER_ROW
 		var column := index % HEARTS_PER_ROW
 		var at := Vector2(_hearts_left(),_hearts_top()) + offset + Vector2(column * (HEART_SIZE.x + HEART_GAP),row * (HEART_SIZE.y + HEART_GAP))
+		if index >= red_count():
+			var soul_index := index - red_count()
+			_draw_heart(at,clampf(float(soul - soul_index * health_per_heart) / float(health_per_heart),0.0,1.0),1.0,true)
+			continue
 		var filled := clampf(float(health - index * health_per_heart) / float(health_per_heart),0.0,1.0)
 		# The heart holding your last health beats when you're nearly dead.
 		var beat := 1.0
 		var is_last := filled > 0.0 and float(health) <= float(index + 1) * health_per_heart
-		if is_last and _low_health(): beat = 1.0 + 0.12 * maxf(0.0,sin(_time * 9.0))
+		if is_last and _low_health() and soul <= 0: beat = 1.0 + 0.12 * maxf(0.0,sin(_time * 9.0))
 		_draw_heart(at,filled,beat)
 	if show_resource:
 		var pip_top := _hearts_top() - 16.0
@@ -253,7 +273,7 @@ func _draw() -> void:
 			var inner := PackedVector2Array([center + Vector2(0,-4),center + Vector2(4,0),center + Vector2(0,4),center + Vector2(-4,0)])
 			draw_colored_polygon(inner,resource_color if index < resource else EMPTY)
 
-func _draw_heart(at: Vector2, filled: float, beat: float) -> void:
+func _draw_heart(at: Vector2, filled: float, beat: float, soul_heart: bool = false) -> void:
 	var pixel := PIXEL * beat
 	var origin := at + HEART_SIZE * 0.5 - Vector2(7,6) * pixel * 0.5
 	# A one-pixel dark outline all round, like a sprite.
@@ -267,9 +287,10 @@ func _draw_heart(at: Vector2, filled: float, beat: float) -> void:
 			if String(HEART[y])[x] != "X": continue
 			var color := EMPTY
 			if float(x) + 0.5 <= fill_columns:
-				color = RED
-				if y >= 4 or x == 6 or (y == 3 and x == 5): color = RED_DARK
-				if (x == 1 and y == 1) or (x == 1 and y == 0) or (x == 2 and y == 1): color = RED_LIGHT
+				color = SOUL if soul_heart else RED
+				if y >= 4 or x == 6 or (y == 3 and x == 5): color = SOUL_DARK if soul_heart else RED_DARK
+				if (x == 1 and y == 1) or (x == 1 and y == 0) or (x == 2 and y == 1): color = SOUL_LIGHT if soul_heart else RED_LIGHT
+			elif soul_heart: continue
 			if _flash > 0.0 and color != EMPTY: color = color.lerp(Color.WHITE,_flash / 0.35 * 0.8)
 			draw_rect(Rect2(origin + Vector2(x,y) * pixel,Vector2.ONE * pixel),color)
 

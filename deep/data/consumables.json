@@ -4,20 +4,20 @@
     "healing_potion": {
       "name": "Healing Potion",
       "rarity": "common",
-      "description": "Restore 5 hearts (plus potion healing from items).",
+      "description": "Restore 1 heart (plus potion healing from items).",
       "icon": "res://assets/pixel_art/potion.png",
       "effects": {
-        "heal": 5,
+        "heal": 2,
         "item_trigger": "potion"
       }
     },
     "greater_healing_potion": {
       "name": "Greater Healing Potion",
       "rarity": "uncommon",
-      "description": "Restore 9 hearts (plus potion healing from items).",
+      "description": "Restore 2 hearts (plus potion healing from items).",
       "icon": "res://assets/pixel_art/potion.png",
       "effects": {
-        "heal": 9,
+        "heal": 4,
         "item_trigger": "potion"
       }
     },

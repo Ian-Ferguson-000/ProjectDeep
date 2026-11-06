@@ -858,6 +858,7 @@ func _refresh_active_hud()->void:
 func _refresh_dungeon_hud()->void:
 	if dungeon_hud==null or not is_instance_valid(player):return
 	var potions:=run_state.get_consumables().count("healing_potion")
+	dungeon_hud.show_soul(run_state.soul_health)
 	dungeon_hud.show_state(player.health,player.max_health,run_state.gold,run_state.keys,potions)
 	# Specials are off for now, so the resource pips only show when they come back.
 	var picked:Array=[]
