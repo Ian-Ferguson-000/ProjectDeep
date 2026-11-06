@@ -549,8 +549,18 @@ func _setup_simple_combat(state:RunState)->void:
 	weapon_stat=SimpleCombat.weapon_stat(state.selected_gear.id if state.selected_gear else "",state.selected_class_id)
 	simple_base=int(simple_bases.get(weapon_stat,1))
 	simple_reference=maxi(1,_scaled_damage(_ability_tuning("basic")))
-	dodge_chance=SimpleCombat.dodge_chance(int(stats.get("dex",10))) if SimpleCombat.enabled() else 0.0
+	refresh_dexterity()
 	dodge_rng.seed=hash("%d:%d:dodge"%[state.get_current_floor_seed(),state.current_floor])
+
+## Dexterity with items included (each "dex" on an item is +1). It sets walking
+## speed for every class and the dodge chance. Called again when items change.
+var dexterity:=10
+func refresh_dexterity()->void:
+	if run_state==null:return
+	dexterity=int(run_state.get_stats().get("dex",10))+int(run_state.get_active_item_modifiers().get("dex",0))
+	if not SimpleCombat.enabled():return
+	speed=SimpleCombat.move_speed(dexterity)
+	dodge_chance=SimpleCombat.dodge_chance(dexterity)
 
 ## Hit size for an attack: its own damage_stat (a summon's WIS), else the weapon's.
 func simple_base_for(attack:Dictionary)->int:

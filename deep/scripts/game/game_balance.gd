@@ -299,7 +299,8 @@ static func _conversion_phrase(key:String,value:float)->String:
 		"range_pixels":return "longer reach and spell range"
 		"attack_speed":return "basic attacks %d%% faster" % int(value)
 		"potion_heal_bonus":return "potions heal %d more" % int(value)
-		"max_health":return "+%d max health" % int(value)
+		"max_health":return "+%d heart%s" % [int(value),"" if int(value)==1 else "s"]
+		"dex":return "+%d Dexterity (you move faster)" % int(value)
 		"gold_bonus_percent":return "+%d%% gold found" % int(value)
 		"xp_bonus_percent":return ""
 		"armor_class":return "+%d armor" % int(value)
@@ -643,10 +644,11 @@ static func _load_pickup_items(source: Dictionary) -> void:
 			}
 			if authored.has("floors"): item["duration_floors"] = int(authored.floors)
 			var turn_based: Dictionary = Dictionary(authored.get("turn_based", {}))
-			if turn_based.has("rules_text"): item["rules_text"] = String(turn_based.rules_text)
-			# Items made only for real-time combat show their combat rules instead.
-			if not item.has("rules_text") and authored.get("combat") is Dictionary and String(Dictionary(authored.combat).get("rules", "")) != "":
+			# The game is real-time: show the combat rules when an item has them,
+			# else the older turn-based text.
+			if authored.get("combat") is Dictionary and String(Dictionary(authored.combat).get("rules", "")) != "":
 				item["rules_text"] = String(authored.combat.rules).trim_prefix("Slasher: ")
+			elif turn_based.has("rules_text"): item["rules_text"] = String(turn_based.rules_text)
 			if turn_based.has("effects"): item["effects"] = Array(turn_based.effects).duplicate(true)
 			catalog[String(item_id)] = item
 			if authored.get("combat") is Dictionary: combat[String(item_id)] = Dictionary(authored.combat).duplicate(true)

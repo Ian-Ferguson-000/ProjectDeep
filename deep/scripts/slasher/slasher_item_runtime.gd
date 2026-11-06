@@ -21,6 +21,7 @@ func refresh()->void:
 			var value:float=float(Dictionary(record.get("conversions",{}))[key]);var key_string:String=String(key)
 			if key_string.ends_with("_multiplier"):conversions[key_string]=float(conversions.get(key_string,1.0))*value
 			else:conversions[key_string]=float(conversions.get(key_string,0.0))+value
+	if is_instance_valid(owner_player) and owner_player.has_method("refresh_dexterity"):owner_player.refresh_dexterity()
 
 func floor_entered()->void:
 	floor_uses.clear();precision_count=0
@@ -88,7 +89,15 @@ func transform_attack(attack:Dictionary,slot:String)->Dictionary:
 		if record.has("area_radius_bonus"):result["area_radius"]=float(result.get("area_radius",0.0))+float(record.area_radius_bonus)
 	return result
 
+## Blackoak Ward ("room_ward"): the first hit in each room is blocked. The
+## player (and this runtime) is rebuilt for every room, so it resets per room.
+var room_ward_used:=false
 func mitigate_damage(amount:int)->Dictionary:
+	if amount>0 and not room_ward_used:
+		for record:Dictionary in records:
+			if bool(record.get("room_ward",false)):
+				room_ward_used=true;effect_activated.emit("%s blocks the blow."%String(GameBalance.get_item(String(record.get("item_id",""))).get("name","Ward")))
+				return {"damage":0,"prevented":amount}
 	var reduction:float=clampf(conversion("damage_reduction"),0.0,0.65);var prevented:int=int(round(amount*reduction))+int(conversion("flat_prevention"));return {"damage":maxi(0,amount-prevented),"prevented":mini(amount,prevented)}
 
 func try_prevent_lethal(final_damage:int,current_health:int)->bool:

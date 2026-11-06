@@ -1,5 +1,5 @@
 {
-  "stock_by_rarity": {"common":5,"uncommon":4,"rare":3,"very_rare":2,"legendary":1},
+  "stock_by_rarity": {"uncommon":5,"rare":3,"very_rare":2,"legendary":1},
   "rank_names": ["Stranger", "Associate", "Trusted", "Honored", "Devoted"],
   "rank_requirements": [
     {"favor": 0, "depth": 0},
@@ -24,8 +24,8 @@
         {"offer_id":"tavern_key","kind":"key","name":"Iron Key","description":"Begin the next expedition with one key.","gold":12,"min_rank":0,"location":"tavern"},
         {"offer_id":"quickstep_charm","kind":"item","item_id":"quickstep_charm","gold":15,"min_rank":0,"location":"tavern"},
         {"offer_id":"keen_edge_oil","kind":"item","item_id":"keen_edge_oil","gold":16,"min_rank":0,"location":"tavern"},
-        {"offer_id":"menders_sachet","kind":"item","item_id":"menders_sachet","gold":18,"min_rank":1,"location":"tavern"},
-        {"offer_id":"soldiers_buckle","kind":"item","item_id":"soldiers_buckle","gold":27,"min_rank":2,"location":"tavern"},
+        {"offer_id":"apothecarys_cup","kind":"item","item_id":"apothecarys_cup","gold":18,"min_rank":1,"location":"tavern"},
+        {"offer_id":"scavengers_token","kind":"item","item_id":"scavengers_token","gold":27,"min_rank":2,"location":"tavern"},
         {"offer_id":"amulet_of_vigor","kind":"item","item_id":"amulet_of_vigor","gold":44,"min_rank":3,"location":"tavern"},
         {"offer_id":"chronomancers_pin","kind":"item","item_id":"chronomancers_pin","favor":45,"min_rank":4,"location":"favor"}
       ]
@@ -44,7 +44,7 @@
         {"offer_id":"ironroot_ring","kind":"item","item_id":"ironroot_ring","gold":16,"min_rank":0,"location":"both"},
         {"offer_id":"brambleguard_clasp","kind":"item","item_id":"brambleguard_clasp","gold":28,"min_rank":1,"location":"both"},
         {"offer_id":"wayfinders_compass","kind":"item","item_id":"wayfinders_compass","gold":30,"min_rank":2,"location":"both"},
-        {"offer_id":"moonleaf_cloak","kind":"item","item_id":"moonleaf_cloak","gold":46,"min_rank":2,"location":"both"},
+        {"offer_id":"windrunner_boots","kind":"item","item_id":"windrunner_boots","gold":46,"min_rank":2,"location":"both"},
         {"offer_id":"blackoak_ward","kind":"item","item_id":"blackoak_ward","gold":55,"min_rank":3,"location":"both"},
         {"offer_id":"heartwood_crown","kind":"item","item_id":"heartwood_crown","favor":55,"min_rank":4,"location":"favor"}
       ]
@@ -60,8 +60,8 @@
         {"offer_id":"farmstead_firebreak","kind":"consumable","consumable_id":"firebreak_draught","name":"Firebreak Draught","description":"Gain a Firebreak Draught.","gold":13,"min_rank":1,"location":"both"},
         {"offer_id":"farmstead_haste","kind":"consumable","consumable_id":"haste_potion","name":"Harvest Haste","description":"Double remaining movement and gain an action.","gold":24,"min_rank":2,"location":"both"},
         {"offer_id":"charred_horseshoe","kind":"item","item_id":"charred_horseshoe","gold":18,"min_rank":0,"location":"both"},
-        {"offer_id":"harvesters_gloves","kind":"item","item_id":"harvesters_gloves","gold":31,"min_rank":1,"location":"both"},
-        {"offer_id":"cinderheart_locket","kind":"item","item_id":"cinderheart_locket","favor":55,"min_rank":4,"location":"favor"}
+        {"offer_id":"deft_hands","kind":"item","item_id":"deft_hands","gold":31,"min_rank":1,"location":"both"},
+        {"offer_id":"kingsroad_aegis","kind":"item","item_id":"kingsroad_aegis","favor":55,"min_rank":4,"location":"favor"}
       ]
     },
     "crypt": {
@@ -94,7 +94,7 @@
       "name":"Veyra Coil","title":"Last Forge Artificer","description":"An artificer dealing in tempered weapons, heat wards, and rare mechanisms.","portrait":"res://assets/merchants/tavern_mara.png","dungeon_id":"ember_foundry",
       "stock":[
         {"offer_id":"foundry_potion","kind":"consumable","consumable_id":"firebreak_draught","name":"Quenched Firebreak","description":"Gain one Firebreak Draught.","gold":14,"min_rank":0,"location":"both"},
-        {"offer_id":"foundry_buckle","kind":"item","item_id":"soldiers_buckle","gold":34,"min_rank":1,"location":"both"},
+        {"offer_id":"foundry_lucky_coin","kind":"item","item_id":"lucky_coin","gold":34,"min_rank":1,"location":"both"},
         {"offer_id":"foundry_reliquary","kind":"item","item_id":"phoenix_ash_reliquary","favor":60,"min_rank":4,"location":"favor"}
       ]
     }

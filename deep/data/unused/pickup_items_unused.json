@@ -1,0 +1,317 @@
+{
+  "how_to_edit": [
+    "Items taken out of the game but kept for later. The game never reads this file.",
+    "To bring one back, move its block into data/pickup_items.json (any_class, melee_only or ranged_only) and run tests/pickup_items_test.gd.",
+    "hearth_items: the Hearth's own copies of removed relics (they lived in data/hearth_campaign.json → items)."
+  ],
+  "removed_from": "any_class",
+  "items": {
+    "menders_sachet": {
+      "name": "Mender's Sachet",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 3,
+      "description": "Bitter herbs release a restorative breath when blood is first drawn.",
+      "stats": {
+        "potion_heal_bonus": 1
+      },
+      "tags": [
+        "healing",
+        "utility"
+      ],
+      "icon": "potion",
+      "turn_based": {
+        "rules_text": "The first time you fall below half health each combat, heal 3.",
+        "effects": [
+          {
+            "trigger": "cross_low_health",
+            "heal": 3,
+            "limit": "combat"
+          }
+        ]
+      }
+    },
+    "soldiers_buckle": {
+      "name": "Soldier's Buckle",
+      "rarity": "common",
+      "lasts": "dungeon_bound",
+      "description": "A drilled guard-oath steadies your stance just before a blow lands.",
+      "stats": {
+        "armor_class": 1
+      },
+      "combat": {
+        "rules": "Slasher: reduce incoming damage by 3.5%.",
+        "trigger": "passive"
+      },
+      "tags": [
+        "martial",
+        "defense"
+      ],
+      "icon": "defense",
+      "turn_based": {
+        "rules_text": "When a defensive reaction triggers, gain 1 Threshold for that attack.",
+        "effects": [
+          {
+            "trigger": "reaction",
+            "modifiers": {
+              "threshold": 1
+            }
+          }
+        ]
+      }
+    },
+    "windknotted_thread": {
+      "name": "Windknotted Thread",
+      "rarity": "common",
+      "lasts": "temporary",
+      "floors": 2,
+      "description": "A pale cord pulls its wearer toward unoccupied ground.",
+      "stats": {
+        "initiative_modifier": 1
+      },
+      "tags": [
+        "movement",
+        "speed"
+      ],
+      "icon": "move",
+      "turn_based": {
+        "rules_text": "With no adjacent enemies, gain +1 movement and +1 Evasion.",
+        "effects": [
+          {
+            "condition": "unengaged",
+            "modifiers": {
+              "movement": 1,
+              "evasion": 1
+            }
+          }
+        ]
+      }
+    },
+    "harvesters_gloves": {
+      "name": "Harvester's Gloves",
+      "rarity": "uncommon",
+      "lasts": "run",
+      "description": "Warding straw and copper thread guide both steel and spell through chaff.",
+      "stats": {
+        "accuracy": 1,
+        "penetration": 1
+      },
+      "tags": [
+        "farmstead",
+        "power"
+      ],
+      "icon": "attack",
+      "turn_based": {
+        "rules_text": "Against an enemy standing beside a destructible prop, gain +2 Accuracy.",
+        "effects": [
+          {
+            "condition": "target_near_prop",
+            "modifiers": {
+              "accuracy": 2
+            }
+          }
+        ]
+      }
+    },
+    "redstep_spurs": {
+      "name": "Redstep Spurs",
+      "rarity": "uncommon",
+      "lasts": "dungeon_bound",
+      "description": "The spurs bite only when their wearer commits to a line of attack.",
+      "stats": {
+        "movement": 1,
+        "initiative_modifier": 1
+      },
+      "tags": [
+        "movement",
+        "speed"
+      ],
+      "icon": "move",
+      "turn_based": {
+        "rules_text": "After moving at least 2 tiles, gain +2 Attack Power on the next martial attack.",
+        "effects": [
+          {
+            "condition": "moved_far",
+            "modifiers": {
+              "attack_power": 2
+            }
+          }
+        ]
+      }
+    },
+    "moonleaf_cloak": {
+      "name": "Moonleaf Cloak",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "Moonleaf fibers blur at the edge of an attacker's vision.",
+      "stats": {
+        "evasion": 2,
+        "initiative_modifier": 1
+      },
+      "tags": [
+        "defense",
+        "speed"
+      ],
+      "icon": "defense",
+      "turn_based": {
+        "rules_text": "While Hidden or before your first attack, gain +2 Armor Class.",
+        "effects": [
+          {
+            "condition": "unrevealed",
+            "modifiers": {
+              "armor_class": 2
+            }
+          }
+        ]
+      }
+    },
+    "pilgrims_greaves": {
+      "name": "Pilgrim's Greaves",
+      "rarity": "rare",
+      "lasts": "dungeon_bound",
+      "description": "The greaves harden with every deliberate step.",
+      "stats": {
+        "movement": 1,
+        "armor_class": 1
+      },
+      "tags": [
+        "movement",
+        "defense"
+      ],
+      "icon": "move",
+      "turn_based": {
+        "rules_text": "After moving at least 2 tiles, gain +2 Threshold until your next turn.",
+        "effects": [
+          {
+            "condition": "moved_far",
+            "modifiers": {
+              "threshold": 2
+            }
+          }
+        ]
+      }
+    },
+    "cinderheart_locket": {
+      "name": "Cinderheart Locket",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "The Farmstead's last clean ember flares when its bearer is nearly spent.",
+      "stats": {
+        "max_health": 10,
+        "armor_class": 2,
+        "potion_heal_bonus": 2
+      },
+      "tags": [
+        "farmstead",
+        "health",
+        "defense"
+      ],
+      "icon": "health",
+      "turn_based": {
+        "rules_text": "Below half health, gain 2 fire Aegis and restore 1 additional health from consumables.",
+        "effects": [
+          {
+            "condition": "low_health",
+            "modifiers": {
+              "aegis_fire": 2,
+              "potion_heal_bonus": 1
+            }
+          }
+        ]
+      }
+    },
+    "starfallen_sigil": {
+      "name": "Starfallen Sigil",
+      "rarity": "legendary",
+      "lasts": "permanent",
+      "description": "A patient silver star aligns weapon and spell trajectories alike.",
+      "stats": {
+        "accuracy": 3,
+        "penetration": 2,
+        "initiative_modifier": 2
+      },
+      "combat": {
+        "rules": "Slasher: specials release a 45% arcane shockwave around you, once every 4 seconds.",
+        "procs": [
+          {
+            "type": "nova",
+            "on": "special",
+            "damage_percent": 45,
+            "radius": 90,
+            "element": "arcane",
+            "cooldown": 4.0
+          }
+        ]
+      },
+      "tags": [
+        "legendary",
+        "power"
+      ],
+      "icon": "special",
+      "turn_based": {
+        "rules_text": "On a natural 20, restore 1 class resource.",
+        "effects": [
+          {
+            "trigger": "critical_hit",
+            "resource": 1
+          }
+        ]
+      }
+    }
+  },
+  "hearth_items": {
+    "hearth_soldiers_buckle": {
+      "name": "Soldier's Buckle",
+      "slot": "accessory",
+      "tier": 0,
+      "rarity": "common",
+      "price": 24,
+      "description": "defense +1",
+      "modifiers": {
+        "defense": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "effect_id": "soldiers_buckle"
+    },
+    "hearth_starfallen_sigil": {
+      "name": "Starfallen Sigil",
+      "slot": "accessory",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 65,
+      "description": "attack bonus +4, spell power +4, initiative modifier +2",
+      "modifiers": {
+        "attack_bonus": 4,
+        "spell_power": 4,
+        "initiative_modifier": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "effect_id": "starfallen_sigil"
+    },
+    "hearth_menders_sachet": {
+      "name": "Mender's Sachet",
+      "slot": "accessory",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 150,
+      "description": "potion heal bonus +2",
+      "modifiers": {
+        "potion_heal_bonus": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "effect_id": "menders_sachet"
+    }
+  }
+}

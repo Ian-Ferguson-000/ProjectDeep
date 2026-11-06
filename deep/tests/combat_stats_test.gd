@@ -35,7 +35,7 @@ func _initialize() -> void:
 			_expect(not modifiers.has(removed_stat), "%s still uses legacy %s" % [item_id, removed_stat], failures)
 	var quickstep := RunState.new()
 	quickstep.add_inventory_item("quickstep_charm", 1)
-	_expect(quickstep.get_derived_stat("movement") == 1, "Quickstep static movement modifier failed", failures)
+	_expect(int(quickstep.get_active_item_modifiers().get("dex",0)) == 1, "Quickstep should add 1 Dexterity (walking speed)", failures)
 	_expect(quickstep.get_contextual_item_modifier("evasion", {"moved":true}) == 2, "Quickstep moved Evasion effect failed", failures)
 	var keen := RunState.new()
 	keen.add_inventory_item("keen_edge_oil", 1)

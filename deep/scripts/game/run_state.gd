@@ -866,7 +866,8 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 	var seed_value := hash("%s:%d:%d:%s" % [merchant_id,get_current_floor_seed(),current_floor,active_dungeon_id])
 	var rng := RandomNumberGenerator.new(); rng.seed = seed_value
 	var slots: Array[String] = []
-	for index in int(settings.get("common_slots",3)): slots.append("common")
+	# The slots that are always there hold the lowest tier (there's no common tier now).
+	for index in int(settings.get("base_slots",settings.get("common_slots",3))): slots.append(String(settings.get("base_slot_rarity","uncommon")))
 	var weights: Dictionary = settings.get("tier_weights",{"uncommon":1})
 	for bonus in Array(settings.get("bonus_slots",[])):
 		if rng.randf() < float(Dictionary(bonus).get("chance",0.0)):
@@ -1107,15 +1108,14 @@ func generate_slasher_chest_choices(floor_number:int,chest_identity:Variant,endl
 	pending_chest_choices.assign(choices);return choices
 
 func _roll_weighted_rarity(weights:Dictionary,source_rng:RandomNumberGenerator)->String:
-	weights=_rarity_weights_allowed_by_tavern(weights)
 	var total:int=0
 	for value:Variant in weights.values():total+=maxi(0,int(value))
-	if total<=0:return "common"
+	if total<=0:return "uncommon"
 	var roll:int=source_rng.randi_range(1,total);var running:int=0
 	for key:Variant in weights:
 		running+=maxi(0,int(weights[key]))
 		if roll<=running:return String(key)
-	return "common"
+	return "uncommon"
 
 func choose_chest_item(item_id: String) -> Array[String]:
 	var logs: Array[String] = []
@@ -1753,12 +1753,14 @@ func _make_inventory_entry(item_id: String, item: Dictionary, source_floor: int)
 	}
 
 func _roll_item_rarity(floor: int, source_rng: RandomNumberGenerator) -> String:
-	var weights: Dictionary = _rarity_weights_allowed_by_tavern(GameBalance.get_rarity_weights(floor))
+	# Relic rarity uses loot_tables.json's rates as they are. (The Hearth's
+	# Appraisal upgrade improves recovered equipment, not dungeon relics.)
+	var weights: Dictionary = GameBalance.get_rarity_weights(floor)
 	var total_weight := 0
 	for key in weights.keys():
 		total_weight += maxi(0, int(weights[key]))
 	if total_weight <= 0:
-		return "common"
+		return "uncommon"
 	var roll := source_rng.randi_range(1, total_weight)
 	var running := 0
 	for key in weights.keys():
@@ -1766,13 +1768,6 @@ func _roll_item_rarity(floor: int, source_rng: RandomNumberGenerator) -> String:
 		if roll <= running:
 			return String(key)
 	return "common"
-
-func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
-	var result:=source.duplicate(true);var rank:=int(campaign.tavern_upgrades.get("item_rarity",0)) if campaign!=null else 0
-	var order:Array[String]=["common","uncommon","rare","epic","legendary"];var maximum_index:=mini(order.size()-1,1+rank)
-	for rarity in result.keys():
-		if not order.has(String(rarity)) or order.find(String(rarity))>maximum_index:result[rarity]=0
-	return result
 
 ## Pickup items the active hero could actually use: in the drop pool and allowed
 ## for their class group (pickup_items.json any_class / melee_only / ranged_only).

@@ -1,6 +1,6 @@
 extends SceneTree
 
-## The dungeon trader: 3 commons plus sometimes 1-2 pricier higher-tier relics,
+## The dungeon trader: 3 uncommons (the lowest tier) plus sometimes 1-2 pricier higher-tier relics,
 ## rolled fresh per floor and per run, no consumables anywhere.
 
 var failures: Array[String] = []
@@ -15,7 +15,7 @@ func _run() -> void:
 	# Shape and pricing.
 	var offers := state.get_merchant_offers("forest","dungeon")
 	_expect(offers.size() >= 3 and offers.size() <= 5,"Trader should show 3 to 5 items, shows %d" % offers.size())
-	for index in 3: _expect(String(offers[index].rarity) == "common","Slot %d should be common" % (index + 1))
+	for index in 3: _expect(String(offers[index].rarity) == "uncommon","Slot %d should be uncommon" % (index + 1))
 	for offer in offers:
 		_expect(String(offer.kind) == "item","Trader sold a %s" % offer.kind)
 		_expect(int(offer.gold) == int(prices[String(offer.rarity)]),"%s priced wrong" % offer.name)
@@ -30,7 +30,7 @@ func _run() -> void:
 		state.floor_seed = 77 + sample * 13
 		for offer in state.get_merchant_offers("forest","dungeon"):
 			_expect(String(offer.kind) != "consumable","Trader sold consumable %s" % offer.offer_id)
-			if String(offer.item_id) in ["healers_brooch","menders_sachet","apothecarys_cup"]: potion_relic_seen = true
+			if String(offer.item_id) in ["healers_brooch","apothecarys_cup","saints_phial"]: potion_relic_seen = true
 	_expect(potion_relic_seen,"Potion relics never offered although potions drop")
 	state.floor_seed = 1001 + 37
 	offers = state.get_merchant_offers("forest","dungeon")
@@ -56,7 +56,7 @@ func _run() -> void:
 	var expedition_run := RunState.new(); expedition_run.attach_campaign(c); expedition_run.active_character_id = c.living_roster()[0].id; expedition_run.start_new_run(null,"forest")
 	_expect(c.expedition.floor_seed == expedition_run.floor_seed and ExpeditionState.from_dict(c.expedition.to_dict()).floor_seed == expedition_run.floor_seed,"Run seed not saved with the expedition")
 
-	# Bonus slots: sometimes, and always above common.
+	# Bonus slots: sometimes, rolled from the chest rates (never below uncommon).
 	var fourth := 0; var fifth := 0
 	for sample in 600:
 		state.floor_seed = 1000 + sample * 31

@@ -17,7 +17,7 @@ to return to the old numbers.
 | Stat | Does | Numbers |
 | --- | --- | --- |
 | **STR** | Damage with strength weapons: swords, spears, hammers, the greatsword, the tank's shields and maces | STR ÷ 5, rounded, 1–4 |
-| **DEX** | Damage with dexterity weapons: daggers, bows, the sling, the crossbow. Also a chance to dodge any hit completely ("Dodge!") | DEX ÷ 5 for damage; dodge 1% per point above 10, max 15% (DEX 20 = 10%) |
+| **DEX** | **Walking speed for every class.** Also damage with dexterity weapons (daggers, bows, the sling, the crossbow) and a chance to dodge any hit completely ("Dodge!"). Items that make you faster add Dexterity | Speed 265 at DEX 10, ±10 per point (DEX 6 = 225, DEX 12 = 285, DEX 20 = 365; 180 to 420), `move_speed_*` in `simple_combat`. DEX ÷ 5 for damage; dodge 1% per point above 10, max 15% |
 | **CON** | Hearts, for every class | CON ÷ 4, rounded |
 | **INT** | Magic strength: the mage's foci (missiles, fireball, lightning) | INT ÷ 5, 1–4 |
 | **WIS** | Summon strength: the summoner's bonded wolf hits with WIS (and the summoner's staffs) | WIS ÷ 5, 1–4 |

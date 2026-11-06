@@ -167,7 +167,7 @@
       ],
       "shop": [
         {"offer_id": "tessaly_medium_armor", "kind": "item", "id": "medium_armor_0", "price": 22, "min_rank": 0},
-        {"offer_id": "tessaly_buckle", "kind": "item", "id": "hearth_soldiers_buckle", "price": 22, "min_rank": 0},
+        {"offer_id": "tessaly_vigor", "kind": "item", "id": "hearth_amulet_of_vigor", "price": 22, "min_rank": 0},
         {"offer_id": "tessaly_spear", "kind": "item", "id": "spear_shield", "price": 58, "min_rank": 1},
         {"offer_id": "tessaly_borderkeepers_spear", "kind": "item", "id": "borderkeepers_spear", "price": 28, "min_rank": 0},
         {"offer_id": "tessaly_heavy_armor", "kind": "item", "id": "heavy_armor_1", "price": 60, "min_rank": 1},
@@ -242,7 +242,7 @@
         {"offer_id": "calden_hearty_crate", "kind": "food", "id": "hearty", "count": 5, "price": 20, "min_rank": 0},
         {"offer_id": "calden_feast_crate", "kind": "food", "id": "feast", "count": 2, "price": 18, "min_rank": 1},
         {"offer_id": "calden_prayer_altar", "kind": "furnishing", "id": "prayer_altar", "price": 30, "min_rank": 1, "once": true},
-        {"offer_id": "calden_menders_sachet", "kind": "item", "id": "hearth_menders_sachet", "price": 130, "min_rank": 2, "once": true}
+        {"offer_id": "calden_healers_brooch", "kind": "item", "id": "hearth_healers_brooch", "price": 130, "min_rank": 2, "once": true}
       ],
       "minigame": {"contest": "memory_match", "stat": 12, "favour_per_win": 1}
     },
