@@ -1158,6 +1158,9 @@ func add_inventory_item(item_id: String, source_floor: int) -> Array[String]:
 		return ["The chest sputters; its relic is missing from the catalog."]
 	var entry: Dictionary = _make_inventory_entry(item_id, item, source_floor)
 	inventory_items.append(entry)
+	# Soul-heart items (Isaac): their soul hearts arrive once, on pickup.
+	var soul := int(Dictionary(item.get("modifiers",{})).get("soul_hearts",0))
+	if soul > 0 and SimpleCombat.enabled(): add_soul_hearts(soul)
 	if String(entry["duration_type"]) == "permanent":
 		var profile: Dictionary = _active_profile()
 		var permanent_items_value: Variant = profile.get("permanent_items", [])

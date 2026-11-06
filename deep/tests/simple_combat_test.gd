@@ -122,8 +122,9 @@ func _run() -> void:
 
 	# ---- enemy health is rescaled once on spawn
 	var scene = await _fighter(15,15)
-	var plain := SlasherEnemy.new()
-	plain.configure(1,false,"bandit_cutthroat",false,"bandit_cutthroat")
+	var plain: SlasherEnemy = scene._instantiate_enemy("bandit_cutthroat")
+	plain.champion_roll = 0.99
+	plain.configure(scene.run_state.current_floor,false,"bandit_cutthroat",false,"bandit_cutthroat")
 	var raw := plain.max_health
 	plain.free()
 	var spawned: SlasherEnemy = scene._spawn_enemy(scene.player.global_position + Vector2(300,0),"bandit_cutthroat","bandit_cutthroat")

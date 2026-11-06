@@ -272,7 +272,7 @@ static func get_slasher_item_effects(item_id:String)->Dictionary:
 			"move_speed":conversions["speed_multiplier"]=float(conversions.get("speed_multiplier",1.0))*(1.0+value/100.0)
 			"attack_speed":conversions["attack_speed"]=value
 			# Real-time stats (docs/Items.md).
-			"damage","boss_damage","block_percent","dodge_percent":conversions[key]=float(conversions.get(key,0.0))+value
+			"damage","boss_damage","block_percent","dodge_percent","luck","soul_hearts":conversions[key]=float(conversions.get(key,0.0))+value
 			"cooldown_percent":conversions["cooldown_reduction"]=minf(0.35,float(conversions.get("cooldown_reduction",0.0))+value/100.0)
 			"precision_hits":conversions["precision_hits"]=value
 			_:conversions[key]=value
@@ -299,12 +299,14 @@ static func _conversion_phrase(key:String,value:float)->String:
 		"speed_multiplier":return "move %s faster" % pct.call(value-1.0)
 		"mobility_multiplier","defense_window_bonus":return ""
 		"elite_damage_multiplier":return "+%s damage to elites and bosses" % pct.call(value-1.0)
-		"range_pixels":return "longer reach and spell range"
+		"range_pixels":return "+%d range" % int(round(value/48.0))
 		"attack_speed":return "basic attacks %d%% faster" % int(value)
 		"potion_heal_bonus":return "potions heal %s more" % ("half a heart" if int(value)==1 else "%s hearts" % str(value/2.0).trim_suffix(".0"))
 		"max_health":return "+%d heart%s" % [int(value),"" if int(value)==1 else "s"]
 		"dex":return "+%d Dexterity (you move faster)" % int(value)
 		"damage":return "+%d damage on every hit" % int(value)
+		"luck":return "+%d luck" % int(value)
+		"soul_hearts":return "+%d soul heart%s" % [int(value),"" if int(value)==1 else "s"]
 		"boss_damage":return "+%d damage to elites and bosses" % int(value)
 		"block_percent":return "%d%% chance to block a hit" % int(value)
 		"dodge_percent":return "+%d%% dodge chance" % int(value)

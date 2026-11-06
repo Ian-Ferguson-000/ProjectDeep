@@ -360,7 +360,7 @@ func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 	return {"visual_id":enemy_id,"behavior_id":enemy_id if enemy_id in SlasherEnemySceneLibrary.FOREST_IDS else ""}
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
-	var enemy:=_instantiate_enemy(visual_id);enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1
+	var enemy:=_instantiate_enemy(visual_id);enemy.champion_roll=_champion_roll(world_position);enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1
 	if is_boss:call_deferred("_warm_reinforcement_visuals",_reinforcement_visual_ids())
 	return enemy
 
@@ -726,6 +726,11 @@ func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	if not material_id.is_empty() and drop_rng().randf()<chance:_spawn_material_drop(spot,material_id)
 
 ## A small pouch of a crafting or quest material (data/materials.json).
+## The champion roll for a foe, from the floor seed, room and spot.
+func _champion_roll(world_position:Vector2)->float:
+	var rng:=RandomNumberGenerator.new();rng.seed=hash("%d:%d:%d:%s:champion"%[run_state.get_current_floor_seed(),run_state.current_floor,int(run_state.field_run.get("current_room",0)) if run_state.field_run is Dictionary else 0,str(world_position.round())])
+	return rng.randf()
+
 func _spawn_material_drop(world_position:Vector2,material_id:String)->void:
 	if material_id.is_empty():return
 	var area:=Area2D.new();area.name="MaterialDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape)
@@ -859,6 +864,7 @@ func _refresh_dungeon_hud()->void:
 	if dungeon_hud==null or not is_instance_valid(player):return
 	var potions:=run_state.get_consumables().count("healing_potion")
 	dungeon_hud.show_soul(run_state.soul_health)
+	dungeon_hud.show_stats(player.stat_line())
 	dungeon_hud.show_state(player.health,player.max_health,run_state.gold,run_state.keys,potions)
 	# Specials are off for now, so the resource pips only show when they come back.
 	var picked:Array=[]

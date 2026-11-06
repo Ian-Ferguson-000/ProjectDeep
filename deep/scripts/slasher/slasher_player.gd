@@ -563,6 +563,14 @@ func refresh_dexterity()->void:
 	# Dodge from Dexterity, plus items' dodge_percent (all capped at 50%).
 	dodge_chance=minf(0.5,SimpleCombat.dodge_chance(dexterity)+(item_runtime.conversion("dodge_percent")/100.0 if item_runtime else 0.0))
 
+## The Isaac-style stat line for the HUD: Speed, Tears (basic attacks a second),
+## Damage (per hit, items included), Range and Luck.
+func stat_line()->Array:
+	var basic:=float(_ability_tuning("basic").get("cooldown",0.4))
+	var tears:=1.0/maxf(0.05,effective_attack_interval("basic",maxf(0.05,basic)))
+	var range_bonus:float=item_runtime.conversion("range_pixels") if item_runtime else 0.0
+	return [["Speed","%.2f"%(speed/SimpleCombat.move_speed(10))],["Tears","%.2f"%tears],["Damage",str(simple_base+(int(item_runtime.conversion("damage")) if item_runtime else 0))],["Range","%.2f"%(1.0+range_bonus/240.0)],["Luck",str(int(item_runtime.conversion("luck")) if item_runtime else 0)]]
+
 ## Hit size for an attack: its own damage_stat (a summon's WIS), else the weapon's.
 func simple_base_for(attack:Dictionary)->int:
 	return int(simple_bases.get(String(attack.get("damage_stat","")),simple_base))

@@ -81,7 +81,9 @@ func _ready_to_fire(proc: Dictionary) -> bool:
 		swing_counts[key] = int(swing_counts.get(key,0)) + 1
 		if int(swing_counts[key]) < every: return false
 		swing_counts[key] = 0
-	if randf() > float(proc.get("chance",1.0)): return false
+	# Luck (Isaac): each point adds 5% to a chance effect.
+	var luck: float = player.item_runtime.conversion("luck") if is_instance_valid(player) and player.item_runtime else 0.0
+	if randf() > minf(1.0,float(proc.get("chance",1.0)) + luck * 0.05): return false
 	if float(proc.get("cooldown",0.0)) > 0.0: proc_cooldowns[key] = float(proc.cooldown)
 	return true
 
