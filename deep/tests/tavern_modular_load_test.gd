@@ -52,7 +52,10 @@ func _initialize() -> void:
 		assert(section.get_node_or_null("CollisionBody/CollisionShape2D") != null)
 		assert(section.get_node_or_null("NavigationObstacle2D") != null)
 		wall_textures[section.section_texture.resource_path]=true
-	assert(wall_textures.size() == 6)
+	assert(wall_textures.size() == 4)
+	assert(walls.get_node("BackWall").z_index < 0)
+	assert(walls.get_node("FrontWall").z_index > 0)
+	assert(walls.get_node("Openings/EntranceFrame").z_index == walls.get_node("FrontWall").z_index)
 	var back_sections:Array[Node]=[
 		walls.get_node("BackWall/WestEnd"),
 		walls.get_node("BackWall/LanternBay"),
@@ -63,6 +66,11 @@ func _initialize() -> void:
 		var previous:Node=back_sections[index-1]
 		var current:Node=back_sections[index]
 		assert(current.position.x-current.collision_size.x*0.5<=previous.position.x+previous.collision_size.x*0.5)
+		# Check the artwork as well as collision: posts must overlap, bases must align.
+		var previous_size:Vector2=previous.section_texture.get_size()*previous.visual_scale
+		var current_size:Vector2=current.section_texture.get_size()*current.visual_scale
+		assert(current.position.x-current_size.x*0.5 < previous.position.x+previous_size.x*0.5)
+		assert(is_equal_approx(previous.position.y+previous_size.y*0.5,current.position.y+current_size.y*0.5))
 	assert(back_sections.front().position.x-back_sections.front().collision_size.x*0.5<=256.5)
 	assert(back_sections.back().position.x+back_sections.back().collision_size.x*0.5>=1407.5)
 	assert(walls.get_node("SideWalls/WestRun").collision_size.y==704.0)
@@ -71,6 +79,12 @@ func _initialize() -> void:
 	assert(walls.get_node("SideWalls/WestRun").position.y+walls.get_node("SideWalls/WestRun").collision_size.y*0.5==896.0)
 	assert(walls.get_node("SideWalls/WestRun").position.x+walls.get_node("SideWalls/WestRun").collision_offset.x==256.0)
 	assert(walls.get_node("SideWalls/EastRun").position.x+walls.get_node("SideWalls/EastRun").collision_offset.x==1408.0)
+	for wall_name in ["WestRunNorth", "WestRunSouth", "EastRunNorth", "EastRunSouth"]:
+		var side:=tavern.get_node("TavernWorld/Expansions/"+wall_name) as TavernWallSection
+		assert(side.side_profile and side.z_index > 0)
+		assert(side.collision_size.x == 38.0)
+		assert(not side.get_node("Visual").visible)
+		assert(side.get_node("NavigationObstacle2D").avoidance_enabled)
 	var keeper_body:=tavern.get_node("TavernWorld/Keeper") as CharacterBody2D
 	keeper_body.position=Vector2(500,700);assert(keeper_body.move_and_collide(Vector2(-400,0))!=null)
 	keeper_body.position=Vector2(1164,700);assert(keeper_body.move_and_collide(Vector2(400,0))!=null)
@@ -78,10 +92,28 @@ func _initialize() -> void:
 	keeper_body.position=Vector2(350,600);assert(keeper_body.move_and_collide(Vector2(0,400))!=null)
 	keeper_body.position=Vector2(832,700);assert(keeper_body.move_and_collide(Vector2(0,260))==null)
 	keeper_body.position=Vector2(832,780)
+	var entrance:=walls.get_node("Openings/EntranceFrame") as TavernWallSection
+	entrance._process(1.0)
+	assert(is_equal_approx(entrance.get_node("Visual").modulate.a,0.35))
+	keeper_body.position=Vector2(832,650)
+	entrance._process(1.0)
+	assert(is_equal_approx(entrance.get_node("Visual").modulate.a,1.0))
+	keeper_body.position=Vector2(832,780)
 	assert(walls.get_node("FrontWall/WestInner").position.x+walls.get_node("FrontWall/WestInner").collision_size.x*0.5>=704.0)
 	assert(walls.get_node("FrontWall/EastInner").position.x-walls.get_node("FrontWall/EastInner").collision_size.x*0.5<=960.0)
 	var bar:=tavern.get_node("TavernWorld/Fixtures/BarFixture") as TavernProp
 	assert(bar.prop_texture!=null and bar.obstacle_enabled)
+	assert(bar.get_node("BottleShelf").z_index < 0)
+	assert(bar.position.y > tavern.get_node("TavernWorld/ActivityAnchors/Merchant_tavern").position.y)
+	keeper_body.position=Vector2(760,450)
+	var counter_hit:=keeper_body.move_and_collide(Vector2(0,-180))
+	assert(counter_hit!=null and counter_hit.get_collider()==bar.get_node("CollisionBody"))
+	keeper_body.position=Vector2(590,282)
+	assert(keeper_body.move_and_collide(Vector2(340,0))==null)
+	keeper_body.position=Vector2(760,282)
+	var shelf_hit:=keeper_body.move_and_collide(Vector2(0,-90))
+	assert(shelf_hit!=null and shelf_hit.get_collider()==bar.get_node("ShelfCollision"))
+	keeper_body.position=Vector2(832,780)
 	assert(walls.find_child("BarFront",true,false)==null)
 	var decor:=tavern.get_node("TavernWorld/Decor")
 	var decor_props:=decor.find_children("*","TavernProp",true,false)

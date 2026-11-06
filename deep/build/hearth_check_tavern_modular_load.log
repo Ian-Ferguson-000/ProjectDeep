@@ -1,7 +1,3 @@
-TIMEOUT
-Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
 
-SCRIPT ERROR: Assertion failed.
-   at: _initialize (res://tests/tavern_modular_load_test.gd:65)
-   GDScript backtrace (most recent call first):
-       [0] _initialize (res://tests/tavern_modular_load_test.gd:65)
+Modular tavern resources loaded.

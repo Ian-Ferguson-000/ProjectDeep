@@ -17,8 +17,6 @@ const PROP := preload("res://scenes/components/TavernProp.tscn")
 const FLOOR_TEXTURE := preload("res://assets/pixel_art/Tavern Floor Revised.png")
 const WALL_STRAIGHT := preload("res://assets/tavern/wall_kit/wall_straight.png")
 const WALL_LANTERN := preload("res://assets/tavern/wall_kit/wall_lantern.png")
-const SIDE_LEFT := preload("res://assets/tavern/wall_kit/side_wall_left_v2.png")
-const SIDE_RIGHT := preload("res://assets/tavern/wall_kit/side_wall_right_v2.png")
 const PILLAR := preload("res://assets/tavern/wall_kit/support_pillar.png")
 const FOREST_SHEET := preload("res://assets/pixel_art/forest_art/forest tiles.png")
 const TREES := preload("res://assets/pixel_art/FreePack.png")
@@ -142,38 +140,24 @@ func camera_bounds() -> Rect2:
 func _cut_side_walls() -> void:
 	var walls := world.get_node_or_null("Walls/SideWalls")
 	if walls == null: return
-	for record in [["WestRun",SIDE_LEFT,64.25],["EastRun",SIDE_RIGHT,-64.25]]:
-		var section := walls.get_node_or_null(String(record[0])) as TavernWallSection
+	for wall_name in ["WestRun", "EastRun"]:
+		var section := walls.get_node_or_null(wall_name) as TavernWallSection
 		if section == null: continue
 		section.section_enabled = false
-		var texture: Texture2D = record[1]
-		var scale_value: Vector2 = section.visual_scale
-		var height := texture.get_height() * scale_value.y
-		var top := section.position.y - height * 0.5
-		var left := section.position.x - texture.get_width() * scale_value.x * 0.5
-		for span in [[top,DOOR_TOP],[DOOR_BOTTOM,top + height]]:
-			var from_y: float = span[0]; var to_y: float = span[1]
-			var piece := Sprite2D.new()
-			piece.texture = texture
-			piece.centered = false
-			piece.region_enabled = true
-			piece.region_rect = Rect2(0,(from_y - top) / scale_value.y,texture.get_width(),(to_y - from_y) / scale_value.y)
-			piece.scale = scale_value
-			piece.position = Vector2(left,from_y)
-			var holder := Node2D.new()
-			holder.position = Vector2(0,to_y)
-			piece.position -= holder.position
-			holder.add_child(piece)
-			add_child(holder)
-			_wall_body(Vector2(section.position.x + float(record[2]),(from_y + to_y) * 0.5),Vector2(38,to_y - from_y))
-		# Lanterns either side of the opening.
-		for y in [DOOR_TOP - 14.0,DOOR_BOTTOM + 6.0]:
-			var lamp := ColorRect.new()
-			lamp.color = Color(1.0,0.72,0.32,0.85)
-			lamp.size = Vector2(8,8)
-			lamp.position = Vector2(section.position.x + float(record[2]) - 4.0,y)
-			lamp.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			add_child(lamp)
+		var center_x := section.position.x + section.collision_offset.x
+		for span in [[192.0, DOOR_TOP], [DOOR_BOTTOM, 896.0]]:
+			var from_y: float = span[0]
+			var to_y: float = span[1]
+			var piece := WALL_SECTION.instantiate() as TavernWallSection
+			piece.name = wall_name + ("North" if from_y == 192.0 else "South")
+			piece.section_id = piece.name
+			piece.section_texture = WALL_STRAIGHT
+			piece.side_profile = true
+			piece.z_index = 8
+			piece.position = Vector2(center_x, (from_y + to_y) * 0.5)
+			piece.collision_size = Vector2(38, to_y - from_y)
+			piece.collision_offset = Vector2.ZERO
+			add_child(piece)
 
 func _wall_body(center: Vector2, size: Vector2) -> void:
 	var body := StaticBody2D.new()
@@ -189,12 +173,14 @@ func _wall_run(texture: Texture2D, x_from: float, x_to: float, y: float, base_sc
 	var span := x_to - x_from
 	var piece_width := texture.get_width() * base_scale.x
 	var count := maxi(1,int(ceil(span / piece_width)))
-	var fitted := Vector2(base_scale.x * span / (count * piece_width),base_scale.y)
 	for index in count:
 		var section := WALL_SECTION.instantiate() as TavernWallSection
 		section.section_id = "%s_%d" % [tags,index]
 		section.section_texture = texture if index % 3 != 1 or texture != WALL_STRAIGHT else WALL_LANTERN
-		section.visual_scale = fitted if section.section_texture == texture else Vector2(fitted.x * texture.get_width() / WALL_LANTERN.get_width(),fitted.y)
+		# Overlap the timber posts, and normalize both textures to one baseline.
+		section.visual_scale = Vector2((span / count + 20.0) / section.section_texture.get_width(), texture.get_height() * base_scale.y / section.section_texture.get_height())
+		section.z_index = 10 if tags.ends_with("front") else -12
+		if tags.ends_with("front"): section.occlusion_target_path = NodePath("../../Keeper")
 		section.collision_size = Vector2(span / count,34)
 		section.collision_offset = Vector2(0,collision_offset_y)
 		section.position = Vector2(x_from + (index + 0.5) * span / count,y)
@@ -204,11 +190,13 @@ func _wall_run(texture: Texture2D, x_from: float, x_to: float, y: float, base_sc
 
 func _build_lodgings() -> void:
 	var left := lodging_floor.position.x
-	_wall_run(WALL_STRAIGHT,left,160.0,73.0,Vector2.ONE,119.0,"lodging_back")
-	_wall_run(WALL_STRAIGHT,left,160.0,800.0,Vector2(0.72,0.8),95.2,"lodging_front")
+	_wall_run(WALL_STRAIGHT,left,256.0,90.0,Vector2.ONE,102.0,"lodging_back")
+	_wall_run(WALL_STRAIGHT,left,256.0,800.8,Vector2(0.72,0.8),95.2,"lodging_front")
 	var end_wall := WALL_SECTION.instantiate() as TavernWallSection
 	end_wall.section_id = "lodging_west_end"
-	end_wall.section_texture = SIDE_LEFT
+	end_wall.section_texture = WALL_STRAIGHT
+	end_wall.side_profile = true
+	end_wall.z_index = 8
 	end_wall.visual_scale = Vector2(0.5,0.51841)
 	end_wall.collision_size = Vector2(38,704)
 	end_wall.collision_offset = Vector2(64.25,0)

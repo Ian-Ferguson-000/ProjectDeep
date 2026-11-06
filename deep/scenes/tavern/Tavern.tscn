@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" path="res://scenes/tavern/TavernDecor.tscn" id="8_decor"]
 [ext_resource type="PackedScene" path="res://scenes/tavern/TavernLighting.tscn" id="9_lighting"]
 [ext_resource type="Texture2D" path="res://assets/tavern/tavern_social_table_cards.png" id="10_cards"]
-[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/bar_front.png" id="11_bar"]
+[ext_resource type="PackedScene" path="res://scenes/components/TavernBar.tscn" id="11_bar"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_tavern"]
 vertices = PackedVector2Array(256, 192, 1408, 192, 1408, 896, 960, 896, 930, 960, 734, 960, 704, 896, 256, 896)
@@ -38,16 +38,8 @@ y_sort_enabled = true
 [node name="Fixtures" type="Node2D" parent="TavernWorld"]
 y_sort_enabled = true
 
-[node name="BarFixture" parent="TavernWorld/Fixtures" instance=ExtResource("7_prop")]
-position = Vector2(760, 300)
-prop_id = "bar"
-display_name = "The bar"
-interaction_text = "The bar is ready for another night's stories."
-obstacle_enabled = true
-prop_texture = ExtResource("11_bar")
-visual_scale = Vector2(0.95, 0.82)
-collision_size = Vector2(280, 54)
-collision_offset = Vector2(0, 72)
+[node name="BarFixture" parent="TavernWorld/Fixtures" instance=ExtResource("11_bar")]
+position = Vector2(760, 354)
 
 [node name="EntranceFixture" parent="TavernWorld/Fixtures" instance=ExtResource("7_prop")]
 position = Vector2(832, 945)
@@ -140,7 +132,7 @@ metadata/activity_kind = "Entrance"
 position = Vector2(1140, 355)
 metadata/activity_kind = "Stairway"
 [node name="Merchant_tavern" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
-position = Vector2(760, 250)
+position = Vector2(760, 282)
 metadata/activity_kind = "Merchant"
 [node name="Merchant_forest" type="Marker2D" parent="TavernWorld/ActivityAnchors"]
 position = Vector2(350, 335)

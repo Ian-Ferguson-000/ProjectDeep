@@ -2,6 +2,16 @@
 extends Node2D
 class_name TavernWallSection
 
+## Side walls are viewed from above, using the same timber as the face-on walls.
+@export var side_profile := false:
+	set(value):
+		side_profile = value
+		_refresh_section()
+
+## Foreground architecture fades locally when it covers the controlled character.
+@export var occlusion_target_path: NodePath
+var _occlusion_target: Node2D
+
 @export var section_id := "wall_section"
 @export var section_texture: Texture2D:
 	set(value):
@@ -31,15 +41,30 @@ class_name TavernWallSection
 
 func _ready() -> void:
 	_refresh_section()
+	if not Engine.is_editor_hint() and not occlusion_target_path.is_empty():
+		_occlusion_target = get_node_or_null(occlusion_target_path) as Node2D
+	set_process(_occlusion_target != null)
+
+func _process(delta: float) -> void:
+	if not is_instance_valid(_occlusion_target):
+		set_process(false)
+		return
+	var sprite := get_node("Visual") as Sprite2D
+	var feet := sprite.to_local(_occlusion_target.global_position)
+	var head := sprite.to_local(_occlusion_target.to_global(Vector2(0, -48)))
+	var bounds := sprite.get_rect().grow(12.0)
+	var obscured := bounds.intersects(Rect2(head.min(feet) - Vector2(12, 0), Vector2(24, absf(feet.y - head.y))))
+	sprite.modulate.a = move_toward(sprite.modulate.a, 0.35 if obscured else 1.0, delta * 5.0)
 
 func _refresh_section() -> void:
+	queue_redraw()
 	if not is_inside_tree():
 		return
 	var sprite := get_node_or_null("Visual") as Sprite2D
 	if sprite != null:
 		sprite.texture = section_texture
 		sprite.scale = visual_scale
-		sprite.visible = section_enabled
+		sprite.visible = section_enabled and not side_profile
 	var body := get_node_or_null("CollisionBody") as StaticBody2D
 	if body != null:
 		body.position = collision_offset
@@ -59,3 +84,24 @@ func _refresh_section() -> void:
 			Vector2(half.x, half.y), Vector2(-half.x, half.y),
 		])
 		obstacle.avoidance_enabled = section_enabled and obstacle_enabled
+
+func _draw() -> void:
+	if not side_profile or not section_enabled or section_texture == null:
+		return
+	var rect := Rect2(collision_offset - collision_size * 0.5, collision_size)
+	# A shallow inner face and a continuous top beam keep the floor plan readable.
+	draw_rect(rect.grow(3.0), Color("21170f"))
+	var y := rect.position.y
+	while y < rect.end.y:
+		var height := minf(110.0, rect.end.y - y)
+		draw_texture_rect_region(section_texture, Rect2(rect.position.x, y, rect.size.x, height), Rect2(10, 75, 36, height))
+		y += height
+	draw_line(rect.position + Vector2(3, 0), Vector2(rect.position.x + 3, rect.end.y), Color("9a7143"), 2.0)
+	draw_line(Vector2(rect.end.x - 3, rect.position.y), rect.end - Vector2(3, 0), Color("322116"), 4.0)
+	# End caps and spaced joints replace the repeated sideways plaster panels.
+	y = rect.position.y
+	while y < rect.end.y:
+		var cap_y := minf(y, rect.end.y - 24.0)
+		draw_texture_rect_region(section_texture, Rect2(rect.position.x - 4, cap_y, rect.size.x + 8, 24), Rect2(4, 0, 48, 69))
+		y += 176.0
+	draw_texture_rect_region(section_texture, Rect2(rect.position.x - 4, rect.end.y - 24, rect.size.x + 8, 24), Rect2(4, 0, 48, 69))
