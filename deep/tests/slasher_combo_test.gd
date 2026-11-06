@@ -90,7 +90,7 @@ func _run()->void:
 	var slash_cooldowns:Array[float]=[]
 	for index in 3:
 		warrior_player.cooldowns.basic=0.0;warrior_player.use_action("basic");slash_cooldowns.append(float(warrior_player.cooldowns.basic))
-	_expect(is_equal_approx(slash_cooldowns[0],0.18) and is_equal_approx(slash_cooldowns[1],0.18) and is_equal_approx(slash_cooldowns[2],0.90),"Slash did not use the two-fast-hits then long-recovery cadence",failures)
+	_expect(is_equal_approx(slash_cooldowns[0],0.18) and is_equal_approx(slash_cooldowns[1],0.18) and is_equal_approx(slash_cooldowns[2],0.42),"Slash did not use the two-fast-hits then finisher-recovery cadence",failures)
 	warrior_state.class_resource=0;warrior_player.cooldowns.movement=0.0;var free_charge:Dictionary=warrior_player.use_action("movement")
 	_expect(String(free_charge.get("combo_id",""))=="flowing_assault" and int(free_charge.get("resource_spent",-1))==0 and warrior_state.class_resource==0 and is_zero_approx(float(warrior_player.cooldowns.basic)),"Flowing Assault did not waive Charge cost and reset Slash cooldown",failures)
 	warrior_player.queue_free();crosscut_target.queue_free();deflect_source.queue_free();near_projectile.queue_free();far_projectile.queue_free();await process_frame

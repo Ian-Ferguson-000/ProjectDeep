@@ -57,6 +57,8 @@ var animation_lock:=0.0
 var presentation_ready:=false
 var retribution_stored:=0
 var input_locked:=false
+# Optional screen-to-floor basis supplied by a spatial dungeon presentation.
+var spatial_input_basis := Transform2D.IDENTITY
 var position_sanitizer:Callable
 var camera:Camera2D
 var screen_shake_time:=0.0
@@ -272,7 +274,7 @@ func _physics_process(delta:float)->void:
 	_update_aim()
 	if warrior_dash_active:_process_warrior_dash(delta);return
 	if input_locked:basic_mouse_held=false;velocity=Vector2.ZERO;return
-	var direction:=Input.get_vector("slasher_left","slasher_right","slasher_up","slasher_down")
+	var direction:=_screen_input_to_world(Input.get_vector("slasher_left","slasher_right","slasher_up","slasher_down"))
 	if direction.length()>0.1:last_direction=direction.normalized()
 	var kit_speed: float=mage_kit.movement_speed_multiplier() if is_instance_valid(mage_kit) and mage_kit.has_method("movement_speed_multiplier") else 1.0
 	velocity=direction*speed*kit_speed*(kit_buffs.speed_multiplier() if is_instance_valid(kit_buffs) else 1.0)*consumable_speed_multiplier*movement_debuff_multiplier*(item_runtime.conversion("speed_multiplier",1.0) if item_runtime else 1.0)
@@ -842,8 +844,11 @@ func _ensure_companion()->void:
 	if is_instance_valid(companion):return
 	var tuning:=GameBalance.get_slasher_companion_tuning("wolf");var spawn:Array=tuning.get("spawn_offset",[28,0])
 	companion=load("res://scripts/slasher/slasher_wolf.gd").new();companion.name="BondedWolf";get_parent().add_child(companion);companion.global_position=global_position+Vector2(float(spawn[0]),float(spawn[1]));companion.call("setup",self,run_state.active_character_id)
+func _screen_input_to_world(value: Vector2) -> Vector2:
+	return (spatial_input_basis * value).normalized() * value.length()
+
 func _update_aim()->void:
-	var stick_aim:=Input.get_vector("slasher_aim_left","slasher_aim_right","slasher_aim_up","slasher_aim_down")
+	var stick_aim:=_screen_input_to_world(Input.get_vector("slasher_aim_left","slasher_aim_right","slasher_aim_up","slasher_aim_down"))
 	var mouse_offset:=get_global_mouse_position()-global_position
 	if stick_aim.length()>0.2:aim_direction=stick_aim.normalized()
 	elif mouse_offset.length()>4.0:aim_direction=mouse_offset.normalized()

@@ -28,6 +28,7 @@ func _run() -> void:
 	main.start_dungeon("forest",gear,[member.id] as Array[String])
 	for i in 5:await physics_frame
 	expect(state.campaign.expedition.active,"3D hub could not launch an expedition")
+	expect(main.current_scene.get_node_or_null("ForestWorld3D")!=null,"Forest expedition did not use the 3D rooms")
 	expect(main.current_scene.get_node_or_null("World3D")==null,"Dungeon transition left the tavern active")
 	main.return_to_tavern("victory","Integration test return")
 	for i in 12:await physics_frame
