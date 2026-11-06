@@ -104,7 +104,12 @@ func _ensure_floor_graph() -> bool:
 	run_state.field_run["forest_floor_key"] = floor_key
 	run_state.field_run["layout_kind"] = "forest_rooms"
 	run_state.field_run["arrival_direction"] = ""
-	_assign_rest_room()
+	# Isaac floors: no campfire by default (dungeons.json room_count.rest_room);
+	# from locked_treasure_from_floor the treasure room needs a key.
+	if bool(tuning.get("rest_room",true)): _assign_rest_room()
+	if run_state.current_floor >= int(tuning.get("locked_treasure_from_floor",99)):
+		for record in run_state.field_run.get("rooms",[]):
+			if String(record.role) == "treasure": run_state.update_field_room(int(record.id),{"locked":true})
 	if MapPlaytest.active():
 		var tested := MapPlaytest.template()
 		var role := String(Array(tested.get("roles",["combat"]))[0]) if not Array(tested.get("roles",[])).is_empty() else "combat"
@@ -651,6 +656,13 @@ func _check_doors() -> void:
 		if not is_instance_valid(door) or player.global_position.distance_to(door.global_position) > DOOR_TRIGGER_RADIUS: continue
 		var neighbor := int(Dictionary(room.neighbors).get(direction,-1))
 		if neighbor < 0: continue
+		# A locked treasure room (Isaac): a key opens it for good.
+		var target := run_state.get_field_room(neighbor)
+		if bool(target.get("locked",false)):
+			if run_state.keys <= 0:
+				_show_message("Locked · it needs a key.",0.4); return
+			run_state.keys -= 1; run_state.update_field_room(neighbor,{"locked":false})
+			AudioCue.play_from(self,"pickup"); _show_message("Unlocked with a key.",1.6)
 		AudioCue.play_at_from(self,"door_open",player.global_position)
 		transition_cooldown = 1.0
 		run_state.field_run["arrival_direction"] = ROOMS.OPPOSITE[direction]

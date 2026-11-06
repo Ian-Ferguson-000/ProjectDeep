@@ -80,7 +80,8 @@ func _run() -> void:
 	var boss = forest._spawn_enemy(here,"heartwood_colossus","colossus",true)
 	forest._roll_enemy_drop(boss); boss.free()
 	var boss_ids: Array = _drops(forest).map(func(n): return String(n.get_meta("material_id","")))
-	_expect(boss_ids == ["heartwood_seed"],"The colossus should drop its seed: %s" % [boss_ids])
+	var boss_kinds: Array = _drops(forest).map(func(n): return String(n.get_meta("kind","")))
+	_expect(boss_ids.has("heartwood_seed") and boss_kinds.has("relic") and boss_kinds.size() == 2,"The colossus should drop its seed and an item (Isaac boss item): %s %s" % [boss_ids,boss_kinds])
 	_clear_drops(forest)
 	table["basic_material_chance"] = saved_basic; table["mini_boss_item_chance"] = saved_mini
 

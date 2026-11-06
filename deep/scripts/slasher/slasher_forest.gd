@@ -724,9 +724,12 @@ func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	var material_id:=Materials.for_enemy(String(enemy.visual_id),String(enemy.behavior_id),trophy)
 	if enemy.boss:
 		for index in int(table.get("boss_materials",1)):_spawn_material_drop(spot+Vector2(index*18-9,0),material_id)
+		# Isaac: every boss leaves an item.
+		if bool(table.get("boss_item",false)):_spawn_relic_drop(spot+Vector2(0,-30))
 		return
 	if enemy.mini_boss:
 		for index in int(table.get("mini_boss_materials",2)):_spawn_material_drop(spot+Vector2(index*20-10,6),material_id)
+		# Isaac: the floor's boss leaves an item (mini_boss_item_chance 1.0).
 		if drop_rng().randf()<float(table.get("mini_boss_item_chance",0.3))*minf(Unlocks.drop_luck(run_state.campaign),float(table.get("luck_cap",2.5))):_spawn_relic_drop(spot+Vector2(0,-22))
 		return
 	var chance:=float(table.get("basic_material_chance",0.3))*minf(Unlocks.drop_luck(run_state.campaign),float(table.get("luck_cap",2.5)))

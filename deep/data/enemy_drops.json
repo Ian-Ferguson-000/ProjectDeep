@@ -1,7 +1,7 @@
 {
   "how_to_edit": [
     "What defeated enemies drop. Every kill also pays its gold reward straight into the purse; that isn't a drop.",
-    "Basic enemies drop only materials (data/materials.json): basic_material_chance per kill (× drop luck, up to luck_cap).",
+    "Basic enemies drop only materials (data/materials.json): basic_material_chance per kill (\u00d7 drop luck, up to luck_cap).",
     "Mini bosses (gate guardians, elite champions) always drop their trophy material (mini_boss_materials of them) and have mini_boss_item_chance of also dropping an item (a relic for your class). Never an active item: those come from treasure-room pedestals.",
     "Bosses always drop their trophy material.",
     "chances / enemy_multipliers / gold_amount / active_item_drops are no longer used by enemy kills (kept for reference)."
@@ -74,7 +74,8 @@
   },
   "luck_cap": 2.5,
   "basic_material_chance": 0.3,
-  "mini_boss_item_chance": 0.3,
+  "mini_boss_item_chance": 1.0,
   "mini_boss_materials": 2,
-  "boss_materials": 1
+  "boss_materials": 1,
+  "boss_item": true
 }
