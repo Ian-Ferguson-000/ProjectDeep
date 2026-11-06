@@ -48,6 +48,8 @@ var lodging_floor := Rect2()
 var yard_floor := Rect2()
 var yard_open := false
 var ground: Node2D
+var accessible_tier := 0
+var accessible_room_count := 0
 
 func build(target_world: Node2D, source: CampaignState) -> void:
 	world = target_world
@@ -61,11 +63,13 @@ func build(target_world: Node2D, source: CampaignState) -> void:
 	add_child(ground)
 	HearthLodging.ensure_rooms(campaign)
 	HearthLodging.sync_occupants(campaign)
-	yard_open = int(campaign.establishment_tier) >= YARD_UNLOCK_TIER
-	var slots := HearthLodging.room_limit(campaign)
+	accessible_tier = 3 if GameSettingsService.dev_mode_enabled() else int(campaign.establishment_tier)
+	accessible_room_count = int(HearthCatalog.tier(accessible_tier).capacity)
+	yard_open = accessible_tier >= YARD_UNLOCK_TIER
+	var slots := accessible_room_count
 	var width := slots * ALCOVE_WIDTH + 160.0
 	lodging_floor = Rect2(160.0 - width, HALL_FLOOR.position.y, width, HALL_FLOOR.size.y)
-	var yard_width := 1000.0 + 200.0 * maxi(0,int(campaign.establishment_tier) - YARD_UNLOCK_TIER)
+	var yard_width := 1000.0 + 200.0 * maxi(0,accessible_tier - YARD_UNLOCK_TIER)
 	yard_floor = Rect2(1504.0, 132.0, yard_width, 820.0)
 	_cut_side_walls()
 	_build_lodgings()
@@ -86,7 +90,7 @@ func _build_navigation() -> void:
 	var corridor := Rect2(lodging_floor.position.x + 30.0,HALL_FLOOR.position.y + ALCOVE_DEPTH,150.0 - (lodging_floor.position.x + 30.0),860.0 - (HALL_FLOOR.position.y + ALCOVE_DEPTH))
 	_nav_rect(corridor)
 	var corridor_left := lodging_floor.position.x + 80.0
-	for index in HearthLodging.room_limit(campaign):
+	for index in accessible_room_count:
 		var cell := Rect2(corridor_left + index * ALCOVE_WIDTH,HALL_FLOOR.position.y,ALCOVE_WIDTH,ALCOVE_DEPTH)
 		var room: Dictionary = campaign.rooms[index] if index < campaign.rooms.size() else {}
 		if room.is_empty(): continue
@@ -106,9 +110,9 @@ func _build_navigation() -> void:
 	_anchor("Train",ring_center + Vector2(0,-70))
 	_anchor("Wander",Vector2(yard_floor.position.x + 560.0,yard_floor.position.y + 300.0))
 	_anchor("Wander",Vector2(yard_floor.position.x + 200.0,yard_floor.end.y - 160.0))
-	if int(campaign.establishment_tier) >= 2:
+	if accessible_tier >= 2:
 		for index in 3: _anchor("Train",Vector2(yard_floor.end.x - 420.0,yard_floor.position.y + 230.0 + index * 150.0))
-	if int(campaign.establishment_tier) >= 3:
+	if accessible_tier >= 3:
 		_anchor("Train",Vector2(yard_floor.position.x + 700.0,yard_floor.end.y - 70.0))
 
 func _nav_rect(rect: Rect2) -> void:
@@ -202,7 +206,7 @@ func _build_lodgings() -> void:
 	end_wall.collision_offset = Vector2(64.25,0)
 	end_wall.position = Vector2(left - 64.25,544)
 	add_child(end_wall)
-	var slots := HearthLodging.room_limit(campaign)
+	var slots := accessible_room_count
 	var corridor_left := left + 80.0
 	for index in slots:
 		var cell := Rect2(corridor_left + index * ALCOVE_WIDTH,HALL_FLOOR.position.y,ALCOVE_WIDTH,ALCOVE_DEPTH)
@@ -275,7 +279,7 @@ func _build_locked_yard_door() -> void:
 	gate.name = "LockedYardDoor"
 
 func _build_yard() -> void:
-	var tier := int(campaign.establishment_tier)
+	var tier := accessible_tier
 	var r := yard_floor
 	var fence := YardFence.new()
 	fence.rect = r
@@ -388,7 +392,7 @@ func _draw_ground() -> void:
 	_tile_floor(Rect2(1408.0,DOOR_TOP - 12.0,128.0 if yard_open else 64.0,DOOR_BOTTOM - DOOR_TOP + 24.0))
 	# Alcove floors are a shade warmer than the corridor.
 	var corridor_left := lodging_floor.position.x + 80.0
-	for index in HearthLodging.room_limit(campaign):
+	for index in accessible_room_count:
 		var built := index < campaign.rooms.size()
 		ground.draw_rect(Rect2(corridor_left + index * ALCOVE_WIDTH + 8.0,lodging_floor.position.y,ALCOVE_WIDTH - 16.0,ALCOVE_DEPTH - 8.0),Color(0.35,0.2,0.1,0.18) if built else Color(0.0,0.0,0.0,0.32))
 	if not yard_open: return

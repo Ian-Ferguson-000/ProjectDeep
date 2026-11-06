@@ -28,6 +28,9 @@ func _walk(actor: TavernActor, target: Vector2, frames: int = 900) -> bool:
 
 func _run() -> void:
 	root.size = Vector2i(1280,720)
+	var settings := root.get_node("GameSettings")
+	var previous_dev: bool = settings.get_bool("dev_mode",false)
+	settings.values["dev_mode"] = false
 	var tavern := _make(0)
 	await process_frame; await process_frame
 	var ex: TavernExpansions = tavern.expansions
@@ -67,6 +70,7 @@ func _run() -> void:
 		var choice: Marker2D = tavern.activity_controller._claim_anchor(other_id,["Rest"] as Array[String])
 		_expect(choice == null or not choice.has_meta("occupant") or String(choice.get_meta("occupant")) == other_id,"Someone claimed another adventurer's bed")
 	tavern.queue_free(); await process_frame
+	settings.values["dev_mode"] = previous_dev
 	if failures.is_empty(): print("TAVERN_EXPANSIONS_TESTS_PASSED"); quit(0)
 	else:
 		for failure in failures: push_error(failure)

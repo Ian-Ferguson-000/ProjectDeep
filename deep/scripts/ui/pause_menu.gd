@@ -35,6 +35,18 @@ var body: VBoxContainer
 var previous_pause := false
 var page := "main"
 
+const TAVERN_CONTROLS := [
+	["Move","WASD / Arrow keys","D-pad"],
+	["Walk to / interact with target","Left click",""],
+	["Interact / talk","E / Space","A"],
+	["Orbit camera","Hold right mouse + drag",""],
+	["Zoom","Mouse wheel",""],
+	["Toggle cutaway walls","C",""],
+	["Toggle character names","N",""],
+	["Reset camera","R",""],
+	["This menu","Esc","Back / Select"],
+]
+
 const CONTROLS := [
 	["Move","WASD / Arrow keys","D-pad / Left stick"],
 	["Attack (hold to keep swinging)","Left click","A"],
@@ -215,7 +227,7 @@ func _controls_page() -> void:
 	grid.add_theme_constant_override("h_separation",28); grid.add_theme_constant_override("v_separation",8)
 	body.add_child(grid)
 	for heading in ["","KEYBOARD & MOUSE","CONTROLLER"]: grid.add_child(_label(heading,12,THEME.MUTED))
-	for row in CONTROLS:
+	for row in (TAVERN_CONTROLS if context=="tavern" else CONTROLS):
 		grid.add_child(_label(String(row[0]),15,THEME.IVORY))
 		grid.add_child(_label(String(row[1]),15,THEME.HIGHLIGHT_GOLD))
 		grid.add_child(_label(String(row[2]),15,THEME.HIGHLIGHT_GOLD))

@@ -2,7 +2,7 @@ extends Node
 
 const StartScreenScene := preload("res://scenes/start/StartScreen.tscn")
 const ClassSelectionScene := preload("res://scenes/class_selection/ClassSelection.tscn")
-const TavernScene := preload("res://scenes/tavern/Tavern.tscn")
+const TavernScene := preload("res://scenes/tavern3d/Tavern3D.tscn")
 const TestingGroundScene := preload("res://scenes/slasher/TestingGround.tscn")
 const SlasherForestScene := preload("res://scenes/slasher/SlasherForest.tscn")
 const SlasherFarmsteadScene := preload("res://scenes/slasher/SlasherFarmstead.tscn")

@@ -1,0 +1,18 @@
+{
+  "dimensions_m": [
+    18,
+    11,
+    3.87
+  ],
+  "mesh_objects": 717,
+  "evaluated_triangles": 32228,
+  "materials": 24,
+  "glb_bytes": 2141168,
+  "source": "tools/blender/build_tavern_room.py",
+  "coordinate_system": "Blender Z-up, exported glTF Y-up",
+  "door_clear_widths_m": {
+    "entrance": 2.22,
+    "lodgings": 1.92,
+    "yard": 1.92
+  }
+}
