@@ -21,25 +21,25 @@
   that make you faster add Dexterity: `"dex": 1` is +1 DEX. An item with a
   percentage move-speed bonus counts as +1.
 
-## Item stats (real-time only)
+## Item stats (Isaac style, all stack)
 
-Turn-based rules are gone from every item. These are the stats items use, and
-what each does in a fight:
+| Stat | Isaac name | Does |
+| --- | --- | --- |
+| `damage` | Damage Up | +N damage on every hit, after the 1–4 hit |
+| `boss_damage` | | +N more against elites, mini bosses and bosses |
+| `attack_speed` | Tears Up | % faster basic attacks |
+| `dex` | Speed Up | +1 Dexterity: faster walking |
+| `max_health` | Health Up | +1 heart container each, filled |
+| `soul_hearts` | Soul hearts | Soul hearts, once, when picked up |
+| `range` | Range Up | Longer reach and projectiles |
+| `luck` | Luck Up | +5% to chance effects and room-clear drops |
+| `cooldown_percent` | | % faster ability recharge (cap 35%) |
+| `gold_bonus_percent` | | A chance of an extra coin |
+| `potion_heal_bonus` | | Potions heal this many more half hearts |
+| `xp_bonus_percent` | | XP only; doesn't drop while levelling is off |
 
-| Stat | Does |
-| --- | --- |
-| `dex` | +1 Dexterity: faster walking (and a little dodge) |
-| `max_health` | +1 heart each |
-| `damage` | +N damage on every hit, added after the 1–4 hit |
-| `boss_damage` | +N more against elites, mini bosses and bosses |
-| `block_percent` | Chance to block an enemy hit completely (all items together cap at 50%) |
-| `dodge_percent` | More dodge chance on top of Dexterity's (cap 50%) |
-| `attack_speed` | % faster basic attacks |
-| `cooldown_percent` | % faster ability recharge (cap 35%) |
-| `precision_hits` | Every Nth hit does +1 damage |
-| `gold_bonus_percent` | % more gold from kills, piles and rooms |
-| `potion_heal_bonus` | Potions heal this many more hearts |
-| `xp_bonus_percent` | XP only; does nothing while levelling is off, so these items don't drop |
+Block chance became soul hearts (2–6% = 1, 10–15% = 2, 22% = 3), dodge became
++1 Dexterity, and "every Nth hit" became Luck Up (docs/IsaacRules.md).
 
 Item procs (crescents, lightning, burning, chill, novas) carry their own damage
 and don't get `damage`, `boss_damage` or precision on top.

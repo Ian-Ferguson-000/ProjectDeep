@@ -43,7 +43,7 @@ func _initialize() -> void:
 	_expect(int(keen.get_active_item_modifiers().get("boss_damage",0)) == 1, "Keen Edge Oil should add +1 damage against elites and bosses", failures)
 	var mantle := RunState.new()
 	mantle.add_inventory_item("wyvernscale_mantle", 1)
-	_expect(int(mantle.get_active_item_modifiers().get("block_percent",0)) == 22, "Wyvernscale Mantle should give a 22% block chance", failures)
+	_expect(int(mantle.get_active_item_modifiers().get("soul_hearts",0)) == 3, "Wyvernscale Mantle should give 3 soul hearts", failures)
 	for item_id in items.keys():
 		for dead_stat in ["armor_class","threshold","accuracy","penetration","evasion","initiative_modifier","attack_power","spell_potency","aegis_fire","aegis_lightning","aegis_physical","aegis_poison"]:
 			_expect(not Dictionary(items[item_id].get("modifiers",{})).has(dead_stat), "%s still uses the turn-based stat %s" % [item_id,dead_stat], failures)

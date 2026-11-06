@@ -803,7 +803,12 @@ static var coin_value_override := 0
 func apply_reward_bonus(base_amount: int, reward_type: String) -> int:
 	var modifier_id := "%s_bonus_percent" % reward_type
 	var bonus_percent: int = get_active_item_modifier_value(modifier_id)
-	return maxi(0, int(round(float(base_amount) * (1.0 + float(bonus_percent) / 100.0))))
+	# Coins are small numbers (Isaac style), so the fraction left over is the
+	# chance of one more: +20% on a penny is a 20% chance of a second coin.
+	var exact := float(base_amount) * (1.0 + float(bonus_percent) / 100.0)
+	var whole := int(floor(exact))
+	if randf() < exact - float(whole): whole += 1
+	return maxi(0, whole)
 
 func _ensure_merchant_progress() -> void:
 	for merchant_id in GameBalance.get_merchants().keys():

@@ -5,7 +5,7 @@
     "class_groups says which classes count as melee and ranged.",
     "name: shown to players. rarity: uncommon, rare, very_rare or legendary (there's no common tier; drop rates by rarity are in loot_tables.json).",
     "lasts: every item lasts the whole run (lost when the expedition ends).",
-    "stats (real-time combat): dex (+1 Dexterity = faster walking), max_health (hearts), damage (+N on every hit), boss_damage (+N against elites, mini bosses and bosses), block_percent (chance to block a hit, 50% cap), dodge_percent, attack_speed (% faster basic attacks), cooldown_percent (% faster ability recharge), precision_hits (every Nth hit does +1 damage), gold_bonus_percent, potion_heal_bonus. xp_bonus_percent only matters with levelling on.",
+    "stats (Isaac style, all stack): damage (Damage Up: +N per hit), boss_damage (+N against elites and bosses), attack_speed (Tears Up: % faster basic attacks), dex (Speed Up: +1 Dexterity), max_health (Health Up: heart containers), soul_hearts (soul hearts, once on pickup), range (Range Up), luck (Luck Up: +5% to chance effects and room-clear drops), cooldown_percent (faster ability recharge), gold_bonus_percent (a chance of an extra coin), potion_heal_bonus (half hearts more from potions). xp_bonus_percent only matters with levelling on.",
     "combat.room_ward: true blocks the first hit taken in each room. Proc types drop_potion (a healing potion) and drop_gold (amount_min..amount_max coins) put loot on the floor; use them with on: kill or on: hit and a chance.",
     "To add an item, copy an existing block, give it a new unique id (lowercase_with_underscores) and change its fields.",
     "combat (optional): how the item behaves in real-time combat. 'rules' is the text players read; 'trigger' is passive, hit, potion_use, floor_entry, action_complete, lethal_damage and so on; other numbers tune the effect.",
@@ -185,7 +185,7 @@
       "description": "Bronze thorns punish anything that presses into the wearer's guard.",
       "stats": {
         "max_health": 2,
-        "block_percent": 5
+        "soul_hearts": 1
       },
       "tags": [
         "defense",
@@ -465,7 +465,7 @@
       "description": "A royal ward turns the first wound of every battle into a glancing blow.",
       "stats": {
         "max_health": 4,
-        "block_percent": 15
+        "soul_hearts": 2
       },
       "tags": [
         "defense",
@@ -604,7 +604,7 @@
       "lasts": "run",
       "description": "Copper wire discharges into the first target struck each round.",
       "stats": {
-        "precision_hits": 6
+        "luck": 1
       },
       "tags": [
         "martial",
@@ -618,7 +618,7 @@
       "lasts": "run",
       "description": "The gloves guide a blade toward whichever opening appears first.",
       "stats": {
-        "precision_hits": 5
+        "luck": 2
       },
       "tags": [
         "martial",
@@ -664,7 +664,7 @@
       "description": "A warm rune divides its loyalty between blade and guard.",
       "stats": {
         "damage": 1,
-        "block_percent": 5
+        "soul_hearts": 2
       },
       "tags": [
         "martial",
@@ -680,7 +680,7 @@
       "stats": {
         "max_health": 9,
         "damage": 1,
-        "block_percent": 5
+        "soul_hearts": 1
       },
       "tags": [
         "health",
@@ -694,7 +694,7 @@
       "lasts": "run",
       "description": "Overlapping scales turn poison and blades in different ways.",
       "stats": {
-        "block_percent": 22
+        "soul_hearts": 3
       },
       "tags": [
         "defense",
@@ -710,10 +710,10 @@
       "stats": {
         "damage": 2,
         "boss_damage": 3,
-        "block_percent": 10
+        "soul_hearts": 2
       },
       "combat": {
-        "rules": "+2 damage on every hit and +3 against elites and bosses, a 10% chance to block a hit, and your impacts hit harder, wider and with more knockback.",
+        "rules": "+2 damage on every hit and +3 against elites and bosses, +2 soul hearts, and your impacts hit harder, wider and with more knockback.",
         "trigger": "hit",
         "area_radius_bonus": 20.0
       },
@@ -880,7 +880,7 @@
       "description": "A disposable ember lens stretches fire beyond its natural reach.",
       "stats": {
         "damage": 1,
-        "block_percent": 2
+        "soul_hearts": 1
       },
       "tags": [
         "arcane",
@@ -911,7 +911,7 @@
       "description": "A captive storm leaps farther after movement.",
       "stats": {
         "damage": 1,
-        "block_percent": 4
+        "dex": 1
       },
       "tags": [
         "arcane",
@@ -926,7 +926,7 @@
       "description": "The wand banks heat until magic finds clustered prey.",
       "stats": {
         "damage": 1,
-        "precision_hits": 6
+        "luck": 1
       },
       "tags": [
         "arcane",
@@ -958,8 +958,8 @@
       "lasts": "run",
       "description": "The lens exposes the thinnest seam in magical resistance.",
       "stats": {
-        "precision_hits": 6,
-        "damage": 1
+        "damage": 1,
+        "luck": 2
       },
       "tags": [
         "arcane",
@@ -974,10 +974,10 @@
       "description": "Its hands twitch backward at the instant an action goes wrong.",
       "stats": {
         "cooldown_percent": 10,
-        "dodge_percent": 5
+        "dex": 1
       },
       "combat": {
-        "rules": "Abilities recharge 10% faster, every 8 seconds 0.4 seconds comes off every cooldown, and +5% dodge chance.",
+        "rules": "Abilities recharge 10% faster, every 8 seconds 0.4 seconds comes off every cooldown, and +1 Dexterity.",
         "trigger": "periodic",
         "internal_cooldown": 8.0,
         "cooldown_flat": 0.4
@@ -995,10 +995,10 @@
       "description": "The talisman rewards spellcasters who stand close enough to feel the heat.",
       "stats": {
         "damage": 2,
-        "block_percent": 6
+        "soul_hearts": 1
       },
       "combat": {
-        "rules": "+2 damage on every hit, a 6% chance to block a hit, and spell impacts burst over a wider area.",
+        "rules": "+2 damage on every hit, +1 soul heart, and spell impacts burst over a wider area.",
         "trigger": "hit",
         "area_radius_bonus": 18.0,
         "internal_cooldown": 1.5
@@ -1016,10 +1016,10 @@
       "description": "Uncooling ash kindles when healing would otherwise be too late.",
       "stats": {
         "damage": 2,
-        "block_percent": 6
+        "soul_hearts": 1
       },
       "combat": {
-        "rules": "+2 damage on every hit, a 6% chance to block a hit, and survive one lethal hit per floor at 1 heart.",
+        "rules": "+2 damage on every hit, +1 soul heart, and survive one lethal hit per floor at half a heart.",
         "trigger": "lethal_damage",
         "once_per_floor": true
       },
@@ -1038,10 +1038,10 @@
       "stats": {
         "damage": 2,
         "boss_damage": 2,
-        "block_percent": 10
+        "soul_hearts": 2
       },
       "combat": {
-        "rules": "+2 damage on every hit and +2 against elites and bosses, a 10% chance to block a hit, and specials hit 30% harder over a wider area.",
+        "rules": "+2 damage on every hit and +2 against elites and bosses, +2 soul hearts, and specials hit 30% harder over a wider area.",
         "trigger": "action_start",
         "special_damage_multiplier": 1.3,
         "area_radius_bonus": 28.0
