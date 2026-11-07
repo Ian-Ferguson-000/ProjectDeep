@@ -15,6 +15,10 @@ var rng := RandomNumberGenerator.new()
 var materials: Dictionary = {}
 var batches: Dictionary = {}
 var dimensions := Vector2.ZERO
+## Trees fade see-through when the player walks near or behind them
+## (slasher_balance.json → tree_fade). Each entry: {root, meshes, alpha}.
+var fading_trees: Array = []
+var fade_rules: Dictionary = {}
 
 func mat(color: String, glow: bool = false) -> StandardMaterial3D:
 	var key := color + str(glow)
@@ -105,7 +109,7 @@ func build(layout: Dictionary) -> void:
 		if (cell.x+cell.y)%2 == 0:
 			var height := rng.randf_range(3.5,4.8) if not near else rng.randf_range(.8,1.3)
 			if cell.x<2 or cell.x>dimensions.x-3: height = minf(height,2.3)
-			tree(point,height)
+			standing_tree(point,height)
 		else:
 			primitive("orb","3e6036",point+Vector3(0,.5,0),Vector3(1.25,.95,1.15))
 	# Non-room tutorial/interlude layouts still receive an honest boundary.
@@ -278,6 +282,65 @@ func tree(point: Vector3, height: float, parent: Node3D = null) -> void:
 			primitive("orb",["3d6035","52753d","638348"][i],point+Vector3(cos(angle)*.45,height*.72+i*.14,sin(angle)*.4),Vector3(1.7,1.65,1.65),parent)
 		primitive("orb","66874a",point+Vector3(.08,height-.35,0),Vector3(1.25,1.1,1.2),parent)
 
+## A tree with its own nodes (not batched) so it can fade on its own.
+func standing_tree(point: Vector3, height: float) -> Node3D:
+	var root := Node3D.new()
+	root.name = "Tree"
+	root.position = point
+	add_child(root)
+	tree(Vector3.ZERO,height,root)
+	_track_fading(root)
+	return root
+
+func _track_fading(root: Node3D) -> void:
+	var meshes: Array = []
+	for child in root.get_children():
+		if child is GeometryInstance3D: meshes.append(child)
+	fading_trees.append({"root":root,"meshes":meshes,"alpha":0.0})
+
+## Fades every tree that is close to the player, or stands between the player
+## and the camera, so the player is never hidden behind a canopy.
+func fade_trees(player: Vector3, toward_camera: Vector3, delta: float) -> void:
+	if fade_rules.is_empty(): fade_rules = GameBalance.get_slasher_balance("tree_fade")
+	var rules := fade_rules
+	var near := float(rules.get("near_radius",2.2))
+	var behind_width := float(rules.get("behind_width",1.7))
+	var behind_depth := float(rules.get("behind_depth",6.0))
+	var faded := float(rules.get("faded_transparency",0.72))
+	var speed := float(rules.get("fade_speed",8.0))
+	var look := Vector2(toward_camera.x,toward_camera.z).normalized()
+	var keep: Array = []
+	for record in fading_trees:
+		var root: Node3D = record.root
+		if not is_instance_valid(root): continue
+		keep.append(record)
+		var offset := Vector2(root.global_position.x-player.x,root.global_position.z-player.z)
+		var along := offset.dot(look)
+		var across := absf(offset.cross(look))
+		var hiding := offset.length() < near or (along > -0.5 and along < behind_depth and across < behind_width)
+		var target := faded if hiding else 0.0
+		var alpha: float = move_toward(float(record.alpha),target,delta*speed*faded)
+		if is_equal_approx(alpha,float(record.alpha)) and alpha == target and record.has("set"): continue
+		record.alpha = alpha
+		record["set"] = true
+		for mesh in record.meshes:
+			if is_instance_valid(mesh): _set_see_through(mesh,alpha)
+	fading_trees = keep
+
+## A see-through copy of the mesh's own material (works on every renderer);
+## fully solid again uses the shared opaque material, shadows included.
+func _set_see_through(mesh: MeshInstance3D, alpha: float) -> void:
+	if alpha <= 0.001:
+		mesh.material_override = null
+		return
+	var faded: StandardMaterial3D = mesh.material_override
+	if faded == null:
+		var base: StandardMaterial3D = mesh.mesh.material
+		faded = base.duplicate()
+		faded.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mesh.material_override = faded
+	faded.albedo_color.a = 1.0-alpha
+
 func make_prop(kind: String, point: Vector3) -> Node3D:
 	var root := Node3D.new()
 	root.name = kind.to_pascal_case()
@@ -295,7 +358,9 @@ func make_prop(kind: String, point: Vector3) -> Node3D:
 				primitive("orb","6b6574",Vector3(-.19,.45,.1),Vector3(.45,.24,.36),root)
 		return root
 	match kind:
-		"tree_large","tree_small","tree": tree(Vector3.ZERO,2.7,root)
+		"tree_large","tree_small","tree":
+			tree(Vector3.ZERO,2.7,root)
+			_track_fading(root)
 		"chest":
 			primitive("box","755034",Vector3(0,.25,0),Vector3(.74,.5,.52),root)
 			var lid := primitive("box","9a7042",Vector3(0,.53,0),Vector3(.78,.13,.56),root)

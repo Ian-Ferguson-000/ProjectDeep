@@ -1435,5 +1435,13 @@
     "half_heart_chance": 0.4,
     "champion_drops": 1,
     "gold_per_coin": 10
+  },
+  "tree_fade": {
+    "_note": "3D forest: trees near the player, or between the player and the camera, fade to this transparency (0 solid, 1 invisible). Distances in map cells.",
+    "near_radius": 2.2,
+    "behind_width": 1.7,
+    "behind_depth": 6.0,
+    "faded_transparency": 0.72,
+    "fade_speed": 8.0
   }
 }

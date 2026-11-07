@@ -101,6 +101,7 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(dungeon.player): return
 	_sync_objects()
 	_update_camera(delta)
+	art.fade_trees(to_world(dungeon.player.global_position),camera.global_position-focus,delta)
 
 func _sync_objects() -> void:
 	# Scan only actors: dynamically spawned summons, projectiles, loot and props
