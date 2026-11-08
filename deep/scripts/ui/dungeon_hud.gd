@@ -100,9 +100,11 @@ func _init() -> void:
 	_items.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_items)
 
-## Isaac's stat column on the left: Speed, Tears, Damage, Range, Luck.
+## Isaac's stat column, right-aligned under the run clock: Speed, Attack speed,
+## Damage, Range, Luck. top is where it starts (just below the clock).
 var stats_box: VBoxContainer
-func show_stats(lines: Array) -> void:
+const STATS_WIDTH := 220.0
+func show_stats(lines: Array, top: float = 178.0) -> void:
 	if stats_box == null:
 		stats_box = VBoxContainer.new(); stats_box.name = "Stats"; stats_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		stats_box.add_theme_constant_override("separation",0); add_child(stats_box)
@@ -110,12 +112,14 @@ func show_stats(lines: Array) -> void:
 		for child in stats_box.get_children(): child.free()
 		for line in lines:
 			var label := Label.new(); label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; label.custom_minimum_size.x = STATS_WIDTH
 			label.add_theme_font_size_override("font_size",15); label.add_theme_color_override("font_color",TEXT)
 			label.add_theme_color_override("font_outline_color",OUTLINE); label.add_theme_constant_override("outline_size",5)
 			stats_box.add_child(label)
 	for index in lines.size():
 		(stats_box.get_child(index) as Label).text = "%s  %s" % [String(lines[index][0]).to_upper(),String(lines[index][1])]
-	stats_box.position = Vector2(MARGIN.x - 4.0,size.y * 0.40)
+	stats_box.size.x = STATS_WIDTH
+	stats_box.position = Vector2(size.x - 22.0 - STATS_WIDTH,top)
 
 ## Pushes the relic row down, e.g. below the party strip when parties are on.
 func set_items_top(top: float) -> void:

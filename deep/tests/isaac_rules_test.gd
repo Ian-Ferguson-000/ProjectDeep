@@ -104,7 +104,7 @@ func _run() -> void:
 	# Coins bank at 10 gold each; the stat line is there.
 	expect(RunState.coin_value() == 10,"A coin should bank as 10 gold")
 	var stats: Array = player.stat_line()
-	expect(stats.map(func(s): return s[0]) == ["Speed","Tears","Damage","Range","Luck"],"The stat line is wrong: %s" % [stats])
+	expect(stats.map(func(s): return s[0]) == ["Speed","Attack speed","Damage","Range","Luck"],"The stat line is wrong: %s" % [stats])
 	scene.queue_free(); await _frames(2)
 	if failures.is_empty(): print("ISAAC_RULES_TESTS_PASSED"); quit(0)
 	else:

@@ -22,9 +22,9 @@ Eros now plays by Binding of Isaac rules, on top of our own attributes.
 - Numbers: `slasher_balance.json → simple_combat` (`units_per_heart`,
   `enemy_hit_damage`, `strong_hit_damage`, `max_total_hearts`).
 
-## Stats (HUD, left side)
+## Stats (HUD, right side under the clock)
 
-**Speed** (from DEX), **Tears** (basic attacks a second), **Damage** (per hit,
+**Speed** (from DEX), **Attack speed** (basic attacks a second; Isaac calls this Tears), **Damage** (per hit,
 items included), **Range** and **Luck**. Items raise them all and everything
 stacks. Luck adds 5% a point to chance effects (burns, chills, lightning) and to
 room-clear drops.
@@ -62,7 +62,7 @@ Every item is **15 coins**, and there's always a **red heart (3)** and a **key
 
 ## Items
 
-All stat ups, all stacking (docs/Items.md): Damage Up (`damage`), Tears Up
+All stat ups, all stacking (docs/Items.md): Damage Up (`damage`), Attack speed Up
 (`attack_speed`), Speed Up (`dex`), Health Up (`max_health`), soul hearts
 (`soul_hearts`), Range Up (`range`), Luck Up (`luck`), plus damage against
 bosses, faster ability recharge and gold-find. Blackoak Ward is our Holy Mantle

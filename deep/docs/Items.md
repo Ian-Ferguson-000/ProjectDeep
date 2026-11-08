@@ -27,7 +27,7 @@
 | --- | --- | --- |
 | `damage` | Damage Up | +N damage on every hit, after the 1–4 hit |
 | `boss_damage` | | +N more against elites, mini bosses and bosses |
-| `attack_speed` | Tears Up | % faster basic attacks |
+| `attack_speed` | Tears Up (attack speed) | % faster basic attacks |
 | `dex` | Speed Up | +1 Dexterity: faster walking |
 | `max_health` | Health Up | +1 heart container each, filled |
 | `soul_hearts` | Soul hearts | Soul hearts, once, when picked up |
