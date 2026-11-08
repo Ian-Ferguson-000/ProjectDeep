@@ -1437,11 +1437,12 @@
     "gold_per_coin": 10
   },
   "tree_fade": {
-    "_note": "3D forest: trees near the player, or between the player and the camera, fade to this transparency (0 solid, 1 invisible). Distances in map cells.",
+    "_note": "3D forest: trees near the player, or between the player and the camera, fade to this transparency (0 solid, 1 invisible). Distances in map cells. door_clear_radius: no trees within this many cells of a doorway (only low shrubs in the outer part).",
     "near_radius": 3.2,
     "behind_width": 2.6,
     "behind_depth": 7.5,
     "faded_transparency": 0.88,
-    "fade_speed": 9.0
+    "fade_speed": 9.0,
+    "door_clear_radius": 2.6
   }
 }

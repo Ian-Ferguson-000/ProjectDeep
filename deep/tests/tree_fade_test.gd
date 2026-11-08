@@ -47,7 +47,24 @@ func _run() -> void:
 	# The live scene runs the fade every frame.
 	for i in 5: await process_frame
 	expect(w.art.fading_trees.size() == trees.size(),"Live trees were dropped")
+	# Doorways are clear of trees.
+	for direction in Dictionary(scene.layout.doors):
+		var door: Vector2 = Vector2(Vector2i(scene.layout.doors[direction]))
+		for other in trees:
+			var at: Vector3 = other.root.global_position
+			if other.root.name == "Tree":
+				expect(Vector2(at.x-0.5,at.z-0.5).distance_to(door) > 2.6,"A tree stands in the %s doorway" % direction)
+	# Swapping scenes the way Main does (new one in, old one queue_free'd) must
+	# not bring the 2D art back over the new 3D room.
+	var hidden: int = w.HIDDEN_LAYER
+	var next := FOREST.instantiate()
+	next._ensure_designer_controls()
+	next.run_state = state
+	root.add_child(next)
 	scene.queue_free()
+	for i in 6: await process_frame
+	expect(root.canvas_cull_mask & hidden == 0,"2D room art shows after a scene swap")
+	next.queue_free()
 	await process_frame
 	if failures.is_empty(): print("TREE_FADE_TEST: PASS")
 	quit(1 if not failures.is_empty() else 0)

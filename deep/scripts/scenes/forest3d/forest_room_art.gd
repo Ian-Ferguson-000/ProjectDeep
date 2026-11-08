@@ -100,11 +100,23 @@ func build(layout: Dictionary) -> void:
 			primitive("box","80aaa0",Vector3(cell.x+.5,-.151,cell.y+.5),Vector3(.42,.008,.018),null,Vector3(0,.2,0))
 	# Each blocked edge has a visible bank. Higher canopy is kept to the rear;
 	# foreground growth is cut down so it never hides combat or door thresholds.
+	# Doorways stay clear (slasher_balance.json tree_fade.door_clear_radius): no
+	# trees or bushes right at an exit, only low shrubs a little further out.
+	var door_points: Array = []
+	for direction in Dictionary(layout.get("doors",{})):
+		door_points.append(Vector2(Vector2i(layout.doors[direction])))
+	var clear_radius := float(GameBalance.get_slasher_balance("tree_fade").get("door_clear_radius",2.6))
 	for value in thicket:
 		var cell: Vector2i = value
 		if body.has(cell): continue
 		var point := Vector3(cell.x+.5,0,cell.y+.5)
 		var near := cell.y > dimensions.y*.65
+		var door_gap := INF
+		for door_point in door_points: door_gap = minf(door_gap,Vector2(cell).distance_to(door_point))
+		if door_gap <= clear_radius*0.6: continue
+		if door_gap <= clear_radius:
+			primitive("orb","46543b",point+Vector3(0,.18,0),Vector3(.9,.45,.85))
+			continue
 		primitive("orb","46543b",point+Vector3(0,.22,0),Vector3(1.05,.65,.95))
 		if (cell.x+cell.y)%2 == 0:
 			var height := rng.randf_range(3.5,4.8) if not near else rng.randf_range(.8,1.3)

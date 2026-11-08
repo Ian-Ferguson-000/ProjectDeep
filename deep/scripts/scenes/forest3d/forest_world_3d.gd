@@ -99,6 +99,9 @@ func _build_effects_pass() -> void:
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(dungeon.player): return
+	# The previous dungeon scene restores the 2D mask as it leaves, a frame after
+	# this one starts (Main swaps scenes with queue_free): keep the 2D art hidden.
+	get_viewport().canvas_cull_mask &= ~(EFFECT_LAYER | HIDDEN_LAYER)
 	_sync_objects()
 	_update_camera(delta)
 	art.fade_trees(to_world(dungeon.player.global_position),camera.global_position-focus,delta)
