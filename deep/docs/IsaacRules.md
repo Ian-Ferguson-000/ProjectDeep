@@ -63,9 +63,22 @@ plinth with its price under it. **Stand on one** to see its name, rarity, price 
 effect, then **press E to buy** (the tag says how many coins you're short). E at the
 stall still opens the full list. Layout: `slasher_balance.json → shop_floor`.
 
-The trader lays out **3 items, each uncommon (70%) or rare (30%)**, every one
-**15 coins**; Charisma adjusts the price. No hearts, keys or other pickups
-(`data/trader.json`: `base_slots`, `slot_tier_weights`, `prices`).
+The trader lays out **3 items**, each rolled at the stage's odds below, every
+one **15 coins**; Charisma adjusts the price. No hearts, keys or other pickups
+(`data/trader.json`: `base_slots`, `slot_rarity`, `prices`).
+
+## Item rarity by stage
+
+Every item roll (chests, treasure rooms, boss items, trader slots) uses its
+stage's odds, out of 100 (`data/loot_tables.json → rarity_weights_by_stage`):
+
+| Stage | Uncommon | Rare | Very rare | Legendary |
+| --- | --- | --- | --- | --- |
+| Forest | 70 | 25 | 4 | 1 |
+| Crypt | 60 | 25 | 10 | 5 |
+| Hell | 40 | 40 | 10 | 10 |
+
+If a stage rolls a rarity the class has run out of, it steps down a tier.
 
 ## Items
 

@@ -324,8 +324,8 @@ static func _ordinal(n:int)->String:
 static func get_slasher_item_rules_text(item_id:String)->String:return String(get_slasher_item_effects(item_id).get("rules",""))
 static func get_slasher_item_stat_conversions(item_id:String)->Dictionary:return Dictionary(get_slasher_item_effects(item_id).get("conversions",{})).duplicate(true)
 
-static func get_slasher_chest_rarity_weights(floor_number:int,endless_cycle:int=0)->Dictionary:
-	_load_all();var weights:Dictionary=get_rarity_weights(clampi(floor_number,1,5)).duplicate(true)
+static func get_slasher_chest_rarity_weights(floor_number:int,endless_cycle:int=0,dungeon_id:String="")->Dictionary:
+	_load_all();var weights:Dictionary=get_rarity_weights(clampi(floor_number,1,5),dungeon_id).duplicate(true)
 	if endless_cycle<=0:return weights
 	var scaling:Dictionary=Dictionary(_slasher_item_effects.get("endless_rarity",{}));var shift:int=endless_cycle*int(scaling.get("shift_per_cycle",4))
 	weights["common"]=maxi(0,int(weights.get("common",0))-shift*2);weights["uncommon"]=maxi(0,int(weights.get("uncommon",0))-shift)
@@ -391,8 +391,21 @@ static func get_loot_table() -> Dictionary:
 	_load_all()
 	return _loot_tables
 
-static func get_rarity_weights(floor: int) -> Dictionary:
+## Item rarity odds for a dungeon's stage (forest, crypt, hell): loot_tables.json.
+static func stage_of(dungeon_id: String) -> String:
 	_load_all()
+	return String(Dictionary(_loot_tables.get("stage_of_dungeon",{})).get(dungeon_id,"forest"))
+
+static func get_stage_rarity_weights(dungeon_id: String) -> Dictionary:
+	_load_all()
+	var stages: Dictionary = _loot_tables.get("rarity_weights_by_stage",{})
+	return Dictionary(stages.get(stage_of(dungeon_id),stages.get("forest",{"uncommon":1}))).duplicate(true)
+
+## Older per-floor tables still work if a data file has one; otherwise the
+## stage's odds (dungeon_id "" is the forest).
+static func get_rarity_weights(floor: int, dungeon_id: String = "") -> Dictionary:
+	_load_all()
+	if _loot_tables.has("rarity_weights_by_stage"): return get_stage_rarity_weights(dungeon_id)
 	var weights_by_floor_value: Variant = _loot_tables.get("rarity_weights_by_floor", {})
 	var weights_by_floor: Dictionary = weights_by_floor_value if weights_by_floor_value is Dictionary else {}
 	var weights_value: Variant = weights_by_floor.get(str(floor), weights_by_floor.get("1", {}))

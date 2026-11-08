@@ -6,9 +6,9 @@
     "potion_drops: true lets healing potions drop from enemies and appear in loot caches during runs, and lets potion relics into the drop pool.",
     "prices: coins per rarity. Isaac style: every item is 15 coins (Charisma adjusts).",
     "base_slots: how many items the trader lays out (3).",
-    "slot_tier_weights: each slot rolls its rarity from these (uncommon or rare only; out of the total).",
     "bonus_slots: extra slots that only sometimes appear ([] = none), rarity from tier_weights.",
-    "pickup_offers: pickups on the counter, e.g. {\"kind\":\"heart\",\"name\":\"Red Heart\",\"price\":3} ([] = none)."
+    "pickup_offers: pickups on the counter, e.g. {\"kind\":\"heart\",\"name\":\"Red Heart\",\"price\":3} ([] = none).",
+    "slot_rarity: \"stage\" rolls each slot's rarity from the stage's odds in loot_tables.json (rarity_weights_by_stage), the same as chests. Put a table here instead, e.g. {\"uncommon\":70,\"rare\":30}, to give the trader its own odds."
   ],
   "bonus_slots": [],
   "tier_weights": {
@@ -27,8 +27,5 @@
   "potion_drops": true,
   "base_slots": 3,
   "pickup_offers": [],
-  "slot_tier_weights": {
-    "uncommon": 70,
-    "rare": 30
-  }
+  "slot_rarity": "stage"
 }

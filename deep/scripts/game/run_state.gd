@@ -897,7 +897,9 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 	# The slots that are always there hold the lowest tier (there's no common tier now).
 	# Each base slot rolls its rarity from slot_tier_weights (uncommon or rare by
 	# default); without that it holds base_slot_rarity.
-	var slot_weights: Dictionary = settings.get("slot_tier_weights",{})
+	# "stage": the same odds as chests for this dungeon's stage (loot_tables.json).
+	var slot_setting: Variant = settings.get("slot_rarity",settings.get("slot_tier_weights",{}))
+	var slot_weights: Dictionary = GameBalance.get_stage_rarity_weights(active_dungeon_id) if slot_setting is String and slot_setting == "stage" else (Dictionary(slot_setting) if slot_setting is Dictionary else {})
 	for index in int(settings.get("base_slots",settings.get("common_slots",3))):
 		if slot_weights.is_empty(): slots.append(String(settings.get("base_slot_rarity","uncommon"))); continue
 		var slot_total := 0.0
@@ -925,6 +927,13 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for index in slots.size():
 		var pool: Array[String] = _item_ids_for_rarity(items,slots[index]).filter(func(id): return not used.has(id))
+		# Nothing left at that rarity (two legendaries rolled, say): step down a tier, then up.
+		if pool.is_empty():
+			var order := ["legendary","very_rare","rare","uncommon"]
+			var at := maxi(0,order.find(slots[index]))
+			for tier in order.slice(at + 1) + order.slice(0,at):
+				pool = _item_ids_for_rarity(items,String(tier)).filter(func(id): return not used.has(id))
+				if not pool.is_empty(): slots[index] = String(tier); break
 		if pool.is_empty(): continue
 		pool.sort()
 		var item_id: String = pool[rng.randi_range(0,pool.size() - 1)]
@@ -1147,7 +1156,7 @@ func generate_slasher_chest_choices(floor_number:int,chest_identity:Variant,endl
 	# Chest offerings deliberately use their own RNG so opening one never perturbs encounter or chest loot rolls.
 	var identity_hash:int=String(chest_identity).hash();var source_rng:=RandomNumberGenerator.new()
 	source_rng.seed=get_current_floor_seed()*1103515245+floor_number*961748927+identity_hash
-	var choices:Array[String]=[];var items:Dictionary=GameBalance.get_items();var weights:Dictionary=GameBalance.get_slasher_chest_rarity_weights(floor_number,endless_cycle)
+	var choices:Array[String]=[];var items:Dictionary=GameBalance.get_items();var weights:Dictionary=GameBalance.get_slasher_chest_rarity_weights(floor_number,endless_cycle,active_dungeon_id)
 	var choice_count:int=int(GameBalance.get_loot_table().get("choice_count",3));var attempts:int=0
 	while choices.size()<choice_count and attempts<120:
 		attempts+=1;var rarity:String=_roll_weighted_rarity(weights,source_rng);var candidates:Array[String]=_item_ids_for_rarity(items,rarity)
@@ -1813,7 +1822,7 @@ func _make_inventory_entry(item_id: String, item: Dictionary, source_floor: int)
 func _roll_item_rarity(floor: int, source_rng: RandomNumberGenerator) -> String:
 	# Relic rarity uses loot_tables.json's rates as they are. (The Hearth's
 	# Appraisal upgrade improves recovered equipment, not dungeon relics.)
-	var weights: Dictionary = GameBalance.get_rarity_weights(floor)
+	var weights: Dictionary = GameBalance.get_rarity_weights(floor,active_dungeon_id)
 	var total_weight := 0
 	for key in weights.keys():
 		total_weight += maxi(0, int(weights[key]))

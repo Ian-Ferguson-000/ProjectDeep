@@ -1,6 +1,6 @@
 extends SceneTree
 
-## The dungeon trader: exactly 3 items, each uncommon or rare, and nothing else,
+## The dungeon trader: exactly 3 items, rarity from the stage's odds (as chests), and nothing else,
 ## rolled fresh per floor and per run, no consumables anywhere.
 
 var failures: Array[String] = []
@@ -15,7 +15,6 @@ func _run() -> void:
 	# Shape and pricing.
 	var offers := state.get_merchant_offers("forest","dungeon").filter(func(o): return String(o.kind) == "item")
 	_expect(offers.size() == 3,"Trader should show 3 items, shows %d" % offers.size())
-	for index in offers.size(): _expect(String(offers[index].rarity) in ["uncommon","rare"],"Slot %d is %s, not uncommon or rare" % [index + 1,offers[index].rarity])
 	for offer in offers:
 		_expect(String(offer.kind) == "item","Trader sold a %s" % offer.kind)
 		_expect(int(offer.gold) == int(prices[String(offer.rarity)]),"%s priced wrong" % offer.name)
@@ -59,18 +58,32 @@ func _run() -> void:
 	var expedition_run := RunState.new(); expedition_run.attach_campaign(c); expedition_run.active_character_id = c.living_roster()[0].id; expedition_run.start_new_run(null,"forest")
 	_expect(c.expedition.floor_seed == expedition_run.floor_seed and ExpeditionState.from_dict(c.expedition.to_dict()).floor_seed == expedition_run.floor_seed,"Run seed not saved with the expedition")
 
-	# Rarity mix: both uncommon and rare turn up, never anything higher.
-	var seen := {}
-	for sample in 300:
-		state.floor_seed = 1000 + sample * 31
-		var stock := state.get_merchant_offers("forest","dungeon")
-		_expect(stock.size() == 3,"Trader stock was not 3 items")
-		for extra in stock: seen[String(extra.rarity)] = int(seen.get(String(extra.rarity),0)) + 1
-	_expect(seen.has("uncommon") and seen.has("rare") and seen.size() == 2,"Trader rarities: %s" % [seen])
-	var weights: Dictionary = settings.slot_tier_weights
-	var expected_rare := float(weights.rare) / (float(weights.rare) + float(weights.uncommon))
-	var rare_share := float(seen.get("rare",0)) / 900.0
-	_expect(absf(rare_share - expected_rare) < 0.07,"Rare share %.2f, expected about %.2f" % [rare_share,expected_rare])
+	# Rarity mix follows the stage (loot_tables.json rarity_weights_by_stage):
+	# forest, crypt and hell each roll their own odds, for the trader and chests alike.
+	for dungeon in ["forest","crypt","balors_hell"]:
+		var stage_run := RunState.new(); stage_run.set_class("warrior"); stage_run.start_new_run(null,dungeon)
+		var weights: Dictionary = GameBalance.get_stage_rarity_weights(dungeon)
+		var total := 0.0
+		for key in weights: total += float(weights[key])
+		var seen := {}
+		var rolls := 0
+		for sample in 700:
+			stage_run.floor_seed = 1000 + sample * 31
+			var stock := stage_run.get_merchant_offers(dungeon,"dungeon")
+			_expect(stock.size() == 3,"%s trader stock was not 3 items" % dungeon)
+			for extra in stock: seen[String(extra.rarity)] = int(seen.get(String(extra.rarity),0)) + 1; rolls += 1
+		for key in ["uncommon","rare"]:
+			var share := float(seen.get(key,0)) / float(rolls)
+			var want := float(weights.get(key,0)) / total
+			_expect(absf(share - want) < 0.06,"%s trader %s share %.2f, expected about %.2f" % [dungeon,key,share,want])
+	_expect(GameBalance.stage_of("forest") == "forest" and GameBalance.stage_of("crypt") == "crypt" and GameBalance.stage_of("balors_hell") == "hell","Dungeons map to the wrong stages")
+	for pair in [["forest",[70,25,4,1]],["crypt",[60,25,10,5]],["balors_hell",[40,40,10,10]]]:
+		var odds: Dictionary = GameBalance.get_stage_rarity_weights(pair[0])
+		var got := ["uncommon","rare","very_rare","legendary"].map(func(key): return int(odds.get(key,-1)))
+		_expect(got == pair[1],"%s odds are %s, want %s" % [pair[0],got,pair[1]])
+	# Chests in the forest use the forest odds.
+	var chest_run := RunState.new(); chest_run.set_class("warrior"); chest_run.start_new_run(null,"forest")
+	_expect(GameBalance.get_slasher_chest_rarity_weights(1,0,"forest") == GameBalance.get_stage_rarity_weights("forest"),"Forest chests ignore the forest odds")
 
 	# Buying: expensive, one each, refreshed next floor.
 	state.floor_seed = 4242; state.current_floor = 1
