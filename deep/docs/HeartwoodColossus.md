@@ -7,8 +7,9 @@ the **Heartwood Throne** arena and the guardian is the Heartwood Colossus.
 
 ## The fight
 
-A corrupted ancient tree rooted in the middle of a 35×19 arena. It never moves:
-its body fills a 7×5 block of the room, and you fight around it. Its trunk can't
+A corrupted ancient tree built into the north wall of a 35×19 arena, goliath
+sized (docs/GuardianArenas.md). It never moves: its body fills a 13×7 block of
+the room against that wall, and you fight in front of it. Its trunk can't
 be hurt. After every attack a **weak point opens**, glowing with a "!" and a
 ring that runs down like a timer. Hit it then.
 
@@ -36,7 +37,7 @@ All numbers are in `data/slasher_balance.json` → `enemies.heartwood_colossus`
 The colossus is drawn in code as a placeholder. To use real art, set these on
 the colossus (`scripts/slasher/slasher_colossus.gd`):
 
-- `body_texture`: the whole tree, centred on the middle of its 7×5 cell block
+- `body_texture`: the whole tree, centred on the middle of its 13×7 cell block
   (336×240 px at game scale; the canopy can extend well beyond).
 - `heart_texture`: the heart weak point (about 60×60).
 - `fist_texture`: a fallen fist (about 70×70).
@@ -46,10 +47,13 @@ working with any art.
 
 ## Making more colossus arenas
 
-In a room scene, add a **Colossus** marker (it shows the 7×5 block it fills) and
-tick the **guardian** role. A guardian room also needs a **Gate down** marker for
-after the fight, and room around the body on all sides. The game picks a guardian
-room for the gate room on guardian floors whenever one exists.
+In a room scene, add a **Colossus** marker and tick the **guardian** role. Wherever
+the marker is painted, the game moves the guardian against the north wall, seals
+the north door, hides the way on inside its body and puts a portal home beside
+it (docs/GuardianArenas.md). Keep the top seven rows clear for its body and the
+cells to its east clear for the portal. The room still needs a **Gate down**
+marker to pass validation, but the game uses the one inside the body. The game
+picks a guardian room for the gate room on guardian floors whenever one exists.
 
 ## Other colossi
 

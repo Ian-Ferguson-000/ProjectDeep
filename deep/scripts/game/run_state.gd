@@ -1,7 +1,8 @@
 extends RefCounted
 class_name RunState
 
-const TUTORIAL_MAX_HEALTH := 3
+## Three hearts (health is in half hearts).
+const TUTORIAL_MAX_HEALTH := 6
 const MAX_HERO_LEVEL := 20
 const FALLBACK_XP_THRESHOLDS := [0, 0, 100, 220, 380, 580, 820, 1100, 1420, 1780, 2180, 2620, 3100, 3620, 4180, 4780, 5420, 6100, 6820, 7580, 8380]
 const FALLBACK_CLASS_STATS := {
@@ -33,6 +34,11 @@ var selected_class_id: String = "warrior"
 var selected_class_name: String = "Warrior"
 var class_resource: int = 0
 var current_health: int = 12
+## Soul hearts, in half hearts: extra health on top of your red hearts that
+## takes damage first and can't be healed back (SimpleCombat).
+var soul_health: int = 0
+## Healing bought from the trader, applied by the dungeon to the adventurer.
+var pending_heal: int = 0
 var max_health: int = 12
 var gold: int = 0
 var keys: int = 0
@@ -121,7 +127,7 @@ func run_snapshot() -> Dictionary:
 	return {"floor":current_floor,"floor_seed":floor_seed,"gold":gold,"keys":keys,"potions":potions,"class_resource":class_resource,
 		"field_run":var_to_str(field_run),"starter_reward_claimed":starter_reward_claimed,"slasher_endless_mode":slasher_endless_mode,
 		"slasher_campaign_boss_cleared":slasher_campaign_boss_cleared,"slasher_merchant_interlude":slasher_merchant_interlude,
-		"run_seed":run_seed,"run_seeded":run_seeded,"materials":materials.duplicate()}
+		"run_seed":run_seed,"run_seeded":run_seeded,"materials":materials.duplicate(),"soul_health":soul_health}
 
 ## Puts a saved snapshot back when a saved expedition is continued. Only used
 ## when it belongs to the floor being resumed.
@@ -137,6 +143,7 @@ func restore_run_snapshot(snapshot: Dictionary) -> bool:
 	slasher_merchant_interlude = bool(snapshot.get("slasher_merchant_interlude",slasher_merchant_interlude))
 	run_seed = int(snapshot.get("run_seed",run_seed)); run_seeded = bool(snapshot.get("run_seeded",run_seeded))
 	materials = Dictionary(snapshot.get("materials",materials)).duplicate()
+	soul_health = int(snapshot.get("soul_health",soul_health))
 	return true
 
 func _restore_campaign_runtime() -> void:
@@ -333,6 +340,7 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	# expedition so a resumed run keeps its floors. See RunSeed.
 	run_seeded = requested_seed > 0
 	materials = {}
+	soul_health = 0
 	floor_seed = requested_seed if run_seeded else RunSeed.random_value()
 	run_seed = floor_seed
 	requested_seed = 0
@@ -618,6 +626,13 @@ func get_xp_to_next_level() -> int:
 		return 0
 	return _xp_required_for_level(level + 1) - int(profile["xp"])
 
+## Soul hearts: +hearts of soul health (in half hearts), within the total cap.
+func add_soul_hearts(hearts: float) -> int:
+	var room: int = maxi(0,SimpleCombat.max_health_units() - max_health - soul_health)
+	var added: int = mini(room,int(round(hearts * SimpleCombat.units_per_heart())))
+	soul_health += added
+	return added
+
 func get_stats() -> Dictionary:
 	var profile: Dictionary = _active_profile()
 	var stats_value: Variant = profile.get("stats", {})
@@ -777,10 +792,23 @@ func get_contextual_item_modifier(stat_id: String, context: Dictionary = {}) -> 
 			total += int(floor(float(context.get("range_bonus", 0)) * float(effect["penetration_from_range"])))
 	return total
 
+## Run coins are scarce (Isaac style); each is worth this much gold when banked
+## at the Hearth (slasher_balance.json pickups.gold_per_coin).
+static func coin_value() -> int:
+	if coin_value_override > 0: return coin_value_override
+	return maxi(1,int(GameBalance.get_slasher_balance("pickups").get("gold_per_coin",1)))
+## Tests of the Hearth's cut arithmetic set this to 1 (a coin = 1 gold).
+static var coin_value_override := 0
+
 func apply_reward_bonus(base_amount: int, reward_type: String) -> int:
 	var modifier_id := "%s_bonus_percent" % reward_type
 	var bonus_percent: int = get_active_item_modifier_value(modifier_id)
-	return maxi(0, int(round(float(base_amount) * (1.0 + float(bonus_percent) / 100.0))))
+	# Coins are small numbers (Isaac style), so the fraction left over is the
+	# chance of one more: +20% on a penny is a 20% chance of a second coin.
+	var exact := float(base_amount) * (1.0 + float(bonus_percent) / 100.0)
+	var whole := int(floor(exact))
+	if randf() < exact - float(whole): whole += 1
+	return maxi(0, whole)
 
 func _ensure_merchant_progress() -> void:
 	for merchant_id in GameBalance.get_merchants().keys():
@@ -866,7 +894,22 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 	var seed_value := hash("%s:%d:%d:%s" % [merchant_id,get_current_floor_seed(),current_floor,active_dungeon_id])
 	var rng := RandomNumberGenerator.new(); rng.seed = seed_value
 	var slots: Array[String] = []
-	for index in int(settings.get("common_slots",3)): slots.append("common")
+	# The slots that are always there hold the lowest tier (there's no common tier now).
+	# Each base slot rolls its rarity from slot_tier_weights (uncommon or rare by
+	# default); without that it holds base_slot_rarity.
+	# "stage": the same odds as chests for this dungeon's stage (loot_tables.json).
+	var slot_setting: Variant = settings.get("slot_rarity",settings.get("slot_tier_weights",{}))
+	var slot_weights: Dictionary = GameBalance.get_stage_rarity_weights(active_dungeon_id) if slot_setting is String and slot_setting == "stage" else (Dictionary(slot_setting) if slot_setting is Dictionary else {})
+	for index in int(settings.get("base_slots",settings.get("common_slots",3))):
+		if slot_weights.is_empty(): slots.append(String(settings.get("base_slot_rarity","uncommon"))); continue
+		var slot_total := 0.0
+		for key in slot_weights: slot_total += float(slot_weights[key])
+		var slot_roll := rng.randf() * slot_total
+		var slot_tier := String(slot_weights.keys().back())
+		for key in slot_weights:
+			slot_roll -= float(slot_weights[key])
+			if slot_roll <= 0.0: slot_tier = String(key); break
+		slots.append(slot_tier)
 	var weights: Dictionary = settings.get("tier_weights",{"uncommon":1})
 	for bonus in Array(settings.get("bonus_slots",[])):
 		if rng.randf() < float(Dictionary(bonus).get("chance",0.0)):
@@ -884,6 +927,13 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for index in slots.size():
 		var pool: Array[String] = _item_ids_for_rarity(items,slots[index]).filter(func(id): return not used.has(id))
+		# Nothing left at that rarity (two legendaries rolled, say): step down a tier, then up.
+		if pool.is_empty():
+			var order := ["legendary","very_rare","rare","uncommon"]
+			var at := maxi(0,order.find(slots[index]))
+			for tier in order.slice(at + 1) + order.slice(0,at):
+				pool = _item_ids_for_rarity(items,String(tier)).filter(func(id): return not used.has(id))
+				if not pool.is_empty(): slots[index] = String(tier); break
 		if pool.is_empty(): continue
 		pool.sort()
 		var item_id: String = pool[rng.randi_range(0,pool.size() - 1)]
@@ -893,7 +943,7 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 		var sold := trader_sold.has(offer_id)
 		result.append({"offer_id":offer_id,"kind":"item","item_id":item_id,"gold":SimpleCombat.price(int(prices.get(slots[index],100)),int(get_stats().get("cha",10))),"base_gold":int(prices.get(slots[index],100)),"favor":0,"min_rank":0,"unlocked":true,"claimed":false,
 			"name":String(item.get("name",item_id)),"description":String(item.get("description","")),"rules_text":_sentence(GameBalance.get_slasher_item_rules_text(item_id).trim_prefix("Slasher: ")),"rarity":String(item.get("rarity",slots[index])),
-			"max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":index + 1,"bonus_slot":index >= int(settings.get("common_slots",3))})
+			"max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":index + 1,"bonus_slot":index >= int(settings.get("base_slots",settings.get("common_slots",3)))})
 	return result
 
 func get_merchant_offers(merchant_id: String, location: String) -> Array[Dictionary]:
@@ -1096,7 +1146,7 @@ func generate_slasher_chest_choices(floor_number:int,chest_identity:Variant,endl
 	# Chest offerings deliberately use their own RNG so opening one never perturbs encounter or chest loot rolls.
 	var identity_hash:int=String(chest_identity).hash();var source_rng:=RandomNumberGenerator.new()
 	source_rng.seed=get_current_floor_seed()*1103515245+floor_number*961748927+identity_hash
-	var choices:Array[String]=[];var items:Dictionary=GameBalance.get_items();var weights:Dictionary=GameBalance.get_slasher_chest_rarity_weights(floor_number,endless_cycle)
+	var choices:Array[String]=[];var items:Dictionary=GameBalance.get_items();var weights:Dictionary=GameBalance.get_slasher_chest_rarity_weights(floor_number,endless_cycle,active_dungeon_id)
 	var choice_count:int=int(GameBalance.get_loot_table().get("choice_count",3));var attempts:int=0
 	while choices.size()<choice_count and attempts<120:
 		attempts+=1;var rarity:String=_roll_weighted_rarity(weights,source_rng);var candidates:Array[String]=_item_ids_for_rarity(items,rarity)
@@ -1107,15 +1157,14 @@ func generate_slasher_chest_choices(floor_number:int,chest_identity:Variant,endl
 	pending_chest_choices.assign(choices);return choices
 
 func _roll_weighted_rarity(weights:Dictionary,source_rng:RandomNumberGenerator)->String:
-	weights=_rarity_weights_allowed_by_tavern(weights)
 	var total:int=0
 	for value:Variant in weights.values():total+=maxi(0,int(value))
-	if total<=0:return "common"
+	if total<=0:return "uncommon"
 	var roll:int=source_rng.randi_range(1,total);var running:int=0
 	for key:Variant in weights:
 		running+=maxi(0,int(weights[key]))
 		if roll<=running:return String(key)
-	return "common"
+	return "uncommon"
 
 func choose_chest_item(item_id: String) -> Array[String]:
 	var logs: Array[String] = []
@@ -1145,6 +1194,9 @@ func add_inventory_item(item_id: String, source_floor: int) -> Array[String]:
 		return ["The chest sputters; its relic is missing from the catalog."]
 	var entry: Dictionary = _make_inventory_entry(item_id, item, source_floor)
 	inventory_items.append(entry)
+	# Soul-heart items (Isaac): their soul hearts arrive once, on pickup.
+	var soul := int(Dictionary(item.get("modifiers",{})).get("soul_hearts",0))
+	if soul > 0 and SimpleCombat.enabled(): add_soul_hearts(soul)
 	if String(entry["duration_type"]) == "permanent":
 		var profile: Dictionary = _active_profile()
 		var permanent_items_value: Variant = profile.get("permanent_items", [])
@@ -1496,7 +1548,7 @@ func _derive_stats(class_id: String, level: int, stats: Dictionary) -> Dictionar
 	legacy["range"] = 0
 	legacy["critical_range"] = 20
 	# Simple combat: health is hearts from Constitution (CON 20 = 5).
-	if SimpleCombat.enabled(): legacy["max_health"] = SimpleCombat.hearts_for(int(stats.get("con",10)))
+	if SimpleCombat.enabled(): legacy["max_health"] = SimpleCombat.health_for(int(stats.get("con",10)))
 	return legacy
 
 func _apply_inventory_modifiers_to_derived(derived_stats: Dictionary) -> void:
@@ -1504,7 +1556,12 @@ func _apply_inventory_modifiers_to_derived(derived_stats: Dictionary) -> void:
 	for key in modifiers.keys():
 		if String(key).ends_with("_bonus_percent"):
 			continue
-		_apply_derived_modifier(derived_stats, String(key), int(modifiers[key]))
+		var amount := int(modifiers[key])
+		# Items' max_health is in whole hearts (Health Up = one heart container).
+		if String(key) == "max_health" and SimpleCombat.enabled(): amount *= SimpleCombat.units_per_heart()
+		_apply_derived_modifier(derived_stats, String(key), amount)
+	if SimpleCombat.enabled() and derived_stats.has("max_health"):
+		derived_stats["max_health"] = clampi(int(derived_stats["max_health"]), SimpleCombat.units_per_heart(), SimpleCombat.max_health_units())
 
 func _apply_progression_modifiers_to_derived(profile: Dictionary, derived_stats: Dictionary) -> void:
 	var modifiers: Dictionary = _selected_progression_modifiers(profile)
@@ -1753,12 +1810,14 @@ func _make_inventory_entry(item_id: String, item: Dictionary, source_floor: int)
 	}
 
 func _roll_item_rarity(floor: int, source_rng: RandomNumberGenerator) -> String:
-	var weights: Dictionary = _rarity_weights_allowed_by_tavern(GameBalance.get_rarity_weights(floor))
+	# Relic rarity uses loot_tables.json's rates as they are. (The Hearth's
+	# Appraisal upgrade improves recovered equipment, not dungeon relics.)
+	var weights: Dictionary = GameBalance.get_rarity_weights(floor,active_dungeon_id)
 	var total_weight := 0
 	for key in weights.keys():
 		total_weight += maxi(0, int(weights[key]))
 	if total_weight <= 0:
-		return "common"
+		return "uncommon"
 	var roll := source_rng.randi_range(1, total_weight)
 	var running := 0
 	for key in weights.keys():
@@ -1766,13 +1825,6 @@ func _roll_item_rarity(floor: int, source_rng: RandomNumberGenerator) -> String:
 		if roll <= running:
 			return String(key)
 	return "common"
-
-func _rarity_weights_allowed_by_tavern(source:Dictionary)->Dictionary:
-	var result:=source.duplicate(true);var rank:=int(campaign.tavern_upgrades.get("item_rarity",0)) if campaign!=null else 0
-	var order:Array[String]=["common","uncommon","rare","epic","legendary"];var maximum_index:=mini(order.size()-1,1+rank)
-	for rarity in result.keys():
-		if not order.has(String(rarity)) or order.find(String(rarity))>maximum_index:result[rarity]=0
-	return result
 
 ## Pickup items the active hero could actually use: in the drop pool and allowed
 ## for their class group (pickup_items.json any_class / melee_only / ranged_only).

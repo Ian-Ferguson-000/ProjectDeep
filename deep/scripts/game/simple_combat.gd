@@ -24,6 +24,25 @@ static func rules() -> Dictionary:
 static func enabled() -> bool:
 	return bool(rules().get("enabled",false))
 
+## Isaac-style health: health is counted in half hearts (units_per_heart = 2).
+## Ordinary hits take half a heart (enemy_hit_damage), hits from bosses, mini
+## bosses and champions (elites) a full heart (strong_hit_damage). Soul hearts
+## sit on top and take damage first. Everything together caps at max_total_hearts.
+static func units_per_heart() -> int:
+	return maxi(1,int(rules().get("units_per_heart",1)))
+
+## Health (in half hearts) from Constitution.
+static func health_for(constitution: int) -> int:
+	return hearts_for(constitution) * units_per_heart()
+
+static func max_health_units() -> int:
+	return int(rules().get("max_total_hearts",12)) * units_per_heart()
+
+## How much one enemy hit takes: half a heart, or a full heart from the big ones.
+static func hit_from(attacker: Node) -> int:
+	var strong: bool = is_instance_valid(attacker) and (("boss" in attacker and bool(attacker.get("boss"))) or ("mini_boss" in attacker and bool(attacker.get("mini_boss"))) or ("elite" in attacker and bool(attacker.get("elite"))))
+	return int(rules().get("strong_hit_damage",2)) if strong else enemy_hit_damage()
+
 ## Hearts from Constitution.
 static func hearts_for(constitution: int) -> int:
 	var r := rules()
@@ -54,7 +73,9 @@ static func enemy_health(health: int) -> int:
 
 # ---------------------------------------------------------------- what each stat does
 ##   STR  damage with strength weapons (swords, spears, hammers, shields)
-##   DEX  damage with dexterity weapons (daggers, bows, slings) + a dodge chance
+##   DEX  movement speed for every class, damage with dexterity weapons
+##        (daggers, bows, slings) and a dodge chance. Items that make you faster
+##        add Dexterity ("dex" in their stats).
 ##   CON  hearts
 ##   INT  magic strength (spells)
 ##   WIS  summon strength
@@ -73,6 +94,14 @@ static func dodge_chance(dexterity: int) -> float:
 	if dodge_override >= 0.0: return dodge_override
 	var r := rules()
 	return clampf(maxi(0,dexterity - 10) * float(r.get("dodge_per_dex_point",0.01)),0.0,float(r.get("dodge_max",0.15)))
+
+## Walking speed (pixels a second) from Dexterity, the same for every class:
+## move_speed_base at DEX 10, plus move_speed_per_dex for each point above
+## (or minus for each below), kept between move_speed_min and move_speed_max.
+static func move_speed(dexterity: int) -> float:
+	var r := rules()
+	var speed := float(r.get("move_speed_base",265.0)) + float(dexterity - 10) * float(r.get("move_speed_per_dex",10.0))
+	return clampf(speed,float(r.get("move_speed_min",180.0)),float(r.get("move_speed_max",420.0)))
 
 ## Price multiplier from Charisma (CHA 20 = 30% off, CHA 6 = 12% dearer).
 static func price_factor(charisma: int) -> float:

@@ -16,7 +16,7 @@ func _run() -> void:
 	# Every proc in the item file uses a known type and trigger.
 	for item_id in GameBalance.get_items():
 		for proc in Array(GameBalance.get_slasher_item_effects(String(item_id)).get("procs",[])):
-			_expect(String(proc.get("type","")) in ["wave","chain_lightning","burn","chill","nova","heal"],"%s has an unknown proc type %s" % [item_id,proc.get("type","")])
+			_expect(String(proc.get("type","")) in ["wave","chain_lightning","burn","chill","nova","heal","drop_potion","drop_gold"],"%s has an unknown proc type %s" % [item_id,proc.get("type","")])
 			_expect(String(proc.get("on","hit")) in ["swing","special","dash","hit","kill"],"%s has an unknown proc trigger %s" % [item_id,proc.get("on","")])
 
 	# Attack speed shortens basic cooldowns; move speed raises the speed multiplier.
@@ -26,9 +26,16 @@ func _run() -> void:
 	await _fresh_player("warrior",["duelists_whetstone"])
 	player.use_action("basic")
 	_expect(is_equal_approx(float(player.cooldowns.basic),plain / 1.15),"Attack speed did not shorten the basic cooldown (%.3f vs %.3f)" % [player.cooldowns.basic,plain])
+	# Dexterity is walking speed for everyone; speed items add Dexterity.
+	await _fresh_player("warrior",[])
+	var base_dex: int = int(state.get_stats().get("dex",10))
+	_expect(player.dexterity == base_dex and is_equal_approx(player.speed,SimpleCombat.move_speed(base_dex)),"Walking speed doesn't come from Dexterity (%s at DEX %d)" % [player.speed,base_dex])
+	_expect(SimpleCombat.move_speed(16) > SimpleCombat.move_speed(12) and SimpleCombat.move_speed(12) > SimpleCombat.move_speed(8),"More Dexterity should be faster")
 	await _fresh_player("warrior",["windrunner_boots","quicksilver_locket"])
-	_expect(is_equal_approx(player.item_runtime.conversion("speed_multiplier",1.0),1.12 * 1.08),"Move speed items did not stack: %s" % player.item_runtime.conversion("speed_multiplier",1.0))
+	_expect(player.dexterity == base_dex + 2 and is_equal_approx(player.speed,SimpleCombat.move_speed(base_dex + 2)),"Speed items didn't add Dexterity (DEX %d, speed %s)" % [player.dexterity,player.speed])
 	_expect(is_equal_approx(player.item_runtime.attack_speed_multiplier(),1.12),"Quicksilver attack speed missing")
+	state.add_inventory_item("boots_of_the_hare",1); player.item_runtime.refresh()
+	_expect(player.dexterity == base_dex + 4,"Picking up Boots of the Hare mid-run didn't add 2 Dexterity")
 
 	# Emberwind Edge: the third swing throws a fire crescent that burns.
 	await _fresh_player("warrior",["emberwind_edge"])
@@ -88,8 +95,9 @@ func _run() -> void:
 	# Elite bonus damage now applies (Giant-Bane Grip).
 	await _fresh_player("warrior",["giant_bane_grip"])
 	var elite := _enemy(Vector2(40,0)); elite.elite = true
-	var adjusted: Dictionary = player.item_runtime.adjust_for_target({"damage":100},elite)
-	_expect(int(adjusted.damage) > 100,"Elite damage bonus not applied")
+	var plain_foe := _enemy(Vector2(-40,0))
+	_expect(player.item_runtime.flat_bonus(elite,{}) == 2 and player.item_runtime.flat_bonus(plain_foe,{}) == 1,"Giant-Bane Grip should add +1 damage, +2 against elites")
+	_expect(player.item_runtime.flat_bonus(elite,{"item_proc":true}) == 0,"Item procs shouldn't get flat item damage")
 	_expect(int(player.item_runtime.adjust_for_target({"damage":100},_enemy(Vector2(0,200))).damage) == 100,"Elite bonus applied to a normal enemy")
 
 	# Periodic relics now tick (Chronomancer's Pin).
@@ -100,18 +108,88 @@ func _run() -> void:
 	player.item_runtime._process(0.0)
 	_expect(float(player.cooldowns.special) < 5.0,"Chronomancer's Pin never shaved a cooldown")
 
-	# Starfallen Sigil: specials release a shockwave.
-	await _fresh_player("warrior",["starfallen_sigil"])
-	player.item_procs.on_action("special",10)
-	_expect(player.item_procs.rings.size() == 1,"Starfallen Sigil did not release its shockwave")
+	# Real hits: +damage items add to the 1-4 hit, block items stop whole hits,
+	# Warding Draught soaks exactly one hit, True-Strike adds +1 to the next hit.
+	await _fresh_player("warrior",[])
+	var dummy := _enemy(Vector2(40,0)); dummy.max_health = 100; dummy.health = 100
+	dummy.receive_attack({"damage":player.simple_reference},player)
+	var plain_damage: int = 100 - dummy.health
+	await _fresh_player("warrior",["veterans_whetstone"])
+	var dummy2 := _enemy(Vector2(40,0)); dummy2.max_health = 100; dummy2.health = 100
+	dummy2.receive_attack({"damage":player.simple_reference},player)
+	_expect(100 - dummy2.health == plain_damage + 1,"Veteran's Whetstone didn't add +1 to a real hit (%d vs %d)" % [100 - dummy2.health,plain_damage])
+	player.apply_consumable({"next_attack_accuracy":8})
+	var struck: Dictionary = player.item_runtime.transform_attack({"damage":player.simple_reference},"basic")
+	_expect(bool(struck.get("precision_hit",false)),"True-Strike Tonic didn't make the next attack a precision hit")
+	await _fresh_player("warrior",["wyvernscale_mantle"])
+	player.item_runtime.conversions["block_percent"] = 100.0  # capped at 50%
+	player.dodge_chance = 0.0
+	var blocked := 0
+	for i in 200:
+		player.health = 3; player.invulnerable = 0
+		player.receive_damage(5,Vector2.ZERO)
+		if player.health == 3: blocked += 1
+	_expect(blocked > 60 and blocked < 140,"Block chance should block about half the hits at the 50%% cap (%d of 200)" % blocked)
+	await _fresh_player("warrior",[])
+	player.dodge_chance = 0.0; player.health = 3; player.invulnerable = 0
+	player.apply_consumable({"temporary_aegis":1})
+	player.receive_damage(5,Vector2.ZERO); player.invulnerable = 0
+	_expect(player.health == 3,"Warding Draught didn't block the next hit")
+	player.receive_damage(5,Vector2.ZERO)
+	_expect(player.health == 2,"Warding Draught blocked more than one hit")
+	# Isaac-style items: soul hearts arrive on pickup; Chronomancer's Pin is +1 DEX.
+	await _fresh_player("warrior",[])
+	var plain_dex := player.dexterity
+	await _fresh_player("warrior",["chronomancers_pin"])
+	_expect(player.dexterity == plain_dex + 1,"Chronomancer's Pin should add 1 Dexterity")
+	await _fresh_player("warrior",["wyvernscale_mantle"])
+	_expect(state.soul_health == 3 * SimpleCombat.units_per_heart(),"Wyvernscale Mantle should give 3 soul hearts (%d)" % state.soul_health)
+	player.dodge_chance = 0.0; player.invulnerable = 0
+	var red := player.health
+	player.receive_damage(5,Vector2.ZERO)
+	_expect(player.health == red and state.soul_health == 3 * SimpleCombat.units_per_heart() - 1,"Soul hearts should take the hit first")
+
+	# Deft Hands: attacks recover 10% faster.
+	await _fresh_player("warrior",["deft_hands"])
+	_expect(is_equal_approx(player.item_runtime.attack_speed_multiplier(),1.10),"Deft Hands isn't 10% faster")
+
+	# Blackoak Ward: the first hit in a room is blocked, the next one isn't.
+	await _fresh_player("warrior",["blackoak_ward"])
+	player.dodge_chance = 0.0; player.health = 3; player.invulnerable = 0
+	player.receive_damage(1,Vector2.ZERO)
+	_expect(player.health == 3,"Blackoak Ward didn't block the first hit (%d)" % player.health)
+	player.invulnerable = 0
+	player.receive_damage(1,Vector2.ZERO)
+	_expect(player.health == 2,"Blackoak Ward blocked more than the first hit (%d)" % player.health)
+
+	# Healer's Brooch and Cutpurse's Favor put loot on the floor.
+	await _fresh_player("warrior",["healers_brooch","cutpurses_favor"])
+	var dungeon := FakeDungeon.new(); root.add_child(dungeon); player.reparent(dungeon)
+	var brooch := {"type":"drop_potion","on":"kill","chance":1.0,"_key":"brooch:0"}
+	player.item_procs._fire(brooch,1,null,Vector2(10,10))
+	var purse := {"type":"drop_gold","on":"hit","chance":1.0,"amount_min":2,"amount_max":5,"_key":"purse:0"}
+	player.item_procs._fire(purse,1,null,Vector2(10,10))
+	_expect(dungeon.potions == 1,"Healer's Brooch didn't drop a potion")
+	_expect(dungeon.gold >= 2 and dungeon.gold <= 5,"Cutpurse's Favor didn't drop 2-5 coins (%d)" % dungeon.gold)
+	var brooch_rule: Dictionary = Array(GameBalance.get_slasher_item_effects("healers_brooch").get("procs",[]))[0]
+	_expect(is_equal_approx(float(brooch_rule.chance),0.05) and String(brooch_rule.on) == "kill","Healer's Brooch should be 5% per kill")
+	dungeon.queue_free()
 
 	if failures.is_empty(): print("ITEM_EFFECTS_TESTS_PASSED"); quit(0)
 	else:
 		for failure in failures: push_error(failure)
 		quit(1)
 
+class FakeDungeon extends Node2D:
+	var potions := 0
+	var gold := 0
+	func _spawn_pickup_drop(kind: String, _at: Vector2) -> void:
+		if kind == "potion": potions += 1
+	func _spawn_gold_drop(_at: Vector2, amount: int) -> void: gold += amount
+
 func _fresh_player(class_id: String, items: Array) -> void:
 	for child in root.get_children():
+		if child is FakeDungeon: child.free(); continue
 		if child is SlasherPlayer or child is SlasherEnemy or child.is_in_group("slasher_item_wave"): child.free()
 	state = RunState.new(); state.set_class(class_id); state.start_new_run(null,"forest")
 	state.class_resource = state.get_class_resource_max()

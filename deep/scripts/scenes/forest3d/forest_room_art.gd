@@ -6,10 +6,19 @@ extends Node3D
 var world: Node3D
 var theme := "forest"
 var torches := 0
+## Guardians are goliaths built into the north wall: their models are this much
+## bigger than the cells they block, and sit this far back into the wall.
+const GOLIATH_SCALE := 2.3
+const GOLIATH_BACK := 2.2
+const TAVERN_ROOM := "res://assets/tavern3d/hearth_room.glb"
 var rng := RandomNumberGenerator.new()
 var materials: Dictionary = {}
 var batches: Dictionary = {}
 var dimensions := Vector2.ZERO
+## Trees fade see-through when the player walks near or behind them
+## (slasher_balance.json → tree_fade). Each entry: {root, meshes, alpha}.
+var fading_trees: Array = []
+var fade_rules: Dictionary = {}
 
 func mat(color: String, glow: bool = false) -> StandardMaterial3D:
 	var key := color + str(glow)
@@ -91,15 +100,28 @@ func build(layout: Dictionary) -> void:
 			primitive("box","80aaa0",Vector3(cell.x+.5,-.151,cell.y+.5),Vector3(.42,.008,.018),null,Vector3(0,.2,0))
 	# Each blocked edge has a visible bank. Higher canopy is kept to the rear;
 	# foreground growth is cut down so it never hides combat or door thresholds.
+	# Doorways stay clear (slasher_balance.json tree_fade.door_clear_radius): no
+	# trees or bushes right at an exit, only low shrubs a little further out.
+	var door_points: Array = []
+	for direction in Dictionary(layout.get("doors",{})):
+		door_points.append(Vector2(Vector2i(layout.doors[direction])))
+	var clear_radius := float(GameBalance.get_slasher_balance("tree_fade").get("door_clear_radius",2.6))
 	for value in thicket:
 		var cell: Vector2i = value
+		if body.has(cell): continue
 		var point := Vector3(cell.x+.5,0,cell.y+.5)
 		var near := cell.y > dimensions.y*.65
+		var door_gap := INF
+		for door_point in door_points: door_gap = minf(door_gap,Vector2(cell).distance_to(door_point))
+		if door_gap <= clear_radius*0.6: continue
+		if door_gap <= clear_radius:
+			primitive("orb","46543b",point+Vector3(0,.18,0),Vector3(.9,.45,.85))
+			continue
 		primitive("orb","46543b",point+Vector3(0,.22,0),Vector3(1.05,.65,.95))
 		if (cell.x+cell.y)%2 == 0:
 			var height := rng.randf_range(3.5,4.8) if not near else rng.randf_range(.8,1.3)
 			if cell.x<2 or cell.x>dimensions.x-3: height = minf(height,2.3)
-			tree(point,height)
+			standing_tree(point,height)
 		else:
 			primitive("orb","3e6036",point+Vector3(0,.5,0),Vector3(1.25,.95,1.15))
 	# Non-room tutorial/interlude layouts still receive an honest boundary.
@@ -145,8 +167,10 @@ func _build_crypt(layout: Dictionary, cells: Dictionary, paths: Dictionary, cobb
 		primitive("box","120f18",Vector3(cell.x+.5,-.44,cell.y+.5),Vector3(1.005,.40,1.005))
 		primitive("box","2a3340",Vector3(cell.x+.5,-.18,cell.y+.5),Vector3(1.005,.04,1.005))
 	# Walls: tall at the back, cut down in front so they never hide a fight.
+	var body: Dictionary = layout.get("colossus_cells",{})
 	for value in thicket:
 		var cell: Vector2i = value
+		if body.has(cell): continue
 		var point := Vector3(cell.x+.5,0,cell.y+.5)
 		var near := cell.y > dimensions.y*.65
 		var height := 0.55 if near else 2.3
@@ -203,7 +227,8 @@ func crypt_decor(kind: String, point: Vector3, parent: Node3D = null) -> void:
 func charnel_king(point: Vector3) -> Node3D:
 	var root := Node3D.new()
 	root.name = "CharnelKing"
-	root.position = point
+	root.position = point + Vector3(0,0,-GOLIATH_BACK*.6)
+	root.scale = Vector3.ONE * GOLIATH_SCALE
 	add_child(root)
 	primitive("trunk","0d0a11",Vector3(0,.02,.6),Vector3(6.8,.04,3.2),root)
 	for i in 10:
@@ -234,7 +259,8 @@ func charnel_king(point: Vector3) -> Node3D:
 func bone_heap(point: Vector3) -> Node3D:
 	var root := Node3D.new()
 	root.name = "FallenCharnelKing"
-	root.position = point
+	root.position = point + Vector3(0,0,-GOLIATH_BACK*.6)
+	root.scale = Vector3.ONE * GOLIATH_SCALE
 	add_child(root)
 	var heap := RandomNumberGenerator.new(); heap.seed = 777
 	for i in 30:
@@ -268,6 +294,65 @@ func tree(point: Vector3, height: float, parent: Node3D = null) -> void:
 			primitive("orb",["3d6035","52753d","638348"][i],point+Vector3(cos(angle)*.45,height*.72+i*.14,sin(angle)*.4),Vector3(1.7,1.65,1.65),parent)
 		primitive("orb","66874a",point+Vector3(.08,height-.35,0),Vector3(1.25,1.1,1.2),parent)
 
+## A tree with its own nodes (not batched) so it can fade on its own.
+func standing_tree(point: Vector3, height: float) -> Node3D:
+	var root := Node3D.new()
+	root.name = "Tree"
+	root.position = point
+	add_child(root)
+	tree(Vector3.ZERO,height,root)
+	_track_fading(root)
+	return root
+
+func _track_fading(root: Node3D) -> void:
+	var meshes: Array = []
+	for child in root.get_children():
+		if child is GeometryInstance3D: meshes.append(child)
+	fading_trees.append({"root":root,"meshes":meshes,"alpha":0.0})
+
+## Fades every tree that is close to the player, or stands between the player
+## and the camera, so the player is never hidden behind a canopy.
+func fade_trees(player: Vector3, toward_camera: Vector3, delta: float) -> void:
+	if fade_rules.is_empty(): fade_rules = GameBalance.get_slasher_balance("tree_fade")
+	var rules := fade_rules
+	var near := float(rules.get("near_radius",2.2))
+	var behind_width := float(rules.get("behind_width",1.7))
+	var behind_depth := float(rules.get("behind_depth",6.0))
+	var faded := float(rules.get("faded_transparency",0.72))
+	var speed := float(rules.get("fade_speed",8.0))
+	var look := Vector2(toward_camera.x,toward_camera.z).normalized()
+	var keep: Array = []
+	for record in fading_trees:
+		var root: Node3D = record.root
+		if not is_instance_valid(root): continue
+		keep.append(record)
+		var offset := Vector2(root.global_position.x-player.x,root.global_position.z-player.z)
+		var along := offset.dot(look)
+		var across := absf(offset.cross(look))
+		var hiding := offset.length() < near or (along > -0.5 and along < behind_depth and across < behind_width)
+		var target := faded if hiding else 0.0
+		var alpha: float = move_toward(float(record.alpha),target,delta*speed*faded)
+		if is_equal_approx(alpha,float(record.alpha)) and alpha == target and record.has("set"): continue
+		record.alpha = alpha
+		record["set"] = true
+		for mesh in record.meshes:
+			if is_instance_valid(mesh): _set_see_through(mesh,alpha)
+	fading_trees = keep
+
+## A see-through copy of the mesh's own material (works on every renderer);
+## fully solid again uses the shared opaque material, shadows included.
+func _set_see_through(mesh: MeshInstance3D, alpha: float) -> void:
+	if alpha <= 0.001:
+		mesh.material_override = null
+		return
+	var faded: StandardMaterial3D = mesh.material_override
+	if faded == null:
+		var base: StandardMaterial3D = mesh.mesh.material
+		faded = base.duplicate()
+		faded.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mesh.material_override = faded
+	faded.albedo_color.a = 1.0-alpha
+
 func make_prop(kind: String, point: Vector3) -> Node3D:
 	var root := Node3D.new()
 	root.name = kind.to_pascal_case()
@@ -285,7 +370,9 @@ func make_prop(kind: String, point: Vector3) -> Node3D:
 				primitive("orb","6b6574",Vector3(-.19,.45,.1),Vector3(.45,.24,.36),root)
 		return root
 	match kind:
-		"tree_large","tree_small","tree": tree(Vector3.ZERO,2.7,root)
+		"tree_large","tree_small","tree":
+			tree(Vector3.ZERO,2.7,root)
+			_track_fading(root)
 		"chest":
 			primitive("box","755034",Vector3(0,.25,0),Vector3(.74,.5,.52),root)
 			var lid := primitive("box","9a7042",Vector3(0,.53,0),Vector3(.78,.13,.56),root)
@@ -333,6 +420,7 @@ func door(point: Vector3, direction: String) -> Node3D:
 
 func build_landmarks(layout: Dictionary) -> void:
 	for key in ["campfire","merchant","exit","treasure"]:
+		if key == "exit" and bool(layout.get("exit_under_body",false)): continue
 		var cell: Vector2i = layout.get(key,Vector2i(-100,-100))
 		if cell.x<0: continue
 		var point := Vector3(cell.x+.5,0,cell.y+.5)
@@ -382,6 +470,37 @@ func build_landmarks(layout: Dictionary) -> void:
 			for visual in child.get_children():
 				if visual is Sprite2D: visual.visibility_layer = world.HIDDEN_LAYER
 
+## A shop ware: a low plinth (a crypt slab in the crypt) with the item floating
+## and turning above it. The bobbing runs in ware_bob().
+func ware_stand(point: Vector3, texture: Texture2D, glow: Color) -> Node3D:
+	var root := Node3D.new()
+	root.name = "Ware"
+	root.position = point
+	add_child(root,true)
+	if theme == "crypt":
+		primitive("box","5f5a69",Vector3(0,.12,0),Vector3(.62,.24,.62),root)
+		primitive("box","767180",Vector3(0,.26,0),Vector3(.5,.05,.5),root)
+	else:
+		primitive("trunk","6b4a2e",Vector3(0,.12,0),Vector3(.62,.24,.62),root)
+		primitive("trunk","9a7448",Vector3(0,.25,0),Vector3(.56,.03,.56),root)
+	var icon := Sprite3D.new()
+	icon.name = "Icon"
+	icon.texture = texture
+	icon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	icon.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	icon.shaded = false
+	icon.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	if texture != null: icon.pixel_size = 0.95 / maxf(1.0,float(maxi(texture.get_width(),texture.get_height())))
+	icon.position = Vector3(0,.95,0)
+	root.add_child(icon)
+	var lamp := OmniLight3D.new(); lamp.position = Vector3(0,.9,0); lamp.light_color = glow; lamp.omni_range = 1.6; lamp.light_energy = 0.9
+	root.add_child(lamp)
+	return root
+
+func ware_bob(stand: Node3D, time: float) -> void:
+	var icon := stand.get_node_or_null("Icon") as Node3D
+	if icon != null: icon.position.y = .95 + sin(time * 2.4 + stand.position.x) * .07
+
 func light(point: Vector3, color: Color, radius: float) -> void:
 	var lamp := OmniLight3D.new()
 	lamp.position = point; lamp.light_color = color; lamp.omni_range = radius; lamp.light_energy = 1.4
@@ -390,7 +509,8 @@ func light(point: Vector3, color: Color, radius: float) -> void:
 func colossus(point: Vector3) -> Node3D:
 	var root := Node3D.new()
 	root.name = "HeartwoodColossus"
-	root.position = point
+	root.position = point + Vector3(0,0,-GOLIATH_BACK)
+	root.scale = Vector3.ONE * GOLIATH_SCALE
 	add_child(root)
 	primitive("trunk","57432f",Vector3(0,2.1,0),Vector3(4.5,4.2,3.3),root)
 	for side in [-1.0,1.0]:
@@ -401,6 +521,61 @@ func colossus(point: Vector3) -> Node3D:
 	for i in 7:
 		var angle := PI*i/6
 		primitive("trunk","655036",Vector3(cos(angle)*2.2,.25,sin(angle)*1.9),Vector3(.5,2.3,.5),root,Vector3(.9,angle,0))
+	return root
+
+## The glow of the way on, deep in the fallen guardian's body.
+func hidden_way(point: Vector3) -> Node3D:
+	var root := Node3D.new()
+	root.name = "HiddenWay"
+	root.position = point
+	add_child(root)
+	var colour := Color("a58cff") if theme == "crypt" else Color("91ca81")
+	var lamp := OmniLight3D.new(); lamp.position = Vector3(0,1.2,.8); lamp.light_color = colour; lamp.omni_range = 5.0; lamp.light_energy = 2.2; root.add_child(lamp)
+	primitive("orb",colour.to_html(false),Vector3(0,.12,1.0),Vector3(2.2,.08,1.6),root,Vector3.ZERO,true)
+	return root
+
+## A standing ring of light with a mirage of the Hearth inside it: walk in to
+## go home. The mirage is the real tavern room, seen through a small camera.
+func tavern_portal(point: Vector3) -> Node3D:
+	var root := Node3D.new()
+	root.name = "TavernPortal"
+	root.position = point
+	add_child(root)
+	# Face the camera (it looks from the south-east).
+	root.rotation.y = atan2(10.0,18.0)
+	# Big enough to walk into, leaning back a little towards the high camera.
+	var frame := Node3D.new(); frame.name = "Frame"; frame.scale = Vector3.ONE*1.45; frame.rotation.x = -0.45; root.add_child(frame)
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new(); torus.inner_radius = 1.0; torus.outer_radius = 1.22; torus.rings = 28; torus.ring_segments = 8
+	ring.mesh = torus; ring.material_override = mat("ffd27a",true); ring.rotation.x = PI*.5; ring.position.y = 1.35; ring.name = "Ring"
+	frame.add_child(ring)
+	for x in [-1.0,1.0]: primitive("box","8a7a5a",Vector3(x*.9,.1,0),Vector3(.5,.2,.5),root)
+	var view := SubViewport.new(); view.name = "Mirage"; view.size = Vector2i(220,220); view.own_world_3d = true; view.transparent_bg = false
+	view.render_target_update_mode = SubViewport.UPDATE_ONCE
+	root.add_child(view)
+	var room_scene: PackedScene = load(TAVERN_ROOM) if ResourceLoader.exists(TAVERN_ROOM) else null
+	if room_scene != null: view.add_child(room_scene.instantiate())
+	var sky := WorldEnvironment.new(); var environment := Environment.new()
+	environment.background_mode = Environment.BG_COLOR; environment.background_color = Color("2a1a10")
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; environment.ambient_light_color = Color("ffcf94"); environment.ambient_light_energy = 0.9
+	sky.environment = environment; view.add_child(sky)
+	var hearth := OmniLight3D.new(); hearth.position = Vector3(0,2.6,0); hearth.light_color = Color("ffb65e"); hearth.omni_range = 14.0; hearth.light_energy = 2.0; view.add_child(hearth)
+	var eye := Camera3D.new(); eye.fov = 62.0; view.add_child(eye)
+	eye.position = Vector3(0,2.7,5.2); eye.look_at_from_position(eye.position,Vector3(0,1.0,-2.5))
+	eye.current = true
+	var disc := MeshInstance3D.new(); disc.name = "Glimpse"
+	var quad := QuadMesh.new(); quad.size = Vector2(2.0,2.0); disc.mesh = quad; disc.position.y = 1.35
+	var shader := Shader.new()
+	shader.code = "shader_type spatial; render_mode unshaded, cull_disabled; uniform sampler2D view_tex : source_color; void fragment(){ vec2 uv = UV; uv.x += sin(uv.y*18.0+TIME*2.2)*0.012; uv.y += sin(uv.x*14.0+TIME*1.7)*0.010; float d = distance(UV,vec2(0.5)); vec3 c = texture(view_tex,uv).rgb; c = mix(c, vec3(1.0,0.85,0.55), 0.18+0.08*sin(TIME*2.0)); ALBEDO = c; ALPHA = smoothstep(0.5,0.40,d)*0.92; }"
+	var glimpse := ShaderMaterial.new(); glimpse.shader = shader; glimpse.set_shader_parameter("view_tex",view.get_texture())
+	disc.material_override = glimpse
+	frame.add_child(disc)
+	var glow := OmniLight3D.new(); glow.position = Vector3(0,1.4,.6); glow.light_color = Color("ffcf7a"); glow.omni_range = 4.0; glow.light_energy = 1.6; root.add_child(glow)
+	# Render the room a couple of times once it has loaded, then leave it still.
+	var view_ref: WeakRef = weakref(view)
+	get_tree().create_timer(0.4).timeout.connect(func():
+		var later: SubViewport = view_ref.get_ref()
+		if later != null: later.render_target_update_mode = SubViewport.UPDATE_ONCE)
 	return root
 
 func flush() -> void:
@@ -422,7 +597,8 @@ func flush() -> void:
 func stump(point: Vector3) -> Node3D:
 	var root := Node3D.new()
 	root.name = "FallenHeartwood"
-	root.position = point
+	root.position = point + Vector3(0,0,-GOLIATH_BACK)
+	root.scale = Vector3.ONE * GOLIATH_SCALE
 	add_child(root)
 	primitive("trunk","57432f",Vector3(0,.55,0),Vector3(4.2,1.1,3.2),root)
 	primitive("trunk","9b8554",Vector3(0,1.10,0),Vector3(3.8,.04,2.8),root)

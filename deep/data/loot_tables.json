@@ -1,10 +1,30 @@
 {
   "choice_count": 3,
-  "rarity_weights_by_floor": {
-	"1": {"common": 82, "uncommon": 17, "rare": 1, "very_rare": 0, "legendary": 0},
-	"2": {"common": 68, "uncommon": 27, "rare": 5, "very_rare": 0, "legendary": 0},
-	"3": {"common": 52, "uncommon": 35, "rare": 11, "very_rare": 2, "legendary": 0},
-	"4": {"common": 35, "uncommon": 40, "rare": 18, "very_rare": 6, "legendary": 1},
-	"5": {"common": 20, "uncommon": 37, "rare": 28, "very_rare": 12, "legendary": 3}
-  }
+  "rarity_weights_by_stage": {
+    "forest": {
+      "uncommon": 70,
+      "rare": 25,
+      "very_rare": 4,
+      "legendary": 1
+    },
+    "crypt": {
+      "uncommon": 60,
+      "rare": 25,
+      "very_rare": 10,
+      "legendary": 5
+    },
+    "hell": {
+      "uncommon": 40,
+      "rare": 40,
+      "very_rare": 10,
+      "legendary": 10
+    }
+  },
+  "stage_of_dungeon": {
+    "forest": "forest",
+    "ashen_farmstead": "forest",
+    "crypt": "crypt",
+    "balors_hell": "hell"
+  },
+  "how_to_edit": "Chance of each rarity whenever an item is rolled (chests, treasure rooms, boss and mini-boss items, and every trader slot), set per stage: forest, crypt, hell. Out of the total (100 here). stage_of_dungeon says which stage each dungeon belongs to; any dungeon not listed uses forest. There is no common tier."
 }

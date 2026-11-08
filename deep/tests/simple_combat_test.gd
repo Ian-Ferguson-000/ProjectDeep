@@ -51,7 +51,8 @@ func _run() -> void:
 	for pair in [[20,20,4,5],[10,12,2,3]]:
 		var scene = await _fighter(pair[0],pair[1])
 		var player: SlasherPlayer = scene.player
-		_expect(player.max_health == pair[3] and player.health == pair[3],"CON %d: %d hearts, expected %d" % [pair[1],player.max_health,pair[3]])
+		# Health is in half hearts (Isaac style): CON 20 = 5 hearts = 10 halves.
+		_expect(player.max_health == pair[3] * 2 and player.health == pair[3] * 2,"CON %d: %d half hearts, expected %d" % [pair[1],player.max_health,pair[3] * 2])
 		var hud: DungeonHud = scene.dungeon_hud
 		_expect(hud.heart_count() == pair[3],"The HUD shows %d hearts, expected %d" % [hud.heart_count(),pair[3]])
 		var foe := _dummy(scene)
@@ -68,7 +69,7 @@ func _run() -> void:
 		var before := player.health
 		player.invulnerable = 0.0; player.defense_window = 0.0
 		player.receive_damage(9,Vector2.ZERO,foe)
-		_expect(player.health == before - 1,"An enemy hit for 9 should cost exactly one heart (%d -> %d)" % [before,player.health])
+		_expect(player.health == before - 1,"An ordinary enemy hit for 9 should cost exactly half a heart (%d -> %d)" % [before,player.health])
 		# A fully blocked hit costs nothing.
 		player.invulnerable = 0.0; player.defense_kind = "guard"; player.defense_window = 1.0
 		var guarded := player.health
@@ -121,8 +122,9 @@ func _run() -> void:
 
 	# ---- enemy health is rescaled once on spawn
 	var scene = await _fighter(15,15)
-	var plain := SlasherEnemy.new()
-	plain.configure(1,false,"bandit_cutthroat",false,"bandit_cutthroat")
+	var plain: SlasherEnemy = scene._instantiate_enemy("bandit_cutthroat")
+	plain.champion_roll = 0.99
+	plain.configure(scene.run_state.current_floor,false,"bandit_cutthroat",false,"bandit_cutthroat")
 	var raw := plain.max_health
 	plain.free()
 	var spawned: SlasherEnemy = scene._spawn_enemy(scene.player.global_position + Vector2(300,0),"bandit_cutthroat","bandit_cutthroat")
@@ -142,7 +144,7 @@ func _run() -> void:
 		if String(entry.get("id","")) == member_id: entry["max_health"] = 16; entry["current_health"] = 8
 	var old := CampaignState.new(); old._load_dict(data)
 	var migrated := old.character(member_id)
-	var hearts := SimpleCombat.hearts_for(int(migrated.attributes.get("con",10)))
+	var hearts := SimpleCombat.health_for(int(migrated.attributes.get("con",10)))
 	_expect(migrated.max_health == hearts and migrated.current_health == int(ceil(hearts * 0.5)),"Old health 8/16 should become %d/%d, got %d/%d" % [int(ceil(hearts * 0.5)),hearts,migrated.current_health,migrated.max_health])
 	# A save made with hearts isn't touched again (bonus hearts survive).
 	migrated.max_health = hearts + 1; migrated.current_health = hearts + 1

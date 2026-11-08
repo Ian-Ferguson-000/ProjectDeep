@@ -26,7 +26,7 @@ signal phase_changed(phase: int)
 const WEAK_POINT := preload("res://scripts/slasher/slasher_colossus_weak_point.gd")
 const CELL := 48.0
 ## Cells the body blocks: must match ForestRoomLibrary.COLOSSUS_SIZE.
-const BODY_CELLS := Vector2i(7,5)
+const BODY_CELLS := Vector2i(13,7)
 const PROJECTILE_CAP := 170
 
 @export var body_texture: Texture2D

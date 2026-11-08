@@ -328,64 +328,208 @@
       "block_limit": 5
     },
     "eldritch_bowstaff": {
-      "name": "Eldritch Bowstaff", "slot": "weapon", "tier": 1, "rarity": "uncommon", "price": 82,
+      "name": "Eldritch Bowstaff",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 82,
       "description": "Curse strikes dissolve slain foes into corrupted mini-beasts, one for every curse stack.",
-      "modifiers": {"attack_power": 2}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "crypt", "abyssal_archive"], "class_id": "warrior", "damage": 3, "block": false, "block_limit": 0
+      "modifiers": {
+        "attack_power": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt",
+        "abyssal_archive"
+      ],
+      "class_id": "warrior",
+      "damage": 3,
+      "block": false,
+      "block_limit": 0
     },
     "demon_blade": {
-      "name": "Demon Blade", "slot": "weapon", "tier": 2, "rarity": "rare", "price": 175,
+      "name": "Demon Blade",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 175,
       "description": "Drawing blood triggers Frenzy: attacks become faster and stronger, but incoming damage is doubled.",
-      "modifiers": {"attack_power": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "balors_hell"], "class_id": "warrior", "damage": 4, "block": false, "block_limit": 0
+      "modifiers": {
+        "attack_power": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "balors_hell"
+      ],
+      "class_id": "warrior",
+      "damage": 4,
+      "block": false,
+      "block_limit": 0
     },
     "storm_trident": {
-      "name": "Storm Trident", "slot": "weapon", "tier": 2, "rarity": "rare", "price": 168,
+      "name": "Storm Trident",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 168,
       "description": "Throw into a targeted storm zone to pin creatures and make them take double damage; retrieve it to throw again.",
-      "modifiers": {"attack_power": 2, "speed": 1}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "sunken_mine"], "class_id": "warrior", "damage": 4, "block": false, "block_limit": 0
+      "modifiers": {
+        "attack_power": 2,
+        "speed": 1
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "sunken_mine"
+      ],
+      "class_id": "warrior",
+      "damage": 4,
+      "block": false,
+      "block_limit": 0
     },
     "valkyrian_sling": {
-      "name": "Valkyrian Sling", "slot": "weapon", "tier": 2, "rarity": "rare", "price": 158,
+      "name": "Valkyrian Sling",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 158,
       "description": "A ricocheting shot returns to its wielder and can be parried back with another stack of attack damage.",
-      "modifiers": {"dexterity": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "moonlit_grove"], "class_id": "warrior", "damage": 4, "block": false, "block_limit": 0
+      "modifiers": {
+        "dexterity": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "moonlit_grove"
+      ],
+      "class_id": "warrior",
+      "damage": 4,
+      "block": false,
+      "block_limit": 0
     },
     "dragonbone_dagger": {
-      "name": "Dragonbone Dagger", "slot": "weapon", "tier": 1, "rarity": "uncommon", "price": 88,
+      "name": "Dragonbone Dagger",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 88,
       "description": "Every cut deepens a refreshing wound that strips armor and increases the damage of later strikes.",
-      "modifiers": {"attack_power": 1, "dexterity": 2}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "ashen_farmstead"], "class_id": "warrior", "damage": 3, "block": false, "block_limit": 0
+      "modifiers": {
+        "attack_power": 1,
+        "dexterity": 2
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ashen_farmstead"
+      ],
+      "class_id": "warrior",
+      "damage": 3,
+      "block": false,
+      "block_limit": 0
     },
     "archon_crossbow": {
-      "name": "Archon Crossbow", "slot": "weapon", "tier": 3, "rarity": "legendary", "price": 335,
+      "name": "Archon Crossbow",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 335,
       "description": "Heavy bolts pierce and drag enemies, gaining damage for each creature already speared.",
-      "modifiers": {"attack_power": 4}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "ember_foundry"], "class_id": "warrior", "damage": 5, "block": false, "block_limit": 0
+      "modifiers": {
+        "attack_power": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "ember_foundry"
+      ],
+      "class_id": "warrior",
+      "damage": 5,
+      "block": false,
+      "block_limit": 0
     },
     "divine_hammer": {
-      "name": "Divine Hammer", "slot": "weapon", "tier": 3, "rarity": "legendary", "price": 350,
+      "name": "Divine Hammer",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 350,
       "description": "Hits release radiant splash; a killing smite refreshes the attack and repeats upon the nearest foe.",
-      "modifiers": {"attack_power": 3, "max_health": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "crypt"], "class_id": "warrior", "damage": 5, "block": false, "block_limit": 0
+      "modifiers": {
+        "attack_power": 3,
+        "max_health": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "crypt"
+      ],
+      "class_id": "warrior",
+      "damage": 5,
+      "block": false,
+      "block_limit": 0
     },
     "grim_reaver": {
-      "name": "Grim Reaver", "slot": "weapon", "tier": 3, "rarity": "legendary", "price": 345,
+      "name": "Grim Reaver",
+      "slot": "weapon",
+      "tier": 3,
+      "rarity": "legendary",
+      "price": 345,
       "description": "Wide scythe arcs critically strike often; kills stack a rampage that raises critical chance further.",
-      "modifiers": {"attack_power": 4}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "abyssal_archive"], "class_id": "warrior", "damage": 5, "block": false, "block_limit": 0
+      "modifiers": {
+        "attack_power": 4
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "abyssal_archive"
+      ],
+      "class_id": "warrior",
+      "damage": 5,
+      "block": false,
+      "block_limit": 0
     },
     "sentinel_shield": {
-      "name": "Sentinel Shield", "slot": "weapon", "tier": 1, "rarity": "uncommon", "price": 76,
+      "name": "Sentinel Shield",
+      "slot": "weapon",
+      "tier": 1,
+      "rarity": "uncommon",
+      "price": 76,
       "description": "A controlling shield whose Sentinel Bash drives enemies far back from the line.",
-      "modifiers": {"max_health": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "forest"], "class_id": "warrior", "damage": 3, "block": true, "block_limit": 4
+      "modifiers": {
+        "max_health": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "forest"
+      ],
+      "class_id": "warrior",
+      "damage": 3,
+      "block": true,
+      "block_limit": 4
     },
     "umbral_bow": {
-      "name": "Umbral Bow", "slot": "weapon", "tier": 2, "rarity": "rare", "price": 172,
+      "name": "Umbral Bow",
+      "slot": "weapon",
+      "tier": 2,
+      "rarity": "rare",
+      "price": 172,
       "description": "Shadow-slick arrows leash and slow enemy shadows, stealing their speed for the wielder.",
-      "modifiers": {"dexterity": 3}, "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": ["merchant", "abyssal_archive"], "class_id": "warrior", "damage": 4, "block": false, "block_limit": 0
+      "modifiers": {
+        "dexterity": 3
+      },
+      "icon": "res://assets/ui/tavern/icons/armory.svg",
+      "sources": [
+        "merchant",
+        "abyssal_archive"
+      ],
+      "class_id": "warrior",
+      "damage": 4,
+      "block": false,
+      "block_limit": 0
     },
     "magic_missile_shield": {
       "name": "Missile Focus",
@@ -979,23 +1123,6 @@
         "ember_foundry"
       ]
     },
-    "hearth_soldiers_buckle": {
-      "name": "Soldier's Buckle",
-      "slot": "accessory",
-      "tier": 0,
-      "rarity": "common",
-      "price": 24,
-      "description": "defense +1",
-      "modifiers": {
-        "defense": 1
-      },
-      "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": [
-        "merchant",
-        "forest"
-      ],
-      "effect_id": "soldiers_buckle"
-    },
     "hearth_healers_brooch": {
       "name": "Healer's Brooch",
       "slot": "accessory",
@@ -1083,25 +1210,6 @@
       ],
       "effect_id": "flameheart_talisman"
     },
-    "hearth_starfallen_sigil": {
-      "name": "Starfallen Sigil",
-      "slot": "accessory",
-      "tier": 1,
-      "rarity": "uncommon",
-      "price": 65,
-      "description": "attack bonus +4, spell power +4, initiative modifier +2",
-      "modifiers": {
-        "attack_bonus": 4,
-        "spell_power": 4,
-        "initiative_modifier": 2
-      },
-      "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": [
-        "merchant",
-        "ashen_farmstead"
-      ],
-      "effect_id": "starfallen_sigil"
-    },
     "hearth_heartwood_crown": {
       "name": "Heartwood Crown",
       "slot": "accessory",
@@ -1174,23 +1282,6 @@
         "crypt"
       ],
       "effect_id": "amulet_of_vigor"
-    },
-    "hearth_menders_sachet": {
-      "name": "Mender's Sachet",
-      "slot": "accessory",
-      "tier": 2,
-      "rarity": "rare",
-      "price": 150,
-      "description": "potion heal bonus +2",
-      "modifiers": {
-        "potion_heal_bonus": 2
-      },
-      "icon": "res://assets/ui/tavern/icons/armory.svg",
-      "sources": [
-        "merchant",
-        "crypt"
-      ],
-      "effect_id": "menders_sachet"
     },
     "hearth_keen_edge_oil": {
       "name": "Keen Edge Oil",
@@ -1295,7 +1386,7 @@
         "merchant",
         "forest"
       ],
-      "effect_id": "starfallen_sigil"
+      "effect_id": "thunderheart_amulet"
     },
     "pilgrim_bell": {
       "name": "Pilgrim Bell",
@@ -1346,7 +1437,7 @@
         "merchant",
         "ashen_farmstead"
       ],
-      "effect_id": "starfallen_sigil"
+      "effect_id": "thunderheart_amulet"
     },
     "wardens_seal": {
       "name": "Warden’s Seal",
@@ -1397,7 +1488,7 @@
         "merchant",
         "crypt"
       ],
-      "effect_id": "starfallen_sigil"
+      "effect_id": "thunderheart_amulet"
     },
     "hunters_star": {
       "name": "Hunter’s Star",
@@ -1446,7 +1537,7 @@
       "sources": [
         "abyssal_archive"
       ],
-      "effect_id": "starfallen_sigil"
+      "effect_id": "thunderheart_amulet"
     },
     "fate_relic": {
       "name": "Thread of Tomorrow",
@@ -1476,7 +1567,6 @@
     "fury_potion"
   ],
   "legacy_item_audit": {
-    "soldiers_buckle": "persistent_equipment_source",
     "embershard_focus": "persistent_equipment_source",
     "keen_edge_oil": "persistent_equipment_source",
     "healers_brooch": "persistent_equipment_source",
@@ -1487,31 +1577,25 @@
     "lucky_coin": "legacy_dungeon_reward",
     "scholars_lens": "legacy_dungeon_reward",
     "giant_bane_grip": "persistent_equipment_source",
-    "moonleaf_cloak": "legacy_dungeon_reward",
     "aether_prism": "legacy_dungeon_reward",
     "boots_of_the_hare": "legacy_dungeon_reward",
     "sunward_periapt": "legacy_dungeon_reward",
     "flameheart_talisman": "persistent_equipment_source",
     "kingsroad_aegis": "legacy_dungeon_reward",
-    "starfallen_sigil": "persistent_equipment_source",
     "heartwood_crown": "persistent_equipment_source",
     "ironroot_ring": "legacy_dungeon_reward",
     "sparkwire_wrap": "temporary_effect",
-    "menders_sachet": "persistent_equipment_source",
-    "windknotted_thread": "temporary_effect",
     "chalk_rune_tablet": "temporary_effect",
     "scavengers_token": "legacy_dungeon_reward",
     "drillmasters_whistle": "legacy_dungeon_reward",
     "brambleguard_clasp": "legacy_dungeon_reward",
     "stormglass_bead": "legacy_dungeon_reward",
     "cutpurses_favor": "legacy_dungeon_reward",
-    "redstep_spurs": "legacy_dungeon_reward",
     "apothecarys_cup": "legacy_dungeon_reward",
     "veterans_whetstone": "temporary_effect",
     "wayfinders_compass": "legacy_dungeon_reward",
     "runebound_bracer": "legacy_dungeon_reward",
     "glass_magus_eye": "legacy_dungeon_reward",
-    "pilgrims_greaves": "legacy_dungeon_reward",
     "gilded_beetle": "legacy_dungeon_reward",
     "saints_phial": "legacy_dungeon_reward",
     "war_scholars_codex": "legacy_dungeon_reward",
@@ -1525,8 +1609,6 @@
     "worldbreaker_gauntlet": "persistent_equipment_source",
     "fortune_eaters_idol": "legacy_dungeon_reward",
     "charred_horseshoe": "legacy_dungeon_reward",
-    "harvesters_gloves": "legacy_dungeon_reward",
-    "cinderheart_locket": "legacy_dungeon_reward",
     "aegis_of_the_last_king": "persistent_equipment_source"
   },
   "economy": {

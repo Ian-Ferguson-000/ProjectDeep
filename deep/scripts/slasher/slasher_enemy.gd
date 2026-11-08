@@ -192,7 +192,11 @@ func configure(floor_number:int,is_boss:bool=false,enemy_visual_id:String="feral
 	boss=is_boss;mini_boss=is_mini_boss
 	behavior_tuning=GameBalance.get_slasher_wolf_archetype(behavior_id) if is_wolf() else (GameBalance.get_slasher_wolfmaster_tuning() if boss else (GameBalance.get_slasher_enemy_tuning(behavior_id) if not behavior_id.is_empty() else {}))
 	tuning=GameBalance.get_slasher_enemy_tuning("forest_boss" if boss else "forest_normal")
-	var elite_tuning:=GameBalance.get_slasher_enemy_tuning("forest_elite");elite=is_mini_boss or behavior_id.is_empty() and not boss and floor_number>=int(elite_tuning.get("minimum_floor",3))
+	# Isaac-style champions: any ordinary foe may spawn as a champion.
+	var elite_tuning:=GameBalance.get_slasher_enemy_tuning("forest_elite")
+	var roll:float=champion_roll if champion_roll>=0.0 else randf()
+	champion=not boss and not is_mini_boss and champion_override!=0 and (champion_override==1 or roll<float(elite_tuning.get("champion_chance",0.1)))
+	elite=is_mini_boss or champion
 	max_health=int(tuning.get("health_base",75 if boss else 14))+floor_number*int(tuning.get("health_per_floor",18 if boss else 5))+(int(elite_tuning.get("health_bonus",10)) if elite else 0)
 	health=max_health;damage=int(tuning.get("damage_base",6 if boss else 2))+floor_number*int(tuning.get("damage_per_floor",2 if boss else 1))+(int(elite_tuning.get("damage_bonus",2)) if elite else 0)
 	speed=float(tuning.get("speed_base",62.0 if boss else 68.0))+floor_number*float(tuning.get("speed_per_floor",0.0 if boss else 3.0));attack_range=float(tuning.get("attack_range",44.0 if boss else 34.0));attack_knockback=float(tuning.get("attack_knockback",120.0));reward=int(elite_tuning.get("reward",5)) if elite else int(tuning.get("reward",18 if boss else 3))
@@ -476,17 +480,32 @@ func receive_hit(amount:int,knockback:Vector2=Vector2.ZERO,attacker:SlasherPlaye
 ## Simple combat: enemy health is rescaled once, after configure() and any
 ## subclass set-up, when the enemy enters the scene.
 var health_simplified:=false
+## A champion: double health (forest_elite.champion_health_multiplier), a tint,
+## full-heart hits and a pickup when it dies. champion_override: -1 roll, 0 never, 1 always.
+var champion:=false
+static var champion_override:=-1
+## Set by the dungeon from the floor's seed before configure(), so a seeded run
+## gets the same champions (negative = roll freely).
+var champion_roll:=-1.0
 func _notification(what:int)->void:
 	if what==NOTIFICATION_READY and not health_simplified and SimpleCombat.enabled():
 		health_simplified=true
 		var fraction:=float(health)/float(maxi(1,max_health))
 		max_health=SimpleCombat.enemy_health(max_health);health=maxi(1,int(ceil(max_health*fraction)))
+	if what==NOTIFICATION_READY and champion and not has_meta("champion_ready"):
+		set_meta("champion_ready",true)
+		max_health=maxi(1,int(round(max_health*float(GameBalance.get_slasher_enemy_tuning("forest_elite").get("champion_health_multiplier",2.0)))));health=max_health
+		self_modulate=Color(1.25,0.82,0.62)
+		for child in get_children():
+			if child is AnimatedSprite2D or child is Sprite2D:child.modulate=Color(1.25,0.82,0.62)
 
 func receive_attack(attack:Dictionary,attacker:SlasherPlayer=null)->int:
 	var was_dead := dead
 	var amount:=maxi(1,int(attack.get("damage",1)))
 	# Simple combat: every player hit lands on the 1-4 scale (SimpleCombat).
 	if SimpleCombat.enabled() and is_instance_valid(attacker):amount=SimpleCombat.player_hit(amount,attacker.simple_reference,attacker.simple_base_for(attack))
+	# Item damage: flat extra damage, extra against elites and bosses, and precision hits.
+	if is_instance_valid(attacker) and attacker.item_runtime:amount+=attacker.item_runtime.flat_bonus(self,attack)
 	var push_direction:=attacker.global_position.direction_to(global_position) if is_instance_valid(attacker) else Vector2.ZERO
 	var element:=String(attack.get("damage_type","physical"))
 	if element=="fire" and is_instance_valid(attacker):

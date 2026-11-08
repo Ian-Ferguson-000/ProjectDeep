@@ -143,7 +143,10 @@ static func settle(c: CampaignState, e: ExpeditionState, outcome: String, extra:
 	for id in e.party_ids: cut_percents[id] = HearthCut.percent(c,c.character(id))
 	HearthUpkeep.on_return(c,e.party_ids,outcome)
 	var divine_modifiers := DIVINE.settlement_modifiers(c,e)
-	var gross := roundi(e.carried_gold*float(divine_modifiers.gold_multiplier)) if outcome != "death" else 0
+	# Coins from a played run are scarce (Isaac style) and each is worth
+	# pickups.gold_per_coin gold here; automated runs already earn gold.
+	var coin_worth := 1 if e.deployment_type == "automated" else RunState.coin_value()
+	var gross := roundi(e.carried_gold*coin_worth*float(divine_modifiers.gold_multiplier)) if outcome != "death" else 0
 	var share := 0 if bool(extra.get("legacy_resolve",false)) else int(gross*0.2)
 	var cut_percent := 0
 	var survivors: Array[String] = []

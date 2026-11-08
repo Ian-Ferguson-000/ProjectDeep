@@ -47,7 +47,7 @@ func _run() -> void:
 	var stock_state := RunState.new()
 	stock_state.gold = 1000
 	var quickstep_offer := _offer(stock_state, "tavern", "quickstep_charm", "tavern")
-	_expect(int(quickstep_offer.get("stock_remaining", 0)) == 5, "common merchant item did not begin with five stock", failures)
+	_expect(int(quickstep_offer.get("stock_remaining", 0)) == 5, "uncommon (lowest tier) merchant item did not begin with five stock", failures)
 	for purchase_index in range(5):
 		_expect(stock_state.purchase_merchant_offer("tavern", "quickstep_charm", "tavern")[0].contains("Purchased"), "stocked item purchase %d failed" % purchase_index, failures)
 	var sold_offer := _offer(stock_state, "tavern", "quickstep_charm", "tavern")

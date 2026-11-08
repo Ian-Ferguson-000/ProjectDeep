@@ -20,8 +20,9 @@ const SOLID_KINDS := {"R":"rock","T":"tree_large","C":"chest"}
 const DECORATION_KINDS := {"r":"mossy_rock","p":"pebbles","m":"mushrooms","F":"campfire"}
 const BUSH_KINDS := ["low_bush_a","low_bush_b","rounded_bush"]
 const KNOWN_SYMBOLS := "#.=c~RTCrpmbFeE$*MXPNSWO"
-## Cells a colossus guardian's body blocks, centred on its marker.
-const COLOSSUS_SIZE := Vector2i(7,5)
+## Cells a colossus guardian's body blocks, centred on its marker. Goliath sized:
+## the guardian is built into the north wall of its arena (see build_layout).
+const COLOSSUS_SIZE := Vector2i(13,7)
 ## guardian: the gate room on a guardian floor (holds the colossus).
 const ROLES := ["start","combat","elite","treasure","shop","rest","boss","guardian"]
 ## Rooms where nothing hostile spawns. Campfires and merchants belong only here.
@@ -91,6 +92,11 @@ static func build_layout(template_data: Dictionary, open_doors: Array, seed_valu
 	var enemy_markers: Array[Vector2i] = []; var elite_markers: Array[Vector2i] = []; var loot_spawns: Array[Vector2i] = []
 	var markers := {}
 	var doors := {}
+	# Guardian arenas: the guardian fills the north wall, so the north door is
+	# sealed (you always come in from the east, west or south, never on top of it).
+	var guardian_room := Array(template_data.get("roles",[])).has("guardian")
+	if guardian_room and open_doors.has("north") and open_doors.size() > 1:
+		open_doors = open_doors.filter(func(direction): return direction != "north")
 	for direction in slots:
 		if open_doors.has(direction): doors[direction] = slots[direction]
 	for y in size.y:
@@ -129,6 +135,29 @@ static func build_layout(template_data: Dictionary, open_doors: Array, seed_valu
 					# Markers dropped onto a trail keep the trail continuous underneath them.
 					if "$MPX*eE".contains(symbol) and _touches_count(rows,cell,"=") >= 2: path_cells[cell] = true
 	var center := Vector2i(size.x/2,size.y/2)
+	# The guardian stands against the north wall, wherever the painter put its
+	# marker. The way on (the gate) is hidden in its body: a passage through the
+	# body opens when it falls. A portal home appears beside it.
+	var passage_cells: Array[Vector2i] = []
+	var portal := Vector2i(-100,-100)
+	# (A save from before this rule may hold an arena reached only from the
+	# north; there the guardian stays where the map puts it.)
+	if markers.has("colossus") and not doors.has("north"):
+		var body := Vector2i(size.x/2,COLOSSUS_SIZE.y/2)
+		markers["colossus"] = body
+		markers["gate"] = body
+		for y in range(body.y,body.y + COLOSSUS_SIZE.y/2 + 1):
+			for x in range(body.x - 1,body.x + 2): passage_cells.append(Vector2i(x,y))
+		var wanted := Vector2i(body.x + COLOSSUS_SIZE.x/2 + 3,body.y + COLOSSUS_SIZE.y/2)
+		var best := 1 << 30
+		var props := {}
+		for prop in solid_props: props[Vector2i(prop.cell)] = true
+		for value in cells:
+			var cell: Vector2i = value
+			if props.has(cell): continue
+			if absi(cell.x - body.x) <= COLOSSUS_SIZE.x/2 + 1 and cell.y <= body.y + COLOSSUS_SIZE.y/2: continue
+			var distance := (cell - wanted).length_squared()
+			if distance < best: best = distance; portal = cell
 	# The colossus's body is part of the room: its cells are solid.
 	var colossus_cells := {}
 	if markers.has("colossus"):
@@ -147,12 +176,13 @@ static func build_layout(template_data: Dictionary, open_doors: Array, seed_valu
 		"enemy_markers":enemy_markers,"elite_markers":elite_markers,"loot_spawns":loot_spawns,
 		"enemy_spawns":[],
 		"doors":doors,"door_slots":slots,
-		"start":Vector2i(markers.get("start",center)),
+		"start":Vector2i(markers.get("start",center)),"center":center,
 		"exit":Vector2i(markers.get("gate",Vector2i(-100,-100))),
 		"merchant":Vector2i(markers.get("merchant",Vector2i(-100,-100))),
 		"treasure":Vector2i(markers.get("treasure",Vector2i(-100,-100))),
 		"campfire":Vector2i(markers.get("campfire",Vector2i(-100,-100))),
 		"colossus":Vector2i(markers.get("colossus",Vector2i(-100,-100))),"colossus_cells":colossus_cells,
+		"passage_cells":passage_cells,"portal":portal,"exit_under_body":not passage_cells.is_empty(),
 		"edges":SlasherForestGenerator.classify_edges(cells),
 	}
 
@@ -246,10 +276,20 @@ static func validate_template(entry: Dictionary) -> Array[String]:
 	var blocked := {}
 	for prop in layout.solid_props: blocked[Vector2i(prop.cell)] = true
 	if Vector2i(layout.campfire).x >= 0: blocked[Vector2i(layout.campfire)] = true
-	var reach := _reachable(layout.cells,blocked,slots.north)
-	for direction in slots:
-		if not reach.has(slots[direction]): errors.append("%s: the %s door cannot be reached from the north door." % [id,direction])
+	# Guardian arenas seal the north door (the guardian fills that wall), so
+	# check reach from the south there; markers under its body don't count.
+	var from := "south" if Dictionary(layout.doors).has("south") and not Dictionary(layout.doors).has("north") else "north"
+	var reach := _reachable(layout.cells,blocked,slots[from])
+	for direction in layout.doors:
+		if not reach.has(slots[direction]): errors.append("%s: the %s door cannot be reached from the %s door." % [id,direction,from])
+	var body: Dictionary = layout.get("colossus_cells",{})
+	if bool(layout.get("exit_under_body",false)):
+		var portal := Vector2i(layout.portal)
+		if portal.x < 0 or not reach.has(portal): errors.append("%s: there's no reachable spot for the portal home beside the guardian." % id)
+		var mouth: Vector2i = Array(layout.passage_cells).back() + Vector2i.DOWN
+		if not reach.has(mouth): errors.append("%s: the way through the fallen guardian at %d,%d can't be reached." % [id,mouth.x,mouth.y])
 	for marker in markers:
+		if body.has(marker): continue
 		if not reach.has(marker): errors.append("%s: the %s at %d,%d cannot be reached." % [id,_marker_name(String(rows[marker.y])[marker.x]),marker.x,marker.y])
 	var roles: Array = Array(entry.get("roles",[]))
 	if roles.has("boss") and Vector2i(layout.exit).x < 0: errors.append("%s: a boss room needs a Gate down marker." % id)

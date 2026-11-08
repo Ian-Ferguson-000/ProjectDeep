@@ -67,6 +67,12 @@ func on_kill(target: Node2D, attack: Dictionary) -> void:
 		if not _ready_to_fire(proc): continue
 		_fire(proc,int(attack.get("damage",1)),null,target.global_position)
 
+## The dungeon the adventurer is in (it owns the loot on the floor).
+func _dungeon() -> Node:
+	var node: Node = player.get_parent() if is_instance_valid(player) else null
+	while node != null and not node.has_method("_spawn_gold_drop"): node = node.get_parent()
+	return node
+
 func _ready_to_fire(proc: Dictionary) -> bool:
 	var key := String(proc._key)
 	if float(proc_cooldowns.get(key,0.0)) > 0.0: return false
@@ -75,7 +81,9 @@ func _ready_to_fire(proc: Dictionary) -> bool:
 		swing_counts[key] = int(swing_counts.get(key,0)) + 1
 		if int(swing_counts[key]) < every: return false
 		swing_counts[key] = 0
-	if randf() > float(proc.get("chance",1.0)): return false
+	# Luck (Isaac): each point adds 5% to a chance effect.
+	var luck: float = player.item_runtime.conversion("luck") if is_instance_valid(player) and player.item_runtime else 0.0
+	if randf() > minf(1.0,float(proc.get("chance",1.0)) + luck * 0.05): return false
 	if float(proc.get("cooldown",0.0)) > 0.0: proc_cooldowns[key] = float(proc.cooldown)
 	return true
 
@@ -92,6 +100,12 @@ func _fire(proc: Dictionary, base_damage: int, target: Node2D, origin: Vector2) 
 			if is_instance_valid(target): apply_chill(target,proc)
 		"nova": _nova(proc,base_damage,origin)
 		"heal": player.heal(int(proc.get("amount",1)))
+		"drop_potion":
+			var dungeon := _dungeon()
+			if dungeon != null: dungeon._spawn_pickup_drop("potion",origin)
+		"drop_gold":
+			var dungeon := _dungeon()
+			if dungeon != null: dungeon._spawn_gold_drop(origin + Vector2(randf_range(-12,12),randf_range(-8,8)),randi_range(int(proc.get("amount_min",1)),maxi(int(proc.get("amount_min",1)),int(proc.get("amount_max",3)))))
 		_: return
 	if String(proc.get("message","")) != "" and player.item_runtime:
 		player.item_runtime.effect_activated.emit(String(proc.message))

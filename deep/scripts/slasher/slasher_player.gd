@@ -549,8 +549,27 @@ func _setup_simple_combat(state:RunState)->void:
 	weapon_stat=SimpleCombat.weapon_stat(state.selected_gear.id if state.selected_gear else "",state.selected_class_id)
 	simple_base=int(simple_bases.get(weapon_stat,1))
 	simple_reference=maxi(1,_scaled_damage(_ability_tuning("basic")))
-	dodge_chance=SimpleCombat.dodge_chance(int(stats.get("dex",10))) if SimpleCombat.enabled() else 0.0
+	refresh_dexterity()
 	dodge_rng.seed=hash("%d:%d:dodge"%[state.get_current_floor_seed(),state.current_floor])
+
+## Dexterity with items included (each "dex" on an item is +1). It sets walking
+## speed for every class and the dodge chance. Called again when items change.
+var dexterity:=10
+func refresh_dexterity()->void:
+	if run_state==null:return
+	dexterity=int(run_state.get_stats().get("dex",10))+int(run_state.get_active_item_modifiers().get("dex",0))
+	if not SimpleCombat.enabled():return
+	speed=SimpleCombat.move_speed(dexterity)
+	# Dodge from Dexterity, plus items' dodge_percent (all capped at 50%).
+	dodge_chance=minf(0.5,SimpleCombat.dodge_chance(dexterity)+(item_runtime.conversion("dodge_percent")/100.0 if item_runtime else 0.0))
+
+## The Isaac-style stat line for the HUD: Speed, Attack speed (basic attacks a second),
+## Damage (per hit, items included), Range and Luck.
+func stat_line()->Array:
+	var basic:=float(_ability_tuning("basic").get("cooldown",0.4))
+	var attacks:=1.0/maxf(0.05,effective_attack_interval("basic",maxf(0.05,basic)))
+	var range_bonus:float=item_runtime.conversion("range_pixels") if item_runtime else 0.0
+	return [["Speed","%.2f"%(speed/SimpleCombat.move_speed(10))],["Attack speed","%.2f"%attacks],["Damage",str(simple_base+(int(item_runtime.conversion("damage")) if item_runtime else 0))],["Range","%.2f"%(1.0+range_bonus/240.0)],["Luck",str(int(item_runtime.conversion("luck")) if item_runtime else 0)]]
 
 ## Hit size for an attack: its own damage_stat (a summon's WIS), else the weapon's.
 func simple_base_for(attack:Dictionary)->int:
@@ -613,16 +632,22 @@ func receive_damage(amount:int,knockback:Vector2,attacker:SlasherEnemy=null,enem
 		prevented+=int(mage_kit.absorb_damage(maxi(0,amount-prevented)))
 	if is_instance_valid(mage_combo_effects):prevented+=mage_combo_effects.absorb_damage(maxi(0,amount-prevented))
 	if is_instance_valid(kit_buffs):prevented+=kit_buffs.absorb_damage(maxi(0,amount-prevented))
-	if consumable_aegis>0:
+	if consumable_aegis>0 and not SimpleCombat.enabled():
 		var aegis_prevented:int=mini(consumable_aegis,maxi(0,amount-prevented));consumable_aegis-=aegis_prevented;prevented+=aegis_prevented
 	var final:=maxi(0,amount-prevented)
-	# Simple combat: anything that gets through does exactly one heart.
-	if final>0 and SimpleCombat.enabled():final=SimpleCombat.enemy_hit_damage()
+	# Simple combat: anything that gets through takes half a heart, or a full
+	# heart from bosses, mini bosses and champions.
+	if final>0 and SimpleCombat.enabled():final=SimpleCombat.hit_from(attacker)
+	# Warding draughts: each point blocks one whole hit.
+	if final>0 and SimpleCombat.enabled() and consumable_aegis>0:consumable_aegis-=1;prevented+=final;final=0
 	if item_runtime:
 		var mitigation:Dictionary=item_runtime.mitigate_damage(final);prevented+=int(mitigation.prevented);final=int(mitigation.damage)
 	# All incoming combat/environmental damage is doubled after mitigation;
 	# healing and resource/health costs do not pass through this damage path.
 	if fighter_frenzy_left>0:final=roundi(final*fighter_frenzy_incoming)
+	# Soul hearts take the hit first.
+	if final>0 and run_state.soul_health>0:
+		var soaked:=mini(run_state.soul_health,final);run_state.soul_health-=soaked;final-=soaked;health_changed.emit(health,max_health)
 	if item_runtime and item_runtime.try_prevent_lethal(final,health):final=maxi(0,health-1)
 	health=maxi(0,health-final);run_state.current_health=health
 	if final>0 and fighter_frenzy_left>0:fighter_frenzy_hurt_flash=0.2
@@ -798,7 +823,7 @@ func apply_consumable(effects:Dictionary)->void:
 	if int(effects.get("extra_actions",0))>0:
 		for key:Variant in cooldowns:cooldowns[key]=maxf(0.0,float(cooldowns[key])-1.0)
 	if float(effects.get("next_attack_damage_multiplier",1.0))>1.0:next_attack_multiplier=float(effects.next_attack_damage_multiplier)
-	if int(effects.get("next_attack_accuracy",0))>0 and item_runtime:item_runtime.precision_count=maxi(item_runtime.precision_count,5)
+	if int(effects.get("next_attack_accuracy",0))>0 and item_runtime:item_runtime.force_precision=true
 	resource_changed.emit(run_state.class_resource,run_state.get_class_resource_max())
 
 func apply_movement_slow(multiplier:float,duration:float)->void:

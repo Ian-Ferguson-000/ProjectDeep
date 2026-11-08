@@ -360,7 +360,7 @@ func _normal_enemy_spec(spawn_index:int,wolf_counts:Dictionary)->Dictionary:
 	return {"visual_id":enemy_id,"behavior_id":enemy_id if enemy_id in SlasherEnemySceneLibrary.FOREST_IDS else ""}
 
 func _spawn_enemy(world_position:Vector2,visual_id:String,behavior_id:String="",is_boss:bool=false,is_mini_boss:bool=false)->SlasherEnemy:
-	var enemy:=_instantiate_enemy(visual_id);enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1
+	var enemy:=_instantiate_enemy(visual_id);enemy.champion_roll=_champion_roll(world_position);enemy.name="ForestBoss" if is_boss else ("EliteGuardian" if is_mini_boss else visual_id.to_pascal_case());enemy.configure(run_state.current_floor,is_boss,visual_id,is_mini_boss,behavior_id);enemy.pathfinder=pathfinder;actor_layer.add_child(enemy);enemy.global_position=world_position;enemy.target=player;enemy.defeated.connect(_on_enemy_defeated);enemy.reinforcement_requested.connect(_on_reinforcement_requested);enemies_remaining+=1
 	if is_boss:call_deferred("_warm_reinforcement_visuals",_reinforcement_visual_ids())
 	return enemy
 
@@ -416,14 +416,14 @@ func _process(delta:float)->void:
 			elif run_state.keys<=0:_show_message("The chest is locked. Find a key.")
 			else:run_state.keys-=1;nearby_chest.open_chest();_show_message("The key turns. The chest opens.")
 	for loot in loot_nodes.duplicate():
-		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<30:_collect_loot(loot);loot_nodes.erase(loot)
+		if is_instance_valid(loot) and player.global_position.distance_to(loot.global_position)<30 and _can_collect(loot):_collect_loot(loot);loot_nodes.erase(loot)
 	if run_state.slasher_merchant_interlude:
 		for offer_area:Area2D in merchant_offer_nodes:
 			if is_instance_valid(offer_area) and player.global_position.distance_to(offer_area.global_position)<42:
 				var merchant_id:=_dungeon_merchant_id();var offer_id:=String(offer_area.get_meta("offer_id",""));var offer:=_find_merchant_offer(merchant_id,offer_id)
 				_show_message("%s · %s · press E to buy"%[String(offer.get("name","Offer")),("%d Favor"%int(offer.get("favor",0))) if int(offer.get("favor",0))>0 else ("%d gold"%int(offer.get("gold",0)))],0.15)
 				if Input.is_action_just_pressed("interact") and not interaction_used:
-					interaction_used=true;player.basic_mouse_held=false;var logs:=run_state.purchase_merchant_offer(merchant_id,offer_id,"dungeon");_show_message(" ".join(logs));_refresh_hud()
+					interaction_used=true;player.basic_mouse_held=false;var logs:=run_state.purchase_merchant_offer(merchant_id,offer_id,"dungeon");_show_message(" ".join(logs));_after_purchase()
 				break
 		if player.global_position.distance_to(exit_position)<42:
 			_show_message("Leave the market and continue to the next floor · press E.",0.15)
@@ -435,9 +435,10 @@ func _process(delta:float)->void:
 		_show_message("A hidden merchant door · press E to enter.",0.15)
 		if Input.is_action_just_pressed("interact"):
 			run_state.slasher_merchant_interlude=true;floor_reward_claimed=false;_store_active_slasher_state();_build_floor();return
+	if _shop_floor_interaction(interaction_used):interaction_used=true
 	if has_dungeon_merchant and player.global_position.distance_to(merchant_position)<48:
 		var merchant_id:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id",run_state.active_dungeon_id));var merchant:=GameBalance.get_merchant(merchant_id);var merchant_name:=String(merchant.get("name","Dungeon merchant"))
-		_show_message("%s · press E to trade."%merchant_name,0.15)
+		_show_message(("%s · the wares are on the floor: stand on one to look. E for the full list."%merchant_name) if "shop_offer_nodes" in self and not Array(get("shop_offer_nodes")).is_empty() else ("%s · press E to trade."%merchant_name),0.15)
 		if not interaction_used and Input.is_action_just_pressed("interact") and merchant_shop_panel:player.basic_mouse_held=false;merchant_shop_panel.setup(run_state,merchant_id,"dungeon");merchant_shop_panel.open()
 	if player.global_position.distance_to(exit_position)<42:
 		if exit_open:_complete_floor()
@@ -451,7 +452,10 @@ func _process(delta:float)->void:
 	_refresh_hud()
 
 func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
-	run_state.record_enemy_defeat(enemy.visual_id,int(enemy.max_health));enemies_remaining=maxi(0,enemies_remaining-1);run_state.gold+=run_state.apply_reward_bonus(reward,"gold")
+	# Isaac style: kills give no coins; champions drop a pickup.
+	run_state.record_enemy_defeat(enemy.visual_id,int(enemy.max_health));enemies_remaining=maxi(0,enemies_remaining-1)
+	if enemy.champion:
+		for i in int(GameBalance.get_slasher_balance("pickups").get("champion_drops",1)):spawn_isaac_pickup(enemy.global_position+Vector2(randf_range(-14,14),randf_range(-10,10)))
 	if player.item_runtime:player.item_runtime.handle_event({"trigger":"boss_kill" if enemy.boss else ("elite_kill" if enemy.elite else "enemy_kill"),"enemy":enemy})
 	for unlock in run_state.note_kill(String(enemy.behavior_id) if not String(enemy.behavior_id).is_empty() else String(enemy.visual_id)):
 		AudioCue.play_from(self,"reward",false);_show_message("Unlocked: %s · %s"%[String(unlock.name),String(unlock.text)],4.0)
@@ -459,6 +463,9 @@ func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	if enemies_remaining==0:
 		AudioCue.play_from(self,"reward",false)
 		exit_open=true;_reveal_secret_door();_show_message("Encounter cleared · the way onward opens.")
+
+## Rooms with wares on the floor handle standing on them (slasher_forest_rooms.gd).
+func _shop_floor_interaction(_used:bool)->bool:return false
 
 func _dungeon_merchant_id()->String:
 	var configured:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id",""))
@@ -566,7 +573,7 @@ func _use_potion()->bool:
 	var consumables:=run_state.get_consumables();var index:=consumables.find("healing_potion")
 	if index<0:_show_message("No healing potion available.");return false
 	AudioCue.play_from(player,"potion")
-	run_state.remove_consumable_at(index);run_state.note_potion();player.heal(6+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
+	run_state.remove_consumable_at(index);run_state.note_potion();player.heal(int(Dictionary(GameBalance.get_consumable("healing_potion").get("effects",{})).get("heal",1))+run_state.get_derived_stat("potion_heal_bonus"));player.item_runtime.handle_event({"trigger":"potion_use"});_show_message("Healing potion consumed.")
 	return true
 
 func _use_consumable_slot(index:int)->bool:
@@ -584,7 +591,11 @@ func _collect_loot(loot:Area2D)->void:
 		"potion":
 			if run_state.add_consumable("healing_potion"):AudioCue.play_from(loot,"pickup");_show_message("Healing potion collected.")
 			else:AudioCue.play_from(self,"ui_error",false);_show_message("Consumable pouch is full.")
-		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Forest key collected.")
+		"key":AudioCue.play_from(loot,"pickup");run_state.keys+=1;_show_message("Key collected.")
+		"heart","half_heart":
+			AudioCue.play_from(loot,"heal");player.heal(SimpleCombat.units_per_heart() if String(loot.get_meta("kind"))=="heart" else 1)
+		"soul_heart":
+			AudioCue.play_from(loot,"pickup");run_state.add_soul_hearts(1.0);_refresh_hud()
 		"material":
 			var material_id:=String(loot.get_meta("material_id",""))
 			Materials.add(run_state.materials,material_id);AudioCue.play_from(loot,"pickup")
@@ -642,6 +653,15 @@ func _offer_starter_relic()->void:
 	if not starter_relic_enabled():return
 	if relic_modal==null or relic_modal.visible:return
 	relic_choice_source="starter";var choices:Array[String]=run_state.generate_slasher_chest_choices(1,"starter",0);relic_modal.open(run_state,choices,true)
+
+## After buying from the trader (floor or list): apply the item to the
+## adventurer right away and redraw the HUD (coins, item row, hearts, stats).
+func _after_purchase(_message:String="")->void:
+	if not is_instance_valid(player):return
+	if player.item_runtime:player.item_runtime.refresh()
+	player.setup(run_state);_refresh_hud()
+	# The list may have sold something that is also lying on the floor.
+	if has_method("_sync_shop_floor"):call("_sync_shop_floor")
 
 func _claim_relic(item_id:String)->void:
 	if relic_choice_source=="active_item_drop":
@@ -717,15 +737,62 @@ func _roll_enemy_drop(enemy:SlasherEnemy)->void:
 	var material_id:=Materials.for_enemy(String(enemy.visual_id),String(enemy.behavior_id),trophy)
 	if enemy.boss:
 		for index in int(table.get("boss_materials",1)):_spawn_material_drop(spot+Vector2(index*18-9,0),material_id)
+		# Isaac: every boss leaves an item.
+		if bool(table.get("boss_item",false)):_spawn_relic_drop(spot+Vector2(0,-30))
 		return
 	if enemy.mini_boss:
 		for index in int(table.get("mini_boss_materials",2)):_spawn_material_drop(spot+Vector2(index*20-10,6),material_id)
+		# Isaac: the floor's boss leaves an item (mini_boss_item_chance 1.0).
 		if drop_rng().randf()<float(table.get("mini_boss_item_chance",0.3))*minf(Unlocks.drop_luck(run_state.campaign),float(table.get("luck_cap",2.5))):_spawn_relic_drop(spot+Vector2(0,-22))
 		return
 	var chance:=float(table.get("basic_material_chance",0.3))*minf(Unlocks.drop_luck(run_state.campaign),float(table.get("luck_cap",2.5)))
 	if not material_id.is_empty() and drop_rng().randf()<chance:_spawn_material_drop(spot,material_id)
 
 ## A small pouch of a crafting or quest material (data/materials.json).
+# ---------------------------------------------------------------- Isaac pickups
+
+## Red hearts stay on the floor while you're at full health; soul hearts while
+## you're at the heart cap.
+func _can_collect(loot:Area2D)->bool:
+	match String(loot.get_meta("kind","gold")):
+		"heart","half_heart":return player.health<player.max_health
+		"soul_heart":return player.max_health+run_state.soul_health<SimpleCombat.max_health_units()
+	return true
+
+## One random pickup (slasher_balance.json pickups): a coin, a red or half
+## heart, a soul heart or a key. kind forces one.
+func spawn_isaac_pickup(world_position:Vector2,kind:String="")->void:
+	var table:Dictionary=GameBalance.get_slasher_balance("pickups");var rng:=drop_rng()
+	if kind.is_empty():kind=String(_weighted(Dictionary(table.get("weights",{"coin":1})),rng))
+	match kind:
+		"coin":
+			var value:=int(String(_weighted(Dictionary(table.get("coin_values",{"1":1})),rng)))
+			_spawn_gold_drop(world_position,value)
+			if value>1:for node in loot_nodes:
+				if is_instance_valid(node) and node.global_position==world_position:node.scale=Vector2.ONE*(1.15 if value==5 else 1.3);node.modulate=Color("#d7e6ff") if value==5 else Color("#ffe27a")
+		"heart":_spawn_pickup_drop("half_heart" if rng.randf()<float(table.get("half_heart_chance",0.4)) else "heart",world_position)
+		_:_spawn_pickup_drop(kind,world_position)
+
+## Clearing a fight: a chance of one pickup (more with luck).
+func roll_room_clear_pickup(world_position:Vector2)->void:
+	var table:Dictionary=GameBalance.get_slasher_balance("pickups")
+	var luck:float=player.item_runtime.conversion("luck") if is_instance_valid(player) and player.item_runtime else 0.0
+	if drop_rng().randf()<float(table.get("room_clear_chance",0.6))+luck*float(table.get("luck_per_point",0.05)):spawn_isaac_pickup(world_position)
+
+static func _weighted(weights:Dictionary,rng:RandomNumberGenerator)->Variant:
+	var total:=0.0
+	for key in weights:total+=float(weights[key])
+	var roll:=rng.randf()*total
+	for key in weights:
+		roll-=float(weights[key])
+		if roll<=0.0:return key
+	return weights.keys().back() if not weights.is_empty() else ""
+
+## The champion roll for a foe, from the floor seed, room and spot.
+func _champion_roll(world_position:Vector2)->float:
+	var rng:=RandomNumberGenerator.new();rng.seed=hash("%d:%d:%d:%s:champion"%[run_state.get_current_floor_seed(),run_state.current_floor,int(run_state.field_run.get("current_room",0)) if run_state.field_run is Dictionary else 0,str(world_position.round())])
+	return rng.randf()
+
 func _spawn_material_drop(world_position:Vector2,material_id:String)->void:
 	if material_id.is_empty():return
 	var area:=Area2D.new();area.name="MaterialDrop";area.position=world_position;var shape:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=14;shape.shape=circle;area.add_child(shape)
@@ -804,7 +871,7 @@ func _build_hud()->void:
 	clock_label.visible=run_state.campaign!=null and not _is_tutorial_expedition()
 	combo_label=Label.new();combo_label.name="Combo";combo_label.set_anchors_preset(Control.PRESET_CENTER_TOP);combo_label.offset_left=-220;combo_label.offset_right=220;combo_label.offset_top=64;combo_label.offset_bottom=86;combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_font_size_override("font_size",15);combo_label.add_theme_color_override("font_color",Color("#e5bf68"));combo_label.add_theme_color_override("font_outline_color",Color("#0b0808"));combo_label.add_theme_constant_override("outline_size",6);canvas.add_child(combo_label)
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));message_label.add_theme_color_override("font_outline_color",Color("#0b0808"));message_label.add_theme_constant_override("outline_size",6);canvas.add_child(message_label)
-	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
+	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.purchase_completed.connect(_after_purchase);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)
 	pause_menu=GamePauseMenu.new().setup(controller,run_state,"dungeon");pause_menu.can_open=_can_open_pause_menu;pause_menu.open_codex=_open_codex.bind("system")
 	if not _is_tutorial_expedition():pause_menu.abandon_run=abandon_run
@@ -823,6 +890,8 @@ func _show_floor_banner()->void:
 
 func _refresh_hud()->void:
 	if not is_instance_valid(player) or objective_label==null:return
+	# A heart bought from the trader heals the adventurer.
+	if run_state.pending_heal>0:var bought:=run_state.pending_heal;run_state.pending_heal=0;player.heal(bought)
 	_store_active_slasher_state();_refresh_party_strip()
 	var depth_text:String="ENDLESS CYCLE %d · FLOOR %d"%[run_state.get_slasher_cycle_number(),run_state.current_floor] if run_state.slasher_endless_mode else "FLOOR %d/%d"%[run_state.current_floor,run_state.max_floors]
 	var encounter_text:String="BOSS" if bool(layout.get("is_boss_floor",false)) else ("ELITE GUARDIAN" if bool(layout.get("is_elite_floor",false)) else ("GATE OPEN" if exit_open else "%d FOES"%enemies_remaining))
@@ -858,6 +927,9 @@ func _refresh_active_hud()->void:
 func _refresh_dungeon_hud()->void:
 	if dungeon_hud==null or not is_instance_valid(player):return
 	var potions:=run_state.get_consumables().count("healing_potion")
+	dungeon_hud.show_soul(run_state.soul_health)
+	var stats_top:=clock_label.offset_bottom+6.0 if clock_label!=null and clock_label.visible else 148.0
+	dungeon_hud.show_stats(player.stat_line(),stats_top)
 	dungeon_hud.show_state(player.health,player.max_health,run_state.gold,run_state.keys,potions)
 	# Specials are off for now, so the resource pips only show when they come back.
 	var picked:Array=[]

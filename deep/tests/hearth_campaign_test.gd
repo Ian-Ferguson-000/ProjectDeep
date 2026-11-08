@@ -2,7 +2,9 @@ extends SceneTree
 
 var failures: Array[String] = []
 
-func _initialize() -> void: call_deferred("run")
+func _initialize() -> void:
+	RunState.coin_value_override = 1  # this test checks the cut arithmetic in plain gold
+	call_deferred("run")
 
 func check(value: bool, message: String) -> void:
 	if not value: failures.append(message)
@@ -23,8 +25,9 @@ func run() -> void:
 		counts[item.slot] = int(counts.get(item.slot,0))+1
 		check(not item.sources.is_empty() and FileAccess.file_exists(item.icon),"Missing source/icon: "+id)
 		check(not GameBalance.get_item(id).is_empty() and not GameBalance.get_slasher_item_effects(id).is_empty(),"Missing mode support: "+id)
-	check(counts=={"weapon":35,"armor":12,"accessory":16,"relic":12},"Catalog count mismatch: %s" % [counts])
-	check(HearthCatalog.data().legacy_item_audit.size()==52,"Legacy audit incomplete")
+	# Three accessories went to data/unused with the relics they copied.
+	check(counts=={"weapon":35,"armor":12,"accessory":13,"relic":12},"Catalog count mismatch: %s" % [counts])
+	check(HearthCatalog.data().legacy_item_audit.size()==43,"Legacy audit incomplete")
 	var c := company()
 	var first: CharacterRecord=c.living_roster()[0]
 	var second: CharacterRecord=c.living_roster()[1]

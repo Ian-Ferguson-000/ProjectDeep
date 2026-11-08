@@ -96,7 +96,29 @@ static func make_sprite(kind:String)->Sprite2D:
 		"gold":sprite.texture=GOLD;_fit_to_pixels(sprite,30.0)
 		"potion":sprite.texture=POTION;_fit_to_pixels(sprite,32.0)
 		"key":sprite.texture=KEY;_fit_to_pixels(sprite,26.0)
+		"heart","half_heart","soul_heart":sprite.texture=heart_texture(kind);sprite.scale=Vector2.ONE*2.6;sprite.offset=Vector2(0,-4)
 	return sprite
+
+## Pixel hearts for the floor pickups: red, a red half, or a blue soul heart.
+static var _heart_textures:Dictionary={}
+static func heart_texture(kind:String)->Texture2D:
+	if _heart_textures.has(kind):return _heart_textures[kind]
+	var rows:=[".XX.XX.","XXXXXXX","XXXXXXX",".XXXXX.","..XXX..","...X..."]
+	var image:=Image.create(9,8,false,Image.FORMAT_RGBA8);image.fill(Color(0,0,0,0))
+	var fill:=Color("#5a7fe0") if kind=="soul_heart" else Color("#d42a2a");var shade:=Color("#2c437f") if kind=="soul_heart" else Color("#8a1414")
+	for y in rows.size():
+		for x in String(rows[y]).length():
+			if String(rows[y])[x]!="X":continue
+			for dy in [-1,0,1]:
+				for dx in [-1,0,1]:image.set_pixel(x+1+dx,y+1+dy,Color("#0b0808")) if image.get_pixel(x+1+dx,y+1+dy).a==0.0 else null
+	for y in rows.size():
+		for x in String(rows[y]).length():
+			if String(rows[y])[x]!="X":continue
+			var color:=fill if y<3 and x<6 else shade
+			if kind=="half_heart" and x>=4:color=Color("#2a1a1a")
+			if (x==1 and y==1):color=Color.WHITE.lerp(fill,0.4)
+			image.set_pixel(x+1,y+1,color)
+	var texture:=ImageTexture.create_from_image(image);_heart_textures[kind]=texture;return texture
 
 ## An archway with dark steps going down inside it, built once from TX Struct.
 static func _stairs()->Texture2D:

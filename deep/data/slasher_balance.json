@@ -1,142 +1,1456 @@
 {
-  "run_start": {"how_to_edit": "starter_relic: true gives a free relic choice when a run begins (floor 1). false: runs start with no relic.", "starter_relic": false},
-  "generation": {"width": 44, "height": 28, "base_rooms": 6, "room_growth_per_floor": 1, "room_growth_cap": 3, "room_width_min": 9, "room_width_max": 14, "room_height_min": 7, "room_height_max": 11, "corridor_width": 2, "tile_size": 48, "decoration_density": 0.16, "edge_decoration_density": 0.48, "solid_prop_density": 0.025, "spawn_clearance_cells": 2,"enemy_count_per_room_cap":7},
-  "rewards": {"floor_xp_base":45,"floor_xp_per_depth":5,"elite_floor_bonus":55,"campaign_boss_bonus":70,"endless_xp_multiplier":0.35,"loot_gold_base":5},
-  "boss_durability": {"max_damage_fraction":0.05,"shield_reduction":0.75,"shield_duration":0.5,"shield_color":"#8fd8ff"},
-  "input": {"held_basic_cooldown_multiplier": 2.25, "held_basic_cooldown_multiplier_by_class": {"warrior": 1.0}, "buffer_window": 0.25, "buffered_slots": ["basic", "special", "movement", "secondary"]},
-  "combos": {
-	"mage": [
-	  {"id":"spellstorm_volley","name":"Spellstorm Volley","description":"Weave two missiles through a Blink, then release a three-fireball fan.","steps":["action:basic","action:basic","action:movement","action:special"],"step_labels":["Missile","Missile","Blink","Fireball"],"window":2.5,"priority":30,"effect":{"projectiles":3,"spread_degrees":12,"damage_multiplier":0.45}},
-	  {"id":"riftburst","name":"Riftburst","description":"Blink after Fireball to detonate its echo at the departure point.","steps":["action:special","action:movement"],"step_labels":["Fireball","Blink"],"window":2.5,"priority":10,"effect":{"damage_multiplier":0.75,"area_radius":105,"knockback":35}},
-	  {"id":"force_prism","name":"Force Prism","description":"Repel an enemy, cast a missile, then fracture Fireball into six arcane bolts.","steps":["confirm:repel_hit","action:basic","action:special"],"step_labels":["Repel an enemy","Missile","Fireball"],"window":2.5,"priority":20,"effect":{"projectiles":6,"damage_multiplier":0.20,"projectile_range":220,"projectile_speed":620}}
-	],
-	"warrior": [
-	  {"id":"crosscut","name":"Crosscut","description":"Slash, Charge, then finish with a critical Slash.","steps":["action:basic","action:movement","action:basic"],"step_labels":["Slash","Charge","Slash"],"window":2.5,"priority":20,"effect":{"damage_multiplier":2.0,"knockback_multiplier":2.0,"screen_shake_multiplier":1.6,"critical":true}},
-	  {"id":"flowing_assault","name":"Flowing Assault","description":"Complete the three-Slash chain, then Charge for free and flow immediately into a new chain.","steps":["action:basic","action:basic","action:basic","action:movement"],"step_labels":["Slash","Slash","Slash","Charge"],"window":0.75,"priority":30,"effect":{"resource_cost_override":0,"reset_cooldown":"basic"}},
-	  {"id":"break_the_line","name":"Break the Line","description":"Charge through an enemy and answer with a staggering full-circle Cleave.","steps":["confirm:movement_hit","action:special"],"step_labels":["Charge through an enemy","Cleave"],"window":2.5,"priority":10,"effect":{"damage_multiplier":1.25,"arc_degrees":360,"knockback":40,"status":"stagger","status_duration":0.5}},
-	  {"id":"vengeful_spiral","name":"Vengeful Spiral","description":"Parry, Charge, and Cleave twice in a vengeful spiral.","steps":["confirm:parry_success","action:movement","action:special"],"step_labels":["Successful Parry","Charge","Cleave"],"window":2.5,"priority":40,"effect":{"damage_multiplier":1.25,"arc_degrees":360,"echo_damage_multiplier":0.60,"echo_delay":0.18,"resource_refund":1}}
-	]
+  "run_start": {
+    "how_to_edit": "starter_relic: true gives a free relic choice when a run begins (floor 1). false: runs start with no relic.",
+    "starter_relic": false
   },
-  "hud": {"health_per_heart": 1},
-  "simple_combat": {"enabled": true, "con_per_heart": 4, "min_hearts": 1, "stat_per_damage": 5, "min_damage": 1, "max_damage": 4, "enemy_hit_damage": 1, "enemy_health_scale": 0.5, "damage_stat_by_class": {"warrior": "str", "tank": "str", "rogue": "dex", "mage": "int", "healer": "wis", "summoner": "wis"}, "weapon_stats": {"borderkeepers_spear": "str", "sword_shield": "str", "spear_shield": "str", "greatsword": "str", "dawn_bastion": "str", "demon_blade": "str", "storm_trident": "str", "divine_hammer": "str", "grim_reaver": "str", "sentinel_shield": "str", "tower_shield": "str", "iron_porter": "str", "oathwall": "str", "citadel_heart": "str", "eldritch_bowstaff": "dex", "valkyrian_sling": "dex", "dragonbone_dagger": "dex", "archon_crossbow": "dex", "umbral_bow": "dex", "spectral_dagger": "dex", "fox_teeth": "dex", "moon_stiletto": "dex", "last_whisper": "dex", "magic_missile_shield": "int", "fireball_fire_shield": "int", "lightning_flash_step": "int", "astral_covenant": "int", "sunwood_staff": "int", "pilgrim_staff": "int", "mercy_branch": "int", "solstice_crook": "int", "bond_staff": "wis", "pack_call": "wis", "wild_covenant": "wis", "ancient_bond": "wis"}, "dodge_per_dex_point": 0.01, "dodge_max": 0.15, "charisma_price_per_point": 0.03, "charisma_price_limits": [0.7, 1.3], "charisma_training_per_point": 2, "untrainable_stats": ["cha"], "stat_descriptions": {"str": "Damage with strength weapons: swords, spears, hammers, greatswords and shields.", "dex": "Damage with dexterity weapons: daggers, bows, slings and crossbows. Also a small chance to dodge any hit.", "con": "Health: every 4 points is a heart (CON 20 = 5 hearts).", "int": "Magic strength: fireballs, missiles, lightning and other spells.", "wis": "Summon strength: how hard your bonded creatures hit.", "cha": "Better prices from traders, and better odds on every training session at the Hearth. Can't be trained."}},
-  "breakable_props": {"tree_large": {"health": 10, "collision_radius": 17, "break_duration": 0.28, "hollow_chance": 0.4}, "coffin": {"health": 10, "collision_radius": 17, "break_duration": 0.26, "hollow_chance": 0.4}, "barrel": {"health": 5, "collision_radius": 16, "break_duration": 0.20}, "rock": {"health": 14, "collision_radius": 17, "break_duration": 0.24}, "chest": {"health": 8, "collision_radius": 17, "break_duration": 0.24, "interaction_radius": 52, "open_gold_min": 4, "open_gold_max": 8, "open_potion_chance": 0.25}, "drops": {"gold_chance": 0.12, "gold_min": 1, "gold_max": 3}},
+  "generation": {
+    "width": 44,
+    "height": 28,
+    "base_rooms": 6,
+    "room_growth_per_floor": 1,
+    "room_growth_cap": 3,
+    "room_width_min": 9,
+    "room_width_max": 14,
+    "room_height_min": 7,
+    "room_height_max": 11,
+    "corridor_width": 2,
+    "tile_size": 48,
+    "decoration_density": 0.16,
+    "edge_decoration_density": 0.48,
+    "solid_prop_density": 0.025,
+    "spawn_clearance_cells": 2,
+    "enemy_count_per_room_cap": 7
+  },
+  "rewards": {
+    "floor_xp_base": 45,
+    "floor_xp_per_depth": 5,
+    "elite_floor_bonus": 55,
+    "campaign_boss_bonus": 70,
+    "endless_xp_multiplier": 0.35,
+    "loot_gold_base": 5
+  },
+  "boss_durability": {
+    "max_damage_fraction": 0.05,
+    "shield_reduction": 0.75,
+    "shield_duration": 0.5,
+    "shield_color": "#8fd8ff"
+  },
+  "input": {
+    "held_basic_cooldown_multiplier": 2.25,
+    "held_basic_cooldown_multiplier_by_class": {
+      "warrior": 1.0
+    },
+    "buffer_window": 0.25,
+    "buffered_slots": [
+      "basic",
+      "special",
+      "movement",
+      "secondary"
+    ]
+  },
+  "combos": {
+    "mage": [
+      {
+        "id": "spellstorm_volley",
+        "name": "Spellstorm Volley",
+        "description": "Weave two missiles through a Blink, then release a three-fireball fan.",
+        "steps": [
+          "action:basic",
+          "action:basic",
+          "action:movement",
+          "action:special"
+        ],
+        "step_labels": [
+          "Missile",
+          "Missile",
+          "Blink",
+          "Fireball"
+        ],
+        "window": 2.5,
+        "priority": 30,
+        "effect": {
+          "projectiles": 3,
+          "spread_degrees": 12,
+          "damage_multiplier": 0.45
+        }
+      },
+      {
+        "id": "riftburst",
+        "name": "Riftburst",
+        "description": "Blink after Fireball to detonate its echo at the departure point.",
+        "steps": [
+          "action:special",
+          "action:movement"
+        ],
+        "step_labels": [
+          "Fireball",
+          "Blink"
+        ],
+        "window": 2.5,
+        "priority": 10,
+        "effect": {
+          "damage_multiplier": 0.75,
+          "area_radius": 105,
+          "knockback": 35
+        }
+      },
+      {
+        "id": "force_prism",
+        "name": "Force Prism",
+        "description": "Repel an enemy, cast a missile, then fracture Fireball into six arcane bolts.",
+        "steps": [
+          "confirm:repel_hit",
+          "action:basic",
+          "action:special"
+        ],
+        "step_labels": [
+          "Repel an enemy",
+          "Missile",
+          "Fireball"
+        ],
+        "window": 2.5,
+        "priority": 20,
+        "effect": {
+          "projectiles": 6,
+          "damage_multiplier": 0.2,
+          "projectile_range": 220,
+          "projectile_speed": 620
+        }
+      }
+    ],
+    "warrior": [
+      {
+        "id": "crosscut",
+        "name": "Crosscut",
+        "description": "Slash, Charge, then finish with a critical Slash.",
+        "steps": [
+          "action:basic",
+          "action:movement",
+          "action:basic"
+        ],
+        "step_labels": [
+          "Slash",
+          "Charge",
+          "Slash"
+        ],
+        "window": 2.5,
+        "priority": 20,
+        "effect": {
+          "damage_multiplier": 2.0,
+          "knockback_multiplier": 2.0,
+          "screen_shake_multiplier": 1.6,
+          "critical": true
+        }
+      },
+      {
+        "id": "flowing_assault",
+        "name": "Flowing Assault",
+        "description": "Complete the three-Slash chain, then Charge for free and flow immediately into a new chain.",
+        "steps": [
+          "action:basic",
+          "action:basic",
+          "action:basic",
+          "action:movement"
+        ],
+        "step_labels": [
+          "Slash",
+          "Slash",
+          "Slash",
+          "Charge"
+        ],
+        "window": 0.75,
+        "priority": 30,
+        "effect": {
+          "resource_cost_override": 0,
+          "reset_cooldown": "basic"
+        }
+      },
+      {
+        "id": "break_the_line",
+        "name": "Break the Line",
+        "description": "Charge through an enemy and answer with a staggering full-circle Cleave.",
+        "steps": [
+          "confirm:movement_hit",
+          "action:special"
+        ],
+        "step_labels": [
+          "Charge through an enemy",
+          "Cleave"
+        ],
+        "window": 2.5,
+        "priority": 10,
+        "effect": {
+          "damage_multiplier": 1.25,
+          "arc_degrees": 360,
+          "knockback": 40,
+          "status": "stagger",
+          "status_duration": 0.5
+        }
+      },
+      {
+        "id": "vengeful_spiral",
+        "name": "Vengeful Spiral",
+        "description": "Parry, Charge, and Cleave twice in a vengeful spiral.",
+        "steps": [
+          "confirm:parry_success",
+          "action:movement",
+          "action:special"
+        ],
+        "step_labels": [
+          "Successful Parry",
+          "Charge",
+          "Cleave"
+        ],
+        "window": 2.5,
+        "priority": 40,
+        "effect": {
+          "damage_multiplier": 1.25,
+          "arc_degrees": 360,
+          "echo_damage_multiplier": 0.6,
+          "echo_delay": 0.18,
+          "resource_refund": 1
+        }
+      }
+    ]
+  },
+  "hud": {
+    "health_per_heart": 2
+  },
+  "simple_combat": {
+    "enabled": true,
+    "con_per_heart": 4,
+    "min_hearts": 1,
+    "stat_per_damage": 5,
+    "min_damage": 1,
+    "max_damage": 4,
+    "units_per_heart": 2,
+    "enemy_hit_damage": 1,
+    "strong_hit_damage": 2,
+    "max_total_hearts": 12,
+    "enemy_health_scale": 0.5,
+    "damage_stat_by_class": {
+      "warrior": "str",
+      "tank": "str",
+      "rogue": "dex",
+      "mage": "int",
+      "healer": "wis",
+      "summoner": "wis"
+    },
+    "weapon_stats": {
+      "borderkeepers_spear": "str",
+      "sword_shield": "str",
+      "spear_shield": "str",
+      "greatsword": "str",
+      "dawn_bastion": "str",
+      "demon_blade": "str",
+      "storm_trident": "str",
+      "divine_hammer": "str",
+      "grim_reaver": "str",
+      "sentinel_shield": "str",
+      "tower_shield": "str",
+      "iron_porter": "str",
+      "oathwall": "str",
+      "citadel_heart": "str",
+      "eldritch_bowstaff": "dex",
+      "valkyrian_sling": "dex",
+      "dragonbone_dagger": "dex",
+      "archon_crossbow": "dex",
+      "umbral_bow": "dex",
+      "spectral_dagger": "dex",
+      "fox_teeth": "dex",
+      "moon_stiletto": "dex",
+      "last_whisper": "dex",
+      "magic_missile_shield": "int",
+      "fireball_fire_shield": "int",
+      "lightning_flash_step": "int",
+      "astral_covenant": "int",
+      "sunwood_staff": "int",
+      "pilgrim_staff": "int",
+      "mercy_branch": "int",
+      "solstice_crook": "int",
+      "bond_staff": "wis",
+      "pack_call": "wis",
+      "wild_covenant": "wis",
+      "ancient_bond": "wis"
+    },
+    "move_speed_base": 265,
+    "move_speed_per_dex": 10,
+    "move_speed_min": 180,
+    "move_speed_max": 420,
+    "dodge_per_dex_point": 0.01,
+    "dodge_max": 0.15,
+    "charisma_price_per_point": 0.03,
+    "charisma_price_limits": [
+      0.7,
+      1.3
+    ],
+    "charisma_training_per_point": 2,
+    "untrainable_stats": [
+      "cha"
+    ],
+    "stat_descriptions": {
+      "str": "Damage with strength weapons: swords, spears, hammers, greatswords and shields.",
+      "dex": "Movement speed for every class (each point is a little faster). Also damage with dexterity weapons (daggers, bows, slings, crossbows) and a small chance to dodge any hit.",
+      "con": "Health: every 4 points is a heart (CON 20 = 5 hearts).",
+      "int": "Magic strength: fireballs, missiles, lightning and other spells.",
+      "wis": "Summon strength: how hard your bonded creatures hit.",
+      "cha": "Better prices from traders, and better odds on every training session at the Hearth. Can't be trained."
+    }
+  },
+  "breakable_props": {
+    "tree_large": {
+      "health": 10,
+      "collision_radius": 17,
+      "break_duration": 0.28,
+      "hollow_chance": 0.4
+    },
+    "coffin": {
+      "health": 10,
+      "collision_radius": 17,
+      "break_duration": 0.26,
+      "hollow_chance": 0.4
+    },
+    "barrel": {
+      "health": 5,
+      "collision_radius": 16,
+      "break_duration": 0.2
+    },
+    "rock": {
+      "health": 14,
+      "collision_radius": 17,
+      "break_duration": 0.24
+    },
+    "chest": {
+      "health": 8,
+      "collision_radius": 17,
+      "break_duration": 0.24,
+      "interaction_radius": 52,
+      "open_gold_min": 4,
+      "open_gold_max": 8,
+      "open_potion_chance": 0.25
+    },
+    "drops": {
+      "gold_chance": 0.12,
+      "gold_min": 1,
+      "gold_max": 3
+    }
+  },
   "classes": {
-	"warrior": {
-	  "speed": 285, "collision_radius": 18, "sprite_scale": 1.42, "sprite_offset_y": -27,
-	  "basic": {"cooldown": 0.18, "combo_finisher_cooldown": 0.42, "combo_reset_window": 0.85, "lunge": [10, 10, 22], "lunge_time": 0.09, "finisher_knockback_multiplier": 1.8, "finisher_arc_bonus": 24, "resource_cost": 0, "resource_gain": 2, "power_stat": "attack_power", "damage_coefficient": 3.0, "flat_damage": 0, "reach": 118, "arc_degrees": 92, "knockback": 10, "deflect_reach": 82, "deflect_arc_degrees": 56, "animation_lock": 0.32},
-	  "movement": {"cooldown": 0.2, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 2.0, "flat_damage": 0, "movement_distance": 355, "dash_speed": 1120, "landing_invulnerability": 0.08, "destination_clearance": 22, "path_radius": 36, "invulnerability": 0.38, "reach": 58, "arc_degrees": 75, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
-	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 4.0, "flat_damage": 0, "reach": 208, "arc_degrees": 140, "knockback": 30, "animation_lock": 0.32},
-	  "defensive": {"cooldown": 3.5, "resource_cost": 0, "resource_gain": 0, "effect_duration": 0.65, "mitigation": 1.0, "counter_coefficient": 1.0, "counter_flat_damage": 0, "counter_knockback": 35, "animation_lock": 0.32}
-	},
-	"mage": {
-	  "speed": 185, "collision_radius": 18, "sprite_scale": 0.65, "sprite_offset_y": -21,
-	  "basic": {"cooldown": 0.22, "resource_cost": 0, "resource_gain": 1, "power_stat": "spell_power", "damage_coefficient": 13.0, "flat_damage": 0, "projectile_range": 360, "projectile_speed": 620, "hit_radius": 24, "area_radius": 62, "piercing": false, "visual": "aether", "focus_min_distance": 140, "animation_lock": 0.32},
-	  "movement": {"cooldown": 0.5, "resource_cost": 0, "resource_gain": 0, "movement_distance": 380, "destination_clearance": 22, "invulnerability": 0.28, "animation_lock": 0.32},
-	  "special": {"cooldown": 2.8, "resource_cost": 1, "resource_gain": 0, "power_stat": "spell_power", "damage_coefficient": 4.0, "flat_damage": 0, "projectile_range": 480, "projectile_speed": 760, "hit_radius": 30, "area_radius": 88, "piercing": true, "visual": "fireball", "visual_scale": 1.7, "animation_lock": 0.32},
-	  "defensive": {"cooldown": 0.25, "resource_cost": 0, "resource_gain": 0, "effect_duration": 1.0, "mitigation": 0.5, "push_radius": 100, "push_distance": 70, "animation_lock": 0.32}
-	},
-	"healer": {
-	  "speed": 185, "collision_radius": 18, "sprite_scale": 0.85, "sprite_offset_y": -27,
-	  "basic": {"cooldown": 0.25, "resource_cost": 0, "resource_gain": 1, "power_stat": "spell_power", "damage_coefficient": 1.0, "flat_damage": 0, "projectile_range": 330, "projectile_speed": 520, "hit_radius": 24, "piercing": false, "visual": "aether", "tint": "#ffe68a", "status": "slow", "status_duration": 1.5, "status_strength": 0.55, "animation_lock": 0.32},
-	  "movement": {"cooldown": 1.3, "resource_cost": 0, "resource_gain": 0, "movement_distance": 145, "destination_clearance": 22, "invulnerability": 0.18, "heal_travel_threshold": 80, "heal_coefficient": 0.0, "flat_heal": 3, "animation_lock": 0.32},
-	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "empower_damage_multiplier": 2.0, "empower_status_duration_bonus": 1.0, "animation_lock": 0.32},
-	  "defensive": {"cooldown": 4.0, "resource_cost": 0, "resource_gain": 0, "effect_duration": 1.2, "recover_fraction": 0.5, "animation_lock": 0.32}
-	},
-	"tank": {
-	  "speed": 165, "collision_radius": 18, "sprite_scale": 0.85, "sprite_offset_y": -26,
-	  "basic": {"cooldown": 0.28, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "reach": 62, "arc_degrees": 70, "knockback": 10, "animation_lock": 0.32},
-	  "movement": {"cooldown": 1.8, "resource_cost": 0, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "movement_distance": 150, "destination_clearance": 22, "invulnerability": 0.30, "area_radius": 72, "knockback": 25, "status": "stagger", "status_duration": 0.45, "screen_shake_multiplier": 1.75, "animation_lock": 0.32},
-	  "special": {"cooldown": 3.0, "resource_cost": 2, "resource_gain": 0, "effect_duration": 2.0, "mitigation": 0.5, "storage_fraction": 0.5, "release_radius": 80, "release_knockback": 30, "animation_lock": 0.32},
-	  "defensive": {"cooldown": 3.5, "resource_cost": 0, "resource_gain": 1, "effect_duration": 1.25, "mitigation": 0.75, "animation_lock": 0.32}
-	},
-	"rogue": {
-	  "speed": 215, "collision_radius": 18, "sprite_scale": 0.85, "sprite_offset_y": -29,
-	  "basic": {"cooldown": 0.12, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 2, "reach": 104, "line_radius": 18, "arc_degrees": 28, "knockback": 10, "piercing": true, "deflect_reach": 110, "deflect_arc_degrees": 54, "animation_lock": 0.32},
-	  "movement": {"cooldown": 0.7, "resource_cost": 0, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "movement_distance": 175, "pass_through_distance": 36, "aim_dot_threshold": 0.72, "path_radius": 22, "destination_clearance": 22, "invulnerability": 0.5, "hidden_duration": 0.5, "animation_lock": 0.32},
-	  "special": {"cooldown": 2.2, "resource_cost": 2, "resource_gain": 0, "power_stat": "attack_power", "damage_coefficient": 2.0, "bonus_damage_coefficient": 3.0, "flat_damage": 0, "target_range": 100, "aim_dot_threshold": 0.65, "isolation_radius": 95, "low_health_fraction": 0.5, "knockback": 15, "animation_lock": 0.32},
-	  "defensive": {"cooldown": 3.2, "resource_cost": 0, "resource_gain": 1, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "effect_duration": 0.7, "invulnerability": 0.7, "movement_distance": 70, "hidden_duration": 0.5, "destination_clearance": 22, "animation_lock": 0.32}
-	},
-	"summoner": {
-	  "speed": 180, "collision_radius": 18, "sprite_scale": 0.85, "sprite_offset_y": -33,
-	  "basic": {"cooldown": 0.22, "resource_cost": 0, "resource_gain": 1, "target_range": 360, "aim_dot_threshold": 0.8, "command_distance": 180, "animation_lock": 0.32},
-	  "movement": {"cooldown": 1.0, "resource_cost": 0, "resource_gain": 0, "movement_distance": 210, "destination_clearance": 22, "invulnerability": 0.24, "mount_offset": 24, "animation_lock": 0.32},
-	  "special": {"cooldown": 2.5, "resource_cost": 2, "resource_gain": 0, "animation_lock": 0.32},
-	  "defensive": {"cooldown": 4.0, "resource_cost": 0, "resource_gain": 0, "effect_duration": 1.0, "animation_lock": 0.32}
-	}
+    "warrior": {
+      "speed": 285,
+      "collision_radius": 18,
+      "sprite_scale": 1.42,
+      "sprite_offset_y": -27,
+      "basic": {
+        "cooldown": 0.18,
+        "combo_finisher_cooldown": 0.42,
+        "combo_reset_window": 0.85,
+        "lunge": [
+          10,
+          10,
+          22
+        ],
+        "lunge_time": 0.09,
+        "finisher_knockback_multiplier": 1.8,
+        "finisher_arc_bonus": 24,
+        "resource_cost": 0,
+        "resource_gain": 2,
+        "power_stat": "attack_power",
+        "damage_coefficient": 3.0,
+        "flat_damage": 0,
+        "reach": 118,
+        "arc_degrees": 92,
+        "knockback": 10,
+        "deflect_reach": 82,
+        "deflect_arc_degrees": 56,
+        "animation_lock": 0.32
+      },
+      "movement": {
+        "cooldown": 0.2,
+        "resource_cost": 0,
+        "resource_gain": 1,
+        "power_stat": "attack_power",
+        "damage_coefficient": 2.0,
+        "flat_damage": 0,
+        "movement_distance": 355,
+        "dash_speed": 1120,
+        "landing_invulnerability": 0.08,
+        "destination_clearance": 22,
+        "path_radius": 36,
+        "invulnerability": 0.38,
+        "reach": 58,
+        "arc_degrees": 75,
+        "knockback": 25,
+        "status": "stagger",
+        "status_duration": 0.45,
+        "screen_shake_multiplier": 1.75,
+        "animation_lock": 0.32
+      },
+      "special": {
+        "cooldown": 2.5,
+        "resource_cost": 2,
+        "resource_gain": 0,
+        "power_stat": "attack_power",
+        "damage_coefficient": 4.0,
+        "flat_damage": 0,
+        "reach": 208,
+        "arc_degrees": 140,
+        "knockback": 30,
+        "animation_lock": 0.32
+      },
+      "defensive": {
+        "cooldown": 3.5,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "effect_duration": 0.65,
+        "mitigation": 1.0,
+        "counter_coefficient": 1.0,
+        "counter_flat_damage": 0,
+        "counter_knockback": 35,
+        "animation_lock": 0.32
+      }
+    },
+    "mage": {
+      "speed": 185,
+      "collision_radius": 18,
+      "sprite_scale": 0.65,
+      "sprite_offset_y": -21,
+      "basic": {
+        "cooldown": 0.22,
+        "resource_cost": 0,
+        "resource_gain": 1,
+        "power_stat": "spell_power",
+        "damage_coefficient": 13.0,
+        "flat_damage": 0,
+        "projectile_range": 360,
+        "projectile_speed": 620,
+        "hit_radius": 24,
+        "area_radius": 62,
+        "piercing": false,
+        "visual": "aether",
+        "focus_min_distance": 140,
+        "animation_lock": 0.32
+      },
+      "movement": {
+        "cooldown": 0.5,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "movement_distance": 380,
+        "destination_clearance": 22,
+        "invulnerability": 0.28,
+        "animation_lock": 0.32
+      },
+      "special": {
+        "cooldown": 2.8,
+        "resource_cost": 1,
+        "resource_gain": 0,
+        "power_stat": "spell_power",
+        "damage_coefficient": 4.0,
+        "flat_damage": 0,
+        "projectile_range": 480,
+        "projectile_speed": 760,
+        "hit_radius": 30,
+        "area_radius": 88,
+        "piercing": true,
+        "visual": "fireball",
+        "visual_scale": 1.7,
+        "animation_lock": 0.32
+      },
+      "defensive": {
+        "cooldown": 0.25,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "effect_duration": 1.0,
+        "mitigation": 0.5,
+        "push_radius": 100,
+        "push_distance": 70,
+        "animation_lock": 0.32
+      }
+    },
+    "healer": {
+      "speed": 185,
+      "collision_radius": 18,
+      "sprite_scale": 0.85,
+      "sprite_offset_y": -27,
+      "basic": {
+        "cooldown": 0.25,
+        "resource_cost": 0,
+        "resource_gain": 1,
+        "power_stat": "spell_power",
+        "damage_coefficient": 1.0,
+        "flat_damage": 0,
+        "projectile_range": 330,
+        "projectile_speed": 520,
+        "hit_radius": 24,
+        "piercing": false,
+        "visual": "aether",
+        "tint": "#ffe68a",
+        "status": "slow",
+        "status_duration": 1.5,
+        "status_strength": 0.55,
+        "animation_lock": 0.32
+      },
+      "movement": {
+        "cooldown": 1.3,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "movement_distance": 145,
+        "destination_clearance": 22,
+        "invulnerability": 0.18,
+        "heal_travel_threshold": 80,
+        "heal_coefficient": 0.0,
+        "flat_heal": 3,
+        "animation_lock": 0.32
+      },
+      "special": {
+        "cooldown": 2.5,
+        "resource_cost": 2,
+        "resource_gain": 0,
+        "empower_damage_multiplier": 2.0,
+        "empower_status_duration_bonus": 1.0,
+        "animation_lock": 0.32
+      },
+      "defensive": {
+        "cooldown": 4.0,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "effect_duration": 1.2,
+        "recover_fraction": 0.5,
+        "animation_lock": 0.32
+      }
+    },
+    "tank": {
+      "speed": 165,
+      "collision_radius": 18,
+      "sprite_scale": 0.85,
+      "sprite_offset_y": -26,
+      "basic": {
+        "cooldown": 0.28,
+        "resource_cost": 0,
+        "resource_gain": 1,
+        "power_stat": "attack_power",
+        "damage_coefficient": 1.0,
+        "flat_damage": 0,
+        "reach": 62,
+        "arc_degrees": 70,
+        "knockback": 10,
+        "animation_lock": 0.32
+      },
+      "movement": {
+        "cooldown": 1.8,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "power_stat": "attack_power",
+        "damage_coefficient": 1.0,
+        "flat_damage": 0,
+        "movement_distance": 150,
+        "destination_clearance": 22,
+        "invulnerability": 0.3,
+        "area_radius": 72,
+        "knockback": 25,
+        "status": "stagger",
+        "status_duration": 0.45,
+        "screen_shake_multiplier": 1.75,
+        "animation_lock": 0.32
+      },
+      "special": {
+        "cooldown": 3.0,
+        "resource_cost": 2,
+        "resource_gain": 0,
+        "effect_duration": 2.0,
+        "mitigation": 0.5,
+        "storage_fraction": 0.5,
+        "release_radius": 80,
+        "release_knockback": 30,
+        "animation_lock": 0.32
+      },
+      "defensive": {
+        "cooldown": 3.5,
+        "resource_cost": 0,
+        "resource_gain": 1,
+        "effect_duration": 1.25,
+        "mitigation": 0.75,
+        "animation_lock": 0.32
+      }
+    },
+    "rogue": {
+      "speed": 215,
+      "collision_radius": 18,
+      "sprite_scale": 0.85,
+      "sprite_offset_y": -29,
+      "basic": {
+        "cooldown": 0.12,
+        "resource_cost": 0,
+        "resource_gain": 1,
+        "power_stat": "attack_power",
+        "damage_coefficient": 1.0,
+        "flat_damage": 2,
+        "reach": 104,
+        "line_radius": 18,
+        "arc_degrees": 28,
+        "knockback": 10,
+        "piercing": true,
+        "deflect_reach": 110,
+        "deflect_arc_degrees": 54,
+        "animation_lock": 0.32
+      },
+      "movement": {
+        "cooldown": 0.7,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "power_stat": "attack_power",
+        "damage_coefficient": 1.0,
+        "flat_damage": 0,
+        "movement_distance": 175,
+        "pass_through_distance": 36,
+        "aim_dot_threshold": 0.72,
+        "path_radius": 22,
+        "destination_clearance": 22,
+        "invulnerability": 0.5,
+        "hidden_duration": 0.5,
+        "animation_lock": 0.32
+      },
+      "special": {
+        "cooldown": 2.2,
+        "resource_cost": 2,
+        "resource_gain": 0,
+        "power_stat": "attack_power",
+        "damage_coefficient": 2.0,
+        "bonus_damage_coefficient": 3.0,
+        "flat_damage": 0,
+        "target_range": 100,
+        "aim_dot_threshold": 0.65,
+        "isolation_radius": 95,
+        "low_health_fraction": 0.5,
+        "knockback": 15,
+        "animation_lock": 0.32
+      },
+      "defensive": {
+        "cooldown": 3.2,
+        "resource_cost": 0,
+        "resource_gain": 1,
+        "power_stat": "attack_power",
+        "damage_coefficient": 1.0,
+        "flat_damage": 0,
+        "effect_duration": 0.7,
+        "invulnerability": 0.7,
+        "movement_distance": 70,
+        "hidden_duration": 0.5,
+        "destination_clearance": 22,
+        "animation_lock": 0.32
+      }
+    },
+    "summoner": {
+      "speed": 180,
+      "collision_radius": 18,
+      "sprite_scale": 0.85,
+      "sprite_offset_y": -33,
+      "basic": {
+        "cooldown": 0.22,
+        "resource_cost": 0,
+        "resource_gain": 1,
+        "target_range": 360,
+        "aim_dot_threshold": 0.8,
+        "command_distance": 180,
+        "animation_lock": 0.32
+      },
+      "movement": {
+        "cooldown": 1.0,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "movement_distance": 210,
+        "destination_clearance": 22,
+        "invulnerability": 0.24,
+        "mount_offset": 24,
+        "animation_lock": 0.32
+      },
+      "special": {
+        "cooldown": 2.5,
+        "resource_cost": 2,
+        "resource_gain": 0,
+        "animation_lock": 0.32
+      },
+      "defensive": {
+        "cooldown": 4.0,
+        "resource_cost": 0,
+        "resource_gain": 0,
+        "effect_duration": 1.0,
+        "animation_lock": 0.32
+      }
+    }
   },
   "companions": {
-	"wolf": {"follow_distance": 40, "follow_speed": 120, "command_distance": 24, "command_speed": 120, "combat_speed": 145, "pounce_speed": 260, "pounce_range": 30, "power_stat": "attack_power", "damage_coefficient": 1.0, "flat_damage": 0, "attack_cooldown": 0.8, "collision_radius": 10, "interception_radius": 90, "cover_mitigation_near": 0.6, "cover_mitigation_far": 0.3, "spawn_offset": [28, 0], "follow_offset": [-24, 18], "resource_gain": 1, "animation_lock": 0.3}
+    "wolf": {
+      "follow_distance": 40,
+      "follow_speed": 120,
+      "command_distance": 24,
+      "command_speed": 120,
+      "combat_speed": 145,
+      "pounce_speed": 260,
+      "pounce_range": 30,
+      "power_stat": "attack_power",
+      "damage_coefficient": 1.0,
+      "flat_damage": 0,
+      "attack_cooldown": 0.8,
+      "collision_radius": 10,
+      "interception_radius": 90,
+      "cover_mitigation_near": 0.6,
+      "cover_mitigation_far": 0.3,
+      "spawn_offset": [
+        28,
+        0
+      ],
+      "follow_offset": [
+        -24,
+        18
+      ],
+      "resource_gain": 1,
+      "animation_lock": 0.3
+    }
   },
   "enemies": {
-	"forest_normal": {"health_base": 14, "health_per_floor": 5, "damage_base": 2, "damage_per_floor": 1, "speed_base": 68, "speed_per_floor": 3, "attack_range": 34, "attack_cooldown": 1.15, "attack_knockback": 120, "collision_radius": 14, "reward": 3, "animation_lock": 0.35, "hit_stun_duration": 0.12, "received_knockback_multiplier": 1.0, "screen_shake_strength": 4.5, "screen_shake_duration": 0.16, "slow_multiplier": 0.55, "slow_duration": 1.5, "stagger_multiplier": 0.0, "stagger_duration": 0.45},
-	"forest_elite": {"minimum_floor":3,"health_bonus":10,"damage_bonus":2,"reward":5,"mini_boss_health_multiplier":2.5,"mini_boss_damage_multiplier":1.5,"mini_boss_reward":12},
-	"elite_guardian": {"received_knockback_multiplier":0.18,"hit_stun_duration":0.04,"burst_telegraph":0.22,"burst_projectiles":8,"burst_damage_multiplier":0.55,"burst_speed":285,"burst_range":285,"burst_hit_radius":13,"burst_rotation_step":0.19635,"burst_color":"#c9ef72"},
-	"heartwood_colossus": {"health_base":380,"health_per_floor":30,"damage_base":3,"damage_per_floor":0.6,"reward":40,"phase_two":0.66,"phase_three":0.33,"phase_two_speed":1.2,"phase_three_speed":1.4,"roar":1.4,"rest":0.9,"bloom_telegraph":1.1,"bloom_bullets":16,"bloom_speed":150,"bloom_wave_gap":0.55,"spiral_telegraph":0.9,"spiral_duration":3.2,"spiral_interval":0.12,"spiral_speed":165,"spiral_turn":0.23,"slam_telegraph":1.15,"slam_radius":74,"slam_damage_multiplier":1.3,"slam_shards":10,"slam_shard_speed":175,"bullet_damage_multiplier":0.5,"heart_window":2.6,"fist_window":2.4},
-	"sporeling": {"health_base":5,"health_per_floor":2,"damage_base":1,"damage_per_floor":0.5,"speed":112,"speed_per_floor":3,"attack_range":24,"knockback":60,"reward":1,"collision_radius":10,"wake_radius":140,"wake_chain_radius":130,"wake_time":0.65,"hop_distance":54,"hop_speed":300,"hop_windup":0.28,"recovery":0.55,"cooldown":1.1,"group_size":3,"group_size_from_floor_3":4},
-	"bandit_cutthroat": {"health_base":16,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":96,"speed_per_floor":2,"attack_range":30,"knockback":140,"reward":4,"collision_radius":13,"circle_range":120,"lunge_range":200,"lunge_windup":0.42,"lunge_distance":190,"lunge_speed":520,"damage_multiplier":1.3,"recovery":0.7},
-	"bandit_knifethrower": {"health_base":11,"health_per_floor":3,"damage_base":2,"damage_per_floor":1,"speed":84,"speed_per_floor":2,"attack_range":30,"knockback":80,"reward":4,"collision_radius":12,"preferred_range":230,"retreat_range":130,"telegraph":0.45,"cooldown":1.8,"knife_speed":330,"knife_range":430,"fan_floor":3},
-	"skeletal_archer": {"health_base":16,"health_per_floor":3,"damage_base":2,"damage_per_floor":1,"speed":76,"preferred_range":255,"retreat_range":145,"telegraph":0.68,"cooldown":1.75,"spread_floor":4,"reward":5,"projectile_cap":72},
-	"grave_acolyte": {"health_base":22,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":61,"preferred_range":225,"telegraph":0.92,"cooldown":2.55,"reward":7,"projectile_cap":72},
-	"soul_wisp": {"health_base":13,"health_per_floor":3,"damage_base":2,"damage_per_floor":1,"speed":104,"preferred_range":190,"cooldown":1.6,"burst_cooldown":5.2,"reward":6,"projectile_cap":72},
-	"crypt_lord": {"gate_health_scale":0.55,"health_base":190,"health_per_floor":20,"damage_base":5,"damage_per_floor":1,"speed":54,"preferred_range":210,"reward":30,"projectile_cap":72,"phase_two":0.70,"phase_three":0.35},
-	"grave_rat": {"behaves_like":"sporeling","health_base":7,"health_per_floor":2,"damage_base":2,"damage_per_floor":0.5,"speed":150,"speed_per_floor":3,"attack_range":24,"knockback":60,"reward":1,"collision_radius":11,"wake_radius":150,"wake_chain_radius":140,"wake_time":0.35,"hop_distance":60,"hop_speed":360,"hop_windup":0.22,"recovery":0.45,"cooldown":0.95},
-	"ghoul": {"behaves_like":"bandit_cutthroat","health_base":22,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":92,"speed_per_floor":2,"attack_range":30,"knockback":150,"reward":4,"collision_radius":14,"circle_range":130,"lunge_range":210,"lunge_windup":0.5,"lunge_distance":200,"lunge_speed":500,"damage_multiplier":1.4,"recovery":0.8},
-	"gravedigger": {"behaves_like":"bandit_knifethrower","health_base":16,"health_per_floor":3,"damage_base":2,"damage_per_floor":1,"speed":76,"speed_per_floor":2,"attack_range":30,"knockback":80,"reward":4,"collision_radius":13,"preferred_range":250,"retreat_range":140,"telegraph":0.5,"cooldown":2.0,"knife_speed":290,"knife_range":460,"fan_floor":3,"projectile_visual":"bone","projectile_color":"#d9d0bd"},
-	"tomb_guard": {"behaves_like":"shieldbearer","health_base":30,"health_per_floor":6,"damage_base":4,"damage_per_floor":1,"speed":58,"speed_per_floor":1,"attack_range":34,"knockback":200,"reward":6,"collision_radius":16,"turn_rate":2.0,"shield_arc_degrees":110,"bash_range":120,"bash_windup":0.55,"bash_distance":110,"bash_speed":420,"bash_damage_multiplier":1.4,"bash_recovery":1.3,"cooldown":2.6},
-	"revenant": {"behaves_like":"revenant","health_base":18,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":70,"speed_per_floor":2,"attack_range":30,"knockback":110,"reward":4,"collision_radius":13,"swing_windup":0.35,"cooldown":1.2,"rise_time":3.5,"rise_health":0.5},
-	"charnel_king": {"health_base":460,"health_per_floor":30,"damage_base":4,"damage_per_floor":0.6,"reward":55,"phase_two":0.66,"phase_three":0.33,"phase_two_speed":1.15,"phase_three_speed":1.3,"roar":1.4,"rest":1.0,"sweep_telegraph":1.2,"sweep_duration":0.9,"lane_height":120,"sweep_damage_multiplier":1.4,"hand_window":2.6,"wail_telegraph":1.0,"wail_bullets":28,"wail_gap":4,"wail_speed":140,"wail_wave_gap":0.75,"gem_window":2.6,"rain_telegraph":1.0,"rain_count":7,"rain_spread":230,"rain_radius":58,"rain_stagger":0.16,"rain_shards":6,"rain_shard_speed":160,"rain_damage_multiplier":1.2,"bullet_damage_multiplier":0.5,"reinforcements":["revenant","grave_rat","grave_rat"]},
-	"infernal_caster":{"health_base":18,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":74,"preferred_range":245,"reward":7,"projectile_cap":96},
-	"rift_stalker":{"health_base":16,"health_per_floor":4,"damage_base":3,"damage_per_floor":1,"speed":92,"preferred_range":175,"teleport_windup":1.0,"teleport_recovery":1.5,"reward":7,"projectile_cap":96},
-	"hellcharger":{"health_base":27,"health_per_floor":5,"damage_base":4,"damage_per_floor":1,"speed":88,"reward":8,"projectile_cap":96},
-	"cinder_bomber":{"health_base":22,"health_per_floor":4,"damage_base":4,"damage_per_floor":1,"speed":64,"preferred_range":235,"reward":8,"projectile_cap":96},
-	"fire_spirit":{"health_base":7,"health_per_floor":2,"damage_base":3,"damage_per_floor":1,"speed":142,"reward":1,"projectile_cap":96},
-	"infernal_legate":{"health_base":105,"health_per_floor":12,"damage_base":5,"damage_per_floor":1,"speed":68,"preferred_range":190,"reward":22,"projectile_cap":96},
-	"balor":{"health_base":285,"health_per_floor":24,"damage_base":6,"damage_per_floor":1,"speed":45,"preferred_range":230,"reward":42,"projectile_cap":96},
-	"forest_boss": {"health_base": 75, "health_per_floor": 18, "damage_base": 6, "damage_per_floor": 2, "speed_base": 62, "speed_per_floor": 0, "attack_range": 44, "attack_cooldown": 0.75, "attack_knockback": 120, "collision_radius": 24, "reward": 18, "animation_lock": 0.35, "hit_stun_duration": 0.06, "received_knockback_multiplier": 0.35, "screen_shake_strength": 6.5, "screen_shake_duration": 0.20, "slow_multiplier": 0.55, "slow_duration": 1.5, "stagger_multiplier": 0.0, "stagger_duration": 0.45}
+    "forest_normal": {
+      "health_base": 14,
+      "health_per_floor": 0,
+      "damage_base": 2,
+      "damage_per_floor": 0,
+      "speed_base": 68,
+      "speed_per_floor": 0,
+      "attack_range": 34,
+      "attack_cooldown": 1.15,
+      "attack_knockback": 120,
+      "collision_radius": 14,
+      "reward": 3,
+      "animation_lock": 0.35,
+      "hit_stun_duration": 0.12,
+      "received_knockback_multiplier": 1.0,
+      "screen_shake_strength": 4.5,
+      "screen_shake_duration": 0.16,
+      "slow_multiplier": 0.55,
+      "slow_duration": 1.5,
+      "stagger_multiplier": 0.0,
+      "stagger_duration": 0.45
+    },
+    "forest_elite": {
+      "health_bonus": 0,
+      "damage_bonus": 0,
+      "reward": 5,
+      "mini_boss_health_multiplier": 2.5,
+      "mini_boss_damage_multiplier": 1.5,
+      "mini_boss_reward": 12,
+      "champion_chance": 0.1,
+      "champion_health_multiplier": 2.0,
+      "how_to_edit": "Champions (Isaac style): any ordinary enemy has champion_chance to spawn as a champion with champion_health_multiplier health. Champions hit for a full heart and drop a pickup. Enemy health doesn't grow with floors (every *_per_floor is 0)."
+    },
+    "elite_guardian": {
+      "received_knockback_multiplier": 0.18,
+      "hit_stun_duration": 0.04,
+      "burst_telegraph": 0.22,
+      "burst_projectiles": 8,
+      "burst_damage_multiplier": 0.55,
+      "burst_speed": 285,
+      "burst_range": 285,
+      "burst_hit_radius": 13,
+      "burst_rotation_step": 0.19635,
+      "burst_color": "#c9ef72"
+    },
+    "heartwood_colossus": {
+      "health_base": 380,
+      "health_per_floor": 0,
+      "damage_base": 3,
+      "damage_per_floor": 0,
+      "reward": 40,
+      "phase_two": 0.66,
+      "phase_three": 0.33,
+      "phase_two_speed": 1.2,
+      "phase_three_speed": 1.4,
+      "roar": 1.4,
+      "rest": 0.9,
+      "bloom_telegraph": 1.1,
+      "bloom_bullets": 16,
+      "bloom_speed": 150,
+      "bloom_wave_gap": 0.55,
+      "spiral_telegraph": 0.9,
+      "spiral_duration": 3.2,
+      "spiral_interval": 0.12,
+      "spiral_speed": 165,
+      "spiral_turn": 0.23,
+      "slam_telegraph": 1.15,
+      "slam_radius": 74,
+      "slam_damage_multiplier": 1.3,
+      "slam_shards": 10,
+      "slam_shard_speed": 175,
+      "bullet_damage_multiplier": 0.5,
+      "heart_window": 2.6,
+      "fist_window": 2.4,
+      "speed_per_floor": 0
+    },
+    "sporeling": {
+      "health_base": 5,
+      "health_per_floor": 0,
+      "damage_base": 1,
+      "damage_per_floor": 0,
+      "speed": 112,
+      "speed_per_floor": 0,
+      "attack_range": 24,
+      "knockback": 60,
+      "reward": 1,
+      "collision_radius": 10,
+      "wake_radius": 140,
+      "wake_chain_radius": 130,
+      "wake_time": 0.65,
+      "hop_distance": 54,
+      "hop_speed": 300,
+      "hop_windup": 0.28,
+      "recovery": 0.55,
+      "cooldown": 1.1,
+      "group_size": 3,
+      "group_size_from_floor_3": 4
+    },
+    "bandit_cutthroat": {
+      "health_base": 16,
+      "health_per_floor": 0,
+      "damage_base": 3,
+      "damage_per_floor": 0,
+      "speed": 96,
+      "speed_per_floor": 0,
+      "attack_range": 30,
+      "knockback": 140,
+      "reward": 4,
+      "collision_radius": 13,
+      "circle_range": 120,
+      "lunge_range": 200,
+      "lunge_windup": 0.42,
+      "lunge_distance": 190,
+      "lunge_speed": 520,
+      "damage_multiplier": 1.3,
+      "recovery": 0.7
+    },
+    "bandit_knifethrower": {
+      "health_base": 11,
+      "health_per_floor": 0,
+      "damage_base": 2,
+      "damage_per_floor": 0,
+      "speed": 84,
+      "speed_per_floor": 0,
+      "attack_range": 30,
+      "knockback": 80,
+      "reward": 4,
+      "collision_radius": 12,
+      "preferred_range": 230,
+      "retreat_range": 130,
+      "telegraph": 0.45,
+      "cooldown": 1.8,
+      "knife_speed": 330,
+      "knife_range": 430,
+      "fan_floor": 3
+    },
+    "skeletal_archer": {
+      "health_base": 16,
+      "health_per_floor": 0,
+      "damage_base": 2,
+      "damage_per_floor": 0,
+      "speed": 76,
+      "preferred_range": 255,
+      "retreat_range": 145,
+      "telegraph": 0.68,
+      "cooldown": 1.75,
+      "spread_floor": 4,
+      "reward": 5,
+      "projectile_cap": 72,
+      "speed_per_floor": 0
+    },
+    "grave_acolyte": {
+      "health_base": 22,
+      "health_per_floor": 0,
+      "damage_base": 3,
+      "damage_per_floor": 0,
+      "speed": 61,
+      "preferred_range": 225,
+      "telegraph": 0.92,
+      "cooldown": 2.55,
+      "reward": 7,
+      "projectile_cap": 72,
+      "speed_per_floor": 0
+    },
+    "soul_wisp": {
+      "health_base": 13,
+      "health_per_floor": 0,
+      "damage_base": 2,
+      "damage_per_floor": 0,
+      "speed": 104,
+      "preferred_range": 190,
+      "cooldown": 1.6,
+      "burst_cooldown": 5.2,
+      "reward": 6,
+      "projectile_cap": 72,
+      "speed_per_floor": 0
+    },
+    "crypt_lord": {
+      "gate_health_scale": 0.55,
+      "health_base": 190,
+      "health_per_floor": 0,
+      "damage_base": 5,
+      "damage_per_floor": 0,
+      "speed": 54,
+      "preferred_range": 210,
+      "reward": 30,
+      "projectile_cap": 72,
+      "phase_two": 0.7,
+      "phase_three": 0.35,
+      "speed_per_floor": 0
+    },
+    "grave_rat": {
+      "behaves_like": "sporeling",
+      "health_base": 7,
+      "health_per_floor": 0,
+      "damage_base": 2,
+      "damage_per_floor": 0,
+      "speed": 150,
+      "speed_per_floor": 0,
+      "attack_range": 24,
+      "knockback": 60,
+      "reward": 1,
+      "collision_radius": 11,
+      "wake_radius": 150,
+      "wake_chain_radius": 140,
+      "wake_time": 0.35,
+      "hop_distance": 60,
+      "hop_speed": 360,
+      "hop_windup": 0.22,
+      "recovery": 0.45,
+      "cooldown": 0.95
+    },
+    "ghoul": {
+      "behaves_like": "bandit_cutthroat",
+      "health_base": 22,
+      "health_per_floor": 0,
+      "damage_base": 3,
+      "damage_per_floor": 0,
+      "speed": 92,
+      "speed_per_floor": 0,
+      "attack_range": 30,
+      "knockback": 150,
+      "reward": 4,
+      "collision_radius": 14,
+      "circle_range": 130,
+      "lunge_range": 210,
+      "lunge_windup": 0.5,
+      "lunge_distance": 200,
+      "lunge_speed": 500,
+      "damage_multiplier": 1.4,
+      "recovery": 0.8
+    },
+    "gravedigger": {
+      "behaves_like": "bandit_knifethrower",
+      "health_base": 16,
+      "health_per_floor": 0,
+      "damage_base": 2,
+      "damage_per_floor": 0,
+      "speed": 76,
+      "speed_per_floor": 0,
+      "attack_range": 30,
+      "knockback": 80,
+      "reward": 4,
+      "collision_radius": 13,
+      "preferred_range": 250,
+      "retreat_range": 140,
+      "telegraph": 0.5,
+      "cooldown": 2.0,
+      "knife_speed": 290,
+      "knife_range": 460,
+      "fan_floor": 3,
+      "projectile_visual": "bone",
+      "projectile_color": "#d9d0bd"
+    },
+    "tomb_guard": {
+      "behaves_like": "shieldbearer",
+      "health_base": 30,
+      "health_per_floor": 0,
+      "damage_base": 4,
+      "damage_per_floor": 0,
+      "speed": 58,
+      "speed_per_floor": 0,
+      "attack_range": 34,
+      "knockback": 200,
+      "reward": 6,
+      "collision_radius": 16,
+      "turn_rate": 2.0,
+      "shield_arc_degrees": 110,
+      "bash_range": 120,
+      "bash_windup": 0.55,
+      "bash_distance": 110,
+      "bash_speed": 420,
+      "bash_damage_multiplier": 1.4,
+      "bash_recovery": 1.3,
+      "cooldown": 2.6
+    },
+    "revenant": {
+      "behaves_like": "revenant",
+      "health_base": 18,
+      "health_per_floor": 0,
+      "damage_base": 3,
+      "damage_per_floor": 0,
+      "speed": 70,
+      "speed_per_floor": 0,
+      "attack_range": 30,
+      "knockback": 110,
+      "reward": 4,
+      "collision_radius": 13,
+      "swing_windup": 0.35,
+      "cooldown": 1.2,
+      "rise_time": 3.5,
+      "rise_health": 0.5
+    },
+    "charnel_king": {
+      "health_base": 460,
+      "health_per_floor": 0,
+      "damage_base": 4,
+      "damage_per_floor": 0,
+      "reward": 55,
+      "phase_two": 0.66,
+      "phase_three": 0.33,
+      "phase_two_speed": 1.15,
+      "phase_three_speed": 1.3,
+      "roar": 1.4,
+      "rest": 1.0,
+      "sweep_telegraph": 1.2,
+      "sweep_duration": 0.9,
+      "lane_height": 120,
+      "sweep_damage_multiplier": 1.4,
+      "hand_window": 2.6,
+      "wail_telegraph": 1.0,
+      "wail_bullets": 28,
+      "wail_gap": 4,
+      "wail_speed": 140,
+      "wail_wave_gap": 0.75,
+      "gem_window": 2.6,
+      "rain_telegraph": 1.0,
+      "rain_count": 7,
+      "rain_spread": 230,
+      "rain_radius": 58,
+      "rain_stagger": 0.16,
+      "rain_shards": 6,
+      "rain_shard_speed": 160,
+      "rain_damage_multiplier": 1.2,
+      "bullet_damage_multiplier": 0.5,
+      "reinforcements": [
+        "revenant",
+        "grave_rat",
+        "grave_rat"
+      ],
+      "speed_per_floor": 0
+    },
+    "infernal_caster": {
+      "health_base": 18,
+      "health_per_floor": 0,
+      "damage_base": 3,
+      "damage_per_floor": 0,
+      "speed": 74,
+      "preferred_range": 245,
+      "reward": 7,
+      "projectile_cap": 96,
+      "speed_per_floor": 0
+    },
+    "rift_stalker": {
+      "health_base": 16,
+      "health_per_floor": 0,
+      "damage_base": 3,
+      "damage_per_floor": 0,
+      "speed": 92,
+      "preferred_range": 175,
+      "teleport_windup": 1.0,
+      "teleport_recovery": 1.5,
+      "reward": 7,
+      "projectile_cap": 96,
+      "speed_per_floor": 0
+    },
+    "hellcharger": {
+      "health_base": 27,
+      "health_per_floor": 0,
+      "damage_base": 4,
+      "damage_per_floor": 0,
+      "speed": 88,
+      "reward": 8,
+      "projectile_cap": 96,
+      "speed_per_floor": 0
+    },
+    "cinder_bomber": {
+      "health_base": 22,
+      "health_per_floor": 0,
+      "damage_base": 4,
+      "damage_per_floor": 0,
+      "speed": 64,
+      "preferred_range": 235,
+      "reward": 8,
+      "projectile_cap": 96,
+      "speed_per_floor": 0
+    },
+    "fire_spirit": {
+      "health_base": 7,
+      "health_per_floor": 0,
+      "damage_base": 3,
+      "damage_per_floor": 0,
+      "speed": 142,
+      "reward": 1,
+      "projectile_cap": 96,
+      "speed_per_floor": 0
+    },
+    "infernal_legate": {
+      "health_base": 105,
+      "health_per_floor": 0,
+      "damage_base": 5,
+      "damage_per_floor": 0,
+      "speed": 68,
+      "preferred_range": 190,
+      "reward": 22,
+      "projectile_cap": 96,
+      "speed_per_floor": 0
+    },
+    "balor": {
+      "health_base": 285,
+      "health_per_floor": 0,
+      "damage_base": 6,
+      "damage_per_floor": 0,
+      "speed": 45,
+      "preferred_range": 230,
+      "reward": 42,
+      "projectile_cap": 96,
+      "speed_per_floor": 0
+    },
+    "forest_boss": {
+      "health_base": 75,
+      "health_per_floor": 0,
+      "damage_base": 6,
+      "damage_per_floor": 0,
+      "speed_base": 62,
+      "speed_per_floor": 0,
+      "attack_range": 44,
+      "attack_cooldown": 0.75,
+      "attack_knockback": 120,
+      "collision_radius": 24,
+      "reward": 18,
+      "animation_lock": 0.35,
+      "hit_stun_duration": 0.06,
+      "received_knockback_multiplier": 0.35,
+      "screen_shake_strength": 6.5,
+      "screen_shake_duration": 0.2,
+      "slow_multiplier": 0.55,
+      "slow_duration": 1.5,
+      "stagger_multiplier": 0.0,
+      "stagger_duration": 0.45
+    }
   },
   "wolf_archetypes": {
-	"wolf_vanguard": {"name":"Vanguard","unlock_floor":1,"color":"#d95b55","scale":1.05,"speed_multiplier":1.18,"detection_radius":560,"bite_cooldown":0.85,"damage_multiplier":1.0},
-	"wolf_lurker": {"name":"Lurker","unlock_floor":2,"color":"#8d6a9f","scale":0.96,"speed_multiplier":1.05,"ambush_radius":165,"lunge_windup":0.28,"lunge_speed":470,"lunge_distance":175,"recovery":0.75,"damage_multiplier":1.15},
-	"wolf_charger": {"name":"Charger","unlock_floor":3,"color":"#e58b42","scale":1.12,"speed_multiplier":0.9,"detection_radius":520,"charge_range":340,"charge_windup":0.65,"charge_speed":560,"charge_distance":310,"recovery":1.05,"damage_multiplier":1.4},
-	"wolf_hunter": {"name":"Hunter","unlock_floor":4,"color":"#5898d4","scale":1.0,"speed_multiplier":1.25,"bite_cooldown":1.15,"damage_multiplier":0.9,"slow_multiplier":0.58,"slow_duration":1.6},
-	"wolf_howler": {"name":"Howler","unlock_floor":5,"color":"#62ad69","scale":0.94,"speed_multiplier":0.95,"preferred_distance":210,"retreat_distance":125,"howl_radius":245,"howl_windup":0.8,"howl_cooldown":7.5,"heal_fraction":0.16,"bite_cooldown":1.5,"damage_multiplier":0.65}
+    "wolf_vanguard": {
+      "name": "Vanguard",
+      "unlock_floor": 1,
+      "color": "#d95b55",
+      "scale": 1.05,
+      "speed_multiplier": 1.18,
+      "detection_radius": 560,
+      "bite_cooldown": 0.85,
+      "damage_multiplier": 1.0
+    },
+    "wolf_lurker": {
+      "name": "Lurker",
+      "unlock_floor": 2,
+      "color": "#8d6a9f",
+      "scale": 0.96,
+      "speed_multiplier": 1.05,
+      "ambush_radius": 165,
+      "lunge_windup": 0.28,
+      "lunge_speed": 470,
+      "lunge_distance": 175,
+      "recovery": 0.75,
+      "damage_multiplier": 1.15
+    },
+    "wolf_charger": {
+      "name": "Charger",
+      "unlock_floor": 3,
+      "color": "#e58b42",
+      "scale": 1.12,
+      "speed_multiplier": 0.9,
+      "detection_radius": 520,
+      "charge_range": 340,
+      "charge_windup": 0.65,
+      "charge_speed": 560,
+      "charge_distance": 310,
+      "recovery": 1.05,
+      "damage_multiplier": 1.4
+    },
+    "wolf_hunter": {
+      "name": "Hunter",
+      "unlock_floor": 4,
+      "color": "#5898d4",
+      "scale": 1.0,
+      "speed_multiplier": 1.25,
+      "bite_cooldown": 1.15,
+      "damage_multiplier": 0.9,
+      "slow_multiplier": 0.58,
+      "slow_duration": 1.6
+    },
+    "wolf_howler": {
+      "name": "Howler",
+      "unlock_floor": 5,
+      "color": "#62ad69",
+      "scale": 0.94,
+      "speed_multiplier": 0.95,
+      "preferred_distance": 210,
+      "retreat_distance": 125,
+      "howl_radius": 245,
+      "howl_windup": 0.8,
+      "howl_cooldown": 7.5,
+      "heal_fraction": 0.16,
+      "bite_cooldown": 1.5,
+      "damage_multiplier": 0.65
+    }
   },
-  "wolfmaster": {"root_cooldown":6.5,"enraged_root_cooldown":4.25,"root_windup":0.85,"root_radius":74,"root_damage_multiplier":0.8,"root_slow_multiplier":0.5,"root_slow_duration":1.4,"howl_cooldown":8.5,"howl_radius":300,"heal_fraction":0.12,"speed_boost":1.22,"speed_boost_duration":3.0,"reinforcement_cap":5},
+  "wolfmaster": {
+    "root_cooldown": 6.5,
+    "enraged_root_cooldown": 4.25,
+    "root_windup": 0.85,
+    "root_radius": 74,
+    "root_damage_multiplier": 0.8,
+    "root_slow_multiplier": 0.5,
+    "root_slow_duration": 1.4,
+    "howl_cooldown": 8.5,
+    "howl_radius": 300,
+    "heal_fraction": 0.12,
+    "speed_boost": 1.22,
+    "speed_boost_duration": 3.0,
+    "reinforcement_cap": 5
+  },
   "enemy_visuals": {
-	"feral_wolf": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.81},
-	"wolf_vanguard": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.91},
-	"wolf_lurker": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.77},
-	"wolf_charger": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.94},
-	"wolf_hunter": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.82},
-	"wolf_howler": {"sprite_offset_x": 0, "sprite_offset_y": -8, "sprite_scale": 0.83},
-	"thornback_boar": {"sprite_offset_x": 0, "sprite_offset_y": -10, "sprite_scale": 0.78},
-	"briar_guardian": {"sprite_offset_x": 0, "sprite_offset_y": -12, "sprite_scale": 0.74},
-	"poison_ranger": {"sprite_offset_x": 0, "sprite_offset_y": -18, "sprite_scale": 0.7},
-	"spore_beast": {"sprite_offset_x": 0, "sprite_offset_y": -20, "sprite_scale": 0.7},
-	"fire_mage": {"sprite_offset_x": 0, "sprite_offset_y": -18, "sprite_scale": 0.7},
-	"ice_mage": {"sprite_offset_x": 0, "sprite_offset_y": -18, "sprite_scale": 0.7},
-	"dark_druid": {"sprite_offset_x": 0, "sprite_offset_y": -20, "sprite_scale": 1.05}
-	,"skeletal_archer": {"sprite_offset_x":0,"sprite_offset_y":-23,"sprite_scale":0.72}
-	,"heartwood_colossus": {"sprite_offset_x":0,"sprite_offset_y":0,"sprite_scale":1.0}
-	,"sporeling": {"sprite_offset_x":0,"sprite_offset_y":-14,"sprite_scale":1.25,"bar_lift":6}
-	,"bandit_cutthroat": {"sprite_offset_x":0,"sprite_offset_y":-32,"sprite_scale":0.72,"bar_lift":18}
-	,"bandit_knifethrower": {"sprite_offset_x":0,"sprite_offset_y":-32,"sprite_scale":0.68,"tint":"#f2a9a0","bar_lift":16}
-	,"necromancer": {"sprite_offset_x":0,"sprite_offset_y":-22,"sprite_scale":0.72}
-	,"soul_wisp": {"sprite_offset_x":0,"sprite_offset_y":-17,"sprite_scale":0.67}
-	,"crypt_boss": {"sprite_offset_x":0,"sprite_offset_y":-25,"sprite_scale":1.08}
-	,"skeleton": {"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.48}
-	,"grave_rat": {"art":"ash_rat","desaturate":0.9,"tint":"#c4bdcc","sprite_offset_x":0,"sprite_offset_y":-12,"sprite_scale":0.5}
-	,"ghoul": {"art":"drowned_foreman","tint":"#c3d0ad","sprite_offset_x":0,"sprite_offset_y":-22,"sprite_scale":0.74,"bar_lift":6}
-	,"gravedigger": {"art":"blighted_farmhand","desaturate":0.55,"tint":"#c9c3d4","sprite_offset_x":0,"sprite_offset_y":-22,"sprite_scale":0.72,"bar_lift":6}
-	,"tomb_guard": {"art":"moon_court_huntress","tint":"#a8a5b4","sprite_offset_x":0,"sprite_offset_y":-24,"sprite_scale":0.8,"bar_lift":8}
-	,"charnel_king": {"sprite_offset_x":0,"sprite_offset_y":0,"sprite_scale":1.0}
-	,"revenant": {"art":"skeleton","tint":"#c9f2c4","sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.52}
-	,"infernal_caster":{"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.72}
-	,"rift_stalker":{"sprite_offset_x":0,"sprite_offset_y":-18,"sprite_scale":0.72}
-	,"hellcharger":{"sprite_offset_x":0,"sprite_offset_y":-14,"sprite_scale":0.78}
-	,"cinder_bomber":{"sprite_offset_x":0,"sprite_offset_y":-16,"sprite_scale":0.74}
-	,"fire_spirit":{"sprite_offset_x":0,"sprite_offset_y":-13,"sprite_scale":0.62}
-	,"infernal_legate":{"sprite_offset_x":0,"sprite_offset_y":-22,"sprite_scale":0.95}
-	,"balor":{"sprite_offset_x":0,"sprite_offset_y":-30,"sprite_scale":1.20}
+    "feral_wolf": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -8,
+      "sprite_scale": 0.81
+    },
+    "wolf_vanguard": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -8,
+      "sprite_scale": 0.91
+    },
+    "wolf_lurker": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -8,
+      "sprite_scale": 0.77
+    },
+    "wolf_charger": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -8,
+      "sprite_scale": 0.94
+    },
+    "wolf_hunter": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -8,
+      "sprite_scale": 0.82
+    },
+    "wolf_howler": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -8,
+      "sprite_scale": 0.83
+    },
+    "thornback_boar": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -10,
+      "sprite_scale": 0.78
+    },
+    "briar_guardian": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -12,
+      "sprite_scale": 0.74
+    },
+    "poison_ranger": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -18,
+      "sprite_scale": 0.7
+    },
+    "spore_beast": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -20,
+      "sprite_scale": 0.7
+    },
+    "fire_mage": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -18,
+      "sprite_scale": 0.7
+    },
+    "ice_mage": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -18,
+      "sprite_scale": 0.7
+    },
+    "dark_druid": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -20,
+      "sprite_scale": 1.05
+    },
+    "skeletal_archer": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -23,
+      "sprite_scale": 0.72
+    },
+    "heartwood_colossus": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": 0,
+      "sprite_scale": 1.0
+    },
+    "sporeling": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -14,
+      "sprite_scale": 1.25,
+      "bar_lift": 6
+    },
+    "bandit_cutthroat": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -32,
+      "sprite_scale": 0.72,
+      "bar_lift": 18
+    },
+    "bandit_knifethrower": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -32,
+      "sprite_scale": 0.68,
+      "tint": "#f2a9a0",
+      "bar_lift": 16
+    },
+    "necromancer": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -22,
+      "sprite_scale": 0.72
+    },
+    "soul_wisp": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -17,
+      "sprite_scale": 0.67
+    },
+    "crypt_boss": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -25,
+      "sprite_scale": 1.08
+    },
+    "skeleton": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -18,
+      "sprite_scale": 0.48
+    },
+    "grave_rat": {
+      "art": "ash_rat",
+      "desaturate": 0.9,
+      "tint": "#c4bdcc",
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -12,
+      "sprite_scale": 0.5
+    },
+    "ghoul": {
+      "art": "drowned_foreman",
+      "tint": "#c3d0ad",
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -22,
+      "sprite_scale": 0.74,
+      "bar_lift": 6
+    },
+    "gravedigger": {
+      "art": "blighted_farmhand",
+      "desaturate": 0.55,
+      "tint": "#c9c3d4",
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -22,
+      "sprite_scale": 0.72,
+      "bar_lift": 6
+    },
+    "tomb_guard": {
+      "art": "moon_court_huntress",
+      "tint": "#a8a5b4",
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -24,
+      "sprite_scale": 0.8,
+      "bar_lift": 8
+    },
+    "charnel_king": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": 0,
+      "sprite_scale": 1.0
+    },
+    "revenant": {
+      "art": "skeleton",
+      "tint": "#c9f2c4",
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -18,
+      "sprite_scale": 0.52
+    },
+    "infernal_caster": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -18,
+      "sprite_scale": 0.72
+    },
+    "rift_stalker": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -18,
+      "sprite_scale": 0.72
+    },
+    "hellcharger": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -14,
+      "sprite_scale": 0.78
+    },
+    "cinder_bomber": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -16,
+      "sprite_scale": 0.74
+    },
+    "fire_spirit": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -13,
+      "sprite_scale": 0.62
+    },
+    "infernal_legate": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -22,
+      "sprite_scale": 0.95
+    },
+    "balor": {
+      "sprite_offset_x": 0,
+      "sprite_offset_y": -30,
+      "sprite_scale": 1.2
+    }
+  },
+  "pickups": {
+    "how_to_edit": "Isaac-style pickups. Clearing a room has room_clear_chance (+luck_per_point for each point of luck) to drop one pickup, picked by weights. Champions always drop one. coin_values: odds of a penny (1), nickel (5) or dime (10). heart: a red heart heals 1 heart, a half heart half; red hearts stay on the floor while you're at full health. soul_heart: +1 soul heart. Run coins bank at the Hearth at gold_per_coin each.",
+    "room_clear_chance": 0.6,
+    "luck_per_point": 0.05,
+    "weights": {
+      "coin": 45,
+      "heart": 22,
+      "soul_heart": 7,
+      "key": 14
+    },
+    "coin_values": {
+      "1": 85,
+      "5": 12,
+      "10": 3
+    },
+    "half_heart_chance": 0.4,
+    "champion_drops": 1,
+    "gold_per_coin": 10
+  },
+  "tree_fade": {
+    "_note": "3D forest: trees near the player, or between the player and the camera, fade to this transparency (0 solid, 1 invisible). Distances in map cells. door_clear_radius: no trees within this many cells of a doorway (only low shrubs in the outer part).",
+    "near_radius": 3.2,
+    "behind_width": 2.6,
+    "behind_depth": 7.5,
+    "faded_transparency": 0.88,
+    "fade_speed": 9.0,
+    "door_clear_radius": 2.6
+  },
+  "shop_floor": {
+    "_note": "Shop rooms: the trader stands back at a stall (stall_row cells from the top, stall_offset_x from the middle); every offer lies on the floor in one row (row_offset from the room's middle, spacing cells apart). Stand within stand_radius pixels to see name, price and effect; E buys.",
+    "stall_row": 2,
+    "stall_offset_x": -7,
+    "row_offset": 2,
+    "spacing": 3,
+    "stand_radius": 34
   }
 }

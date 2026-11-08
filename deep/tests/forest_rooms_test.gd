@@ -23,6 +23,8 @@ func _run() -> void:
 			for index in 4:
 				if mask & (1 << index): open.append(directions[index])
 			var layout := ROOMS.build_layout(template,open,mask)
+			# Guardian arenas seal the north door when there's another way in.
+			if Array(template.get("roles",[])).has("guardian") and open.size() > 1: open.erase("north")
 			for direction in directions:
 				var slot: Vector2i = layout.door_slots[direction]
 				_expect(layout.cells.has(slot) == open.has(direction),"%s: %s door should be %s" % [template.id,direction,"open" if open.has(direction) else "sealed"])
@@ -49,7 +51,13 @@ func _run() -> void:
 	_expect(rooms.size() >= 8,"Floor 2 should have at least 8 rooms, has %d" % rooms.size())
 	var roles := {}
 	for room in rooms: roles[String(room.role)] = true
-	for role in ["start","boss","treasure","shop","rest"]: _expect(roles.has(role),"Floor graph is missing a %s room" % role)
+	# Isaac floors: start, boss, treasure and shop; no campfire (rest_room is off).
+	for role in ["start","boss","treasure","shop"]: _expect(roles.has(role),"Floor graph is missing a %s room" % role)
+	_expect(not roles.has("rest"),"Isaac floors shouldn't have a campfire room")
+	# Camps still work when switched on: make one to check it.
+	for record in rooms:
+		if String(record.role) == "combat":
+			state.update_field_room(int(record.id),{"role":"rest","template_id":"","cleared":true}); break
 	_expect(scene.room_role == "start" and scene.exit_open,"The start room should be safe with open doors")
 	_expect(scene.ground_layer.get_child(0) is TileMapLayer and scene.ground_layer.get_child(0).tile_set == preload("res://maps/forest/tiles/forest_ground.tres"),"Rooms are not drawn from their painted scenes in maps/forest")
 	_expect(scene.door_nodes.size() == Dictionary(rooms[0].neighbors).size(),"Start room doors do not match its neighbours")

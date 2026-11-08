@@ -271,6 +271,10 @@ static func get_slasher_item_effects(item_id:String)->Dictionary:
 			"range":conversions["range_pixels"]=value*48.0
 			"move_speed":conversions["speed_multiplier"]=float(conversions.get("speed_multiplier",1.0))*(1.0+value/100.0)
 			"attack_speed":conversions["attack_speed"]=value
+			# Real-time stats (docs/Items.md).
+			"damage","boss_damage","block_percent","dodge_percent","luck","soul_hearts":conversions[key]=float(conversions.get(key,0.0))+value
+			"cooldown_percent":conversions["cooldown_reduction"]=minf(0.35,float(conversions.get("cooldown_reduction",0.0))+value/100.0)
+			"precision_hits":conversions["precision_hits"]=value
 			_:conversions[key]=value
 	var authored_conversions:Dictionary=Dictionary(record.get("conversions",{}));authored_conversions.merge(conversions,true);record["conversions"]=authored_conversions
 	if not record.has("rules"):
@@ -294,14 +298,21 @@ static func _conversion_phrase(key:String,value:float)->String:
 		"cooldown_reduction":return "abilities recharge %s faster" % pct.call(value)
 		"speed_multiplier":return "move %s faster" % pct.call(value-1.0)
 		"mobility_multiplier","defense_window_bonus":return ""
-		"precision_hits":return "every %s attack lands a precision hit (+25%% damage)" % _ordinal(int(value))
 		"elite_damage_multiplier":return "+%s damage to elites and bosses" % pct.call(value-1.0)
-		"range_pixels":return "longer reach and spell range"
+		"range_pixels":return "+%d range" % int(round(value/48.0))
 		"attack_speed":return "basic attacks %d%% faster" % int(value)
-		"potion_heal_bonus":return "potions heal %d more" % int(value)
-		"max_health":return "+%d max health" % int(value)
+		"potion_heal_bonus":return "potions heal %s more" % ("half a heart" if int(value)==1 else "%s hearts" % str(value/2.0).trim_suffix(".0"))
+		"max_health":return "+%d heart%s" % [int(value),"" if int(value)==1 else "s"]
+		"dex":return "+%d Dexterity (you move faster)" % int(value)
+		"damage":return "+%d damage on every hit" % int(value)
+		"luck":return "+%d luck" % int(value)
+		"soul_hearts":return "+%d soul heart%s" % [int(value),"" if int(value)==1 else "s"]
+		"boss_damage":return "+%d damage to elites and bosses" % int(value)
+		"block_percent":return "%d%% chance to block a hit" % int(value)
+		"dodge_percent":return "+%d%% dodge chance" % int(value)
+		"precision_hits":return "every %s hit does +1 damage" % _ordinal(int(value))
 		"gold_bonus_percent":return "+%d%% gold found" % int(value)
-		"xp_bonus_percent":return ""
+		"xp_bonus_percent":return "+%d%% XP (only while levelling is on)" % int(value)
 		"armor_class":return "+%d armor" % int(value)
 	return "%s %+d" % [key.replace("_"," ").capitalize(),int(value)]
 
@@ -313,8 +324,8 @@ static func _ordinal(n:int)->String:
 static func get_slasher_item_rules_text(item_id:String)->String:return String(get_slasher_item_effects(item_id).get("rules",""))
 static func get_slasher_item_stat_conversions(item_id:String)->Dictionary:return Dictionary(get_slasher_item_effects(item_id).get("conversions",{})).duplicate(true)
 
-static func get_slasher_chest_rarity_weights(floor_number:int,endless_cycle:int=0)->Dictionary:
-	_load_all();var weights:Dictionary=get_rarity_weights(clampi(floor_number,1,5)).duplicate(true)
+static func get_slasher_chest_rarity_weights(floor_number:int,endless_cycle:int=0,dungeon_id:String="")->Dictionary:
+	_load_all();var weights:Dictionary=get_rarity_weights(clampi(floor_number,1,5),dungeon_id).duplicate(true)
 	if endless_cycle<=0:return weights
 	var scaling:Dictionary=Dictionary(_slasher_item_effects.get("endless_rarity",{}));var shift:int=endless_cycle*int(scaling.get("shift_per_cycle",4))
 	weights["common"]=maxi(0,int(weights.get("common",0))-shift*2);weights["uncommon"]=maxi(0,int(weights.get("uncommon",0))-shift)
@@ -380,8 +391,21 @@ static func get_loot_table() -> Dictionary:
 	_load_all()
 	return _loot_tables
 
-static func get_rarity_weights(floor: int) -> Dictionary:
+## Item rarity odds for a dungeon's stage (forest, crypt, hell): loot_tables.json.
+static func stage_of(dungeon_id: String) -> String:
 	_load_all()
+	return String(Dictionary(_loot_tables.get("stage_of_dungeon",{})).get(dungeon_id,"forest"))
+
+static func get_stage_rarity_weights(dungeon_id: String) -> Dictionary:
+	_load_all()
+	var stages: Dictionary = _loot_tables.get("rarity_weights_by_stage",{})
+	return Dictionary(stages.get(stage_of(dungeon_id),stages.get("forest",{"uncommon":1}))).duplicate(true)
+
+## Older per-floor tables still work if a data file has one; otherwise the
+## stage's odds (dungeon_id "" is the forest).
+static func get_rarity_weights(floor: int, dungeon_id: String = "") -> Dictionary:
+	_load_all()
+	if _loot_tables.has("rarity_weights_by_stage"): return get_stage_rarity_weights(dungeon_id)
 	var weights_by_floor_value: Variant = _loot_tables.get("rarity_weights_by_floor", {})
 	var weights_by_floor: Dictionary = weights_by_floor_value if weights_by_floor_value is Dictionary else {}
 	var weights_value: Variant = weights_by_floor.get(str(floor), weights_by_floor.get("1", {}))
@@ -643,10 +667,11 @@ static func _load_pickup_items(source: Dictionary) -> void:
 			}
 			if authored.has("floors"): item["duration_floors"] = int(authored.floors)
 			var turn_based: Dictionary = Dictionary(authored.get("turn_based", {}))
-			if turn_based.has("rules_text"): item["rules_text"] = String(turn_based.rules_text)
-			# Items made only for real-time combat show their combat rules instead.
-			if not item.has("rules_text") and authored.get("combat") is Dictionary and String(Dictionary(authored.combat).get("rules", "")) != "":
+			# The game is real-time: show the combat rules when an item has them,
+			# else the older turn-based text.
+			if authored.get("combat") is Dictionary and String(Dictionary(authored.combat).get("rules", "")) != "":
 				item["rules_text"] = String(authored.combat.rules).trim_prefix("Slasher: ")
+			elif turn_based.has("rules_text"): item["rules_text"] = String(turn_based.rules_text)
 			if turn_based.has("effects"): item["effects"] = Array(turn_based.effects).duplicate(true)
 			catalog[String(item_id)] = item
 			if authored.get("combat") is Dictionary: combat[String(item_id)] = Dictionary(authored.combat).duplicate(true)
@@ -655,6 +680,10 @@ static func _load_pickup_items(source: Dictionary) -> void:
 	_slasher_item_effects = Dictionary(source.get("drop_settings", {})).duplicate(true)
 	_slasher_item_effects["items"] = combat
 	_class_groups = Dictionary(source.get("class_groups", {})).duplicate(true)
+	# Items described only by their stats read those stats in real-time terms.
+	for item_id in catalog:
+		if String(Dictionary(catalog[item_id]).get("rules_text","")).is_empty():
+			catalog[item_id]["rules_text"] = get_slasher_item_rules_text(String(item_id)).trim_prefix("Slasher: ")
 
 ## "melee" or "ranged" for a class, from pickup_items.json class_groups.
 static func get_class_item_group(class_id: String) -> String:

@@ -56,6 +56,7 @@ func _build_floor() -> void:
 	room = run_state.get_field_room(room_id)
 	room_role = String(room.get("role","combat"))
 	layout = _room_layout()
+	if room_role == "shop": _arrange_shop(layout)
 	pathfinder = GRID_PATHFINDER.new().configure(Dictionary(layout.cells),Array(layout.solid_props),ORIGIN,float(TILE))
 	active_summons.clear()
 	_build_world(); _spawn_player(); _restore_player(snapshot)
@@ -67,6 +68,170 @@ func _build_floor() -> void:
 	if new_floor and run_state.current_floor == 1 and not run_state.starter_reward_claimed: call_deferred("_offer_starter_relic")
 	transition_cooldown = 0.5
 	_save_checkpoint()
+
+# --- The shop: wares laid out on the floor, Isaac style --------------------
+# The trader stands back at their stall; every offer sits on the ground in a
+# row. Stand on one to see its name, price and effect, press E to buy it.
+# Spacing and where the row sits: slasher_balance.json → shop_floor.
+var shop_offer_nodes: Array[Area2D] = []
+var shop_tag: PanelContainer
+var _shop_tag_label: RichTextLabel
+
+func _shop_rules() -> Dictionary:
+	return GameBalance.get_slasher_balance("shop_floor")
+
+## Moves the trader to the back of the room and picks a floor spot per offer.
+func _arrange_shop(target: Dictionary) -> void:
+	var rules := _shop_rules()
+	var cells: Dictionary = target.cells
+	var paths: Dictionary = target.get("path_cells",{})
+	var center: Vector2i = target.get("center",Vector2i(int(target.width)/2,int(target.height)/2))
+	var blocked := {}
+	for prop in Array(target.get("solid_props",[])): blocked[Vector2i(prop.cell)] = true
+	for key in ["campfire","treasure","exit"]:
+		var marker := Vector2i(target.get(key,Vector2i(-100,-100)))
+		for dy in range(-1,2):
+			for dx in range(-1,2): blocked[marker + Vector2i(dx,dy)] = true
+	var stall_want := center + Vector2i(int(rules.get("stall_offset_x",-7)),0)
+	stall_want.y = int(rules.get("stall_row",2))
+	target.merchant = _nearest_free_cell(cells,blocked,stall_want,paths)
+	blocked[Vector2i(target.merchant)] = true
+	var count := run_state.get_merchant_offers(_dungeon_merchant_id(),"dungeon").size()
+	var spacing := int(rules.get("spacing",3))
+	var row := center.y + int(rules.get("row_offset",2))
+	var spots: Array = []
+	for index in count:
+		var want := Vector2i(center.x + int(round((index - (count - 1) * 0.5) * spacing)),row)
+		var spot := _nearest_free_cell(cells,blocked,want,{})
+		blocked[spot] = true
+		spots.append(spot)
+	target["shop_slots"] = spots
+
+func _nearest_free_cell(cells: Dictionary, blocked: Dictionary, want: Vector2i, avoid: Dictionary) -> Vector2i:
+	var best := want
+	var best_score := 1 << 30
+	for value in cells:
+		var cell: Vector2i = value
+		if blocked.has(cell): continue
+		# Keep clear of the walls so the stall and wares never touch the thicket.
+		var crowded := 0
+		for direction in [Vector2i.UP,Vector2i.DOWN,Vector2i.LEFT,Vector2i.RIGHT]:
+			if not cells.has(cell + direction): crowded += 1
+		var score := (cell - want).length_squared() * 4 + crowded * 40 + (6 if avoid.has(cell) else 0)
+		if score < best_score: best_score = score; best = cell
+	return best
+
+func _build_shop_floor() -> void:
+	shop_offer_nodes.clear()
+	var spots: Array = layout.get("shop_slots",[])
+	var offers := run_state.get_merchant_offers(_dungeon_merchant_id(),"dungeon")
+	for index in mini(spots.size(),offers.size()):
+		var offer: Dictionary = offers[index]
+		if bool(offer.get("sold",false)): continue
+		var area := Area2D.new()
+		area.name = "ShopOffer_%d" % index
+		area.position = _world(Vector2i(spots[index]))
+		area.set_meta("offer_id",String(offer.get("offer_id","")))
+		area.set_meta("display",_offer_display_kind(offer))
+		var shape := CollisionShape2D.new(); var circle := CircleShape2D.new(); circle.radius = 24; shape.shape = circle; area.add_child(shape)
+		area.add_child(_glow(_rarity_color(String(offer.get("rarity","uncommon"))),22))
+		var icon := Sprite2D.new(); icon.name = "Ware"
+		icon.texture = _offer_texture(offer)
+		if icon.texture != null: icon.scale = Vector2.ONE * (34.0 / maxf(1.0,float(maxi(icon.texture.get_width(),icon.texture.get_height()))))
+		icon.position = Vector2(0,-12)
+		area.add_child(icon)
+		var price := Label.new(); price.name = "Price"
+		price.text = "%d¢" % int(offer.get("gold",0))
+		price.position = Vector2(-50,12); price.size = Vector2(100,28)
+		price.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		price.add_theme_font_size_override("font_size",22)
+		price.add_theme_color_override("font_color",Color("#ffe6a3")); price.add_theme_color_override("font_outline_color",Color("#140e08")); price.add_theme_constant_override("outline_size",5)
+		area.add_child(price)
+		actor_layer.add_child(area)
+		shop_offer_nodes.append(area)
+
+## Removes wares the list panel sold.
+func _sync_shop_floor() -> void:
+	for area in shop_offer_nodes.duplicate():
+		if not is_instance_valid(area): shop_offer_nodes.erase(area); continue
+		if bool(_find_merchant_offer(_dungeon_merchant_id(),String(area.get_meta("offer_id",""))).get("sold",true)):
+			shop_offer_nodes.erase(area); area.queue_free()
+
+func _offer_display_kind(offer: Dictionary) -> String:
+	return String(offer.get("kind","item"))
+
+func _offer_texture(offer: Dictionary) -> Texture2D:
+	var item := GameBalance.get_item(String(offer.get("item_id","")))
+	return DungeonHud.item_icon(String(item.get("icon","special")))
+
+static func _rarity_color(rarity: String) -> Color:
+	match rarity:
+		"rare": return Color("#6fa8ff")
+		"very_rare": return Color("#c27bff")
+		"legendary": return Color("#ffb347")
+		"pickup": return Color("#f2d27a")
+	return Color("#8fd88a")
+
+## The offer the player stands on, or null.
+func shop_offer_under_player() -> Area2D:
+	if not is_instance_valid(player): return null
+	var reach := float(_shop_rules().get("stand_radius",34.0))
+	var best: Area2D = null
+	var best_gap := reach
+	for area in shop_offer_nodes:
+		if not is_instance_valid(area): continue
+		var gap := player.global_position.distance_to(area.global_position)
+		if gap < best_gap: best_gap = gap; best = area
+	return best
+
+func _shop_floor_interaction(used: bool) -> bool:
+	if shop_offer_nodes.is_empty(): _hide_shop_tag(); return false
+	var area := shop_offer_under_player()
+	if area == null: _hide_shop_tag(); return false
+	var offer := _find_merchant_offer(_dungeon_merchant_id(),String(area.get_meta("offer_id","")))
+	if offer.is_empty() or bool(offer.get("sold",false)): _hide_shop_tag(); return false
+	_show_shop_tag(area,offer)
+	if not used and Input.is_action_just_pressed("interact"):
+		player.basic_mouse_held = false
+		var logs := run_state.purchase_merchant_offer(_dungeon_merchant_id(),String(offer.offer_id),"dungeon")
+		_show_message(" ".join(logs))
+		if bool(_find_merchant_offer(_dungeon_merchant_id(),String(offer.offer_id)).get("sold",false)):
+			shop_offer_nodes.erase(area); area.queue_free(); _hide_shop_tag()
+		_after_purchase()
+		return true
+	return false
+
+static func offer_effect_text(offer: Dictionary) -> String:
+	var text := String(offer.get("rules_text",""))
+	return text if not text.is_empty() else String(offer.get("description",""))
+
+func _show_shop_tag(area: Area2D, offer: Dictionary) -> void:
+	if shop_tag == null or not is_instance_valid(shop_tag):
+		var canvas := get_node_or_null("HUD")
+		if canvas == null: return
+		shop_tag = PanelContainer.new(); shop_tag.name = "ShopTag"; shop_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var style := StyleBoxFlat.new(); style.bg_color = Color(0.07,0.05,0.04,0.92); style.border_color = Color("#c9a45c")
+		style.set_border_width_all(2); style.set_corner_radius_all(6); style.content_margin_left = 12; style.content_margin_right = 12; style.content_margin_top = 8; style.content_margin_bottom = 8
+		shop_tag.add_theme_stylebox_override("panel",style)
+		_shop_tag_label = RichTextLabel.new(); _shop_tag_label.bbcode_enabled = true; _shop_tag_label.fit_content = true; _shop_tag_label.scroll_active = false
+		_shop_tag_label.custom_minimum_size = Vector2(300,0); _shop_tag_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_shop_tag_label.add_theme_font_size_override("normal_font_size",15); _shop_tag_label.add_theme_font_size_override("bold_font_size",18)
+		shop_tag.add_child(_shop_tag_label)
+		canvas.add_child(shop_tag)
+	var colour := _rarity_color(String(offer.get("rarity","uncommon"))).to_html(false)
+	var price := int(offer.get("gold",0))
+	var coins := int(run_state.gold)
+	var footer := "[color=#9fe08a]Press E to buy[/color]" if coins >= price else "[color=#e89a7a]You need %d more coin%s[/color]" % [price - coins,"" if price - coins == 1 else "s"]
+	var rarity := String(offer.get("rarity","")).replace("_"," ").capitalize() if String(offer.get("kind","item")) == "item" else ""
+	_shop_tag_label.text = "[b][color=#%s]%s[/color][/b]   [color=#ffe6a3]%d¢[/color]\n%s%s\n%s" % [colour,String(offer.get("name","Item")),price,("[color=#a89a80]%s[/color]\n" % rarity) if not rarity.is_empty() else "",offer_effect_text(offer),footer]
+	shop_tag.visible = true
+	shop_tag.reset_size()
+	var screen := get_viewport().canvas_transform * area.global_position
+	var view := get_viewport().get_visible_rect().size
+	shop_tag.position = Vector2(clampf(screen.x - shop_tag.size.x * 0.5,12.0,view.x - shop_tag.size.x - 12.0),clampf(screen.y - shop_tag.size.y - 70.0,12.0,view.y - shop_tag.size.y - 12.0))
+
+func _hide_shop_tag() -> void:
+	if shop_tag != null and is_instance_valid(shop_tag): shop_tag.visible = false
 
 func _drop_seed_key() -> String:
 	return "room%d" % room_id
@@ -104,7 +269,12 @@ func _ensure_floor_graph() -> bool:
 	run_state.field_run["forest_floor_key"] = floor_key
 	run_state.field_run["layout_kind"] = "forest_rooms"
 	run_state.field_run["arrival_direction"] = ""
-	_assign_rest_room()
+	# Isaac floors: no campfire by default (dungeons.json room_count.rest_room);
+	# from locked_treasure_from_floor the treasure room needs a key.
+	if bool(tuning.get("rest_room",true)): _assign_rest_room()
+	if run_state.current_floor >= int(tuning.get("locked_treasure_from_floor",99)):
+		for record in run_state.field_run.get("rooms",[]):
+			if String(record.role) == "treasure": run_state.update_field_room(int(record.id),{"locked":true})
 	if MapPlaytest.active():
 		var tested := MapPlaytest.template()
 		var role := String(Array(tested.get("roles",["combat"]))[0]) if not Array(tested.get("roles",[])).is_empty() else "combat"
@@ -126,12 +296,15 @@ func _assign_rest_room() -> void:
 		if String(value.role) == "boss": gate_distance = int(distances.get(int(value.id),0))
 	var best := -1
 	var best_score := 999
-	for value in rooms:
-		if String(value.role) != "combat": continue
-		var distance := int(distances.get(int(value.id),0))
-		if distance < 2: continue
-		var score: int = absi(distance - maxi(2,gate_distance/2))
-		if score < best_score: best = int(value.id); best_score = score
+	# Prefer a fighting room two or more rooms in; on a cramped floor, settle for one.
+	for nearest in [2,1]:
+		for value in rooms:
+			if String(value.role) != "combat": continue
+			var distance := int(distances.get(int(value.id),0))
+			if distance < nearest: continue
+			var score: int = absi(distance - maxi(2,gate_distance/2))
+			if score < best_score: best = int(value.id); best_score = score
+		if best >= 0: break
 	if best >= 0:
 		run_state.update_field_room(best,{"role":"rest","cleared":true})
 
@@ -163,6 +336,8 @@ func _room_layout() -> Dictionary:
 		# Playtesting a fight: walk in through a door rather than appearing among the foes.
 		built.start = ROOMS.arrival_cell(built,String(Dictionary(built.doors).keys()[0]))
 	built.enemy_spawns = [] if bool(room.get("cleared",false)) else _encounter(built)
+	if bool(built.get("exit_under_body",false)) and bool(room.get("cleared",false)) and can_press_on():
+		for cell in Array(built.passage_cells): built.cells[cell] = true
 	return built
 
 func _neighbor_template_ids() -> Array:
@@ -315,6 +490,11 @@ func _build_landmarks() -> void:
 		return
 	var gate := Vector2i(layout.exit)
 	exit_position = _world(gate) if gate.x >= 0 else Vector2(-99999,-99999)
+	if bool(layout.get("exit_under_body",false)):
+		# The way on is hidden in the guardian's body; it opens when it falls.
+		exit_position = Vector2(-99999,-99999)
+		if bool(room.get("cleared",false)) or not bool(layout.get("is_boss_floor",false)): _open_guardian_ways(false)
+		gate = Vector2i(-100,-100)
 	if gate.x >= 0:
 		var theme := _room_theme()
 		var exit_root := Node2D.new(); exit_root.name = "RootGate"; exit_root.position = exit_position; exit_root.z_index = 12; exit_root.add_child(_glow(Color(String(theme.exit_glow)),34))
@@ -326,6 +506,7 @@ func _build_landmarks() -> void:
 	if has_dungeon_merchant:
 		var merchant_root := Node2D.new(); merchant_root.name = "CampMerchant"; merchant_root.position = merchant_position; merchant_root.add_child(_glow(Color("#e8b94e"),28))
 		var merchant_sprite := SlasherForestArt.make_sprite("merchant"); merchant_sprite.position = Vector2(0,-28); merchant_root.add_child(merchant_sprite); actor_layer.add_child(merchant_root)
+		_build_shop_floor()
 	var fire := Vector2i(layout.get("campfire",Vector2i(-100,-100)))
 	campfire_position = _world(fire) if fire.x >= 0 else Vector2(-99999,-99999)
 	if fire.x >= 0:
@@ -421,7 +602,9 @@ func _reveal_secret_door() -> void:
 
 func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
 	super._on_enemy_defeated(enemy,reward)
-	if rooms_active and enemy is SlasherColossus: _build_colossus_remains()
+	if rooms_active and enemy is SlasherColossus:
+		_build_colossus_remains()
+		_open_guardian_ways(true)
 	# The guardian's fall ends the fight, Isaac style: its pack scatters and the gate opens.
 	if rooms_active and room_role == "boss" and enemies_remaining > 0 and _is_room_guardian(enemy): _scatter_remaining_foes()
 	if rooms_active and enemies_remaining == 0:
@@ -429,6 +612,60 @@ func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
 		_set_doors_open(true)
 		_spawn_loot()
 		_show_message(String(_room_theme().gate_open) if Vector2i(layout.exit).x >= 0 else String(_room_theme().room_clear))
+
+# ---------------------------------------------------------------- the fallen guardian
+
+## Whether there's a dungeon beyond this one to press on to. When there isn't,
+## the passage through the body stays shut and only the portal home opens.
+func can_press_on() -> bool:
+	if controller != null and controller.has_method("can_press_on"): return bool(controller.call("can_press_on"))
+	return true
+
+## After the guardian falls: a passage opens through its body to the way on
+## (walk through the remains to continue), and a portal showing the Hearth
+## appears beside it (walk in to go home).
+func _open_guardian_ways(live: bool) -> void:
+	if not bool(layout.get("exit_under_body",false)): return
+	if can_press_on():
+		var cells: Dictionary = layout.cells
+		var changed := false
+		for cell in Array(layout.passage_cells):
+			if not cells.has(cell): cells[cell] = true; changed = true
+		exit_position = _world(Vector2i(layout.exit))
+		if changed and live:
+			wall_topology = wall_generator.generate(cells,[],ORIGIN)
+			pathfinder = GRID_PATHFINDER.new().configure(cells,Array(layout.get("solid_props",[])),ORIGIN,float(TILE))
+		if actor_layer.get_node_or_null("HiddenWay") == null:
+			var way := Node2D.new(); way.name = "HiddenWay"; way.position = exit_position; way.add_child(_glow(Color(String(_room_theme().exit_glow)),30)); actor_layer.add_child(way)
+	var portal_cell := Vector2i(layout.get("portal",Vector2i(-100,-100)))
+	if portal_cell.x >= 0 and actor_layer.get_node_or_null("TavernPortal") == null:
+		var portal := TavernPortal.new(); portal.name = "TavernPortal"; portal.position = _world(portal_cell); actor_layer.add_child(portal)
+	if live: _show_message("The guardian falls · walk through it to go on, or take the portal home.",4.0)
+
+func _take_portal_home() -> void:
+	if floor_reward_claimed: return
+	if controller != null and "guardian_choice" in controller: controller.guardian_choice = "home"
+	_complete_floor()
+
+func _complete_floor() -> void:
+	if bool(layout.get("exit_under_body",false)) and controller != null and "guardian_choice" in controller and String(controller.guardian_choice).is_empty():
+		controller.guardian_choice = "onward"
+	super._complete_floor()
+
+## A shimmering ring with a glimpse of the Hearth in it: the way home.
+class TavernPortal extends Node2D:
+	var t := 0.0
+	func _process(delta: float) -> void:
+		t += delta; queue_redraw()
+	func _draw() -> void:
+		var pulse := 0.5 + 0.5 * sin(t * 2.4)
+		draw_set_transform(Vector2(0,-34),0.0,Vector2(0.62,1.0))
+		draw_circle(Vector2.ZERO,40,Color(1.0,0.78,0.42,0.18 + pulse * 0.12))
+		draw_circle(Vector2.ZERO,31,Color("#3a2414"))
+		draw_rect(Rect2(-16,-2,32,18),Color("#a8673a")); draw_colored_polygon(PackedVector2Array([Vector2(-20,-2),Vector2(0,-18),Vector2(20,-2)]),Color("#6b3b22"))
+		draw_rect(Rect2(-4,6,8,10),Color("#ffd27a")); draw_rect(Rect2(-13,2,6,5),Color("#ffd27a")); draw_rect(Rect2(7,2,6,5),Color("#ffd27a"))
+		draw_arc(Vector2.ZERO,36,0,TAU,40,Color(1.0,0.86,0.5,0.85),5.0)
+		draw_set_transform(Vector2.ZERO)
 
 ## The foe whose death decides the gate room: the boss on boss floors, the
 ## elite guardian on elite floors.
@@ -462,9 +699,8 @@ func _mark_room_cleared(fought: bool) -> void:
 		# Clearing a fight charges the active item by one pip.
 		ActiveItems.add_room_charge(run_state,1)
 		_refresh_active_hud()
-		# TUNING: a small purse for every room fought through, on top of enemy rewards.
-		var amount := run_state.apply_reward_bonus(int(Dictionary(Dictionary(GameBalance.get_dungeon(run_state.active_dungeon_id).get("slasher",{})).get("room_count",{})).get("room_clear_gold",3)),"gold")
-		run_state.gold += amount
+		# Isaac style: a chance of one pickup in the middle of the room.
+		roll_room_clear_pickup(sanitize_player_position(_world(Vector2i(layout.get("center",layout.start)))))
 
 ## Loot caches appear once a room is safe and stay collected when you come back.
 func _spawn_loot() -> void:
@@ -573,6 +809,8 @@ func _process(delta: float) -> void:
 	transition_cooldown = maxf(0.0,transition_cooldown-delta)
 	if player.input_locked or (relic_modal != null and relic_modal.visible): return
 	if treasure_area != null and is_instance_valid(treasure_area) and player.global_position.distance_to(treasure_area.global_position) < 40: _open_treasure()
+	var portal := actor_layer.get_node_or_null("TavernPortal") if is_instance_valid(actor_layer) else null
+	if portal != null and player.global_position.distance_to(portal.global_position) < 42: _take_portal_home(); return
 	if room_role == "rest" and player.global_position.distance_to(campfire_position) < 70: _offer_rest()
 	if is_instance_valid(active_pedestal): _check_active_pedestal()
 	_check_doors()
@@ -584,6 +822,13 @@ func _check_doors() -> void:
 		if not is_instance_valid(door) or player.global_position.distance_to(door.global_position) > DOOR_TRIGGER_RADIUS: continue
 		var neighbor := int(Dictionary(room.neighbors).get(direction,-1))
 		if neighbor < 0: continue
+		# A locked treasure room (Isaac): a key opens it for good.
+		var target := run_state.get_field_room(neighbor)
+		if bool(target.get("locked",false)):
+			if run_state.keys <= 0:
+				_show_message("Locked · it needs a key.",0.4); return
+			run_state.keys -= 1; run_state.update_field_room(neighbor,{"locked":false})
+			AudioCue.play_from(self,"pickup"); _show_message("Unlocked with a key.",1.6)
 		AudioCue.play_at_from(self,"door_open",player.global_position)
 		transition_cooldown = 1.0
 		run_state.field_run["arrival_direction"] = ROOMS.OPPOSITE[direction]
