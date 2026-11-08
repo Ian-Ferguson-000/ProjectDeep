@@ -56,6 +56,7 @@ func _build_floor() -> void:
 	room = run_state.get_field_room(room_id)
 	room_role = String(room.get("role","combat"))
 	layout = _room_layout()
+	if room_role == "shop": _arrange_shop(layout)
 	pathfinder = GRID_PATHFINDER.new().configure(Dictionary(layout.cells),Array(layout.solid_props),ORIGIN,float(TILE))
 	active_summons.clear()
 	_build_world(); _spawn_player(); _restore_player(snapshot)
@@ -67,6 +68,173 @@ func _build_floor() -> void:
 	if new_floor and run_state.current_floor == 1 and not run_state.starter_reward_claimed: call_deferred("_offer_starter_relic")
 	transition_cooldown = 0.5
 	_save_checkpoint()
+
+# --- The shop: wares laid out on the floor, Isaac style --------------------
+# The trader stands back at their stall; every offer sits on the ground in a
+# row. Stand on one to see its name, price and effect, press E to buy it.
+# Spacing and where the row sits: slasher_balance.json → shop_floor.
+var shop_offer_nodes: Array[Area2D] = []
+var shop_tag: PanelContainer
+var _shop_tag_label: RichTextLabel
+
+func _shop_rules() -> Dictionary:
+	return GameBalance.get_slasher_balance("shop_floor")
+
+## Moves the trader to the back of the room and picks a floor spot per offer.
+func _arrange_shop(target: Dictionary) -> void:
+	var rules := _shop_rules()
+	var cells: Dictionary = target.cells
+	var paths: Dictionary = target.get("path_cells",{})
+	var center: Vector2i = target.get("center",Vector2i(int(target.width)/2,int(target.height)/2))
+	var blocked := {}
+	for prop in Array(target.get("solid_props",[])): blocked[Vector2i(prop.cell)] = true
+	for key in ["campfire","treasure","exit"]:
+		var marker := Vector2i(target.get(key,Vector2i(-100,-100)))
+		for dy in range(-1,2):
+			for dx in range(-1,2): blocked[marker + Vector2i(dx,dy)] = true
+	var stall_want := center + Vector2i(int(rules.get("stall_offset_x",-7)),0)
+	stall_want.y = int(rules.get("stall_row",2))
+	target.merchant = _nearest_free_cell(cells,blocked,stall_want,paths)
+	blocked[Vector2i(target.merchant)] = true
+	var count := run_state.get_merchant_offers(_dungeon_merchant_id(),"dungeon").size()
+	var spacing := int(rules.get("spacing",3))
+	var row := center.y + int(rules.get("row_offset",2))
+	var spots: Array = []
+	for index in count:
+		var want := Vector2i(center.x + int(round((index - (count - 1) * 0.5) * spacing)),row)
+		var spot := _nearest_free_cell(cells,blocked,want,{})
+		blocked[spot] = true
+		spots.append(spot)
+	target["shop_slots"] = spots
+
+func _nearest_free_cell(cells: Dictionary, blocked: Dictionary, want: Vector2i, avoid: Dictionary) -> Vector2i:
+	var best := want
+	var best_score := 1 << 30
+	for value in cells:
+		var cell: Vector2i = value
+		if blocked.has(cell): continue
+		# Keep clear of the walls so the stall and wares never touch the thicket.
+		var crowded := 0
+		for direction in [Vector2i.UP,Vector2i.DOWN,Vector2i.LEFT,Vector2i.RIGHT]:
+			if not cells.has(cell + direction): crowded += 1
+		var score := (cell - want).length_squared() * 4 + crowded * 40 + (6 if avoid.has(cell) else 0)
+		if score < best_score: best_score = score; best = cell
+	return best
+
+func _build_shop_floor() -> void:
+	shop_offer_nodes.clear()
+	var spots: Array = layout.get("shop_slots",[])
+	var offers := run_state.get_merchant_offers(_dungeon_merchant_id(),"dungeon")
+	for index in mini(spots.size(),offers.size()):
+		var offer: Dictionary = offers[index]
+		if bool(offer.get("sold",false)): continue
+		var area := Area2D.new()
+		area.name = "ShopOffer_%d" % index
+		area.position = _world(Vector2i(spots[index]))
+		area.set_meta("offer_id",String(offer.get("offer_id","")))
+		area.set_meta("display",_offer_display_kind(offer))
+		var shape := CollisionShape2D.new(); var circle := CircleShape2D.new(); circle.radius = 24; shape.shape = circle; area.add_child(shape)
+		area.add_child(_glow(_rarity_color(String(offer.get("rarity","uncommon"))),22))
+		var icon := Sprite2D.new(); icon.name = "Ware"
+		icon.texture = _offer_texture(offer)
+		if icon.texture != null: icon.scale = Vector2.ONE * (34.0 / maxf(1.0,float(maxi(icon.texture.get_width(),icon.texture.get_height()))))
+		icon.position = Vector2(0,-12)
+		area.add_child(icon)
+		var price := Label.new(); price.name = "Price"
+		price.text = "%d¢" % int(offer.get("gold",0))
+		price.position = Vector2(-50,12); price.size = Vector2(100,28)
+		price.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		price.add_theme_font_size_override("font_size",22)
+		price.add_theme_color_override("font_color",Color("#ffe6a3")); price.add_theme_color_override("font_outline_color",Color("#140e08")); price.add_theme_constant_override("outline_size",5)
+		area.add_child(price)
+		actor_layer.add_child(area)
+		shop_offer_nodes.append(area)
+
+func _offer_display_kind(offer: Dictionary) -> String:
+	return String(offer.get("kind","item"))
+
+func _offer_texture(offer: Dictionary) -> Texture2D:
+	match String(offer.get("kind","item")):
+		"heart": return SlasherForestArt.heart_texture("heart")
+		"item":
+			var item := GameBalance.get_item(String(offer.get("item_id","")))
+			return DungeonHud.item_icon(String(item.get("icon","special")))
+	var sprite := SlasherForestArt.make_sprite(String(offer.get("kind","key")))
+	var texture: Texture2D = sprite.texture
+	sprite.free()
+	return texture
+
+static func _rarity_color(rarity: String) -> Color:
+	match rarity:
+		"rare": return Color("#6fa8ff")
+		"very_rare": return Color("#c27bff")
+		"legendary": return Color("#ffb347")
+		"pickup": return Color("#f2d27a")
+	return Color("#8fd88a")
+
+## The offer the player stands on, or null.
+func shop_offer_under_player() -> Area2D:
+	if not is_instance_valid(player): return null
+	var reach := float(_shop_rules().get("stand_radius",34.0))
+	var best: Area2D = null
+	var best_gap := reach
+	for area in shop_offer_nodes:
+		if not is_instance_valid(area): continue
+		var gap := player.global_position.distance_to(area.global_position)
+		if gap < best_gap: best_gap = gap; best = area
+	return best
+
+func _shop_floor_interaction(used: bool) -> bool:
+	if shop_offer_nodes.is_empty(): _hide_shop_tag(); return false
+	var area := shop_offer_under_player()
+	if area == null: _hide_shop_tag(); return false
+	var offer := _find_merchant_offer(_dungeon_merchant_id(),String(area.get_meta("offer_id","")))
+	if offer.is_empty() or bool(offer.get("sold",false)): _hide_shop_tag(); return false
+	_show_shop_tag(area,offer)
+	if not used and Input.is_action_just_pressed("interact"):
+		player.basic_mouse_held = false
+		var logs := run_state.purchase_merchant_offer(_dungeon_merchant_id(),String(offer.offer_id),"dungeon")
+		_show_message(" ".join(logs))
+		if bool(_find_merchant_offer(_dungeon_merchant_id(),String(offer.offer_id)).get("sold",false)):
+			shop_offer_nodes.erase(area); area.queue_free(); _hide_shop_tag()
+		_refresh_hud()
+		return true
+	return false
+
+static func offer_effect_text(offer: Dictionary) -> String:
+	match String(offer.get("kind","item")):
+		"heart": return "Heals one heart."
+		"key": return "Opens a locked treasure room or chest."
+	var text := String(offer.get("rules_text",""))
+	return text if not text.is_empty() else String(offer.get("description",""))
+
+func _show_shop_tag(area: Area2D, offer: Dictionary) -> void:
+	if shop_tag == null or not is_instance_valid(shop_tag):
+		var canvas := get_node_or_null("HUD")
+		if canvas == null: return
+		shop_tag = PanelContainer.new(); shop_tag.name = "ShopTag"; shop_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var style := StyleBoxFlat.new(); style.bg_color = Color(0.07,0.05,0.04,0.92); style.border_color = Color("#c9a45c")
+		style.set_border_width_all(2); style.set_corner_radius_all(6); style.content_margin_left = 12; style.content_margin_right = 12; style.content_margin_top = 8; style.content_margin_bottom = 8
+		shop_tag.add_theme_stylebox_override("panel",style)
+		_shop_tag_label = RichTextLabel.new(); _shop_tag_label.bbcode_enabled = true; _shop_tag_label.fit_content = true; _shop_tag_label.scroll_active = false
+		_shop_tag_label.custom_minimum_size = Vector2(300,0); _shop_tag_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_shop_tag_label.add_theme_font_size_override("normal_font_size",15); _shop_tag_label.add_theme_font_size_override("bold_font_size",18)
+		shop_tag.add_child(_shop_tag_label)
+		canvas.add_child(shop_tag)
+	var colour := _rarity_color(String(offer.get("rarity","uncommon"))).to_html(false)
+	var price := int(offer.get("gold",0))
+	var coins := int(run_state.gold)
+	var footer := "[color=#9fe08a]Press E to buy[/color]" if coins >= price else "[color=#e89a7a]You need %d more coin%s[/color]" % [price - coins,"" if price - coins == 1 else "s"]
+	var rarity := String(offer.get("rarity","")).replace("_"," ").capitalize() if String(offer.get("kind","item")) == "item" else ""
+	_shop_tag_label.text = "[b][color=#%s]%s[/color][/b]   [color=#ffe6a3]%d¢[/color]\n%s%s\n%s" % [colour,String(offer.get("name","Item")),price,("[color=#a89a80]%s[/color]\n" % rarity) if not rarity.is_empty() else "",offer_effect_text(offer),footer]
+	shop_tag.visible = true
+	shop_tag.reset_size()
+	var screen := get_viewport().canvas_transform * area.global_position
+	var view := get_viewport().get_visible_rect().size
+	shop_tag.position = Vector2(clampf(screen.x - shop_tag.size.x * 0.5,12.0,view.x - shop_tag.size.x - 12.0),clampf(screen.y - shop_tag.size.y - 70.0,12.0,view.y - shop_tag.size.y - 12.0))
+
+func _hide_shop_tag() -> void:
+	if shop_tag != null and is_instance_valid(shop_tag): shop_tag.visible = false
 
 func _drop_seed_key() -> String:
 	return "room%d" % room_id
@@ -341,6 +509,7 @@ func _build_landmarks() -> void:
 	if has_dungeon_merchant:
 		var merchant_root := Node2D.new(); merchant_root.name = "CampMerchant"; merchant_root.position = merchant_position; merchant_root.add_child(_glow(Color("#e8b94e"),28))
 		var merchant_sprite := SlasherForestArt.make_sprite("merchant"); merchant_sprite.position = Vector2(0,-28); merchant_root.add_child(merchant_sprite); actor_layer.add_child(merchant_root)
+		_build_shop_floor()
 	var fire := Vector2i(layout.get("campfire",Vector2i(-100,-100)))
 	campfire_position = _world(fire) if fire.x >= 0 else Vector2(-99999,-99999)
 	if fire.x >= 0:

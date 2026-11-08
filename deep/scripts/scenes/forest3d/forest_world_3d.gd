@@ -154,6 +154,15 @@ func _sync_objects() -> void:
 		if not is_instance_valid(source):
 			props[source].queue_free()
 			props.erase(source)
+	# Shop wares: a plinth with the item floating above it; price stays on the floor.
+	for source in dungeon.actor_layer.get_children():
+		if not String(source.name).begins_with("ShopOffer_"): continue
+		if not actors.has(source):
+			var ware := source.get_node_or_null("Ware") as Sprite2D
+			var glow := source.get_child(1) as Polygon2D
+			actors[source] = art.ware_stand(to_world(source.global_position),ware.texture if ware else null,glow.color if glow else Color("e8c76a"))
+			if ware: ware.visibility_layer = HIDDEN_LAYER
+		art.ware_bob(actors[source],Time.get_ticks_msec() / 1000.0)
 	for name in ["TavernPortal","HiddenWay"]:
 		var source := dungeon.actor_layer.get_node_or_null(name) as Node2D
 		if source == null or actors.has(source): continue

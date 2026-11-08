@@ -470,6 +470,37 @@ func build_landmarks(layout: Dictionary) -> void:
 			for visual in child.get_children():
 				if visual is Sprite2D: visual.visibility_layer = world.HIDDEN_LAYER
 
+## A shop ware: a low plinth (a crypt slab in the crypt) with the item floating
+## and turning above it. The bobbing runs in ware_bob().
+func ware_stand(point: Vector3, texture: Texture2D, glow: Color) -> Node3D:
+	var root := Node3D.new()
+	root.name = "Ware"
+	root.position = point
+	add_child(root,true)
+	if theme == "crypt":
+		primitive("box","5f5a69",Vector3(0,.12,0),Vector3(.62,.24,.62),root)
+		primitive("box","767180",Vector3(0,.26,0),Vector3(.5,.05,.5),root)
+	else:
+		primitive("trunk","6b4a2e",Vector3(0,.12,0),Vector3(.62,.24,.62),root)
+		primitive("trunk","9a7448",Vector3(0,.25,0),Vector3(.56,.03,.56),root)
+	var icon := Sprite3D.new()
+	icon.name = "Icon"
+	icon.texture = texture
+	icon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	icon.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	icon.shaded = false
+	icon.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	if texture != null: icon.pixel_size = 0.95 / maxf(1.0,float(maxi(texture.get_width(),texture.get_height())))
+	icon.position = Vector3(0,.95,0)
+	root.add_child(icon)
+	var lamp := OmniLight3D.new(); lamp.position = Vector3(0,.9,0); lamp.light_color = glow; lamp.omni_range = 1.6; lamp.light_energy = 0.9
+	root.add_child(lamp)
+	return root
+
+func ware_bob(stand: Node3D, time: float) -> void:
+	var icon := stand.get_node_or_null("Icon") as Node3D
+	if icon != null: icon.position.y = .95 + sin(time * 2.4 + stand.position.x) * .07
+
 func light(point: Vector3, color: Color, radius: float) -> void:
 	var lamp := OmniLight3D.new()
 	lamp.position = point; lamp.light_color = color; lamp.omni_range = radius; lamp.light_energy = 1.4

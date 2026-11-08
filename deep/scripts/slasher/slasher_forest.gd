@@ -435,9 +435,10 @@ func _process(delta:float)->void:
 		_show_message("A hidden merchant door · press E to enter.",0.15)
 		if Input.is_action_just_pressed("interact"):
 			run_state.slasher_merchant_interlude=true;floor_reward_claimed=false;_store_active_slasher_state();_build_floor();return
+	if _shop_floor_interaction(interaction_used):interaction_used=true
 	if has_dungeon_merchant and player.global_position.distance_to(merchant_position)<48:
 		var merchant_id:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id",run_state.active_dungeon_id));var merchant:=GameBalance.get_merchant(merchant_id);var merchant_name:=String(merchant.get("name","Dungeon merchant"))
-		_show_message("%s · press E to trade."%merchant_name,0.15)
+		_show_message(("%s · the wares are on the floor: stand on one to look. E for the full list."%merchant_name) if "shop_offer_nodes" in self and not Array(get("shop_offer_nodes")).is_empty() else ("%s · press E to trade."%merchant_name),0.15)
 		if not interaction_used and Input.is_action_just_pressed("interact") and merchant_shop_panel:player.basic_mouse_held=false;merchant_shop_panel.setup(run_state,merchant_id,"dungeon");merchant_shop_panel.open()
 	if player.global_position.distance_to(exit_position)<42:
 		if exit_open:_complete_floor()
@@ -462,6 +463,9 @@ func _on_enemy_defeated(enemy:SlasherEnemy,reward:int)->void:
 	if enemies_remaining==0:
 		AudioCue.play_from(self,"reward",false)
 		exit_open=true;_reveal_secret_door();_show_message("Encounter cleared · the way onward opens.")
+
+## Rooms with wares on the floor handle standing on them (slasher_forest_rooms.gd).
+func _shop_floor_interaction(_used:bool)->bool:return false
 
 func _dungeon_merchant_id()->String:
 	var configured:=String(GameBalance.get_dungeon(run_state.active_dungeon_id).get("merchant_id",""))

@@ -1444,5 +1444,13 @@
     "faded_transparency": 0.88,
     "fade_speed": 9.0,
     "door_clear_radius": 2.6
+  },
+  "shop_floor": {
+    "_note": "Shop rooms: the trader stands back at a stall (stall_row cells from the top, stall_offset_x from the middle); every offer lies on the floor in one row (row_offset from the room's middle, spacing cells apart). Stand within stand_radius pixels to see name, price and effect; E buys.",
+    "stall_row": 2,
+    "stall_offset_x": -7,
+    "row_offset": 2,
+    "spacing": 3,
+    "stand_radius": 34
   }
 }

@@ -57,6 +57,11 @@ room-clear drops.
 
 ## The shop
 
+The trader stands back at a stall; **every offer lies on the floor** on a little
+plinth with its price under it. **Stand on one** to see its name, rarity, price and
+effect, then **press E to buy** (the tag says how many coins you're short). E at the
+stall still opens the full list. Layout: `slasher_balance.json → shop_floor`.
+
 Every item is **15 coins**, and there's always a **red heart (3)** and a **key
 (5)** on the counter; Charisma adjusts every price (`data/trader.json`).
 
