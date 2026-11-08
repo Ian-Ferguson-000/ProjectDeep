@@ -944,14 +944,6 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 		result.append({"offer_id":offer_id,"kind":"item","item_id":item_id,"gold":SimpleCombat.price(int(prices.get(slots[index],100)),int(get_stats().get("cha",10))),"base_gold":int(prices.get(slots[index],100)),"favor":0,"min_rank":0,"unlocked":true,"claimed":false,
 			"name":String(item.get("name",item_id)),"description":String(item.get("description","")),"rules_text":_sentence(GameBalance.get_slasher_item_rules_text(item_id).trim_prefix("Slasher: ")),"rarity":String(item.get("rarity",slots[index])),
 			"max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":index + 1,"bonus_slot":index >= int(settings.get("base_slots",settings.get("common_slots",3)))})
-	# Isaac shop pickups: always a red heart and a key on the counter.
-	var pickup_index := 0
-	for pickup in Array(settings.get("pickup_offers",[])):
-		var offer_id := "trader:%d:pickup%d" % [seed_value,pickup_index]; pickup_index += 1
-		var sold := trader_sold.has(offer_id)
-		var price := int(Dictionary(pickup).get("price",5))
-		result.append({"offer_id":offer_id,"kind":String(Dictionary(pickup).get("kind","key")),"item_id":"","gold":SimpleCombat.price(price,int(get_stats().get("cha",10))),"base_gold":price,"favor":0,"min_rank":0,"unlocked":true,"claimed":false,
-			"name":String(Dictionary(pickup).get("name","Pickup")),"description":"","rules_text":"","rarity":"pickup","max_stock":1,"stock_remaining":0 if sold else 1,"sold":sold,"slot":slots.size() + pickup_index,"bonus_slot":false})
 	return result
 
 func get_merchant_offers(merchant_id: String, location: String) -> Array[Dictionary]:
@@ -1048,8 +1040,6 @@ func purchase_merchant_offer(merchant_id: String, offer_id: String, location: St
 		"key":
 			if location == "tavern": pending_shop_keys += 1
 			else: keys += 1
-		"heart":
-			pending_heal += SimpleCombat.units_per_heart()
 		_:
 			var item_id := String(chosen.get("item_id", ""))
 			if location == "tavern": pending_shop_items.append(item_id)

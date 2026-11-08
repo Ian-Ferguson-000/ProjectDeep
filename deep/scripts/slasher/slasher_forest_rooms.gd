@@ -161,15 +161,8 @@ func _offer_display_kind(offer: Dictionary) -> String:
 	return String(offer.get("kind","item"))
 
 func _offer_texture(offer: Dictionary) -> Texture2D:
-	match String(offer.get("kind","item")):
-		"heart": return SlasherForestArt.heart_texture("heart")
-		"item":
-			var item := GameBalance.get_item(String(offer.get("item_id","")))
-			return DungeonHud.item_icon(String(item.get("icon","special")))
-	var sprite := SlasherForestArt.make_sprite(String(offer.get("kind","key")))
-	var texture: Texture2D = sprite.texture
-	sprite.free()
-	return texture
+	var item := GameBalance.get_item(String(offer.get("item_id","")))
+	return DungeonHud.item_icon(String(item.get("icon","special")))
 
 static func _rarity_color(rarity: String) -> Color:
 	match rarity:
@@ -209,9 +202,6 @@ func _shop_floor_interaction(used: bool) -> bool:
 	return false
 
 static func offer_effect_text(offer: Dictionary) -> String:
-	match String(offer.get("kind","item")):
-		"heart": return "Heals one heart."
-		"key": return "Opens a locked treasure room or chest."
 	var text := String(offer.get("rules_text",""))
 	return text if not text.is_empty() else String(offer.get("description",""))
 
