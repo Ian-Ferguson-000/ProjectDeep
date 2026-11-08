@@ -1,22 +1,16 @@
 {
   "how_to_edit": [
     "Stock for the trader you meet in dungeons (camp rooms and hidden merchant doors). It is rolled fresh for every floor of every run.",
-    "base_slots: always this many relics of base_slot_rarity (uncommon).",
-    "bonus_slots: extra slots that only sometimes appear, each with its own chance, holding a relic whose rarity is rolled from tier_weights (the same rates as chests).",
     "Relics on offer follow the same rules as chests: usable by the adventurer's class, in the drop pool, and unlocked.",
     "sell_consumables: false keeps potions and other consumables out of every shop: the dungeon trader, the tavern supplier and the Hearth's provisions. Buying potions makes a bad loop, so they have to be found.",
     "potion_drops: true lets healing potions drop from enemies and appear in loot caches during runs, and lets potion relics into the drop pool.",
     "prices: coins per rarity. Isaac style: every item is 15 coins (Charisma adjusts).",
-    "pickup_offers: pickups always on the counter (a red heart heals 1 heart, a key), at their price in coins."
+    "base_slots: how many items the trader lays out (3).",
+    "slot_tier_weights: each slot rolls its rarity from these (uncommon or rare only; out of the total).",
+    "bonus_slots: extra slots that only sometimes appear ([] = none), rarity from tier_weights.",
+    "pickup_offers: pickups on the counter, e.g. {\"kind\":\"heart\",\"name\":\"Red Heart\",\"price\":3} ([] = none)."
   ],
-  "bonus_slots": [
-    {
-      "chance": 0.45
-    },
-    {
-      "chance": 0.2
-    }
-  ],
+  "bonus_slots": [],
   "tier_weights": {
     "uncommon": 60,
     "rare": 25,
@@ -32,17 +26,9 @@
   "sell_consumables": false,
   "potion_drops": true,
   "base_slots": 3,
-  "base_slot_rarity": "uncommon",
-  "pickup_offers": [
-    {
-      "kind": "heart",
-      "name": "Red Heart",
-      "price": 3
-    },
-    {
-      "kind": "key",
-      "name": "Key",
-      "price": 5
-    }
-  ]
+  "pickup_offers": [],
+  "slot_tier_weights": {
+    "uncommon": 70,
+    "rare": 30
+  }
 }

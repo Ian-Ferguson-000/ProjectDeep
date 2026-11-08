@@ -895,7 +895,19 @@ func trader_offers(merchant_id: String) -> Array[Dictionary]:
 	var rng := RandomNumberGenerator.new(); rng.seed = seed_value
 	var slots: Array[String] = []
 	# The slots that are always there hold the lowest tier (there's no common tier now).
-	for index in int(settings.get("base_slots",settings.get("common_slots",3))): slots.append(String(settings.get("base_slot_rarity","uncommon")))
+	# Each base slot rolls its rarity from slot_tier_weights (uncommon or rare by
+	# default); without that it holds base_slot_rarity.
+	var slot_weights: Dictionary = settings.get("slot_tier_weights",{})
+	for index in int(settings.get("base_slots",settings.get("common_slots",3))):
+		if slot_weights.is_empty(): slots.append(String(settings.get("base_slot_rarity","uncommon"))); continue
+		var slot_total := 0.0
+		for key in slot_weights: slot_total += float(slot_weights[key])
+		var slot_roll := rng.randf() * slot_total
+		var slot_tier := String(slot_weights.keys().back())
+		for key in slot_weights:
+			slot_roll -= float(slot_weights[key])
+			if slot_roll <= 0.0: slot_tier = String(key); break
+		slots.append(slot_tier)
 	var weights: Dictionary = settings.get("tier_weights",{"uncommon":1})
 	for bonus in Array(settings.get("bonus_slots",[])):
 		if rng.randf() < float(Dictionary(bonus).get("chance",0.0)):

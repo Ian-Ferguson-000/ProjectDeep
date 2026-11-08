@@ -150,6 +150,13 @@ func _build_shop_floor() -> void:
 		actor_layer.add_child(area)
 		shop_offer_nodes.append(area)
 
+## Removes wares the list panel sold.
+func _sync_shop_floor() -> void:
+	for area in shop_offer_nodes.duplicate():
+		if not is_instance_valid(area): shop_offer_nodes.erase(area); continue
+		if bool(_find_merchant_offer(_dungeon_merchant_id(),String(area.get_meta("offer_id",""))).get("sold",true)):
+			shop_offer_nodes.erase(area); area.queue_free()
+
 func _offer_display_kind(offer: Dictionary) -> String:
 	return String(offer.get("kind","item"))
 
@@ -197,7 +204,7 @@ func _shop_floor_interaction(used: bool) -> bool:
 		_show_message(" ".join(logs))
 		if bool(_find_merchant_offer(_dungeon_merchant_id(),String(offer.offer_id)).get("sold",false)):
 			shop_offer_nodes.erase(area); area.queue_free(); _hide_shop_tag()
-		_refresh_hud()
+		_after_purchase()
 		return true
 	return false
 

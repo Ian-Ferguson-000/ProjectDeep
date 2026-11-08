@@ -1,6 +1,6 @@
 extends SceneTree
 
-## The dungeon trader: 3 uncommons (the lowest tier) plus sometimes 1-2 pricier higher-tier relics,
+## The dungeon trader: exactly 3 items, each uncommon or rare, and nothing else,
 ## rolled fresh per floor and per run, no consumables anywhere.
 
 var failures: Array[String] = []
@@ -14,16 +14,16 @@ func _run() -> void:
 
 	# Shape and pricing.
 	var offers := state.get_merchant_offers("forest","dungeon").filter(func(o): return String(o.kind) == "item")
-	_expect(offers.size() >= 3 and offers.size() <= 5,"Trader should show 3 to 5 items, shows %d" % offers.size())
-	for index in 3: _expect(String(offers[index].rarity) == "uncommon","Slot %d should be uncommon" % (index + 1))
+	_expect(offers.size() == 3,"Trader should show 3 items, shows %d" % offers.size())
+	for index in offers.size(): _expect(String(offers[index].rarity) in ["uncommon","rare"],"Slot %d is %s, not uncommon or rare" % [index + 1,offers[index].rarity])
 	for offer in offers:
 		_expect(String(offer.kind) == "item","Trader sold a %s" % offer.kind)
 		_expect(int(offer.gold) == int(prices[String(offer.rarity)]),"%s priced wrong" % offer.name)
 		_expect(GameBalance.item_usable_by_class(String(offer.item_id),"warrior") and not Unlocks.is_item_locked(state.campaign,String(offer.item_id)),"%s should not be on sale" % offer.item_id)
 		_expect(String(offer.rules_text).to_lower() == GameBalance.get_slasher_item_rules_text(String(offer.item_id)).trim_prefix("Slasher: ").to_lower(),"%s shows the old turn-based rules" % offer.name)
-	# Isaac shop pickups: a red heart for 3 and a key for 5 (CHA 10 pays list price).
+	# No hearts, keys or other pickups on the counter.
 	var pickups := state.get_merchant_offers("forest","dungeon").filter(func(o): return String(o.kind) != "item")
-	_expect(pickups.size() == 2 and pickups.any(func(o): return String(o.kind) == "heart" and int(o.base_gold) == 3) and pickups.any(func(o): return String(o.kind) == "key" and int(o.base_gold) == 5),"The trader should sell a heart (3) and a key (5): %s" % [pickups])
+	_expect(pickups.is_empty(),"The trader sells pickups: %s" % [pickups])
 	var ids := offers.map(func(o): return String(o.item_id))
 	for id in ids: _expect(ids.count(id) == 1,"Trader offered %s twice" % id)
 
@@ -59,17 +59,18 @@ func _run() -> void:
 	var expedition_run := RunState.new(); expedition_run.attach_campaign(c); expedition_run.active_character_id = c.living_roster()[0].id; expedition_run.start_new_run(null,"forest")
 	_expect(c.expedition.floor_seed == expedition_run.floor_seed and ExpeditionState.from_dict(c.expedition.to_dict()).floor_seed == expedition_run.floor_seed,"Run seed not saved with the expedition")
 
-	# Bonus slots: sometimes, rolled from the chest rates (never below uncommon).
-	var fourth := 0; var fifth := 0
-	for sample in 600:
+	# Rarity mix: both uncommon and rare turn up, never anything higher.
+	var seen := {}
+	for sample in 300:
 		state.floor_seed = 1000 + sample * 31
-		var stock := state.get_merchant_offers("forest","dungeon").filter(func(o): return String(o.kind) == "item")
-		if stock.size() >= 4:
-			fourth += 1
-			for extra in stock.slice(3): _expect(String(extra.rarity) != "common" and int(extra.gold) >= int(prices.uncommon),"Bonus slot held a cheap common")
-		if stock.size() == 5: fifth += 1
-	_expect(fourth > 180 and fourth < 400,"Bonus slots should appear sometimes (%d of 600)" % fourth)
-	_expect(fifth > 0 and fifth < fourth,"A fifth slot should be rarer than a fourth (%d vs %d)" % [fifth,fourth])
+		var stock := state.get_merchant_offers("forest","dungeon")
+		_expect(stock.size() == 3,"Trader stock was not 3 items")
+		for extra in stock: seen[String(extra.rarity)] = int(seen.get(String(extra.rarity),0)) + 1
+	_expect(seen.has("uncommon") and seen.has("rare") and seen.size() == 2,"Trader rarities: %s" % [seen])
+	var weights: Dictionary = settings.slot_tier_weights
+	var expected_rare := float(weights.rare) / (float(weights.rare) + float(weights.uncommon))
+	var rare_share := float(seen.get("rare",0)) / 900.0
+	_expect(absf(rare_share - expected_rare) < 0.07,"Rare share %.2f, expected about %.2f" % [rare_share,expected_rare])
 
 	# Buying: expensive, one each, refreshed next floor.
 	state.floor_seed = 4242; state.current_floor = 1

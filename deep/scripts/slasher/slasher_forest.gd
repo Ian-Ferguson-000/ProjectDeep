@@ -423,7 +423,7 @@ func _process(delta:float)->void:
 				var merchant_id:=_dungeon_merchant_id();var offer_id:=String(offer_area.get_meta("offer_id",""));var offer:=_find_merchant_offer(merchant_id,offer_id)
 				_show_message("%s · %s · press E to buy"%[String(offer.get("name","Offer")),("%d Favor"%int(offer.get("favor",0))) if int(offer.get("favor",0))>0 else ("%d gold"%int(offer.get("gold",0)))],0.15)
 				if Input.is_action_just_pressed("interact") and not interaction_used:
-					interaction_used=true;player.basic_mouse_held=false;var logs:=run_state.purchase_merchant_offer(merchant_id,offer_id,"dungeon");_show_message(" ".join(logs));_refresh_hud()
+					interaction_used=true;player.basic_mouse_held=false;var logs:=run_state.purchase_merchant_offer(merchant_id,offer_id,"dungeon");_show_message(" ".join(logs));_after_purchase()
 				break
 		if player.global_position.distance_to(exit_position)<42:
 			_show_message("Leave the market and continue to the next floor · press E.",0.15)
@@ -654,6 +654,15 @@ func _offer_starter_relic()->void:
 	if relic_modal==null or relic_modal.visible:return
 	relic_choice_source="starter";var choices:Array[String]=run_state.generate_slasher_chest_choices(1,"starter",0);relic_modal.open(run_state,choices,true)
 
+## After buying from the trader (floor or list): apply the item to the
+## adventurer right away and redraw the HUD (coins, item row, hearts, stats).
+func _after_purchase(_message:String="")->void:
+	if not is_instance_valid(player):return
+	if player.item_runtime:player.item_runtime.refresh()
+	player.setup(run_state);_refresh_hud()
+	# The list may have sold something that is also lying on the floor.
+	if has_method("_sync_shop_floor"):call("_sync_shop_floor")
+
 func _claim_relic(item_id:String)->void:
 	if relic_choice_source=="active_item_drop":
 		_acquire_active_item(item_id,active_drop_origin);relic_modal.finish();relic_choice_source="";active_drop_origin=Vector2.ZERO;return
@@ -862,7 +871,7 @@ func _build_hud()->void:
 	clock_label.visible=run_state.campaign!=null and not _is_tutorial_expedition()
 	combo_label=Label.new();combo_label.name="Combo";combo_label.set_anchors_preset(Control.PRESET_CENTER_TOP);combo_label.offset_left=-220;combo_label.offset_right=220;combo_label.offset_top=64;combo_label.offset_bottom=86;combo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;combo_label.add_theme_font_size_override("font_size",15);combo_label.add_theme_color_override("font_color",Color("#e5bf68"));combo_label.add_theme_color_override("font_outline_color",Color("#0b0808"));combo_label.add_theme_constant_override("outline_size",6);canvas.add_child(combo_label)
 	message_label=Label.new();message_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM);message_label.position=Vector2(-360,-150);message_label.size=Vector2(720,42);message_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;message_label.add_theme_font_size_override("font_size",17);message_label.add_theme_color_override("font_color",Color("#ffe4a1"));message_label.add_theme_color_override("font_outline_color",Color("#0b0808"));message_label.add_theme_constant_override("outline_size",6);canvas.add_child(message_label)
-	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
+	merchant_shop_panel=MERCHANT_PANEL.new();merchant_shop_panel.name="SlasherMerchantShop";merchant_shop_panel.purchase_completed.connect(_show_message);merchant_shop_panel.purchase_completed.connect(_after_purchase);merchant_shop_panel.closed.connect(_suppress_abandon_once);canvas.add_child(merchant_shop_panel)
 	codex=CODEX.new();codex.name="SlasherCodex";codex.closed.connect(_on_codex_closed);canvas.add_child(codex)
 	pause_menu=GamePauseMenu.new().setup(controller,run_state,"dungeon");pause_menu.can_open=_can_open_pause_menu;pause_menu.open_codex=_open_codex.bind("system")
 	if not _is_tutorial_expedition():pause_menu.abandon_run=abandon_run

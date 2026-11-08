@@ -50,7 +50,8 @@ room-clear drops.
 
 - Every floor: a start room, fights, an **elite room**, a **shop**, a **treasure
   room** (a free item) and the **boss room**, never entered from the north.
-- **From floor 2 the treasure room is locked**: walk into its door with a key.
+- **From floor 2 the treasure room is locked**: walk into its door with a key
+  (keys come from room-clear drops).
 - **Every boss leaves an item** (the floor's guardian and the colossus).
 - **No campfire rooms**: healing comes from hearts
   (`dungeons.json → slasher.room_count.rest_room`, `locked_treasure_from_floor`).
@@ -62,8 +63,9 @@ plinth with its price under it. **Stand on one** to see its name, rarity, price 
 effect, then **press E to buy** (the tag says how many coins you're short). E at the
 stall still opens the full list. Layout: `slasher_balance.json → shop_floor`.
 
-Every item is **15 coins**, and there's always a **red heart (3)** and a **key
-(5)** on the counter; Charisma adjusts every price (`data/trader.json`).
+The trader lays out **3 items, each uncommon (70%) or rare (30%)**, every one
+**15 coins**; Charisma adjusts the price. No hearts, keys or other pickups
+(`data/trader.json`: `base_slots`, `slot_tier_weights`, `prices`).
 
 ## Items
 

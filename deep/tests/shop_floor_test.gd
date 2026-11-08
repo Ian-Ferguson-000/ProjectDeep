@@ -60,13 +60,27 @@ func _check(packed: PackedScene, dungeon: String) -> void:
 		expect(text.contains("more coin"),"%s: a broke player is not told the shortfall" % dungeon)
 	# With the coins, E buys it and the ware leaves the floor.
 	state.gold = 99
+	scene._refresh_hud()
+	var items_before: int = scene.dungeon_hud.item_slots.size()
 	Input.action_press("interact")
 	await process_frame
 	Input.action_release("interact")
+	# The HUD shows the new coin total and the new item straight away.
+	expect(scene.dungeon_hud.gold_label.text.to_int() == 99 - int(offer.gold),"%s: the coin counter did not update (%s)" % [dungeon,scene.dungeon_hud.gold_label.text])
+	expect(scene.dungeon_hud.item_slots.size() == items_before + 1,"%s: the bought item is not in the HUD item row" % dungeon)
 	for i in 3: await process_frame
 	expect(state.gold == 99 - int(offer.gold),"%s: buying did not take the price (%d left)" % [dungeon,state.gold])
 	expect(not is_instance_valid(area) or area.is_queued_for_deletion(),"%s: the bought ware stayed on the floor" % dungeon)
 	expect(not scene.shop_tag.visible,"%s: the tag stayed up after buying" % dungeon)
+	# Buying from the list at the stall also updates the HUD and clears that ware from the floor.
+	var second: Dictionary = state.get_merchant_offers(scene._dungeon_merchant_id(),"dungeon").filter(func(o): return not bool(o.sold))[0]
+	var before_gold: int = state.gold
+	var floor_count: int = scene.shop_offer_nodes.size()
+	scene.merchant_shop_panel.setup(state,scene._dungeon_merchant_id(),"dungeon")
+	state.purchase_merchant_offer(scene._dungeon_merchant_id(),String(second.offer_id),"dungeon")
+	scene.merchant_shop_panel.purchase_completed.emit("bought")
+	expect(scene.dungeon_hud.gold_label.text.to_int() == before_gold - int(second.gold),"%s: the list purchase left the coin counter stale" % dungeon)
+	expect(scene.shop_offer_nodes.size() == floor_count - 1,"%s: the ware bought from the list stayed on the floor" % dungeon)
 	# Walking off: no tag.
 	scene.player.global_position = scene.merchant_position + Vector2(0,200)
 	for i in 3: await process_frame
