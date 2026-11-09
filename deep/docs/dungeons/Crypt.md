@@ -106,7 +106,7 @@ ring. Its body can't be hurt.
 - Tuning: `slasher_balance.json → enemies.charnel_king`.
 - **Art:** set `body_texture`, `heart_texture` (the soul gem) and
   `fist_texture` (an open hand) on the King, exactly as for the Colossus (see
-  docs/HeartwoodColossus.md). Telegraphs and bullets stay drawn in code.
+  docs/dungeons/HeartwoodColossus.md). Telegraphs and bullets stay drawn in code.
 
 ## The forest change
 

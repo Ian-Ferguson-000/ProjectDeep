@@ -4,7 +4,7 @@ Generated on 2026-09-09 02:21 -04:00. This records assets moved from `assets/` t
 
 - Source assets moved: 1539
 - Source size moved: 79.52 MiB
-- Selection rule: `Unreferenced` in `docs/AssetUsage.md`; runtime-directory and test/tool-only files were retained.
+- Selection rule: `Unreferenced` in `docs/art/AssetUsage.md`; runtime-directory and test/tool-only files were retained.
 - Restore rule: move a file and its `.import` sidecar back to the same relative path below `assets/`.
 
 ## By top-level folder

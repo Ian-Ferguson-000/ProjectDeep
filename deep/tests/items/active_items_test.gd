@@ -395,7 +395,7 @@ func _run() -> void:
 		"Restored room frenzy failed to double a 1-heart hit to 2 (health %d)" % scene.player.health
 	)
 	scene.player.invulnerable = 9999
-	# Enemies never drop active items (docs/Materials.md): elites, mini bosses and
+	# Enemies never drop active items (docs/systems/Materials.md): elites, mini bosses and
 	# bosses drop materials (and mini bosses sometimes a relic) instead.
 	for kind in ["elite", "mini_boss", "boss"]:
 		for attempt in 12:

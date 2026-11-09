@@ -17,7 +17,7 @@
   Hearth's Appraisal upgrade now only improves recovered equipment; it no longer
   caps dungeon relics. The trader's three always-there slots hold Uncommons, and
   Hearth merchants stock 5 of an Uncommon.
-- **Dexterity is walking speed** for every class (docs/SimpleCombat.md). Items
+- **Dexterity is walking speed** for every class (docs/systems/SimpleCombat.md). Items
   that make you faster add Dexterity: `"dex": 1` is +1 DEX. An item with a
   percentage move-speed bonus counts as +1.
 
@@ -39,7 +39,7 @@
 | `xp_bonus_percent` | | XP only; doesn't drop while levelling is off |
 
 Block chance became soul hearts (2–6% = 1, 10–15% = 2, 22% = 3), dodge became
-+1 Dexterity, and "every Nth hit" became Luck Up (docs/IsaacRules.md).
++1 Dexterity, and "every Nth hit" became Luck Up (docs/design/IsaacRules.md).
 
 Item procs (crescents, lightning, burning, chill, novas) carry their own damage
 and don't get `damage`, `boss_damage` or precision on top.

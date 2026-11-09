@@ -2,7 +2,7 @@
 
 > **Update:** runs are now solo. Parties, retreat policy, dispatch and the
 > improvements list have been removed; supplies are food. See
-> `docs/ExpeditionsAndUpkeep.md`.
+> `docs/tavern/ExpeditionsAndUpkeep.md`.
 
 The Hearth campaign is implemented around persistent company state and four
 reusable management services:

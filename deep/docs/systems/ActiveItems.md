@@ -58,7 +58,7 @@ documented in [MageActiveItemsProduction.md](MageActiveItemsProduction.md).
 The main screen exposes a persistent **Dev Mode** toggle for combat testing. It
 keeps normal mechanics intact while active-item recharge runs at 5× speed and
 ordinary enemy loot rolls are tripled. Enemies no longer drop active items at all
-(docs/Materials.md); active items come from chests, pedestals and traders. Picking up one opens
+(docs/systems/Materials.md); active items come from chests, pedestals and traders. Picking up one opens
 a three-card choice of unique, class-valid active items. An item swapped onto the
 ground remains an exact pickup instead of generating another choice. Dev Mode is
 disabled by default.

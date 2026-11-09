@@ -5,7 +5,7 @@ You are the keeper of the Hearth, home of the **Eros** adventuring company.
 1. **Recruit.** Pay a signing fee to bring an adventurer into the company.
    Better-known adventurers cost more but come stronger (fame tiers, below).
 2. **Keep them.** House, feed and train them at the Hearth (pantry, lodgings,
-   training; see docs/ExpeditionsAndUpkeep.md and docs/HearthLodgings.md).
+   training; see docs/tavern/ExpeditionsAndUpkeep.md and docs/tavern/HearthLodgings.md).
 3. **Send them out once.** Each adventurer goes on one expedition, led by you.
 4. **Take your cut.** If they come home (a guardian victory, a retreat or an
    abandoned run), the Hearth keeps its **cut** of the gold they bring back and

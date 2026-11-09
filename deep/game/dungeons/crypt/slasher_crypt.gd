@@ -29,7 +29,7 @@ const ROSTER_BY_FLOOR := [
 	["grave_acolyte", "tomb_guard"],
 	["soul_wisp"],
 ]
-## Enemy id -> sprite used (several reuse art under a new name; see docs/Crypt.md).
+## Enemy id -> sprite used (several reuse art under a new name; see docs/dungeons/Crypt.md).
 const VISUAL_FOR := {"grave_acolyte": "necromancer"}
 
 var crypt_hazards: Array[SlasherCryptHazard] = []

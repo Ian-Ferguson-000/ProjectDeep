@@ -1,7 +1,7 @@
 # Stone Crypt: 3D rooms
 
 Crypt expeditions load `game/dungeons/crypt/Crypt3D.tscn` from Main. It's the 3D
-forest's presentation (docs/Forest3D.md) with the **crypt theme**. Rooms, foes,
+forest's presentation (docs/dungeons/Forest3D.md) with the **crypt theme**. Rooms, foes,
 hazards, hit geometry, drops, checkpoints and saves are all still the 2D crypt
 simulation underneath (`slasher_crypt.gd`), exactly as the forest works.
 

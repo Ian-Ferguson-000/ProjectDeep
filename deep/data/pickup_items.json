@@ -15,7 +15,7 @@
     "type chain_lightning: leaps from the target to nearby enemies. damage_percent, damage, jumps, jump_range.",
     "type burn: sets the target alight. damage (per half-second tick), damage_percent, duration.  type chill: slows the target. slow (0.5 = half speed), duration.",
     "type nova: a burst around the target (or you, for swing/special/dash). damage_percent, damage, radius, element, knockback.  type heal: amount.",
-    "See docs/ItemEffects.md for worked examples.",
+    "See docs/systems/ItemEffects.md for worked examples.",
     "drops: false keeps an item out of chests and shops without deleting it. note: a reminder for the team, not shown in game.",
     "Run tests/items/pickup_items_test.gd after editing to check the file."
   ],

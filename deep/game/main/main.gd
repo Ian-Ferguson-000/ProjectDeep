@@ -445,7 +445,7 @@ func _on_slasher_progression_closed(screen_layer: CanvasLayer, on_complete: Call
 
 ## The scene a dungeon runtime plays in. The tavern, forest and crypt are 3D;
 ## the 2D scenes they're built on stay in scenes/tavern and scenes/slasher as
-## references (docs/Scenes.md). The others are still 2D and are Coming Soon,
+## references (docs/dungeons/Scenes.md). The others are still 2D and are Coming Soon,
 ## and tests/dungeons/live_scenes_test.gd fails if an open dungeon would load a 2D scene.
 static func dungeon_scene(runtime: String) -> PackedScene:
 	match runtime:

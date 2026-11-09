@@ -3,7 +3,7 @@ class_name SlasherCryptCreature
 
 ## The Stone Crypt's newer foes. Several borrow another enemy's sprites under
 ## their own name until they get art of their own ("art" and "tint" in
-## slasher_balance.json enemy_visuals; see docs/Crypt.md).
+## slasher_balance.json enemy_visuals; see docs/dungeons/Crypt.md).
 ##
 ## grave_rat    Hides under bone piles in nests of three. Wakes when you come
 ##              close (waking its nest), then swarms and bites. (sporeling behaviour)

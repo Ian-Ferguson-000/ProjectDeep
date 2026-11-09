@@ -37,7 +37,7 @@ them too. Progress shows on the guardian choice screen.
 
 ## Enemy drops (`data/enemy_drops.json`)
 
-Enemies drop **materials**, not items (docs/Materials.md):
+Enemies drop **materials**, not items (docs/systems/Materials.md):
 
 - **Basic enemies** (including the tougher floor-3+ versions): only a crafting
   or quest material for their family, 30% of the time (`basic_material_chance`).

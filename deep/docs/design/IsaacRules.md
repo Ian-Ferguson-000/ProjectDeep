@@ -82,7 +82,7 @@ If a stage rolls a rarity the class has run out of, it steps down a tier.
 
 ## Items
 
-All stat ups, all stacking (docs/Items.md): Damage Up (`damage`), Attack speed Up
+All stat ups, all stacking (docs/systems/Items.md): Damage Up (`damage`), Attack speed Up
 (`attack_speed`), Speed Up (`dex`), Health Up (`max_health`), soul hearts
 (`soul_hearts`), Range Up (`range`), Luck Up (`luck`), plus damage against
 bosses, faster ability recharge and gold-find. Blackoak Ward is our Holy Mantle

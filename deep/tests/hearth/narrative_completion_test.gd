@@ -10,12 +10,12 @@ const EVENTS := preload("res://game/campaign/story_event_service.gd")
 func _initialize() -> void:
 	var failures: Array[String] = []
 	for path in [
-		"res://docs/story/NarrativeVision.md",
-		"res://docs/story/CampaignArcPlan.md",
-		"res://docs/story/NarrativeAdaptationRoadmap.md",
-		"res://docs/story/CoreCastBriefs.md",
-		"res://docs/story/NationAndCultureGuide.md",
-		"res://docs/story/CosmologySecret.md"
+		"res://docs/design/story/NarrativeVision.md",
+		"res://docs/design/story/CampaignArcPlan.md",
+		"res://docs/design/story/NarrativeAdaptationRoadmap.md",
+		"res://docs/design/story/CoreCastBriefs.md",
+		"res://docs/design/story/NationAndCultureGuide.md",
+		"res://docs/design/story/CosmologySecret.md"
 	]:
 		_expect(FileAccess.file_exists(path), "Missing canon document: %s" % path, failures)
 	var nations := NarrativeContent.nations()

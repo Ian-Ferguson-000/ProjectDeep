@@ -11,7 +11,7 @@ The Codex (M, or Esc → Codex) has a **Bestiary** tab in place of the old journ
 - **Page:** a moving portrait (idle, run, attack), the name, rank (Basic, Mini
   Boss, Boss), dungeon, the most health you've seen it with, kills, and four
   sections: **How it fights**, **How to beat it**, **Drops** (from
-  docs/Materials.md) and **Found** (where it lives). An undiscovered creature's
+  docs/systems/Materials.md) and **Found** (where it lives). An undiscovered creature's
   page tells you only where it's found.
 
 Defeating one creature of a kind unlocks its page; the counts and health are

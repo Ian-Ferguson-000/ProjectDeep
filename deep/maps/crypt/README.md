@@ -27,4 +27,4 @@ darker), Rock → rubble, Mossy rock → rubble decor, Pebbles → a bone pile,
 Mushrooms → candles, Bush → an urn or tombstone, Campfire → campfire, Gate down
 → **stairs down**, Colossus → **Big Skelly Boi**.
 
-See maps/README.md for how to paint rooms and docs/Crypt.md for the crypt itself.
+See maps/README.md for how to paint rooms and docs/dungeons/Crypt.md for the crypt itself.

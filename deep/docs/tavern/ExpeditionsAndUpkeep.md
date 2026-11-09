@@ -6,7 +6,7 @@ building, retreat policies and auto-resolved dispatches are gone from the game
 `HearthExpeditions._legacy_dispatch` / `resolve_auto`).
 
 Each adventurer goes on **one** expedition: when they come home the Hearth
-keeps its cut and they retire to town (docs/TavernBusiness.md).
+keeps its cut and they retire to town (docs/tavern/TavernBusiness.md).
 
 ## The Set Out screen
 

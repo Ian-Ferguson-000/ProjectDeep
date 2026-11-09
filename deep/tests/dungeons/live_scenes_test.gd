@@ -1,7 +1,7 @@
 extends SceneTree
 ## What the player sees is 3D: the tavern, and every dungeon that isn't Coming
 ## Soon, load 3D scenes. The 2D scenes stay in the project only as references and
-## as the base the 3D ones are built on (docs/Scenes.md). The 2D testing ground
+## as the base the 3D ones are built on (docs/dungeons/Scenes.md). The 2D testing ground
 ## is a dev tool and can't be reached in a normal build.
 const MAIN := preload("res://game/main/main.gd")
 var failures: Array[String] = []

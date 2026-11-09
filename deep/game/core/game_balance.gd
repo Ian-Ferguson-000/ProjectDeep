@@ -486,7 +486,7 @@ static func get_slasher_item_effects(item_id: String) -> Dictionary:
 				)
 			"attack_speed":
 				conversions["attack_speed"] = value
-			# Real-time stats (docs/Items.md).
+			# Real-time stats (docs/systems/Items.md).
 			"damage", "boss_damage", "block_percent", "dodge_percent", "luck", "soul_hearts":
 				conversions[key] = float(conversions.get(key, 0.0)) + value
 			"cooldown_percent":

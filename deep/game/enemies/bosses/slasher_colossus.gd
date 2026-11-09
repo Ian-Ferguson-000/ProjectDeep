@@ -14,7 +14,7 @@ class_name SlasherColossus
 ## thorn spiral and double slams, and calls sporelings in the last phase.
 ## Numbers: data/slasher_balance.json enemies.heartwood_colossus.
 ## Art: set body_texture / heart_texture / fist_texture to replace the
-## placeholder drawing (see docs/HeartwoodColossus.md).
+## placeholder drawing (see docs/dungeons/HeartwoodColossus.md).
 ##
 ## Other dungeons' colossi extend this (the crypt's Big Skelly Boi, in
 ## slasher_charnel_king.gd): they set colossus_id and override the patterns and
