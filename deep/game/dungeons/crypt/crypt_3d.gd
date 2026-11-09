@@ -7,25 +7,30 @@ const PRESENTATION := preload("res://game/dungeons/shared/world_3d/forest_world_
 var world_3d: Node3D
 var _original_canvas_mask := 0
 
+
 func _ready() -> void:
 	_original_canvas_mask = get_viewport().canvas_cull_mask
 	super._ready()
 
+
 func _build_floor() -> void:
 	super._build_floor()
 	player.camera.enabled = false
-	pause_menu.extra_controls = [["Zoom camera","Mouse wheel",""]]
+	pause_menu.extra_controls = [["Zoom camera", "Mouse wheel", ""]]
 	world_3d = PRESENTATION.new()
 	world_3d.name = "CryptWorld3D"
 	world_3d.theme = "crypt"
 	world_3d.dungeon = self
 	add_child(world_3d)
 
+
 func _build_mist() -> void:
 	pass
 
+
 func _build_vignette() -> void:
 	pass
+
 
 func _exit_tree() -> void:
 	get_viewport().canvas_transform = Transform2D.IDENTITY

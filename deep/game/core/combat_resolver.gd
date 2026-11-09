@@ -1,7 +1,10 @@
 extends RefCounted
 class_name CombatResolver
 
-const DAMAGE_TYPES := ["physical", "fire", "cold", "lightning", "arcane", "radiant", "necrotic", "poison"]
+const DAMAGE_TYPES := [
+	"physical", "fire", "cold", "lightning", "arcane", "radiant", "necrotic", "poison"
+]
+
 
 static func resolve_attack(
 	roll: int,
@@ -42,9 +45,11 @@ static func resolve_attack(
 	result["damage"] = maxi(0, int(result["raw_damage"]) - effective_aegis)
 	return result
 
+
 static func aegis_for(defenses: Dictionary, damage_type: String) -> int:
 	var typed_key := "aegis_%s" % damage_type
 	return int(defenses.get(typed_key, defenses.get("aegis_all", 0)))
+
 
 static func defense_snapshot(stats: Dictionary) -> Dictionary:
 	var snapshot := {
@@ -54,5 +59,7 @@ static func defense_snapshot(stats: Dictionary) -> Dictionary:
 		"aegis_all": int(stats.get("aegis_all", 0)),
 	}
 	for damage_type in DAMAGE_TYPES:
-		snapshot["aegis_%s" % damage_type] = int(snapshot["aegis_all"]) + int(stats.get("aegis_%s" % damage_type, 0))
+		snapshot["aegis_%s" % damage_type] = (
+			int(snapshot["aegis_all"]) + int(stats.get("aegis_%s" % damage_type, 0))
+		)
 	return snapshot

@@ -12,8 +12,10 @@ class_name TavernFloor
 
 @onready var layer: TileMapLayer = $TileMapLayer
 
+
 func _ready() -> void:
 	_rebuild_if_empty()
+
 
 func _rebuild_if_empty() -> void:
 	if layer == null or layer.tile_set == null:
@@ -21,7 +23,13 @@ func _rebuild_if_empty() -> void:
 	if layer.get_used_cells().is_empty():
 		for y in floor_size.y:
 			for x in floor_size.x:
-				layer.set_cell(Vector2i(x, y), 0, fill_variant + Vector2i(x % pattern_size.x, y % pattern_size.y), 0)
+				layer.set_cell(
+					Vector2i(x, y),
+					0,
+					fill_variant + Vector2i(x % pattern_size.x, y % pattern_size.y),
+					0
+				)
+
 
 func rebuild_floor() -> void:
 	if layer == null:

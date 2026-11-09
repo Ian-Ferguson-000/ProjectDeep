@@ -6,6 +6,7 @@ const DIRECTIONS := ["down", "left", "right", "up"]
 const FRAME_SIZE := Vector2(96, 80)
 const FRAME_COUNT := 8
 
+
 ## Builds all directional player idle and run animations and saves the shared SpriteFrames resource.
 func _init() -> void:
 	var frames := SpriteFrames.new()
@@ -17,7 +18,9 @@ func _init() -> void:
 			frames.set_animation_loop(animation, true)
 			frames.set_animation_speed(animation, 6.0 if state == "idle" else 10.0)
 			var folder: String = "IDLE" if state == "idle" else "RUN"
-			var texture: Texture2D = load(ROOT + "/" + folder + "/" + state + "_" + direction + ".png")
+			var texture: Texture2D = load(
+				ROOT + "/" + folder + "/" + state + "_" + direction + ".png"
+			)
 			for frame_index in FRAME_COUNT:
 				var atlas := AtlasTexture.new()
 				atlas.atlas = texture
@@ -39,5 +42,10 @@ func _init() -> void:
 		push_error("Could not save player SpriteFrames: %s" % error)
 		quit(1)
 	else:
-		print("Created %s with %d directional animations." % [OUTPUT, frames.get_animation_names().size()])
+		print(
+			(
+				"Created %s with %d directional animations."
+				% [OUTPUT, frames.get_animation_names().size()]
+			)
+		)
 		quit(0)

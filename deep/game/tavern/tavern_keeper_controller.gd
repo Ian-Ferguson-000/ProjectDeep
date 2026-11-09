@@ -13,11 +13,13 @@ var facing := "down"
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
+
 func _ready() -> void:
 	add_to_group("tavern_keeper")
 	sprite.sprite_frames = SlasherSpriteLibrary.tavern_keeper_frames()
 	_play_motion_animation("idle")
 	possess_keeper()
+
 
 func possess_keeper() -> void:
 	possessed = true
@@ -26,6 +28,7 @@ func possess_keeper() -> void:
 	_play_motion_animation("idle")
 	possessing_changed_signal()
 
+
 func release_keeper() -> void:
 	possessed = false
 	input_enabled = false
@@ -33,14 +36,17 @@ func release_keeper() -> void:
 	_play_motion_animation("idle")
 	possessing_changed_signal()
 
+
 func is_keeper_possessed() -> bool:
 	return possessed
+
 
 func set_modal_paused(value: bool) -> void:
 	input_enabled = not value and possessed
 	if value:
 		velocity = Vector2.ZERO
 		_play_motion_animation("idle")
+
 
 func move_input() -> Vector2:
 	if not input_enabled:
@@ -49,6 +55,7 @@ func move_input() -> Vector2:
 	if actions.any(func(action: String): return not InputMap.has_action(action)):
 		return Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
+
 
 func nearest_interactable() -> Node:
 	var nearest: Node = null
@@ -64,13 +71,15 @@ func nearest_interactable() -> Node:
 			nearest = candidate
 	return nearest
 
+
 func interact_nearby() -> void:
 	var target := nearest_interactable()
 	if target == null:
 		return
 	get_viewport().set_input_as_handled()
-	AudioCue.play_from(self,"ui_open",false)
+	AudioCue.play_from(self, "ui_open", false)
 	interaction_requested.emit(target)
+
 
 func _physics_process(_delta: float) -> void:
 	if not possessed:
@@ -89,11 +98,14 @@ func _physics_process(_delta: float) -> void:
 	if InputMap.has_action("interact") and Input.is_action_just_pressed("interact"):
 		interact_nearby()
 
+
 func possessing_changed_signal() -> void:
 	possession_changed.emit(possessed)
 
+
 func _play_motion_animation(state: String) -> void:
-	if sprite == null or sprite.sprite_frames == null: return
+	if sprite == null or sprite.sprite_frames == null:
+		return
 	var animation := StringName("%s_%s" % [state, facing])
 	if sprite.sprite_frames.has_animation(animation) and sprite.animation != animation:
 		sprite.play(animation)

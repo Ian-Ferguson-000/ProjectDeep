@@ -14,6 +14,7 @@ var speaker_label: Label
 var dialogue_label: Label
 var continue_label: Label
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -21,10 +22,12 @@ func _ready() -> void:
 	visible = false
 	_build_ui()
 
+
 func play(dialogue_lines: Array) -> void:
 	lines.clear()
 	for value in dialogue_lines:
-		if value is Dictionary: lines.append(Dictionary(value).duplicate(true))
+		if value is Dictionary:
+			lines.append(Dictionary(value).duplicate(true))
 	if lines.is_empty():
 		conversation_finished.emit()
 		return
@@ -36,11 +39,14 @@ func play(dialogue_lines: Array) -> void:
 	_cache_portraits()
 	_advance()
 
+
 func is_playing() -> bool:
 	return visible and line_index >= 0 and line_index < lines.size()
 
+
 func _input(event: InputEvent) -> void:
-	if not is_playing(): return
+	if not is_playing():
+		return
 	var advance := false
 	if event is InputEventMouseButton:
 		advance = event.button_index == MOUSE_BUTTON_LEFT and event.pressed
@@ -49,6 +55,7 @@ func _input(event: InputEvent) -> void:
 	if advance:
 		get_viewport().set_input_as_handled()
 		_advance()
+
 
 func _advance() -> void:
 	line_index += 1
@@ -64,20 +71,27 @@ func _advance() -> void:
 	continue_label.text = "CLICK · E · SPACE    %d / %d" % [line_index + 1, lines.size()]
 	line_changed.emit(line_index, line)
 
+
 func _finish() -> void:
 	visible = false
 	line_index = -1
 	get_tree().paused = previous_tree_paused
 	conversation_finished.emit()
 
+
 func _cache_portraits() -> void:
 	left_portrait.texture = null
 	right_portrait.texture = null
 	for line in lines:
 		var path := String(line.get("portrait", ""))
-		if path.is_empty() or not ResourceLoader.exists(path): continue
-		var target := right_portrait if String(line.get("side", "left")) == "right" else left_portrait
-		if target.texture == null: target.texture = load(path)
+		if path.is_empty() or not ResourceLoader.exists(path):
+			continue
+		var target := (
+			right_portrait if String(line.get("side", "left")) == "right" else left_portrait
+		)
+		if target.texture == null:
+			target.texture = load(path)
+
 
 func _build_ui() -> void:
 	var shade := ColorRect.new()
@@ -97,7 +111,8 @@ func _build_ui() -> void:
 	add_child(panel)
 
 	var margin := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]: margin.add_theme_constant_override("margin_%s" % side, 14)
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_%s" % side, 14)
 	panel.add_child(margin)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
@@ -129,6 +144,7 @@ func _build_ui() -> void:
 	right_portrait = _portrait("RightPortrait")
 	row.add_child(right_portrait)
 
+
 func _portrait(node_name: String) -> TextureRect:
 	var portrait := TextureRect.new()
 	portrait.name = node_name
@@ -138,6 +154,7 @@ func _portrait(node_name: String) -> TextureRect:
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return portrait
+
 
 func _panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

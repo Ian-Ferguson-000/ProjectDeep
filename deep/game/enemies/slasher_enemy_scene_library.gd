@@ -1,38 +1,56 @@
 extends RefCounted
 class_name SlasherEnemySceneLibrary
 
-const PREFAB_ROOT:="res://game/enemies/scenes/"
-const BASE_SCRIPT:=preload("res://game/enemies/slasher_enemy.gd")
-const CRYPT_SCRIPT:=preload("res://game/dungeons/crypt/slasher_crypt_enemy.gd")
-const HELL_SCRIPT:=preload("res://game/dungeons/hell/slasher_hell_enemy.gd")
-const FOREST_SCRIPT:=preload("res://game/enemies/slasher_forest_creature.gd")
-const FOREST_IDS:=["sporeling","bandit_cutthroat","bandit_knifethrower"]
-const COLOSSUS_SCRIPT:=preload("res://game/enemies/bosses/slasher_colossus.gd")
-const CHARNEL_KING_SCRIPT:=preload("res://game/enemies/bosses/slasher_charnel_king.gd")
-const CRYPT_CREATURE_SCRIPT:=preload("res://game/dungeons/crypt/slasher_crypt_creature.gd")
+const PREFAB_ROOT := "res://game/enemies/scenes/"
+const BASE_SCRIPT := preload("res://game/enemies/slasher_enemy.gd")
+const CRYPT_SCRIPT := preload("res://game/dungeons/crypt/slasher_crypt_enemy.gd")
+const HELL_SCRIPT := preload("res://game/dungeons/hell/slasher_hell_enemy.gd")
+const FOREST_SCRIPT := preload("res://game/enemies/slasher_forest_creature.gd")
+const FOREST_IDS := ["sporeling", "bandit_cutthroat", "bandit_knifethrower"]
+const COLOSSUS_SCRIPT := preload("res://game/enemies/bosses/slasher_colossus.gd")
+const CHARNEL_KING_SCRIPT := preload("res://game/enemies/bosses/slasher_charnel_king.gd")
+const CRYPT_CREATURE_SCRIPT := preload("res://game/dungeons/crypt/slasher_crypt_creature.gd")
 ## Crypt foes that borrow other enemies' sprites; built at runtime, no prefab.
-const CRYPT_CREATURE_IDS:=["grave_rat","ghoul","gravedigger","tomb_guard","revenant"]
-const CRYPT_IDS:=["skeletal_archer","necromancer","soul_wisp","crypt_boss"]
-const HELL_IDS:=["infernal_caster","rift_stalker","hellcharger","cinder_bomber","fire_spirit","infernal_legate","balor"]
+const CRYPT_CREATURE_IDS := ["grave_rat", "ghoul", "gravedigger", "tomb_guard", "revenant"]
+const CRYPT_IDS := ["skeletal_archer", "necromancer", "soul_wisp", "crypt_boss"]
+const HELL_IDS := [
+	"infernal_caster",
+	"rift_stalker",
+	"hellcharger",
+	"cinder_bomber",
+	"fire_spirit",
+	"infernal_legate",
+	"balor"
+]
 
-static func create(visual_id:String)->SlasherEnemy:
+
+static func create(visual_id: String) -> SlasherEnemy:
 	# Built from shared sprite sheets at runtime; no prefab needed.
-	if visual_id in FOREST_IDS:return FOREST_SCRIPT.new() as SlasherEnemy
-	if visual_id=="heartwood_colossus":return COLOSSUS_SCRIPT.new() as SlasherEnemy
-	if visual_id=="charnel_king":return CHARNEL_KING_SCRIPT.new() as SlasherEnemy
-	if visual_id in CRYPT_CREATURE_IDS:return CRYPT_CREATURE_SCRIPT.new() as SlasherEnemy
-	var prefab_path:=PREFAB_ROOT+visual_id+".tscn"
+	if visual_id in FOREST_IDS:
+		return FOREST_SCRIPT.new() as SlasherEnemy
+	if visual_id == "heartwood_colossus":
+		return COLOSSUS_SCRIPT.new() as SlasherEnemy
+	if visual_id == "charnel_king":
+		return CHARNEL_KING_SCRIPT.new() as SlasherEnemy
+	if visual_id in CRYPT_CREATURE_IDS:
+		return CRYPT_CREATURE_SCRIPT.new() as SlasherEnemy
+	var prefab_path := PREFAB_ROOT + visual_id + ".tscn"
 	if ResourceLoader.exists(prefab_path):
-		var prefab:=load(prefab_path) as PackedScene
-		if prefab!=null:
-			var instance:=prefab.instantiate()
-			if instance is SlasherEnemy:return instance as SlasherEnemy
+		var prefab := load(prefab_path) as PackedScene
+		if prefab != null:
+			var instance := prefab.instantiate()
+			if instance is SlasherEnemy:
+				return instance as SlasherEnemy
 			instance.free()
-	push_warning("Missing enemy prefab for '%s'; using a runtime fallback."%visual_id)
-	if visual_id in HELL_IDS:return HELL_SCRIPT.new() as SlasherEnemy
-	if visual_id in CRYPT_IDS:return CRYPT_SCRIPT.new() as SlasherEnemy
+	push_warning("Missing enemy prefab for '%s'; using a runtime fallback." % visual_id)
+	if visual_id in HELL_IDS:
+		return HELL_SCRIPT.new() as SlasherEnemy
+	if visual_id in CRYPT_IDS:
+		return CRYPT_SCRIPT.new() as SlasherEnemy
 	return BASE_SCRIPT.new() as SlasherEnemy
 
-static func warm(visual_id:String)->void:
-	var prefab_path:=PREFAB_ROOT+visual_id+".tscn"
-	if ResourceLoader.exists(prefab_path):ResourceLoader.load(prefab_path)
+
+static func warm(visual_id: String) -> void:
+	var prefab_path := PREFAB_ROOT + visual_id + ".tscn"
+	if ResourceLoader.exists(prefab_path):
+		ResourceLoader.load(prefab_path)

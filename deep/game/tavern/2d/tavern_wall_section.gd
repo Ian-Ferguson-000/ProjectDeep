@@ -39,11 +39,13 @@ var _occlusion_target: Node2D
 		section_enabled = value
 		_refresh_section()
 
+
 func _ready() -> void:
 	_refresh_section()
 	if not Engine.is_editor_hint() and not occlusion_target_path.is_empty():
 		_occlusion_target = get_node_or_null(occlusion_target_path) as Node2D
 	set_process(_occlusion_target != null)
+
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(_occlusion_target):
@@ -53,8 +55,11 @@ func _process(delta: float) -> void:
 	var feet := sprite.to_local(_occlusion_target.global_position)
 	var head := sprite.to_local(_occlusion_target.to_global(Vector2(0, -48)))
 	var bounds := sprite.get_rect().grow(12.0)
-	var obscured := bounds.intersects(Rect2(head.min(feet) - Vector2(12, 0), Vector2(24, absf(feet.y - head.y))))
+	var obscured := bounds.intersects(
+		Rect2(head.min(feet) - Vector2(12, 0), Vector2(24, absf(feet.y - head.y)))
+	)
 	sprite.modulate.a = move_toward(sprite.modulate.a, 0.35 if obscured else 1.0, delta * 5.0)
+
 
 func _refresh_section() -> void:
 	queue_redraw()
@@ -68,7 +73,11 @@ func _refresh_section() -> void:
 	var body := get_node_or_null("CollisionBody") as StaticBody2D
 	if body != null:
 		body.position = collision_offset
-		body.process_mode = Node.PROCESS_MODE_INHERIT if section_enabled and obstacle_enabled else Node.PROCESS_MODE_DISABLED
+		body.process_mode = (
+			Node.PROCESS_MODE_INHERIT
+			if section_enabled and obstacle_enabled
+			else Node.PROCESS_MODE_DISABLED
+		)
 	var collision := get_node_or_null("CollisionBody/CollisionShape2D") as CollisionShape2D
 	if collision != null:
 		var rectangle := RectangleShape2D.new()
@@ -79,11 +88,16 @@ func _refresh_section() -> void:
 	if obstacle != null:
 		obstacle.position = collision_offset
 		var half := collision_size * 0.5
-		obstacle.vertices = PackedVector2Array([
-			Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
-			Vector2(half.x, half.y), Vector2(-half.x, half.y),
-		])
+		obstacle.vertices = PackedVector2Array(
+			[
+				Vector2(-half.x, -half.y),
+				Vector2(half.x, -half.y),
+				Vector2(half.x, half.y),
+				Vector2(-half.x, half.y),
+			]
+		)
 		obstacle.avoidance_enabled = section_enabled and obstacle_enabled
+
 
 func _draw() -> void:
 	if not side_profile or not section_enabled or section_texture == null:
@@ -94,14 +108,33 @@ func _draw() -> void:
 	var y := rect.position.y
 	while y < rect.end.y:
 		var height := minf(110.0, rect.end.y - y)
-		draw_texture_rect_region(section_texture, Rect2(rect.position.x, y, rect.size.x, height), Rect2(10, 75, 36, height))
+		draw_texture_rect_region(
+			section_texture,
+			Rect2(rect.position.x, y, rect.size.x, height),
+			Rect2(10, 75, 36, height)
+		)
 		y += height
-	draw_line(rect.position + Vector2(3, 0), Vector2(rect.position.x + 3, rect.end.y), Color("9a7143"), 2.0)
-	draw_line(Vector2(rect.end.x - 3, rect.position.y), rect.end - Vector2(3, 0), Color("322116"), 4.0)
+	draw_line(
+		rect.position + Vector2(3, 0),
+		Vector2(rect.position.x + 3, rect.end.y),
+		Color("9a7143"),
+		2.0
+	)
+	draw_line(
+		Vector2(rect.end.x - 3, rect.position.y), rect.end - Vector2(3, 0), Color("322116"), 4.0
+	)
 	# End caps and spaced joints replace the repeated sideways plaster panels.
 	y = rect.position.y
 	while y < rect.end.y:
 		var cap_y := minf(y, rect.end.y - 24.0)
-		draw_texture_rect_region(section_texture, Rect2(rect.position.x - 4, cap_y, rect.size.x + 8, 24), Rect2(4, 0, 48, 69))
+		draw_texture_rect_region(
+			section_texture,
+			Rect2(rect.position.x - 4, cap_y, rect.size.x + 8, 24),
+			Rect2(4, 0, 48, 69)
+		)
 		y += 176.0
-	draw_texture_rect_region(section_texture, Rect2(rect.position.x - 4, rect.end.y - 24, rect.size.x + 8, 24), Rect2(4, 0, 48, 69))
+	draw_texture_rect_region(
+		section_texture,
+		Rect2(rect.position.x - 4, rect.end.y - 24, rect.size.x + 8, 24),
+		Rect2(4, 0, 48, 69)
+	)

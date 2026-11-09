@@ -4,6 +4,7 @@ extends "res://game/tavern/tavern.gd"
 const WORLD_3D := preload("res://game/tavern/3d/tavern_world_3d.gd")
 var world_3d: Node3D
 
+
 func _ready() -> void:
 	super._ready()
 	world.hide()
@@ -16,23 +17,32 @@ func _ready() -> void:
 	world_3d.hub = self
 	add_child(world_3d)
 	var settings := get_node_or_null("/root/GameSettings")
-	if settings != null: settings.settings_changed.connect(_on_3d_settings_changed)
+	if settings != null:
+		settings.settings_changed.connect(_on_3d_settings_changed)
+
 
 func _on_3d_settings_changed(key: String, _value: Variant) -> void:
-	if key == "dev_mode": _refresh_wings()
+	if key == "dev_mode":
+		_refresh_wings()
+
 
 func _update_camera(_snap: bool) -> void:
 	if world != null:
 		world.position = Vector2.ZERO
 		world.scale = Vector2.ONE
 
+
 func _refresh_wings() -> void:
 	super._refresh_wings()
-	if is_instance_valid(world_3d): world_3d.call_deferred("rebuild_wings")
+	if is_instance_valid(world_3d):
+		world_3d.call_deferred("rebuild_wings")
+
 
 func _recruit_candidate(candidate_id: String) -> void:
 	super._recruit_candidate(candidate_id)
-	if not run_state.campaign.candidate_pool.has(candidate_id): _refresh_wings()
+	if not run_state.campaign.candidate_pool.has(candidate_id):
+		_refresh_wings()
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Keep arrival/departure skipping and modal dismissal in the shared controller.

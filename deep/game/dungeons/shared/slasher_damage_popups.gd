@@ -5,9 +5,17 @@ const MAX_PER_TARGET := 6
 var target_popups: Dictionary = {}
 var popup_counts: Dictionary = {}
 
+
 ## Keep feedback beside targets, rather than on them, so lethal hits remain visible.
-static func spawn(target: Node2D, amount: int, kind: String = "physical", source: String = "", critical: bool = false) -> void:
-	if amount <= 0 or not is_instance_valid(target) or not target.is_inside_tree(): return
+static func spawn(
+	target: Node2D,
+	amount: int,
+	kind: String = "physical",
+	source: String = "",
+	critical: bool = false
+) -> void:
+	if amount <= 0 or not is_instance_valid(target) or not target.is_inside_tree():
+		return
 	var parent := target.get_parent()
 	var layer := parent.get_node_or_null("DamagePopups")
 	if layer == null:
@@ -17,36 +25,44 @@ static func spawn(target: Node2D, amount: int, kind: String = "physical", source
 		parent.add_child(layer)
 	layer._show(target, amount, kind, source, critical)
 
+
 func _show(target: Node2D, amount: int, kind: String, source: String, critical: bool) -> void:
 	var target_id := target.get_instance_id()
 	var active := _live_popups(target_id)
-	var compact:bool=POPUP.is_compact_source(source)
+	var compact: bool = POPUP.is_compact_source(source)
 	if compact:
 		for reference in active:
-			var existing:Node=reference.get_ref()
-			if existing.compact and existing.damage_type==kind and existing.age<0.22:
-				existing.amount+=amount
-				existing.critical=existing.critical or critical
+			var existing: Node = reference.get_ref()
+			if existing.compact and existing.damage_type == kind and existing.age < 0.22:
+				existing.amount += amount
+				existing.critical = existing.critical or critical
 				existing.queue_redraw()
 				return
 	while active.size() >= (2 if compact else MAX_PER_TARGET):
 		var oldest: Node = active.pop_front().get_ref()
-		if is_instance_valid(oldest): oldest.queue_free()
+		if is_instance_valid(oldest):
+			oldest.queue_free()
 	var ordinal := int(popup_counts.get(target_id, 0))
 	var lane := 1 if compact else ordinal % 3
 	popup_counts[target_id] = ordinal + 1
 	var popup := POPUP.new()
 	popup.setup(amount, kind, source, critical, lane)
 	add_child(popup)
-	popup.global_position = target.global_position + Vector2((lane - 1) * 60, -58 if compact else -66)
+	popup.global_position = (
+		target.global_position + Vector2((lane - 1) * 60, -58 if compact else -66)
+	)
 	active.append(weakref(popup))
 	target_popups[target_id] = active
 
+
 func _live_popups(target_id: int) -> Array:
 	var active: Array = target_popups.get(target_id, [])
-	return active.filter(func(reference: WeakRef):
-		var popup: Node = reference.get_ref()
-		return is_instance_valid(popup) and not popup.is_queued_for_deletion())
+	return active.filter(
+		func(reference: WeakRef):
+			var popup: Node = reference.get_ref()
+			return is_instance_valid(popup) and not popup.is_queued_for_deletion()
+	)
+
 
 func _process(_delta: float) -> void:
 	for target_id: int in target_popups.keys():

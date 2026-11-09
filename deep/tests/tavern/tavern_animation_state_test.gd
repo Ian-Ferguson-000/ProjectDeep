@@ -3,8 +3,10 @@ extends SceneTree
 const KEEPER_SCENE := preload("res://game/tavern/2d/TavernKeeper.tscn")
 const ACTOR_SCENE := preload("res://game/tavern/2d/TavernActor.tscn")
 
+
 func _initialize() -> void:
 	call_deferred("_run")
+
 
 func _run() -> void:
 	var frames := SlasherSpriteLibrary.tavern_keeper_frames()

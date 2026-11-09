@@ -11,6 +11,7 @@ class_name GearData
 @export var defense_id: String = ""
 @export_multiline var description: String = ""
 
+
 static func create(
 	gear_id: String,
 	gear_name: String,
