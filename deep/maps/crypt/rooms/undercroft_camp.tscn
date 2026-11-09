@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_23w6y"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_23w6y"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_0v60s"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_7jteh"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_7jteh"]
 
 [node name="UndercroftCamp" type="Node2D" unique_id=1205641804]
 script = ExtResource("1_23w6y")

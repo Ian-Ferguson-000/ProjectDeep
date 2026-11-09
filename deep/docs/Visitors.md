@@ -72,12 +72,12 @@ Objective types: `kills`, `reach_floor`, `clear`, `return_gold`, `runs_home`,
 
 ## Code
 
-- `scripts/game/visitor_service.gd` (`VisitorService`): schedules, ranks,
+- `game/campaign/visitor_service.gd` (`VisitorService`): schedules, ranks,
   quest states, `notify(event)`, deliveries, rewards, shop, mini-game, lines.
 - Saved in `CampaignState.visitor_state`.
 - Events come from `RunState` (kills, floors, clears), `HearthExpeditions.settle`
   (coming home), `HearthLodging.train` and the visitor's mini-game.
-- `scripts/ui/visitor_panel.gd` (talking to them), `scripts/ui/placeholder_art.gd`
+- `game/ui/hearth/visitor_panel.gd` (talking to them), `game/ui/placeholder_art.gd`
   (silhouettes), `tavern_activity_controller.gd → _spawn_visitor`,
   `hearth_management.gd → quests_page`.
-- Test: `tests/visitors_test.gd`.
+- Test: `tests/tavern/visitors_test.gd`.

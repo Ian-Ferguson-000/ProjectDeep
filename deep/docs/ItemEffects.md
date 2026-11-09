@@ -116,8 +116,8 @@ Starfallen Sigil now uses a `nova` proc on specials.
 
 ## Code
 
-- `scripts/slasher/slasher_item_procs.gd`: runs procs, burning, chilling, lightning and nova visuals.
-- `scripts/slasher/slasher_item_wave.gd`: the crescent projectile.
+- `game/items/slasher_item_procs.gd`: runs procs, burning, chilling, lightning and nova visuals.
+- `game/items/slasher_item_wave.gd`: the crescent projectile.
 - `SlasherPlayer._strike` / `on_item_enemy_hit`: every melee, line, area, projectile and kit hit reports to items.
 - `SlasherItemRuntime`: `attack_speed_multiplier`, `adjust_for_target` (elite bonus), and `periodic` relics.
-- Tests: `tests/item_effects_test.gd`.
+- Tests: `tests/items/item_effects_test.gd`.

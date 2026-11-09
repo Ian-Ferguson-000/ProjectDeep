@@ -63,7 +63,7 @@ crowds remain visible.
 
 ## Verification
 
-`tests/mage_active_items_test.gd` exercises every item against no enemies, one
+`legacy/tests/mage_active_items_test.gd` exercises every item against no enemies, one
 enemy, and 48 enemies at both effect quality settings, comparing damage results.
 It additionally checks attack identity, empty-room charge retention, projectile
 travel, freed targets, immunity, walls, weak points, control ownership, genuine
@@ -72,13 +72,13 @@ effect recycling, source attribution, fuel recovery, thunder overlap, exposure
 decay, independently positioned targeting, and interruption.
 
 The frame-rate check compares Dragonstaff damage at 30, 60, and 144 Hz.
-`tests/testing_ground_test.gd` activates the real armory slot and waits for
+`legacy/tests/testing_ground_test.gd` activates the real armory slot and waits for
 a traveling Jade dart to kill and safely release its live enemy.
 
 Run the main suite with:
 
 ```sh
-godot --headless --path . --script res://tests/mage_active_items_test.gd
+godot --headless --path . --script res://legacy/tests/mage_active_items_test.gd
 ```
 
 `tests/mage_active_visual_capture.gd` captures all ten items in a crowd in normal

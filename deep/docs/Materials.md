@@ -29,7 +29,7 @@ Drop luck from unlocks multiplies both chances (up to ×2.5). Tuning lives in
 | Heartwood Seed | the Heartwood Colossus |
 | Crown Shard | the Charnel King |
 
-`by_family` maps an enemy family (`scripts/game/unlocks.gd → FAMILIES`; wolves
+`by_family` maps an enemy family (`game/core/unlocks.gd → FAMILIES`; wolves
 and other beasts are worked out from the id) to its material. `by_enemy` gives
 mini bosses and bosses a trophy, which wins over the family material. Add a
 material by adding it under `materials` with a name, description and colour.
@@ -52,7 +52,7 @@ Crafting will use them later.
 
 ## Code and tests
 
-- `scripts/game/materials.gd`: data lookups, which material an enemy drops, adding to a store.
+- `game/core/materials.gd`: data lookups, which material an enemy drops, adding to a store.
 - `slasher_forest.gd → _roll_enemy_drop, _spawn_material_drop, _collect_loot`.
 - `hearth_expeditions.gd → settle` banks; `visitor_service.gd` handles deliveries.
-- Test: `tests/drops_materials_test.gd`.
+- Test: `tests/items/drops_materials_test.gd`.

@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_vqde1"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_vqde1"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_sfvi6"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_tt152"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_r3rny"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_r3rny"]
 
 [node name="EmberlightClearing" type="Node2D" unique_id=299886265]
 script = ExtResource("1_vqde1")

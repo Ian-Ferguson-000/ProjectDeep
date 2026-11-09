@@ -35,7 +35,7 @@ All numbers are in `data/slasher_balance.json` → `enemies.heartwood_colossus`
 ## Art
 
 The colossus is drawn in code as a placeholder. To use real art, set these on
-the colossus (`scripts/slasher/slasher_colossus.gd`):
+the colossus (`game/enemies/bosses/slasher_colossus.gd`):
 
 - `body_texture`: the whole tree, centred on the middle of its 13×7 cell block
   (336×240 px at game scale; the canopy can extend well beyond).
@@ -63,7 +63,7 @@ A dungeon picks its colossus with `dungeons.json → <dungeon>.slasher.colossus`
 
 ## Code
 
-- `scripts/slasher/slasher_colossus.gd`: patterns, phases, telegraphs, boss bar.
-- `scripts/slasher/slasher_colossus_weak_point.gd`: the heart and fists.
+- `game/enemies/bosses/slasher_colossus.gd`: patterns, phases, telegraphs, boss bar.
+- `game/enemies/bosses/slasher_colossus_weak_point.gd`: the heart and fists.
 - `ForestRoomLibrary`: the `O` (colossus) symbol and the `guardian` role.
-- Test: `tests/colossus_test.gd`.
+- Test: `tests/enemies/colossus_test.gd`.

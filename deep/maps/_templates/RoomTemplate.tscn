@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_vdumd"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_vdumd"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_jk6f4"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_66dxf"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_ori6o"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_ori6o"]
 
 [node name="NewRoom" type="Node2D" unique_id=960978848]
 script = ExtResource("1_vdumd")

@@ -134,7 +134,7 @@ checks, not claims that a 100x build is normally attainable or visually ideal.
 Existing dynamic-buff and visual-capture gates remain separate.
 
 Target lifecycle release gate is now verified. The new native-special matrix
-(`tests/fighter_target_lifecycle_test.gd`) passes **316 checks** across all ten
+(`tests/player/fighter_target_lifecycle_test.gd`) passes **316 checks** across all ten
 items, normal/reduced effects, actual lethal external damage, and queue-free
 despawns. Every fixture first proves real contact; Archon additionally proves
 attachment, Umbral a live tether, and Bowstaff positive curse stacks. Weak refs
@@ -150,7 +150,7 @@ and source-owned cleanup evidence alongside the new post-contact matrix. This
 closes only the target death/despawn gate, not all release verification.
 
 Native class-swap coverage now passes **94 checks** across all ten weapons
-(`tests/fighter_class_swap_test.gd`). Each weapon starts a native special and
+(`tests/player/fighter_class_swap_test.gd`). Each weapon starts a native special and
 reaches live combat state before the same player-setup entry point used by class
 podiums switches to Mage and back to Fighter. Pending contacts/recovery clear,
 carries and tethers release, and returning reuses exactly one original runtime
@@ -763,7 +763,7 @@ now preserve remaining frenzy duration and all three modifiers. The rebuilt
 player is distinct, retains its commitment, and takes 20 actual damage from a
 10-damage incoming hit. The active-item integration suite passes after the fix.
 
-`tests/fighter_interruption_test.gd` adds **98 passing checks**. Every item is
+`tests/player/fighter_interruption_test.gd` adds **98 passing checks**. Every item is
 interrupted during anticipation by focus loss, Escape, input lock, and unequip;
 the tests then advance 1.5 seconds and require no delayed damage or pending
 attack state. Trident, Sling, Crossbow, and Umbral targets are also freed only
@@ -855,14 +855,14 @@ Latest verification after the impact-rendering changes: 220 focused checks and
 `git diff --check` is clean. Remaining visual work includes Hammer/Shield recovery,
 summon emergence/expiration, and weapon-specific status transitions in crowds.
 
-`tests/fighter_production_test.gd`: 220 checks passing. Covers actual curse deaths
+`legacy/tests/fighter_production_test.gd`: 220 checks passing. Covers actual curse deaths
 from other sources, lethal first strikes, overlap deduplication, curse refresh/
 expiry, simultaneous deaths at the global beast cap, single sling possession,
 parry-cycle deduplication and baseline preservation, finite return/lifetime,
 per-target Reaver critical rolls and kill ownership, rampage cap/expiry, and
 beast wall collision/contact blocking/lifespan.
 
-`tests/fighter_scenario_matrix_test.gd`: 760 checks passing across all ten items,
+`tests/player/fighter_scenario_matrix_test.gd`: 760 checks passing across all ten items,
 empty/single/32-enemy rooms, normal/reduced quality, and 30/120 Hz caller steps.
 It requires real damage in populated scenarios, identical total damage across
 quality and step rates, bounded projectiles, pending-attack cancellation on

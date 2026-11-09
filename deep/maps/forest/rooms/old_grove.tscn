@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_jni52"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_jni52"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_j3frg"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_vi32o"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_ig7yp"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_ig7yp"]
 
 [node name="OldGrove" type="Node2D" unique_id=758717275]
 script = ExtResource("1_jni52")

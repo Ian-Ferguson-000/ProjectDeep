@@ -68,7 +68,7 @@ validation are unchanged. The 20 original rooms were converted from text maps by
 Validation (`ForestRoomLibrary.validate_template`) checks that the edge is thicket
 apart from the doors, every door and marker can be reached, camp-only markers are
 in camp rooms, peaceful rooms have no spawns, and each role has its required
-marker. `tests/forest_rooms_test.gd` also builds every map with all 15
+marker. `tests/dungeons/forest_rooms_test.gd` also builds every map with all 15
 combinations of open doors and walks a live floor.
 
 ## Toward procedural generation

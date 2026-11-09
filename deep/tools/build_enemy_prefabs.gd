@@ -1,8 +1,8 @@
 extends SceneTree
 
-const BASE_SCRIPT:="res://scripts/slasher/slasher_enemy.gd"
-const CRYPT_SCRIPT:="res://scripts/slasher/slasher_crypt_enemy.gd"
-const HELL_SCRIPT:="res://scripts/slasher/slasher_hell_enemy.gd"
+const BASE_SCRIPT:="res://game/enemies/slasher_enemy.gd"
+const CRYPT_SCRIPT:="res://game/dungeons/crypt/slasher_crypt_enemy.gd"
+const HELL_SCRIPT:="res://game/dungeons/hell/slasher_hell_enemy.gd"
 const CRYPT_IDS:=["skeletal_archer","necromancer","soul_wisp","crypt_boss"]
 const HELL_IDS:=["infernal_caster","rift_stalker","hellcharger","cinder_bomber","fire_spirit","infernal_legate","balor"]
 const IDS:=[
@@ -15,7 +15,7 @@ const IDS:=[
 ]
 
 func _init()->void:
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://scenes/slasher/enemies"))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://game/enemies/scenes"))
 	for enemy_id:String in IDS:_build_prefab(enemy_id)
 	quit()
 
@@ -25,6 +25,6 @@ func _build_prefab(enemy_id:String)->void:
 	var collision:=CollisionShape2D.new();collision.name="CollisionShape2D";var circle:=CircleShape2D.new();circle.radius=14.0;collision.shape=circle;enemy.add_child(collision);collision.owner=enemy
 	var sprite:=AnimatedSprite2D.new();sprite.name="AnimatedSprite2D";sprite.sprite_frames=load("res://assets/enemies/%s/frames.tres"%enemy_id);enemy.add_child(sprite);sprite.owner=enemy
 	var packed:=PackedScene.new();var error:=packed.pack(enemy)
-	if error==OK:error=ResourceSaver.save(packed,"res://scenes/slasher/enemies/%s.tscn"%enemy_id)
+	if error==OK:error=ResourceSaver.save(packed,"res://game/enemies/scenes/%s.tscn"%enemy_id)
 	if error!=OK:push_error("Failed to build enemy prefab %s: %s"%[enemy_id,error_string(error)])
 	enemy.free()

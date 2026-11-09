@@ -99,7 +99,7 @@ the potion key now heals the potion's own amount (it healed 6 regardless).
 
 Mender's Sachet, Soldier's Buckle, Windknotted Thread, Harvester's Gloves,
 Redstep Spurs, Moonleaf Cloak, Pilgrim's Greaves, Cinderheart Locket and
-Starfallen Sigil are in `data/unused/pickup_items_unused.json`, with the Hearth's
+Starfallen Sigil are in `legacy/data/pickup_items_unused.json`, with the Hearth's
 own copies of three of them. The game never reads that file. To bring one back,
 move its block into `data/pickup_items.json`. Shops and visitors that sold them
 now sell kept items instead, and the four mage trinkets that borrowed Starfallen
@@ -112,5 +112,5 @@ now borrow Thunderheart Amulet's chain lightning.
 - Proc `drop_potion`: drops a healing potion (`on: "kill"`, `chance`).
 - Proc `drop_gold`: drops `amount_min`–`amount_max` coins (`on: "hit"`, `chance`).
 
-Tests: `tests/item_effects_test.gd` (Dexterity speed, Deft Hands, Blackoak Ward,
-the brooch and purse drops), `tests/trader_test.gd`, `tests/pickup_items_test.gd`.
+Tests: `tests/items/item_effects_test.gd` (Dexterity speed, Deft Hands, Blackoak Ward,
+the brooch and purse drops), `tests/items/trader_test.gd`, `tests/items/pickup_items_test.gd`.

@@ -16,7 +16,7 @@ Binding of Isaac style: almost nothing on screen.
 - **Top centre:** the boss's health bar when there is one (any boss, gate or elite
   guardian, or colossus), centred, with its name. Gold laurel wreaths and frame
   for bosses, silver for mini bosses; a pale trail shows the damage just dealt.
-  Drawn in `scripts/ui/boss_bar.gd`. Combo progress under it.
+  Drawn in `game/ui/boss_bar.gd`. Combo progress under it.
 - **Top right:** the floor map, with the run clock and your best time just below it.
 - **Floor banner:** "VERDANT FOREST / Floor 2 of 5" fades in when each floor
   starts, noting a guardian or elite floor.
@@ -26,4 +26,4 @@ The ornate bottom-right frame, the top objective panel and the party strip (show
 only if parties return, `max_party_size` > 1) are gone. The old health/resource
 bars still exist hidden, because other code reads them.
 
-Code: `scripts/ui/dungeon_hud.gd`, built in `SlasherForest._build_hud`.
+Code: `game/ui/dungeon_hud.gd`, built in `SlasherForest._build_hud`.

@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_ryrpn"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_ryrpn"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_ndc3h"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_vb8sf"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_ygr5t"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_ygr5t"]
 
 [node name="WindingBrook" type="Node2D" unique_id=345973733]
 script = ExtResource("1_ryrpn")

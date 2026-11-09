@@ -10,7 +10,7 @@ This document compares the active Godot project with the target story and sequen
 
 | Existing asset/system | Current behavior | Narrative value |
 |---|---|---|
-| Tutorial branch in `scripts/main.gd` and `CampaignState` | Alden enters the Briarway and can die or win | Strong foundation for the Last Customer and divergent consequences |
+| Tutorial branch in `game/main/main.gd` and `CampaignState` | Alden enters the Briarway and can die or win | Strong foundation for the Last Customer and divergent consequences |
 | Forest, Crypt, and Balor's Hell runtimes | Three separate dungeons with a defined progression | Nearly matches the intended first route; needs story framing and eventually safe connected-expedition flow |
 | Data-driven dungeon catalog | Names, descriptions, unlocks, routes, clues, unique rewards | Natural place for territory, prison, doctrine, pressure, and story metadata after schema design |
 | Curated adventurers in `data/adventurers.json` | Twenty-four authored people across six active classes | Excellent base for nation, faith, relationship, and loop-aware character arcs |

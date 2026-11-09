@@ -132,14 +132,14 @@ The forest's sheets are cut on a 32px grid (`forest_ground.png`) and a 16px grid
 
 ## For programmers
 
-- `scripts/maps/map_room.gd`: the room root (Inspector fields, editor overlay, warnings, F6).
-- `scripts/maps/map_marker.gd`: markers and their kinds.
-- `scripts/maps/map_library.gd`: finds room scenes, reads them into the room
+- `game/dungeons/shared/maps/map_room.gd`: the room root (Inspector fields, editor overlay, warnings, F6).
+- `game/dungeons/shared/maps/map_marker.gd`: markers and their kinds.
+- `game/dungeons/shared/maps/map_library.gd`: finds room scenes, reads them into the room
   format the game already uses, and hands their painted layers to the game.
-- `scripts/slasher/forest_room_library.gd`: room rules and validation, unchanged
+- `game/dungeons/shared/forest_room_library.gd`: room rules and validation, unchanged
   in behaviour.
 - `tools/maps/`: one-time scripts that built the tilesets and converted the old
   text rooms (`convert_forest_rooms.gd`), and built the crypt's tiles and rooms
   (`make_crypt_sheet.py`, `crypt_room_designs.py`, `build_crypt_rooms.gd`).
   Don't re-run them once the artist has started; they overwrite.
-- Tests: `tests/map_rooms_test.gd`, `tests/crypt_rooms_test.gd`.
+- Tests: `tests/dungeons/map_rooms_test.gd`, `tests/dungeons/crypt_rooms_test.gd`.

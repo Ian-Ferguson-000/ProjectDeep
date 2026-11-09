@@ -26,4 +26,4 @@ For new narrative work, these files supersede the story assumptions in `High Con
 
 ## Current gate
 
-The adaptation roadmap is implemented through Phase 8 and covered by `tests/narrative_completion_test.gd` plus the campaign regression runner. Stable serialized IDs must remain unchanged even when prose receives later editorial polish.
+The adaptation roadmap is implemented through Phase 8 and covered by `tests/hearth/narrative_completion_test.gd` plus the campaign regression runner. Stable serialized IDs must remain unchanged even when prose receives later editorial polish.

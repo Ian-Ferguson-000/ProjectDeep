@@ -6,7 +6,7 @@ the actual class at recruitment, and can retrain them later.
 
 ## Stat builds
 
-Defined in `data/adventurers.json` under `stat_builds`, rolled by `scripts/game/adventurer_builds.gd`.
+Defined in `data/adventurers.json` under `stat_builds`, rolled by `game/core/adventurer_builds.gd`.
 
 | Field | Meaning |
 |---|---|
@@ -38,4 +38,4 @@ Appraising and contesting candidates makes the estimate sharper.
   again, health is recalculated (keeping the same wounded fraction), and gear the new class
   can't use goes back to the armory. Bound starter weapons are swapped for the new class's.
 
-Tests: `tests/adventurer_builds_test.gd` (included in `tools/run_hearth_tests.py`).
+Tests: `tests/hearth/adventurer_builds_test.gd` (included in `tools/run_hearth_tests.py`).

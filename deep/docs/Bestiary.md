@@ -25,6 +25,6 @@ Everything is in `data/slasher_journal.json`. Each entry has `name`, `category`,
 bosses, Elite is a mini boss) unless the entry sets `"rank"` (`basic`,
 `mini_boss` or `boss`), as the briar guardian does. `order` is the grid order.
 
-Code: `scripts/slasher/slasher_codex_menu.gd` (the `_build_journal` section).
+Code: `game/dungeons/shared/slasher_codex_menu.gd` (the `_build_journal` section).
 Health seen: `RunState.record_enemy_defeat(id, max_health)` /
-`get_enemy_health_seen`. Test: `tests/bestiary_test.gd`.
+`get_enemy_health_seen`. Test: `tests/enemies/bestiary_test.gd`.

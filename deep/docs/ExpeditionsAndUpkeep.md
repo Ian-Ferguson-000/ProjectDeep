@@ -11,7 +11,7 @@ keeps its cut and they retire to town (docs/TavernBusiness.md).
 ## The Set Out screen
 
 Hearth → **Expeditions** → **Plan an Expedition** opens a full-screen, three-step
-screen (`scripts/ui/expedition_setup.gd`):
+screen (`game/ui/expedition_setup.gd`):
 
 1. **Destination**: three picture tiles. **Verdant Forest** (left) is the only
    choice: every run starts there, and the **Stone Crypt** is reached by
@@ -39,7 +39,7 @@ is ready, and says why when it isn't.
 ## The pantry (supplies)
 
 Supplies are now **food** (`data/upkeep.json`, code in
-`scripts/game/hearth_upkeep.gd`). Like Mewgenics' food, the Hearth has to keep
+`game/hearth/hearth_upkeep.gd`). Like Mewgenics' food, the Hearth has to keep
 feeding the company to keep them.
 
 | Food | Cost | Happiness a day |
@@ -92,4 +92,4 @@ has been removed; the Facilities page only shows the tiers and the expansion.
 - A few unused variables in `hearth_management.gd` (`selected_party`, `policy`,
   `_buy_supplies`, `_style_check`).
 
-Test: `tests/expedition_setup_test.gd`.
+Test: `tests/ui/expedition_setup_test.gd`.

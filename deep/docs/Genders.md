@@ -23,4 +23,4 @@ both the dungeon player (`slasher_player.gd`) and the adventurer walking about t
 tavern (`tavern_activity_controller.gd`) use it, through
 `SlasherSpriteLibrary.player_frames(class_id, gender)`.
 
-Test: `tests/genders_test.gd`.
+Test: `tests/player/genders_test.gd`.

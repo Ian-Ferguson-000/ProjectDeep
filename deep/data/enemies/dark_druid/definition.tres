@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyDefinition" format=3]
 
-[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://scripts/codes/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://game/shared/combat/enemy_definition.gd" id="1"]
 [ext_resource type="Resource" path="res://Data/enemies/dark_druid/profile.tres" id="2"]
 [ext_resource type="Resource" uid="uid://cw1p26nqiy0q3" path="res://Data/enemies/dark_druid/journal.tres" id="3"]
 [ext_resource type="SpriteFrames" uid="uid://dc3l7j4bx6ulr" path="res://assets/enemies/dark_druid/frames.tres" id="4"]

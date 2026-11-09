@@ -39,15 +39,15 @@ screen still appears if a guardian floor is finished some other way.
 
 ## Code
 
-- `scripts/slasher/forest_room_library.gd → build_layout`: moves the guardian,
+- `game/dungeons/shared/forest_room_library.gd → build_layout`: moves the guardian,
   seals the north door, sets `exit` inside the body, and adds `passage_cells`,
   `portal` and `exit_under_body` to the layout.
-- `scripts/slasher/slasher_forest_rooms.gd`: `_open_guardian_ways` (opens the
+- `game/dungeons/shared/slasher_forest_rooms.gd`: `_open_guardian_ways` (opens the
   passage, rebuilds the walls and pathfinding, places the portal), the portal
   check, `can_press_on`, and the `TavernPortal` 2D reference drawing.
-- `scripts/main.gd`: `guardian_choice` ("onward" / "home") and `can_press_on`.
-- `scripts/scenes/forest3d/forest_room_art.gd`: `tavern_portal`, `hidden_way`, goliath scale.
-- `scripts/scenes/forest3d/forest_world_3d.gd`: arena camera.
+- `game/main/main.gd`: `guardian_choice` ("onward" / "home") and `can_press_on`.
+- `game/dungeons/shared/world_3d/forest_room_art.gd`: `tavern_portal`, `hidden_way`, goliath scale.
+- `game/dungeons/shared/world_3d/forest_world_3d.gd`: arena camera.
 
-Test: `tests/guardian_arena_test.gd`. Run it without `--headless` and add
+Test: `tests/dungeons/guardian_arena_test.gd`. Run it without `--headless` and add
 `-- --capture` for pictures of both arenas before and after the kill.

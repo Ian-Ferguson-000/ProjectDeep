@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_e4dag"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_e4dag"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_8fbtc"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_jgrim"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_wp6ow"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_wp6ow"]
 
 [node name="MossyCrossing" type="Node2D" unique_id=1019661478]
 script = ExtResource("1_e4dag")

@@ -26,7 +26,7 @@ func _run()->void:
 
 func _verify_enemy(enemy_id:String)->void:
 	var frames_path:="res://assets/enemies/%s/frames.tres"%enemy_id
-	var prefab_path:="res://scenes/slasher/enemies/%s.tscn"%enemy_id
+	var prefab_path:="res://game/enemies/scenes/%s.tscn"%enemy_id
 	if not ResourceLoader.exists(frames_path):failures.append("Missing frames: "+enemy_id);return
 	if not ResourceLoader.exists(prefab_path):failures.append("Missing prefab: "+enemy_id);return
 	var prefab:=load(prefab_path) as PackedScene

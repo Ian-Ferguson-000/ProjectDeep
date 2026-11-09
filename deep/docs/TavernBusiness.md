@@ -54,10 +54,10 @@ two adventurers and no money, a cheap recruit signs for free.)
 ## Tuning and code
 
 - All numbers: `data/tavern_cut.json` (with `how_to_edit` notes).
-- `scripts/game/hearth_cut.gd` (`HearthCut`): `breakdown`, `percent`,
+- `game/hearth/hearth_cut.gd` (`HearthCut`): `breakdown`, `percent`,
   `explain`, `split`, `retire_to_town`, fame (`roll_fame`, `apply_fame`).
 - Settlement: `HearthExpeditions.settle` (manual runs). Old saves' automated
   dispatches keep the old 20% share and come home as before.
 - The tutorial run is unchanged: the first adventurer comes home and stays.
 - `CharacterRecord.fame` and `joined_day` are saved with each adventurer.
-- Test: `tests/hearth_cut_test.gd`.
+- Test: `tests/hearth/hearth_cut_test.gd`.

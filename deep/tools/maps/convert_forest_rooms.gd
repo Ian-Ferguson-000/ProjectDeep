@@ -10,7 +10,7 @@ extends SceneTree
 const LEGACY := "res://tools/maps/legacy_forest_rooms.json"
 const GROUND_SET := "res://maps/forest/tiles/forest_ground.tres"
 const PATH_SET := "res://maps/forest/tiles/forest_paths.tres"
-const TERRAIN_ART := preload("res://scripts/slasher/slasher_forest_terrain_art.gd")
+const TERRAIN_ART := preload("res://game/dungeons/forest/slasher_forest_terrain_art.gd")
 ## Old dirt piece (sheet rectangle corner) -> tile in forest_paths.png.
 const PIECES := {
 	Vector2(400,16):Vector2i(0,0), Vector2(416,16):Vector2i(1,0), Vector2(544,16):Vector2i(2,0), Vector2(524,76):Vector2i(3,0), Vector2(420,76):Vector2i(4,0),

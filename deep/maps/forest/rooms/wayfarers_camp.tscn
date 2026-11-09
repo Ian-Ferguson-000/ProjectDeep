@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_8bvv6"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_8bvv6"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_budvb"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_g5fap"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_kaei1"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_kaei1"]
 
 [node name="WayfarersCamp" type="Node2D" unique_id=1913758005]
 script = ExtResource("1_8bvv6")

@@ -34,10 +34,10 @@ save space.
 
 ## Code
 
-- `scripts/game/run_seed.gd` (`RunSeed`): encode/decode, random seeds, saved list.
+- `game/core/run_seed.gd` (`RunSeed`): encode/decode, random seeds, saved list.
 - `RunState.requested_seed` (set before `start_new_run`, used once),
   `run_seed`, `run_seeded`, `seed_code()`.
 - Drops: `slasher_forest.gd → drop_rng()` seeded from the floor seed and
   `_drop_seed_key()` (the room, in room scenes).
-- Test: `tests/run_seed_test.gd` builds the same seed twice and compares the
+- Test: `tests/core/run_seed_test.gd` builds the same seed twice and compares the
   floor map, rooms, foes, drops and trader.

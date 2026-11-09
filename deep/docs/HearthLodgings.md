@@ -2,7 +2,7 @@
 
 The Hearth is the company's cosy home between expeditions. Your roster stays here from day to day: every adventurer has a room, can train once a day, and goes out better prepared for the next run.
 
-Everything below is tuned in `data/lodging.json`. That file has `how_to_edit` notes at the top and is loaded by `scripts/game/hearth_lodging.gd`. Players use it in the Hearth menu under **Company → Training** and **Company → Lodgings**.
+Everything below is tuned in `data/lodging.json`. That file has `how_to_edit` notes at the top and is loaded by `game/hearth/hearth_lodging.gd`. Players use it in the Hearth menu under **Company → Training** and **Company → Lodgings**.
 
 ## Rooms
 
@@ -29,11 +29,11 @@ Each adventurer can train one attribute per day while they're at the Hearth.
 - **Cap:** stats cap at `stat_cap` (18 by default).
 - **Effect on runs:** trained stats carry into expeditions through the adventurer's attributes. Constitution also raises maximum health.
 
-Tests: `tests/hearth_lodging_test.gd`.
+Tests: `tests/hearth/hearth_lodging_test.gd`.
 
 ## In the tavern
 
-The Hearth's main hall opens onto two walkable areas, built by `scripts/scenes/tavern_expansions.gd`. The camera follows the keeper between them.
+The Hearth's main hall opens onto two walkable areas, built by `game/tavern/tavern_expansions.gd`. The camera follows the keeper between them.
 
 - **Lodgings wing (west doorway).** A corridor with one alcove for every room the Hearth has space for: 6, 10, 14 or 18 as it expands.
   - Built rooms show a bed in the room's quality, the resident's nameplate and their furnishings.

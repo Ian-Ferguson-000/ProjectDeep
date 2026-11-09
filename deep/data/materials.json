@@ -2,7 +2,7 @@
   "how_to_edit": [
     "Crafting and quest materials. Basic enemies drop only these (data/enemy_drops.json → basic_material_chance). Mini bosses and bosses always drop their trophy. Read by scripts/game/materials.gd.",
     "Materials are carried during a run and banked at the Hearth when the adventurer comes home alive; a death loses them. Visitors can ask for them (deliver quests: {\"material\": id, \"count\": n}). Crafting will use them later.",
-    "by_family: which material each enemy family drops (families come from scripts/game/unlocks.gd FAMILIES). by_enemy: trophies for specific mini bosses and bosses, which win over the family.",
+    "by_family: which material each enemy family drops (families come from game/core/unlocks.gd FAMILIES). by_enemy: trophies for specific mini bosses and bosses, which win over the family.",
     "color: the pouch colour on the floor and in lists (hex)."
   ],
   "materials": {

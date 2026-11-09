@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_iugxw"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_iugxw"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_nwk0q"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_ag755"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_usgb7"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_usgb7"]
 
 [node name="StoneScatter" type="Node2D" unique_id=1524636784]
 script = ExtResource("1_iugxw")

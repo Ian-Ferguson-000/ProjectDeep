@@ -6,12 +6,12 @@ The game has three kinds of maps, and they are edited in different ways.
 | --- | --- | --- |
 | **Dungeon rooms** (the forest today) | Painted Godot scenes, one per room | `maps/<dungeon>/rooms/`, guide in **`maps/README.md`** |
 | **Room tiles** | TileSets per dungeon | `maps/<dungeon>/tiles/` |
-| **Tavern floor** | A Godot TileMap | `scenes/tavern/taverntiles.tscn` |
+| **Tavern floor** | A Godot TileMap | `game/tavern/2d/taverntiles.tscn` |
 
 Older TileMap scenes are still in the project but are not used by rooms:
 `scenes/slasher/templates/*.tscn` (tutorial and merchant floors, and the
-generated dungeons' authoring templates), `scenes/scenes/maps/StarterMap.tscn` and
-`scenes/slasher/tools/WallGenerationLab.tscn`.
+generated dungeons' authoring templates), `legacy/scenes/scenes/maps/StarterMap.tscn` and
+`legacy/scenes/slasher/tools/WallGenerationLab.tscn`.
 
 ---
 
@@ -25,7 +25,7 @@ folder.
 
 ## 2. Code-drawn fallback ground
 
-`scripts/slasher/slasher_forest_terrain_art.gd` still draws ground from
+`game/dungeons/forest/slasher_forest_terrain_art.gd` still draws ground from
 `assets/pixel_art/forest_art/forest tiles.png` for any room without a painted
 scene, and for the older single-floor forest (tutorial, merchant interludes). It
 picks one of nine grass cuts per cell (`GRASS_VARIANTS`).
@@ -34,7 +34,7 @@ picks one of nine grass cuts per cell (`GRASS_VARIANTS`).
 
 ## 3. The tavern floor: a real TileMap
 
-`scenes/tavern/taverntiles.tscn` holds a `TileMapLayer` whose TileSet uses
+`game/tavern/2d/taverntiles.tscn` holds a `TileMapLayer` whose TileSet uses
 `assets/pixel_art/Tavern Floor Revised.png`. The image has eight floor styles,
 each a 4×2 block of 32px tiles:
 
@@ -59,7 +59,7 @@ painted cells, the automatic fill is skipped, so your painting is kept. Use
 **Clear** in the TileMap panel to go back to the automatic fill.
 
 The Lodgings wing and Training Yard draw the same plank style in code
-(`_tile_floor` in `scripts/scenes/tavern_expansions.gd`). Change the `Vector2(128,0)`
+(`_tile_floor` in `game/tavern/tavern_expansions.gd`). Change the `Vector2(128,0)`
 there to match if you change the hall's style.
 
 ---

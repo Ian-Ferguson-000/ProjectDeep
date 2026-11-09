@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://cmhqo823cw4r3"]
 
-[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://game/shared/journal/enemy_journal_entry.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://cix2nbksf8nw" path="res://assets/enemies/ice_mage/normalized_sheet.png" id="2"]
 
 [sub_resource type="AtlasTexture" id="Portrait"]

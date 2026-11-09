@@ -123,14 +123,14 @@ freely for hidden ones).
 
 ## Code
 
-- `scripts/slasher/slasher_crypt.gd`: the crypt scene (extends the forest's
+- `game/dungeons/crypt/slasher_crypt.gd`: the crypt scene (extends the forest's
   room scene; `_room_theme()` swaps walls, bars, stairs and wording; hazards,
   roster, rat nests).
-- `scripts/slasher/slasher_forest_rooms.gd`: rooms for any dungeon, gate and
+- `game/dungeons/shared/slasher_forest_rooms.gd`: rooms for any dungeon, gate and
   elite guardians, arena zoom.
-- `scripts/slasher/slasher_crypt_creature.gd`: grave rat, ghoul, gravedigger,
+- `game/dungeons/crypt/slasher_crypt_creature.gd`: grave rat, ghoul, gravedigger,
   tomb guard, revenant.
-- `scripts/slasher/slasher_charnel_king.gd`: Big Skelly Boi (extends
+- `game/enemies/bosses/slasher_charnel_king.gd`: Big Skelly Boi (extends
   `slasher_colossus.gd`).
 - `ForestRoomLibrary.use_dungeon()`: which dungeon's rooms are in use.
-- Test: `tests/crypt_rooms_test.gd`.
+- Test: `tests/dungeons/crypt_rooms_test.gd`.

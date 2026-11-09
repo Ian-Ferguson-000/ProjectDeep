@@ -1,6 +1,6 @@
 # Stone Crypt: 3D rooms
 
-Crypt expeditions load `scenes/crypt3d/Crypt3D.tscn` from Main. It's the 3D
+Crypt expeditions load `game/dungeons/crypt/Crypt3D.tscn` from Main. It's the 3D
 forest's presentation (docs/Forest3D.md) with the **crypt theme**. Rooms, foes,
 hazards, hit geometry, drops, checkpoints and saves are all still the 2D crypt
 simulation underneath (`slasher_crypt.gd`), exactly as the forest works.
@@ -29,14 +29,14 @@ simulation underneath (`slasher_crypt.gd`), exactly as the forest works.
 
 ## Editing
 
-- `scripts/scenes/crypt3d/crypt_3d.gd`: the crypt adapter (sets `theme = "crypt"`).
-- `scripts/scenes/forest3d/forest_room_art.gd`: the shared kit. Crypt pieces are
+- `game/dungeons/crypt/crypt_3d.gd`: the crypt adapter (sets `theme = "crypt"`).
+- `game/dungeons/shared/world_3d/forest_room_art.gd`: the shared kit. Crypt pieces are
   under `# crypt` (`_build_crypt`, `crypt_decor`, `charnel_king`, `bone_heap`), plus
   crypt branches in `make_prop`, `door` and `build_landmarks`.
-- `scripts/scenes/forest3d/forest_world_3d.gd`: lighting per theme, foe sizes,
+- `game/dungeons/shared/world_3d/forest_world_3d.gd`: lighting per theme, foe sizes,
   and `_pose_charnel_king`.
 - Room layouts: `maps/crypt/rooms/` as before.
 
-Test: `tests/crypt_3d_test.gd`. Run it without `--headless` and add
+Test: `tests/dungeons/crypt_3d_test.gd`. Run it without `--headless` and add
 `-- --capture` for `build/visual_checks/crypt_3d_*.png` (start, combat, rest,
 shop, treasure, guardian, interlude).

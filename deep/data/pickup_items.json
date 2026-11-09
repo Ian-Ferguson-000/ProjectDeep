@@ -17,7 +17,7 @@
     "type nova: a burst around the target (or you, for swing/special/dash). damage_percent, damage, radius, element, knockback.  type heal: amount.",
     "See docs/ItemEffects.md for worked examples.",
     "drops: false keeps an item out of chests and shops without deleting it. note: a reminder for the team, not shown in game.",
-    "Run tests/pickup_items_test.gd after editing to check the file."
+    "Run tests/items/pickup_items_test.gd after editing to check the file."
   ],
   "class_groups": {
     "melee": [

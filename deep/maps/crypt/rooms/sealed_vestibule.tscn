@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_0nsth"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_0nsth"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_bki37"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_5jj4v"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_5jj4v"]
 
 [node name="SealedVestibule" type="Node2D" unique_id=1794240147]
 script = ExtResource("1_0nsth")

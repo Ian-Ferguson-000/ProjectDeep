@@ -5,7 +5,7 @@ Dungeons are never finished. Every run that defeats a dungeon's guardian is a
 
 ## What is recorded
 
-`CampaignState.clear_records` (see `scripts/game/clear_records.gd`):
+`CampaignState.clear_records` (see `game/core/clear_records.gd`):
 
 - **Record**: the fastest clear of each dungeon, with the hero and class.
 - **Best per class**: the fastest Warrior, Mage, Rogue... clear of each dungeon.

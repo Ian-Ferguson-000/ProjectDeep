@@ -88,4 +88,4 @@ All stat ups, all stacking (docs/Items.md): Damage Up (`damage`), Attack speed U
 bosses, faster ability recharge and gold-find. Blackoak Ward is our Holy Mantle
 (blocks the first hit in each room).
 
-Test: `tests/isaac_rules_test.gd`.
+Test: `tests/dungeons/isaac_rules_test.gd`.

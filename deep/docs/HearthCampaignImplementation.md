@@ -37,9 +37,9 @@ upgrade ranks through `HearthMigration`.
 
 ## Validation
 
-`tests/hearth_campaign_test.gd` covers catalog completeness, mode support,
+`tests/hearth/hearth_campaign_test.gd` covers catalog completeness, mode support,
 exclusive ownership, save/load, recovery, retirement, dispatch, deterministic
-settlement, expansion, and same-class progression. `tests/hearth_visual_capture.gd`
+settlement, expansion, and same-class progression. `tests/visual_captures/hearth_visual_capture.gd`
 captures the expanded tavern and every management page.
 
 The old `tavern_cycle_test.gd` contains three assertions for the pre-Hearth

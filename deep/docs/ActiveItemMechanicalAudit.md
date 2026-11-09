@@ -21,7 +21,7 @@ not count.
 | Umbral Bow | Leash several targets, steal their speed, and kite while the links remain active. | Verified |
 
 The Fighter suite already has direct behavior coverage for all ten defining
-loops in `tests/fighter_arsenal_test.gd`; no structural rewrite is currently
+loops in `legacy/tests/fighter_arsenal_test.gd`; no structural rewrite is currently
 justified.
 
 ## Mage

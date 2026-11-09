@@ -30,7 +30,7 @@ Fighter keep the sword). The weapon can still be swapped in the Armory.
 | **Damage stat** | Strength | Strength |
 
 The spear's moveset is the existing warrior kit `borderkeepers_spear`
-(`scripts/slasher/slasher_warrior_kit.gd`); its catalog entry is in
+(`game/player/warrior/slasher_warrior_kit.gd`); its catalog entry is in
 `data/hearth_campaign.json`. Recruits' starting weapons per class are
 `CampaignState.STARTER_WEAPONS` (`{"warrior": ["sword_shield",
 "borderkeepers_spear"]}`); add a class or a third weapon there. Tessaly Vane
@@ -48,7 +48,7 @@ hit a test expects to land. Tests that need every hit to land set
 
 ## Code
 
-- `scripts/slasher/slasher_player.gd`: `_buffer`, `_lunge`, the chain in
+- `game/player/slasher_player.gd`: `_buffer`, `_lunge`, the chain in
   `use_action`, `use_secondary`, `SpearStreak`.
-- `scripts/ui/dungeon_hud.gd → SecondarySlot`; `RunState.secondary_weapon_id()`.
-- Test: `tests/fighter_feel_test.gd`.
+- `game/ui/dungeon_hud.gd → SecondarySlot`; `RunState.secondary_weapon_id()`.
+- Test: `tests/player/fighter_feel_test.gd`.

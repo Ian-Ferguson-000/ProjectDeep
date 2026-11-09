@@ -27,7 +27,7 @@ this press may open the menu (the scene's `can_open` callback:
 `slasher_forest.gd` / `tavern.gd → _can_open_pause_menu`, which say no while a
 window is open). The window then handles Esc as usual, and the menu opens in
 `_unhandled_input` only if the press was allowed and nothing used it. Test:
-`tests/pause_menu_test.gd` (including a real Esc key over the Hearth).
+`tests/ui/pause_menu_test.gd` (including a real Esc key over the Hearth).
 
 ## Leaving and saving
 
@@ -42,16 +42,16 @@ Nothing is lost when you leave, quit or crash:
   `RunState.run_snapshot()` on every save, put back by
   `restore_run_snapshot()` in `main.gd → _resume_saved_expedition`). Room
   saves go through `RunState.save_room_checkpoint()`, called from
-  `slasher_forest_rooms.gd → _save_checkpoint`; `tests/autosave_policy_test.gd`
-  keeps saving to these paths. Test: `tests/run_checkpoint_test.gd`.
+  `slasher_forest_rooms.gd → _save_checkpoint`; `tests/core/autosave_policy_test.gd`
+  keeps saving to these paths. Test: `tests/core/run_checkpoint_test.gd`.
 
 ## Code
 
-- `scripts/ui/pause_menu.gd` (`GamePauseMenu`): the menu; `CONTROLS` lists the
+- `game/ui/pause_menu.gd` (`GamePauseMenu`): the menu; `CONTROLS` lists the
   bindings shown on the Controls page.
 - The `pause_menu` input action (Esc + Back) is added by
   `GamePauseMenu.ensure_action()` from `main.gd`.
 - `main.gd → return_to_title()`.
 - Wired up in `slasher_forest.gd → _build_hud` (all dungeons) and `tavern.gd`
   (`_can_open_pause_menu` in each decides when Esc may open it).
-- Test: `tests/pause_menu_test.gd`.
+- Test: `tests/ui/pause_menu_test.gd`.

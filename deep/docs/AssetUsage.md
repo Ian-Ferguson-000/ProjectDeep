@@ -56,126 +56,126 @@ This audit tracks source files under `assets/`. Godot `.import` sidecars and hou
 | `assets/classes/rogue/sheet.png` | data/classes.json |
 | `assets/classes/summoner/sheet.png` | data/classes.json |
 | `assets/classes/tank/sheet.png` | data/classes.json |
-| `assets/classes/wolf_companion/sheet.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_sprite_library.gd |
-| `assets/crypt/hazards/bone_spikes_source.png` | scripts/slasher/slasher_crypt_hazard.gd |
-| `assets/crypt/hazards/curse_sigil_source.png` | scripts/slasher/slasher_crypt_hazard.gd |
-| `assets/crypt/hazards/soulflame_source.png` | scripts/slasher/slasher_crypt_hazard.gd |
-| `assets/effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 Hit.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_impact.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 Start.png` | scripts/codes/projectile.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/effect_packs/Aether Effect 01/Aether VFX 1/IceVFX 1 Repeatable.png` | scripts/codes/projectile.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/effect_packs/fireball/fireball_flight.png` | scripts/codes/projectile.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/effect_packs/fireball/fireball_impact.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_impact.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/effect_packs/fireball/fireball_start.png` | scripts/codes/projectile.gd<br>scripts/slasher/slasher_projectile.gd |
-| `assets/enemies/crypt/crypt_boss.png` | scripts/slasher/slasher_forest.gd |
-| `assets/enemies/crypt/ghoul.png` | scripts/slasher/slasher_forest.gd |
-| `assets/enemies/crypt/necromancer.png` | scripts/slasher/slasher_forest.gd |
-| `assets/enemies/crypt/skeleton.png` | scripts/slasher/slasher_forest.gd |
+| `assets/classes/wolf_companion/sheet.png` | game/dungeons/shared/slasher_forest.gd<br>game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/crypt/hazards/bone_spikes_source.png` | game/dungeons/crypt/slasher_crypt_hazard.gd |
+| `assets/crypt/hazards/curse_sigil_source.png` | game/dungeons/crypt/slasher_crypt_hazard.gd |
+| `assets/crypt/hazards/soulflame_source.png` | game/dungeons/crypt/slasher_crypt_hazard.gd |
+| `assets/effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 Hit.png` | game/shared/projectile.gd<br>game/shared/spells/spell_impact.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/player/slasher_projectile.gd |
+| `assets/effect_packs/Aether Effect 01/Aether VFX 1/Ice VFX 1 Start.png` | game/shared/projectile.gd<br>game/player/slasher_projectile.gd |
+| `assets/effect_packs/Aether Effect 01/Aether VFX 1/IceVFX 1 Repeatable.png` | game/shared/projectile.gd<br>game/player/slasher_projectile.gd |
+| `assets/effect_packs/fireball/fireball_flight.png` | game/shared/projectile.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/player/slasher_projectile.gd |
+| `assets/effect_packs/fireball/fireball_impact.png` | game/shared/projectile.gd<br>game/shared/spells/spell_impact.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/player/slasher_projectile.gd |
+| `assets/effect_packs/fireball/fireball_start.png` | game/shared/projectile.gd<br>game/player/slasher_projectile.gd |
+| `assets/enemies/crypt/crypt_boss.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/enemies/crypt/ghoul.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/enemies/crypt/necromancer.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/enemies/crypt/skeleton.png` | game/dungeons/shared/slasher_forest.gd |
 | `assets/enemies/dark_druid/frames.tres` | data/enemies/dark_druid/definition.tres |
 | `assets/enemies/feral_wolf/frames.tres` | data/enemies/feral_wolf/definition.tres |
-| `assets/enemies/feral_wolf/normalized_sheet.png` | data/enemies/feral_wolf/journal.tres<br>scripts/slasher/slasher_forest.gd |
+| `assets/enemies/feral_wolf/normalized_sheet.png` | data/enemies/feral_wolf/journal.tres<br>game/dungeons/shared/slasher_forest.gd |
 | `assets/enemies/fire_mage/frames.tres` | data/enemies/fire_mage/definition.tres |
-| `assets/enemies/fire_mage/normalized_sheet.png` | data/enemies/fire_mage/journal.tres<br>scripts/slasher/slasher_forest.gd |
+| `assets/enemies/fire_mage/normalized_sheet.png` | data/enemies/fire_mage/journal.tres<br>game/dungeons/shared/slasher_forest.gd |
 | `assets/enemies/ice_mage/frames.tres` | data/enemies/ice_mage/definition.tres |
 | `assets/enemies/ice_mage/normalized_sheet.png` | data/enemies/ice_mage/journal.tres |
 | `assets/enemies/poison_ranger/frames.tres` | data/enemies/poison_ranger/definition.tres |
 | `assets/enemies/poison_ranger/normalized_sheet.png` | data/enemies/poison_ranger/journal.tres |
 | `assets/enemies/spore_beast/frames.tres` | data/enemies/spore_beast/definition.tres |
-| `assets/field/farmstead/fire_patch.png` | scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/merchant_orin.png` | data/merchants.json<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/return_gate.png` | scripts/slasher/slasher_farmstead.gd |
-| `assets/generated_characters/tavern_keeper.png` | scenes/tavern/Tavern.tscn<br>scripts/scenes/tavern.gd |
-| `assets/generated_characters/town_mayor.png` | scripts/main.gd |
-| `assets/generated_ui/wooden_exit_door.png` | scripts/slasher/slasher_forest.gd |
-| `assets/generated_vfx/flamethrower/flamethrower_active.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_effect.gd |
-| `assets/generated_vfx/flamethrower/flamethrower_end.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_effect.gd |
-| `assets/generated_vfx/flamethrower/flamethrower_start.png` | scripts/codes/projectile.gd<br>scripts/codes/spells/spell_effect.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Book Desk/1.png` | scenes/tavern/Tavern.tscn |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Book Desk/4.png` | scenes/scenes/StartMenu.tscn |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/1.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/10.png` | scripts/slasher/slasher_forest.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/15.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/1.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/10.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/12.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/15.png` | scripts/slasher/slasher_forest.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/2.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/20.png` | scripts/slasher/slasher_forest.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/22.png` | scripts/slasher/slasher_forest.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/26.png` | scripts/slasher/slasher_forest.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/7.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/1.png` | scenes/scenes/StartMenu.tscn<br>scenes/scenes/ui/PlayerMenu.tscn<br>scenes/scenes/ui/SoulSpace.tscn |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/3 Item Holder/1.png` | scripts/codes/player_menu.gd<br>scripts/codes/soul_space.gd |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/7 Dialogue Box/1.png` | scenes/scenes/StartMenu.tscn<br>scenes/scenes/ui/SoulSpace.tscn |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/8 Shop/1.png` | scenes/scenes/ui/PlayerMenu.tscn<br>scenes/scenes/ui/SoulSpace.tscn |
-| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/9 Rewards/1.png` | scenes/scenes/ui/PlayerMenu.tscn |
+| `assets/field/farmstead/fire_patch.png` | game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/merchant_orin.png` | data/merchants.json<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/return_gate.png` | game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/generated_characters/tavern_keeper.png` | game/tavern/2d/Tavern.tscn<br>game/tavern/tavern.gd |
+| `assets/generated_characters/town_mayor.png` | game/main/main.gd |
+| `assets/generated_ui/wooden_exit_door.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/generated_vfx/flamethrower/flamethrower_active.png` | game/shared/projectile.gd<br>game/shared/spells/spell_effect.gd |
+| `assets/generated_vfx/flamethrower/flamethrower_end.png` | game/shared/projectile.gd<br>game/shared/spells/spell_effect.gd |
+| `assets/generated_vfx/flamethrower/flamethrower_start.png` | game/shared/projectile.gd<br>game/shared/spells/spell_effect.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Book Desk/1.png` | game/tavern/2d/Tavern.tscn |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Book Desk/4.png` | legacy/scenes/scenes/StartMenu.tscn |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/1.png` | game/dungeons/shared/slasher_forest.gd<br>game/items/slasher_relic_choice_modal.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/10.png` | game/dungeons/shared/slasher_forest.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/1 Items/15.png` | game/dungeons/shared/slasher_forest.gd<br>game/items/slasher_relic_choice_modal.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/1.png` | game/dungeons/shared/slasher_forest.gd<br>game/items/slasher_relic_choice_modal.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/10.png` | game/dungeons/shared/slasher_forest.gd<br>game/items/slasher_relic_choice_modal.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/12.png` | game/dungeons/shared/slasher_forest.gd<br>game/items/slasher_relic_choice_modal.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/15.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/2.png` | game/dungeons/shared/slasher_forest.gd<br>game/items/slasher_relic_choice_modal.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/20.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/22.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/26.png` | game/dungeons/shared/slasher_forest.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Content/2 Icons/7.png` | game/dungeons/shared/slasher_forest.gd<br>game/items/slasher_relic_choice_modal.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/2 Headers/1.png` | legacy/scenes/scenes/StartMenu.tscn<br>legacy/scenes/scenes/ui/PlayerMenu.tscn<br>legacy/scenes/scenes/ui/SoulSpace.tscn |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/3 Item Holder/1.png` | legacy/scripts/codes/player_menu.gd<br>legacy/scripts/codes/soul_space.gd |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/7 Dialogue Box/1.png` | legacy/scenes/scenes/StartMenu.tscn<br>legacy/scenes/scenes/ui/SoulSpace.tscn |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/8 Shop/1.png` | legacy/scenes/scenes/ui/PlayerMenu.tscn<br>legacy/scenes/scenes/ui/SoulSpace.tscn |
+| `assets/Humble Gift - Paper UI System v1.1/Sprites/Paper UI Pack/Plain/9 Rewards/1.png` | legacy/scenes/scenes/ui/PlayerMenu.tscn |
 | `assets/merchants/crypt_caldris.png` | data/merchants.json |
-| `assets/merchants/forest_thistle.png` | data/merchants.json<br>scripts/slasher/slasher_forest_art.gd |
-| `assets/merchants/tavern_mara.png` | data/merchants.json<br>scripts/main.gd |
-| `assets/pixel_art/atlas_transparency.gdshader` | scenes/scenes/maps/StarterMap.tscn |
-| `assets/pixel_art/Campfire.png` | scenes/slasher/templates/MineLoopTemplate.tscn<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd |
-| `assets/pixel_art/chests/chest2.png` | scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/forest_art/grass1.jpeg` | scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/forest_art/grass2.jpg` | scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/forest_art/grass3.jpg` | scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/forest_art/interactables/barrel_generated.png` | scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/FreePack.png` | scenes/scenes/maps/StarterMap.tscn<br>scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/Gold.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/houses.png` | scenes/scenes/maps/StarterMap.tscn |
-| `assets/pixel_art/key.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/potion.png` | data/consumables.json<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/pixel_art/rocks/rock1.png` | scenes/slasher/templates/MineLoopTemplate.tscn |
-| `assets/pixel_art/rocks/rock2.png` | scripts/slasher/slasher_forest.gd |
+| `assets/merchants/forest_thistle.png` | data/merchants.json<br>game/dungeons/forest/slasher_forest_art.gd |
+| `assets/merchants/tavern_mara.png` | data/merchants.json<br>game/main/main.gd |
+| `assets/pixel_art/atlas_transparency.gdshader` | legacy/scenes/scenes/maps/StarterMap.tscn |
+| `assets/pixel_art/Campfire.png` | legacy/scenes/slasher/templates/MineLoopTemplate.tscn<br>game/dungeons/shared/slasher_forest.gd<br>game/dungeons/forest/slasher_forest_art.gd |
+| `assets/pixel_art/chests/chest2.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/forest_art/grass1.jpeg` | game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/forest_art/grass2.jpg` | game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/forest_art/grass3.jpg` | game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/forest_art/interactables/barrel_generated.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/FreePack.png` | legacy/scenes/scenes/maps/StarterMap.tscn<br>game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/Gold.png` | game/dungeons/shared/slasher_forest.gd<br>game/dungeons/forest/slasher_forest_art.gd<br>game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/houses.png` | legacy/scenes/scenes/maps/StarterMap.tscn |
+| `assets/pixel_art/key.png` | game/dungeons/shared/slasher_forest.gd<br>game/dungeons/forest/slasher_forest_art.gd<br>game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/potion.png` | data/consumables.json<br>game/dungeons/shared/slasher_forest.gd<br>game/dungeons/forest/slasher_forest_art.gd<br>game/dungeons/shared/slasher_forest.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/pixel_art/rocks/rock1.png` | legacy/scenes/slasher/templates/MineLoopTemplate.tscn |
+| `assets/pixel_art/rocks/rock2.png` | game/dungeons/shared/slasher_forest.gd |
 | `assets/pixel_art/shroomie.png` | data/enemies/spore_beast/journal.tres |
-| `assets/pixel_art/spellnode.png` | data/consumables.json<br>scripts/codes/soul_space.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_relic_choice_modal.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/pixel_art/starter_atlas.png` | data/journal/corrupted_heart.tres<br>scenes/scenes/maps/StarterMap.tscn<br>scripts/codes/player_menu.gd |
-| `assets/pixel_art/translucent shrooms.png` | scenes/scenes/maps/StarterMap.tscn |
-| `assets/pixel_art/trap.png` | scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/TX Plant.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd |
-| `assets/pixel_art/TX Props.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_forest_art.gd |
-| `assets/pixel_art/TX Struct.png` | scripts/slasher/slasher_forest.gd |
-| `assets/pixel_art/TX Tileset Grass.png` | scenes/slasher/SlasherCrypt.tscn<br>scenes/slasher/SlasherForest.tscn<br>scenes/scenes/maps/StarterMap.tscn<br>scenes/slasher/templates/ForestBranchingTemplate.tscn<br>scenes/slasher/tools/WallGenerationLab.tscn<br>scenes/tavern/Tavern.tscn<br>scripts/slasher/slasher_forest_art.gd |
-| `assets/pixel_art/TX tileset Hellfloor.png` | scripts/slasher/slasher_hell_art.gd |
-| `assets/pixel_art/TX tileset Hellfloor2.png` | scripts/slasher/slasher_hell_art.gd |
-| `assets/pixel_art/TX tileset Hellwall.png` | data/slasher_wall_tilesets.json<br>scripts/slasher/slasher_hell_art.gd |
-| `assets/pixel_art/TX Tileset Stone Ground.png` | scripts/slasher/slasher_forest.gd<br>scripts/slasher/slasher_crypt_art.gd |
-| `assets/pixel_art/TX Tileset Wall.png` | data/slasher_wall_tilesets.json<br>scenes/slasher/templates/ForestBranchingTemplate.tscn<br>scenes/slasher/tools/WallGenerationLab.tscn<br>scenes/tavern/Tavern.tscn |
-| `assets/pixel_art/voodoo-guy-walk anim.png` | data/enemies/dark_druid/journal.tres<br>scenes/scenes/maps/StarterMap.tscn |
-| `assets/projectiles/hostile/balor_flaming_disk.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/projectiles/hostile/hellfire_orb.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/projectiles/hostile/necrotic_skull.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/projectiles/hostile/rift_shard.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/projectiles/hostile/soul_flame.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/projectiles/hostile/spectral_arrow.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/roster_portraits/warrior_0.png` | scripts/main.gd |
-| `assets/slasher/ui/slasher_resource_hud_frame.png` | scripts/slasher/slasher_forest.gd |
-| `assets/sprite_packs/Kobold/kobold_frames.tres` | data/enemies/kobold_guard/definition.tres<br>scenes/scenes/actors/Kobold.tscn |
-| `assets/sprite_packs/Kobold/kobold_profile.tres` | data/enemies/kobold_guard/definition.tres<br>scenes/scenes/actors/Kobold.tscn |
-| `assets/sprite_packs/Kobold/Sprites/with_outline/IDLE.png` | data/journal/kobold_guard.tres<br>scripts/slasher/slasher_forest.gd |
-| `assets/sprite_packs/Player/IDLE/idle_down.png` | data/classes.json<br>scripts/slasher/slasher_forest.gd<br>scripts/scenes/tavern.gd |
-| `assets/sprite_packs/Player/player_frames.tres` | scenes/scenes/actors/Player.tscn<br>scripts/slasher/slasher_sprite_library.gd |
-| `assets/tavern/tavern_hub_backdrop.png` | scripts/scenes/tavern.gd |
-| `assets/tile_sets/Free_pixel_tiles_pack/grass_1.png` | scripts/slasher/slasher_farmstead.gd |
-| `assets/tile_sets/Free_pixel_tiles_pack/grass_3.png` | scripts/slasher/slasher_farmstead.gd |
-| `assets/ui/buttons/fantasy_button_compact_dark_clean.png` | scripts/ui/fantasy_button.gd |
-| `assets/ui/buttons/fantasy_button_dark_clean.png` | scripts/ui/fantasy_button.gd |
-| `assets/ui/buttons/fantasy_button_light_clean.png` | scripts/ui/fantasy_button.gd |
-| `assets/ui/card1.png` | scripts/slasher/slasher_relic_choice_modal.gd |
-| `assets/ui/character_menu/close_button.png` | scripts/ui/player_character_menu.gd |
-| `assets/ui/character_menu/menu_frame.png` | scripts/slasher/slasher_codex_menu.gd<br>scripts/ui/player_character_menu.gd |
-| `assets/ui/character_menu/portrait_frame.png` | scripts/ui/player_character_menu.gd |
-| `assets/ui/character_menu/relic_slot_empty.png` | scripts/ui/player_character_menu.gd |
-| `assets/ui/character_menu/relic_slot_selected.png` | scripts/ui/player_character_menu.gd |
-| `assets/ui/character_menu/section_panel.png` | scripts/ui/player_character_menu.gd |
-| `assets/ui/character_menu/side_panel.png` | scripts/ui/player_character_menu.gd |
-| `assets/ui/character_menu/tip_panel.png` | scripts/ui/player_character_menu.gd |
-| `assets/ui/Eros.png` | scripts/scenes/start_screen.gd |
-| `assets/ui/item_card/card_background_dark.png` | scripts/ui/item_reward_card.gd |
-| `assets/ui/item_card/parchment_panel.png` | scripts/ui/item_reward_card.gd |
-| `assets/ui/item_card/rarity/common.png` | scripts/ui/item_reward_card.gd |
-| `assets/ui/item_card/rarity/epic.png` | scripts/ui/item_reward_card.gd |
-| `assets/ui/item_card/rarity/legendary.png` | scripts/ui/item_reward_card.gd |
-| `assets/ui/item_card/rarity/rare.png` | scripts/ui/item_reward_card.gd |
-| `assets/ui/item_card/rarity/uncommon.png` | scripts/ui/item_reward_card.gd |
+| `assets/pixel_art/spellnode.png` | data/consumables.json<br>legacy/scripts/codes/soul_space.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/items/slasher_relic_choice_modal.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/pixel_art/starter_atlas.png` | data/journal/corrupted_heart.tres<br>legacy/scenes/scenes/maps/StarterMap.tscn<br>legacy/scripts/codes/player_menu.gd |
+| `assets/pixel_art/translucent shrooms.png` | legacy/scenes/scenes/maps/StarterMap.tscn |
+| `assets/pixel_art/trap.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/TX Plant.png` | game/dungeons/shared/slasher_forest.gd<br>game/dungeons/forest/slasher_forest_art.gd |
+| `assets/pixel_art/TX Props.png` | game/dungeons/shared/slasher_forest.gd<br>game/dungeons/forest/slasher_forest_art.gd |
+| `assets/pixel_art/TX Struct.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/pixel_art/TX Tileset Grass.png` | game/dungeons/crypt/SlasherCrypt.tscn<br>game/dungeons/forest/SlasherForest.tscn<br>legacy/scenes/scenes/maps/StarterMap.tscn<br>legacy/scenes/slasher/templates/ForestBranchingTemplate.tscn<br>legacy/scenes/slasher/tools/WallGenerationLab.tscn<br>game/tavern/2d/Tavern.tscn<br>game/dungeons/forest/slasher_forest_art.gd |
+| `assets/pixel_art/TX tileset Hellfloor.png` | game/dungeons/hell/slasher_hell_art.gd |
+| `assets/pixel_art/TX tileset Hellfloor2.png` | game/dungeons/hell/slasher_hell_art.gd |
+| `assets/pixel_art/TX tileset Hellwall.png` | data/slasher_wall_tilesets.json<br>game/dungeons/hell/slasher_hell_art.gd |
+| `assets/pixel_art/TX Tileset Stone Ground.png` | game/dungeons/shared/slasher_forest.gd<br>game/dungeons/crypt/slasher_crypt_art.gd |
+| `assets/pixel_art/TX Tileset Wall.png` | data/slasher_wall_tilesets.json<br>legacy/scenes/slasher/templates/ForestBranchingTemplate.tscn<br>legacy/scenes/slasher/tools/WallGenerationLab.tscn<br>game/tavern/2d/Tavern.tscn |
+| `assets/pixel_art/voodoo-guy-walk anim.png` | data/enemies/dark_druid/journal.tres<br>legacy/scenes/scenes/maps/StarterMap.tscn |
+| `assets/projectiles/hostile/balor_flaming_disk.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/projectiles/hostile/hellfire_orb.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/projectiles/hostile/necrotic_skull.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/projectiles/hostile/rift_shard.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/projectiles/hostile/soul_flame.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/projectiles/hostile/spectral_arrow.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/roster_portraits/warrior_0.png` | game/main/main.gd |
+| `assets/slasher/ui/slasher_resource_hud_frame.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/sprite_packs/Kobold/kobold_frames.tres` | data/enemies/kobold_guard/definition.tres<br>legacy/scenes/scenes/actors/Kobold.tscn |
+| `assets/sprite_packs/Kobold/kobold_profile.tres` | data/enemies/kobold_guard/definition.tres<br>legacy/scenes/scenes/actors/Kobold.tscn |
+| `assets/sprite_packs/Kobold/Sprites/with_outline/IDLE.png` | data/journal/kobold_guard.tres<br>game/dungeons/shared/slasher_forest.gd |
+| `assets/sprite_packs/Player/IDLE/idle_down.png` | data/classes.json<br>game/dungeons/shared/slasher_forest.gd<br>game/tavern/tavern.gd |
+| `assets/sprite_packs/Player/player_frames.tres` | legacy/scenes/scenes/actors/Player.tscn<br>game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/tavern/tavern_hub_backdrop.png` | game/tavern/tavern.gd |
+| `assets/tile_sets/Free_pixel_tiles_pack/grass_1.png` | game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/tile_sets/Free_pixel_tiles_pack/grass_3.png` | game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/ui/buttons/fantasy_button_compact_dark_clean.png` | game/ui/fantasy_button.gd |
+| `assets/ui/buttons/fantasy_button_dark_clean.png` | game/ui/fantasy_button.gd |
+| `assets/ui/buttons/fantasy_button_light_clean.png` | game/ui/fantasy_button.gd |
+| `assets/ui/card1.png` | game/items/slasher_relic_choice_modal.gd |
+| `assets/ui/character_menu/close_button.png` | legacy/scripts/ui/player_character_menu.gd |
+| `assets/ui/character_menu/menu_frame.png` | game/dungeons/shared/slasher_codex_menu.gd<br>legacy/scripts/ui/player_character_menu.gd |
+| `assets/ui/character_menu/portrait_frame.png` | legacy/scripts/ui/player_character_menu.gd |
+| `assets/ui/character_menu/relic_slot_empty.png` | legacy/scripts/ui/player_character_menu.gd |
+| `assets/ui/character_menu/relic_slot_selected.png` | legacy/scripts/ui/player_character_menu.gd |
+| `assets/ui/character_menu/section_panel.png` | legacy/scripts/ui/player_character_menu.gd |
+| `assets/ui/character_menu/side_panel.png` | legacy/scripts/ui/player_character_menu.gd |
+| `assets/ui/character_menu/tip_panel.png` | legacy/scripts/ui/player_character_menu.gd |
+| `assets/ui/Eros.png` | game/main/start_screen.gd |
+| `assets/ui/item_card/card_background_dark.png` | legacy/scripts/ui/item_reward_card.gd |
+| `assets/ui/item_card/parchment_panel.png` | legacy/scripts/ui/item_reward_card.gd |
+| `assets/ui/item_card/rarity/common.png` | legacy/scripts/ui/item_reward_card.gd |
+| `assets/ui/item_card/rarity/epic.png` | legacy/scripts/ui/item_reward_card.gd |
+| `assets/ui/item_card/rarity/legendary.png` | legacy/scripts/ui/item_reward_card.gd |
+| `assets/ui/item_card/rarity/rare.png` | legacy/scripts/ui/item_reward_card.gd |
+| `assets/ui/item_card/rarity/uncommon.png` | legacy/scripts/ui/item_reward_card.gd |
 
 ## Runtime: dependency (15)
 
@@ -201,118 +201,118 @@ This audit tracks source files under `assets/`. Godot `.import` sidecars and hou
 
 | Asset | Reference or loader |
 | --- | --- |
-| `assets/classes/healer/slasher_sheet.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/classes/mage/slasher_sheet.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/classes/phantom/slasher_sheet.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/classes/rogue/slasher_sheet.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/classes/summoner/slasher_sheet.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/classes/tank/slasher_sheet.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/ash_rat/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/balor/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/blighted_farmhand/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/briar_guardian/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/cinder_bomber/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/crypt_boss/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/crypt/crypt_enemy_sheet.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/drowned_foreman/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/ember_crow/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/feral_wolf/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/fire_mage/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/fire_spirit/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/harvest_wretch/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/hellcharger/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/ice_mage/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/infernal_caster/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/infernal_legate/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/last_warmachine/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/moon_court_huntress/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/poison_ranger/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/possessed_scarecrow/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/rift_stalker/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/skeletal_archer/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/soul_wisp/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/thornback_boar/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/unwritten_curator/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/wolf_charger/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/wolf_howler/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/wolf_hunter/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/wolf_lurker/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/enemies/wolf_vanguard/generated_source.png` | scripts/slasher/slasher_sprite_library.gd |
-| `assets/field/farmstead/ash_rat.png` | scripts/slasher/slasher_forest.gd |
-| `assets/field/farmstead/barrel.png` | scripts/slasher/slasher_forest.gd |
-| `assets/field/farmstead/blighted_farmhand.png` | scripts/slasher/slasher_forest.gd |
-| `assets/field/farmstead/ember_crow.png` | scripts/slasher/slasher_forest.gd |
-| `assets/field/farmstead/fence.png` | scripts/slasher/slasher_forest.gd |
-| `assets/field/farmstead/harvest_wretch.png` | scripts/slasher/slasher_forest.gd |
-| `assets/field/farmstead/hay_bale.png` | scripts/slasher/slasher_forest.gd |
-| `assets/field/farmstead/merchant_orin_portrait.png` | scripts/slasher/slasher_forest.gd |
-| `assets/field/farmstead/possessed_scarecrow.png` | scripts/slasher/slasher_forest.gd |
-| `assets/roster_portraits/healer_0.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/healer_1.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/healer_2.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/healer_3.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/mage_0.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/mage_1.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/mage_2.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/mage_3.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/recruit_atlas.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/rogue_0.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/rogue_1.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/rogue_2.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/rogue_3.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/summoner_0.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/summoner_1.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/summoner_2.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/summoner_3.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/tank_0.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/tank_1.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/tank_2.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/tank_3.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/warrior_1.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/warrior_2.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/roster_portraits/warrior_3.png` | scripts/main.gd<br>scripts/scenes/tavern.gd<br>scripts/slasher/slasher_forest.gd<br>scripts/ui/recruitment_dialogue.gd |
-| `assets/ui/class_cards/healer.png` | scripts/scenes/class_selection.gd<br>scripts/scenes/tavern.gd |
-| `assets/ui/class_cards/mage.png` | scripts/scenes/class_selection.gd<br>scripts/scenes/tavern.gd |
-| `assets/ui/class_cards/phantom.png` | scripts/scenes/class_selection.gd<br>scripts/scenes/tavern.gd |
-| `assets/ui/class_cards/summoner.png` | scripts/scenes/class_selection.gd<br>scripts/scenes/tavern.gd |
-| `assets/ui/class_cards/tank.png` | scripts/scenes/class_selection.gd<br>scripts/scenes/tavern.gd |
-| `assets/ui/class_cards/warrior.png` | scripts/scenes/class_selection.gd<br>scripts/scenes/tavern.gd |
+| `assets/classes/healer/slasher_sheet.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/classes/mage/slasher_sheet.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/classes/phantom/slasher_sheet.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/classes/rogue/slasher_sheet.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/classes/summoner/slasher_sheet.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/classes/tank/slasher_sheet.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/ash_rat/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/balor/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/blighted_farmhand/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/briar_guardian/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/cinder_bomber/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/crypt_boss/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/crypt/crypt_enemy_sheet.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/drowned_foreman/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/ember_crow/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/feral_wolf/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/fire_mage/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/fire_spirit/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/harvest_wretch/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/hellcharger/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/ice_mage/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/infernal_caster/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/infernal_legate/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/last_warmachine/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/moon_court_huntress/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/poison_ranger/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/possessed_scarecrow/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/rift_stalker/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/skeletal_archer/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/soul_wisp/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/thornback_boar/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/unwritten_curator/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/wolf_charger/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/wolf_howler/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/wolf_hunter/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/wolf_lurker/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/enemies/wolf_vanguard/generated_source.png` | game/dungeons/shared/slasher_sprite_library.gd |
+| `assets/field/farmstead/ash_rat.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/field/farmstead/barrel.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/field/farmstead/blighted_farmhand.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/field/farmstead/ember_crow.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/field/farmstead/fence.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/field/farmstead/harvest_wretch.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/field/farmstead/hay_bale.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/field/farmstead/merchant_orin_portrait.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/field/farmstead/possessed_scarecrow.png` | game/dungeons/shared/slasher_forest.gd |
+| `assets/roster_portraits/healer_0.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/healer_1.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/healer_2.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/healer_3.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/mage_0.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/mage_1.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/mage_2.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/mage_3.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/recruit_atlas.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/rogue_0.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/rogue_1.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/rogue_2.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/rogue_3.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/summoner_0.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/summoner_1.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/summoner_2.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/summoner_3.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/tank_0.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/tank_1.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/tank_2.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/tank_3.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/warrior_1.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/warrior_2.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/roster_portraits/warrior_3.png` | game/main/main.gd<br>game/tavern/tavern.gd<br>game/dungeons/shared/slasher_forest.gd<br>game/ui/hearth/recruitment_dialogue.gd |
+| `assets/ui/class_cards/healer.png` | game/main/class_selection.gd<br>game/tavern/tavern.gd |
+| `assets/ui/class_cards/mage.png` | game/main/class_selection.gd<br>game/tavern/tavern.gd |
+| `assets/ui/class_cards/phantom.png` | game/main/class_selection.gd<br>game/tavern/tavern.gd |
+| `assets/ui/class_cards/summoner.png` | game/main/class_selection.gd<br>game/tavern/tavern.gd |
+| `assets/ui/class_cards/tank.png` | game/main/class_selection.gd<br>game/tavern/tavern.gd |
+| `assets/ui/class_cards/warrior.png` | game/main/class_selection.gd<br>game/tavern/tavern.gd |
 
 ## Review: runtime directory (31)
 
 | Asset | Reference or loader |
 | --- | --- |
-| `assets/field/farmstead/backgrounds/barn.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/cellar.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/crossroads.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/farmyard.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/harvest_field.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/barn_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/cellar_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/crossroads_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/farmyard_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/harvest_field_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/sources/storehouse_source.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/field/farmstead/backgrounds/storehouse.png` | scripts/slasher/slasher_farmstead.gd<br>scripts/slasher/slasher_farmstead.gd |
-| `assets/ui/tavern/chrome/button_primary.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/chrome/button.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/chrome/nameplate.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/armory.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/bank.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/calendar.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/class_healer.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/class_mage.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/class_rogue.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/class_summoner.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/class_tank.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/class_warrior.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/expedition.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/hearth.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/ledger.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/merchants.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/roster.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/season.svg` | scripts/ui/tavern_ui_theme.gd |
-| `assets/ui/tavern/icons/settings.svg` | scripts/ui/tavern_ui_theme.gd |
+| `assets/field/farmstead/backgrounds/barn.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/cellar.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/crossroads.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/farmyard.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/harvest_field.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/barn_source.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/cellar_source.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/crossroads_source.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/farmyard_source.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/harvest_field_source.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/sources/storehouse_source.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/field/farmstead/backgrounds/storehouse.png` | game/dungeons/farmstead/slasher_farmstead.gd<br>game/dungeons/farmstead/slasher_farmstead.gd |
+| `assets/ui/tavern/chrome/button_primary.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/chrome/button.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/chrome/nameplate.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/armory.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/bank.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/calendar.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/class_healer.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/class_mage.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/class_rogue.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/class_summoner.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/class_tank.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/class_warrior.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/expedition.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/hearth.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/ledger.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/merchants.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/roster.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/season.svg` | game/tavern/tavern_ui_theme.gd |
+| `assets/ui/tavern/icons/settings.svg` | game/tavern/tavern_ui_theme.gd |
 
 ## Support: test/tool only (13)
 

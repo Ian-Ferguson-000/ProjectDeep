@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_pp6at"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_pp6at"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_qdv4q"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_jf4ff"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_jf4ff"]
 
 [node name="WardensHall" type="Node2D" unique_id=361459559]
 script = ExtResource("1_pp6at")

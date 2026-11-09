@@ -1,6 +1,6 @@
 # Verdant Forest: 3D rooms
 
-Normal forest expeditions now load `scenes/forest3d/Forest3D.tscn` from Main. Run the project with F5, then enter the forest through the tavern. The Stone Crypt uses the same presentation with a stone theme (docs/Crypt3D.md). The dungeons still marked Coming Soon keep their 2D presentation until they get a 3D one (docs/Scenes.md). The forest's authored maps, seeded room graph, encounters, checkpoints and campaign saves remain compatible.
+Normal forest expeditions now load `game/dungeons/forest/Forest3D.tscn` from Main. Run the project with F5, then enter the forest through the tavern. The Stone Crypt uses the same presentation with a stone theme (docs/Crypt3D.md). The dungeons still marked Coming Soon keep their 2D presentation until they get a 3D one (docs/Scenes.md). The forest's authored maps, seeded room graph, encounters, checkpoints and campaign saves remain compatible.
 
 ## Presentation
 
@@ -16,13 +16,13 @@ This is a 3D environment presentation over the existing 2D combat simulation. Co
 
 ## Editing
 
-- `scripts/scenes/forest3d/forest_3d.gd`: adapter extending the existing forest room controller; rebuilds presentation on room/floor changes and restores viewport state when leaving.
-- `scripts/scenes/forest3d/forest_world_3d.gd`: camera, actor and prop synchronization, shared effects viewport, and screen-to-combat coordinate mapping.
-- `scripts/scenes/forest3d/forest_room_art.gd`: reusable procedural mesh kit, palette, vegetation, fixtures and guardian models. One 48-pixel gameplay cell becomes one metre.
+- `game/dungeons/forest/forest_3d.gd`: adapter extending the existing forest room controller; rebuilds presentation on room/floor changes and restores viewport state when leaving.
+- `game/dungeons/shared/world_3d/forest_world_3d.gd`: camera, actor and prop synchronization, shared effects viewport, and screen-to-combat coordinate mapping.
+- `game/dungeons/shared/world_3d/forest_room_art.gd`: reusable procedural mesh kit, palette, vegetation, fixtures and guardian models. One 48-pixel gameplay cell becomes one metre.
 - `maps/forest/rooms/`: existing authored room layouts remain the source for floor shapes, paths, water, props and doors.
-- `scripts/slasher/slasher_player.gd`: optional input basis, identity in 2D dungeons; the forest supplies its camera's inverse basis.
+- `game/player/slasher_player.gd`: optional input basis, identity in 2D dungeons; the forest supplies its camera's inverse basis.
 
-These rooms are generated in Godot rather than stored as individual Blender scenes. Edit the shared kit to change the whole forest, or edit an authored room to change that room's layout. No texture download or external generation service is needed. The original `scenes/slasher/SlasherForest.tscn` remains available for 2D comparison and shared gameplay tests.
+These rooms are generated in Godot rather than stored as individual Blender scenes. Edit the shared kit to change the whole forest, or edit an authored room to change that room's layout. No texture download or external generation service is needed. The original `game/dungeons/forest/SlasherForest.tscn` remains available for 2D comparison and shared gameplay tests.
 
 The onboarding expedition and merchant interlude use their existing connected-floor layouts, also rendered through the 3D adapter.
 
@@ -30,8 +30,8 @@ The onboarding expedition and merchant interlude use their existing connected-fl
 
 ```sh
 GODOT='/Users/michaeligbanugo/Downloads/Godot.app/Contents/MacOS/Godot'
-"$GODOT" --headless --path . --script tests/forest_3d_test.gd --quit-after 16000
-"$GODOT" --headless --path . --script tests/tavern_3d_main_flow_test.gd --quit-after 3000
+"$GODOT" --headless --path . --script tests/dungeons/forest_3d_test.gd --quit-after 16000
+"$GODOT" --headless --path . --script tests/tavern/tavern_3d_main_flow_test.gd --quit-after 3000
 python3 tools/run_hearth_tests.py --godot "$GODOT" forest_rooms slasher_hit_geometry slasher_combo pause_menu
 ```
 

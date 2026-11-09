@@ -15,9 +15,9 @@ room) · the Esc menu.
 - Seen once per save: `tavern_dialogue_flags.tavern_tour_done` (no save format
   change). Finishing or skipping both count.
 - Replay any time: Esc → **Tavern Guide**.
-- Wording and order: `STEPS` in `scripts/ui/tavern_tour.gd`. Each step names a
+- Wording and order: `STEPS` in `game/tavern/tavern_tour.gd`. Each step names a
   Hearth `page` to open (`""` = the tavern floor) and a `target` node to
   spotlight (Hearth tabs are named `<Page>Tab`, sidebar buttons `<Group>Nav`,
   plus `AdvanceShiftButton` and `TavernToolbar`).
 - Wired up in `tavern.gd` (`_maybe_start_tavern_tour`, `start_tavern_tour`).
-- Test: `tests/tavern_tour_test.gd` checks every step's page and spotlight.
+- Test: `tests/tavern/tavern_tour_test.gd` checks every step's page and spotlight.

@@ -75,10 +75,10 @@ once: saves now record `"simple_hearts"`, so bonus hearts aren't undone.
 
 ## Code
 
-- `scripts/game/simple_combat.gd` (`SimpleCombat`): the rules.
+- `game/core/simple_combat.gd` (`SimpleCombat`): the rules.
 - Hearts: `AdventurerBuilds.max_health_for` and `RunState._derive_stats`.
 - Player hits: `SlasherEnemy.receive_attack`; the player's `simple_base` and
   `simple_reference` are set in `SlasherPlayer._setup_simple_combat`.
 - Enemy hits: `SlasherPlayer.receive_damage`.
 - Enemy health: `SlasherEnemy._notification` (on ready).
-- Test: `tests/simple_combat_test.gd`.
+- Test: `tests/core/simple_combat_test.gd`.

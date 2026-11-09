@@ -38,7 +38,7 @@ Damage scales from the hero's basic attack, so items keep up as you get stronger
 `data/active_items.json`: name, description, `charge` ("rooms" with `rooms`,
 or "timer" with `seconds`), `classes`, and an `effect` whose `kind` is one of
 dash, spin, line, rally, ward (with its numbers). A new kind of effect needs code
-in `scripts/slasher/slasher_active_effects.gd` (`use()`, plus an icon in
+in `game/items/slasher_active_effects.gd` (`use()`, plus an icon in
 `draw_icon()`). Icons are drawn in code until there's art.
 
 ## Code
@@ -46,12 +46,12 @@ in `scripts/slasher/slasher_active_effects.gd` (`use()`, plus an icon in
 The mage arsenal's current controls, tuning, limits, and verification are
 documented in [MageActiveItemsProduction.md](MageActiveItemsProduction.md).
 
-- `scripts/game/active_items.gd`: the data, the slot (in `run_stats.active_item`), charging.
-- `scripts/slasher/slasher_active_effects.gd`: what each kind does, and the icons.
+- `game/core/active_items.gd`: the data, the slot (in `run_stats.active_item`), charging.
+- `game/items/slasher_active_effects.gd`: what each kind does, and the icons.
 - `SlasherForest.use_active_item / _process_active_item`: Space, timer charge, HUD.
 - `slasher_forest_rooms.gd`: room clears charge it; treasure pedestals and swapping.
 - `DungeonHud.ActiveSlot`: the HUD slot.
-- Test: `tests/active_items_test.gd`.
+- Test: `tests/items/active_items_test.gd`.
 
 ## Dev Mode
 

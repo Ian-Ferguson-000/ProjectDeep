@@ -1,6 +1,6 @@
 # Forest tileset comparison
 
-Open `scenes/slasher/tools/ForestTilesetComparison.tscn` in Godot and press **F6**.
+Open `legacy/scenes/slasher/tools/ForestTilesetComparison.tscn` in Godot and press **F6**.
 
 This visual sample compares the previous forest grass against the new
 `assets/pixel_art/forest_art/forest tiles.png` sheet on the same generated floor
@@ -24,4 +24,4 @@ Water and stone are left for a later experiment because the existing forest
 generator does not include ponds or paved areas.
 
 To regenerate the overview and close-up PNGs in `build/`, run Godot with
-`--path . scenes/slasher/tools/ForestTilesetComparison.tscn -- --forest-capture`.
+`--path . legacy/scenes/slasher/tools/ForestTilesetComparison.tscn -- --forest-capture`.

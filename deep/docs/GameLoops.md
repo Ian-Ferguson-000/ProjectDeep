@@ -69,13 +69,13 @@ The tutorial skips this screen.
 
 ## Code
 
-- `scripts/game/unlocks.gd`: conditions, rewards, locked items, drop luck.
-- `scripts/game/bounty_board.gd`: posting, progress, payout.
+- `game/core/unlocks.gd`: conditions, rewards, locked items, drop luck.
+- `game/campaign/bounty_board.gd`: posting, progress, payout.
 - `RunState.note_kill / note_potion / run_stats()`: per-expedition stats, saved
   on `ExpeditionState.run_stats`. Lifetime counts are on `CampaignState.lifetime_stats`.
 - `SlasherForest.roll_drop / _roll_enemy_drop`: enemy drops.
-- `scripts/ui/guardian_crossroads.gd` and `main.gd _guardian_crossroads`: the choice screen.
-- Test: `tests/game_loops_test.gd`.
+- `game/ui/guardian_crossroads.gd` and `main.gd _guardian_crossroads`: the choice screen.
+- Test: `tests/core/game_loops_test.gd`.
 
 ## The dungeon trader (`data/trader.json`)
 
@@ -106,4 +106,4 @@ A run starts with nothing: there's no relic choice on floor 1 any more, so every
 relic is earned in the dungeon (chests, pedestals, traders, mini bosses). To bring
 the opening choice back, set `run_start.starter_relic` to `true` in
 `data/slasher_balance.json` (`slasher_forest.gd → starter_relic_enabled`).
-Test: `tests/run_start_test.gd`.
+Test: `tests/core/run_start_test.gd`.

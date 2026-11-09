@@ -5,7 +5,7 @@
     "Picking one up gives it fully charged. Picking up another swaps: the old one is left on the pedestal.",
     "classes: which adventurers can find it. An empty list means every class.",
     "icon: attack, defense, move, mode, special, spell, gold, potion (the relic icon set).",
-    "effect: the numbers for what it does; see scripts/slasher/slasher_active_effects.gd for each kind.",
+    "effect: the numbers for what it does; see game/items/slasher_active_effects.gd for each kind.",
     "treasure_chance: how often a treasure room holds an active item instead of a relic. The first treasure room of a run always does while your slot is empty.",
     "Authored pixel art is loaded by item id from res://assets/slasher/active_item_icons/<id>.png; legacy items use procedural glyphs."
   ],

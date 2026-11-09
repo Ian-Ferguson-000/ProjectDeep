@@ -25,7 +25,7 @@ The helper safely does nothing when a standalone test omits the autoload or does
 not select a game audio context. Main selects the context before constructing each
 scene; audio integration tests explicitly select one when testing gameplay cues.
 
-`scripts/audio/audio_catalog.gd` contains 37 reusable event definitions, with explicit
+`game/audio/audio_catalog.gd` contains 37 reusable event definitions, with explicit
 stream references, routing, gain, pitch variation, cooldown, priority and voice caps.
 Multiple recordings avoid repeating the previous variant. Explicit preloads make
 the selected recordings available in exported builds without network access.
@@ -79,7 +79,7 @@ Music, ambience and gameplay event hooks keep their existing behavior.
 
 ## Verification
 
-`tests/audio_integration_test.gd` exercises playback from real player, enemy, chest
+`tests/audio/audio_integration_test.gd` exercises playback from real player, enemy, chest
 and dynamic button actions; rejected actions and immunity; random variants; voice
 limits and priority; pause and scene cleanup; every environment's loops; actual
 movement versus teleporting; settings fallback and mixer PCM output.
@@ -87,10 +87,10 @@ movement versus teleporting; settings fallback and mixer PCM output.
 Run with Godot 4.7:
 
 ```text
-godot --headless --path . --script tests/audio_integration_test.gd
+godot --headless --path . --script tests/audio/audio_integration_test.gd
 ```
 
-`tests/audio_gameplay_test.gd` additionally traverses the real main controller,
+`tests/audio/audio_gameplay_test.gd` additionally traverses the real main controller,
 tavern, testing ground and dungeon scene lifecycle and checks adaptive combat,
 loot, trading and outcome sound integration.
 
