@@ -31,7 +31,7 @@ deep/
 | `player/` | The adventurer in a dungeon: movement, attacks, buffs. `warrior/` and `mage/` hold each class's kit and combos. | `slasher_player.gd` |
 | `items/` | Item effects in real time: stat runtime, procs, active items. | `slasher_item_runtime.gd` |
 | `enemies/` | Enemy behaviour and art; `bosses/` (colossus, charnel king); `scenes/` (one prefab per enemy). | `slasher_enemy.gd` |
-| `dungeons/shared/` | Everything every dungeon uses: the base dungeon, Isaac-style rooms, pathfinding, minimaps, codex. `walls/`, `maps/`, `world_3d/` (the 3D room builder). | `slasher_forest.gd` → `slasher_forest_rooms.gd` |
+| `dungeons/shared/` | Everything every dungeon uses: the base dungeon, rooms and doors, pathfinding, minimaps, codex. `walls/`, `maps/`, `world_3d/` (the 3D room builder). | `slasher_forest.gd` → `slasher_forest_rooms.gd` |
 | `dungeons/<name>/` | One folder per dungeon: forest and crypt (3D), hell, farmstead, mine, foundry, grove, archive (2D, Coming Soon), testing_ground (dev). | `forest/forest_3d.gd` |
 | `ui/` | HUD, pause menu, shop panel, expedition screens; `hearth/` for the tavern management screens. | `dungeon_hud.gd` |
 | `audio/` | Sound catalogue and cues (the `Audio` autoload). | `game_audio.gd` |
@@ -47,7 +47,7 @@ The class chain, from general to specific:
 
 ```
 dungeons/shared/slasher_forest.gd         the base: player, enemies, HUD, loot, one generated floor
-  └─ dungeons/shared/slasher_forest_rooms.gd   Isaac-style rooms and doors, shops, treasure
+  └─ dungeons/shared/slasher_forest_rooms.gd   rooms and doors, shops, treasure
        ├─ dungeons/forest/forest_3d.gd           the live forest: adds the 3D view (world_3d/)
        └─ dungeons/crypt/slasher_crypt.gd        the crypt's look and foes
             └─ dungeons/crypt/crypt_3d.gd        the live crypt, 3D

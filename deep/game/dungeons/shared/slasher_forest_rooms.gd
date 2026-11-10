@@ -1,6 +1,6 @@
 extends "res://game/dungeons/shared/slasher_forest.gd"
 
-## Dungeons as interconnected rooms, Binding of Isaac style. The Verdant Forest
+## Dungeons as interconnected rooms. The Verdant Forest
 ## uses this scene directly; the Stone Crypt extends it and swaps the look
 ## through _room_theme() (stone walls, iron bars, stairs down).
 ##
@@ -119,7 +119,7 @@ func _build_floor() -> void:
 	_save_checkpoint()
 
 
-# --- The shop: wares laid out on the floor, Isaac style --------------------
+# --- The shop: wares laid out on the floor ---------------------------------
 # The trader stands back at their stall; every offer sits on the ground in a
 # row. Stand on one to see its name, price and effect, press E to buy it.
 # Spacing and where the row sits: slasher_balance.json → shop_floor.
@@ -456,7 +456,7 @@ func _ensure_floor_graph() -> bool:
 	run_state.field_run["forest_floor_key"] = floor_key
 	run_state.field_run["layout_kind"] = "forest_rooms"
 	run_state.field_run["arrival_direction"] = ""
-	# Isaac floors: no campfire by default (dungeons.json room_count.rest_room);
+	# No campfire by default (dungeons.json room_count.rest_room);
 	# from locked_treasure_from_floor the treasure room needs a key.
 	if bool(tuning.get("rest_room", true)):
 		_assign_rest_room()
@@ -1044,7 +1044,7 @@ func _dress_door_barrier(barrier: Node2D, _direction: String) -> void:
 
 
 func _door_hint(neighbor: Dictionary) -> String:
-	# Like Isaac's boss door, the way to the gate room is recognisable before you go in.
+	# The way to the gate room is recognisable before you go in.
 	if String(neighbor.get("role", "")) == "boss" and not bool(neighbor.get("cleared", false)):
 		if run_state.is_slasher_boss_floor():
 			return "Guardian"
@@ -1107,7 +1107,7 @@ func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
 	if rooms_active and enemy is SlasherColossus:
 		_build_colossus_remains()
 		_open_guardian_ways(true)
-	# The guardian's fall ends the fight, Isaac style: its pack scatters and the gate opens.
+	# The guardian's fall ends the fight: its pack scatters and the gate opens.
 	if rooms_active and room_role == "boss" and enemies_remaining > 0 and _is_room_guardian(enemy):
 		_scatter_remaining_foes()
 	if rooms_active and enemies_remaining == 0:
@@ -1261,7 +1261,7 @@ func _mark_room_cleared(fought: bool) -> void:
 		# Clearing a fight charges the active item by one pip.
 		ActiveItems.add_room_charge(run_state, 1)
 		_refresh_active_hud()
-		# Isaac style: a chance of one pickup in the middle of the room.
+		# A chance of one pickup in the middle of the room.
 		roll_room_clear_pickup(
 			sanitize_player_position(_world(Vector2i(layout.get("center", layout.start))))
 		)
@@ -1468,7 +1468,7 @@ func _check_doors() -> void:
 		var neighbor := int(Dictionary(room.neighbors).get(direction, -1))
 		if neighbor < 0:
 			continue
-		# A locked treasure room (Isaac): a key opens it for good.
+		# A locked treasure room: a key opens it for good.
 		var target := run_state.get_field_room(neighbor)
 		if bool(target.get("locked", false)):
 			if run_state.keys <= 0:
@@ -1804,7 +1804,7 @@ class ActivePedestal:
 			SlasherActiveEffects.draw_icon(self, item_id, float_at, 34.0)
 
 
-## Isaac-style intro when you walk into the guardian's room.
+## The intro when you walk into the guardian's room.
 func _show_guardian_banner() -> void:
 	var hud := get_node_or_null("HUD")
 	if hud == null:

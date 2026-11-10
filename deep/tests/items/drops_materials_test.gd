@@ -146,7 +146,7 @@ func _run() -> void:
 	_expect(
 		boss_ids.has("heartwood_seed") and boss_kinds.has("relic") and boss_kinds.size() == 2,
 		(
-			"The colossus should drop its seed and an item (Isaac boss item): %s %s"
+			"The colossus should drop its seed and an item (every boss leaves one): %s %s"
 			% [boss_ids, boss_kinds]
 		)
 	)

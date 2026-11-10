@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## The gate room: killing the guardian always opens the Root Gate (its pack
-## scatters), and the way in is flagged like Isaac's boss door.
+## scatters), and the way in is flagged before you enter.
 
 const FOREST := preload("res://game/dungeons/forest/SlasherForest.tscn")
 var failures: Array[String] = []

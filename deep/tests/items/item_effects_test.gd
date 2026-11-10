@@ -278,23 +278,23 @@ func _run() -> void:
 	_expect(player.health == 3, "Warding Draught didn't block the next hit")
 	player.receive_damage(5, Vector2.ZERO)
 	_expect(player.health == 2, "Warding Draught blocked more than one hit")
-	# Isaac-style items: soul hearts arrive on pickup; Chronomancer's Pin is +1 DEX.
+	# Chronomancer's Pin is +1 DEX; Wyvernscale Mantle is three heart containers.
 	await _fresh_player("warrior", [])
 	var plain_dex := player.dexterity
 	await _fresh_player("warrior", ["chronomancers_pin"])
 	_expect(player.dexterity == plain_dex + 1, "Chronomancer's Pin should add 1 Dexterity")
+	await _fresh_player("warrior", [])
+	var plain_max := player.max_health
 	await _fresh_player("warrior", ["wyvernscale_mantle"])
 	_expect(
-		state.soul_health == 3 * SimpleCombat.units_per_heart(),
-		"Wyvernscale Mantle should give 3 soul hearts (%d)" % state.soul_health
-	)
-	player.dodge_chance = 0.0
-	player.invulnerable = 0
-	var red := player.health
-	player.receive_damage(5, Vector2.ZERO)
-	_expect(
-		player.health == red and state.soul_health == 3 * SimpleCombat.units_per_heart() - 1,
-		"Soul hearts should take the hit first"
+		(
+			player.max_health
+			== mini(plain_max + 3 * SimpleCombat.units_per_heart(), SimpleCombat.max_health_units())
+		),
+		(
+			"Wyvernscale Mantle should add 3 heart containers (%d vs %d)"
+			% [player.max_health, plain_max]
+		)
 	)
 
 	# Deft Hands: attacks recover 10% faster.

@@ -1206,7 +1206,7 @@ func refresh_dexterity() -> void:
 	)
 
 
-## The Isaac-style stat line for the HUD: Speed, Attack speed (basic attacks a second),
+## The stat line for the HUD: Speed, Attack speed (basic attacks a second),
 ## Damage (per hit, items included), Range and Luck.
 func stat_line() -> Array:
 	var basic := float(_ability_tuning("basic").get("cooldown", 0.4))
@@ -1392,12 +1392,6 @@ func receive_damage(
 	# healing and resource/health costs do not pass through this damage path.
 	if fighter_frenzy_left > 0:
 		final = roundi(final * fighter_frenzy_incoming)
-	# Soul hearts take the hit first.
-	if final > 0 and run_state.soul_health > 0:
-		var soaked := mini(run_state.soul_health, final)
-		run_state.soul_health -= soaked
-		final -= soaked
-		health_changed.emit(health, max_health)
 	if item_runtime and item_runtime.try_prevent_lethal(final, health):
 		final = maxi(0, health - 1)
 	health = maxi(0, health - final)

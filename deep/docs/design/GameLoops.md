@@ -2,7 +2,7 @@
 
 ## Unlocks (`data/unlocks.json`)
 
-Goals that permanently change the game, Binding of Isaac style. They survive
+Goals that permanently change the game. They survive
 Hearth loops.
 
 - **Items** listed in an unlock's reward stay out of chests, shops and drops until

@@ -1,6 +1,6 @@
 # Active items
 
-One slot, Isaac style, used with **Space** (the special button; on a
+One slot, used with **Space** (the special button; on a
 controller, whatever the special is bound to). The slot sits in the
 bottom-left corner of the HUD, next to the potion pocket.
 

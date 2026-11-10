@@ -246,7 +246,7 @@ static func settle(
 		cut_percents[id] = HearthCut.percent(c, c.character(id))
 	HearthUpkeep.on_return(c, e.party_ids, outcome)
 	var divine_modifiers := DIVINE.settlement_modifiers(c, e)
-	# Coins from a played run are scarce (Isaac style) and each is worth
+	# Coins from a played run are scarce and each is worth
 	# pickups.gold_per_coin gold here; automated runs already earn gold.
 	var coin_worth := 1 if e.deployment_type == "automated" else RunState.coin_value()
 	var gross := (
@@ -477,7 +477,8 @@ static func settle(
 		"divine": divine_result
 	}
 	report["bounties"] = completed_bounties.map(
-		func(bounty): return "%s (+%s)" % [String(bounty.text), BountyBoard.reward_text(bounty.reward)]
+		func(bounty):
+			return "%s (+%s)" % [String(bounty.text), BountyBoard.reward_text(bounty.reward)]
 	)
 	report["unlocks"] = Array(e.run_stats.get("unlocked", [])).duplicate()
 	c.return_reports.append(report)

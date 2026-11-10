@@ -62,10 +62,7 @@ var selected_class_id: String = "warrior"
 var selected_class_name: String = "Warrior"
 var class_resource: int = 0
 var current_health: int = 12
-## Soul hearts, in half hearts: extra health on top of your red hearts that
-## takes damage first and can't be healed back (SimpleCombat).
-var soul_health: int = 0
-## Healing bought from the trader, applied by the dungeon to the adventurer.
+## Healing waiting to be applied to the adventurer by the dungeon.
 var pending_heal: int = 0
 var max_health: int = 12
 var gold: int = 0
@@ -184,8 +181,7 @@ func run_snapshot() -> Dictionary:
 		"slasher_merchant_interlude": slasher_merchant_interlude,
 		"run_seed": run_seed,
 		"run_seeded": run_seeded,
-		"materials": materials.duplicate(),
-		"soul_health": soul_health
+		"materials": materials.duplicate()
 	}
 
 
@@ -212,7 +208,6 @@ func restore_run_snapshot(snapshot: Dictionary) -> bool:
 	run_seed = int(snapshot.get("run_seed", run_seed))
 	run_seeded = bool(snapshot.get("run_seeded", run_seeded))
 	materials = Dictionary(snapshot.get("materials", materials)).duplicate()
-	soul_health = int(snapshot.get("soul_health", soul_health))
 	return true
 
 
@@ -504,7 +499,6 @@ func start_new_run(gear: GearData, dungeon_id: String = "forest") -> void:
 	# expedition so a resumed run keeps its floors. See RunSeed.
 	run_seeded = requested_seed > 0
 	materials = {}
-	soul_health = 0
 	floor_seed = requested_seed if run_seeded else RunSeed.random_value()
 	run_seed = floor_seed
 	requested_seed = 0
@@ -969,14 +963,6 @@ func get_xp_to_next_level() -> int:
 	return _xp_required_for_level(level + 1) - int(profile["xp"])
 
 
-## Soul hearts: +hearts of soul health (in half hearts), within the total cap.
-func add_soul_hearts(hearts: float) -> int:
-	var room: int = maxi(0, SimpleCombat.max_health_units() - max_health - soul_health)
-	var added: int = mini(room, int(round(hearts * SimpleCombat.units_per_heart())))
-	soul_health += added
-	return added
-
-
 func get_stats() -> Dictionary:
 	var profile: Dictionary = _active_profile()
 	var stats_value: Variant = profile.get("stats", {})
@@ -1230,7 +1216,7 @@ func get_contextual_item_modifier(stat_id: String, context: Dictionary = {}) -> 
 	return total
 
 
-## Run coins are scarce (Isaac style); each is worth this much gold when banked
+## Run coins are scarce; each is worth this much gold when banked
 ## at the Hearth (slasher_balance.json pickups.gold_per_coin).
 static func coin_value() -> int:
 	if coin_value_override > 0:
@@ -1245,7 +1231,7 @@ static var coin_value_override := 0
 func apply_reward_bonus(base_amount: int, reward_type: String) -> int:
 	var modifier_id := "%s_bonus_percent" % reward_type
 	var bonus_percent: int = get_active_item_modifier_value(modifier_id)
-	# Coins are small numbers (Isaac style), so the fraction left over is the
+	# Coins are small numbers, so the fraction left over is the
 	# chance of one more: +20% on a penny is a 20% chance of a second coin.
 	var exact := float(base_amount) * (1.0 + float(bonus_percent) / 100.0)
 	var whole := int(floor(exact))
@@ -1807,10 +1793,6 @@ func add_inventory_item(item_id: String, source_floor: int) -> Array[String]:
 		return ["The chest sputters; its relic is missing from the catalog."]
 	var entry: Dictionary = _make_inventory_entry(item_id, item, source_floor)
 	inventory_items.append(entry)
-	# Soul-heart items (Isaac): their soul hearts arrive once, on pickup.
-	var soul := int(Dictionary(item.get("modifiers", {})).get("soul_hearts", 0))
-	if soul > 0 and SimpleCombat.enabled():
-		add_soul_hearts(soul)
 	if String(entry["duration_type"]) == "permanent":
 		var profile: Dictionary = _active_profile()
 		var permanent_items_value: Variant = profile.get("permanent_items", [])

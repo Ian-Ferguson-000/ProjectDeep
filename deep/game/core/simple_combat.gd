@@ -27,10 +27,10 @@ static func enabled() -> bool:
 	return bool(rules().get("enabled", false))
 
 
-## Isaac-style health: health is counted in half hearts (units_per_heart = 2).
+## Health is counted in half hearts (units_per_heart = 2).
 ## Ordinary hits take half a heart (enemy_hit_damage), hits from bosses, mini
-## bosses and champions (elites) a full heart (strong_hit_damage). Soul hearts
-## sit on top and take damage first. Everything together caps at max_total_hearts.
+## bosses and champions (elites) a full heart (strong_hit_damage). Hearts cap at
+## max_total_hearts.
 static func units_per_heart() -> int:
 	return maxi(1, int(rules().get("units_per_heart", 1)))
 

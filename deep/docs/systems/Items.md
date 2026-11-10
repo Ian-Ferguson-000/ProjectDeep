@@ -21,25 +21,25 @@
   that make you faster add Dexterity: `"dex": 1` is +1 DEX. An item with a
   percentage move-speed bonus counts as +1.
 
-## Item stats (Isaac style, all stack)
+## Item stats (all stack)
 
-| Stat | Isaac name | Does |
-| --- | --- | --- |
-| `damage` | Damage Up | +N damage on every hit, after the 1–4 hit |
-| `boss_damage` | | +N more against elites, mini bosses and bosses |
-| `attack_speed` | Tears Up (attack speed) | % faster basic attacks |
-| `dex` | Speed Up | +1 Dexterity: faster walking |
-| `max_health` | Health Up | +1 heart container each, filled |
-| `soul_hearts` | Soul hearts | Soul hearts, once, when picked up |
-| `range` | Range Up | Longer reach and projectiles |
-| `luck` | Luck Up | +5% to chance effects and room-clear drops |
-| `cooldown_percent` | | % faster ability recharge (cap 35%) |
-| `gold_bonus_percent` | | A chance of an extra coin |
-| `potion_heal_bonus` | | Potions heal this many more half hearts |
-| `xp_bonus_percent` | | XP only; doesn't drop while levelling is off |
+| Stat | Does |
+| --- | --- |
+| `damage` | +N damage on every hit, after the 1–4 hit |
+| `boss_damage` | +N more against elites, mini bosses and bosses |
+| `attack_speed` | % faster basic attacks |
+| `dex` | +1 Dexterity: faster walking |
+| `max_health` | +N heart containers, filled |
+| `range` | Longer reach and projectiles |
+| `luck` | +5% to chance effects and room-clear drops |
+| `cooldown_percent` | % faster ability recharge (cap 35%) |
+| `gold_bonus_percent` | A chance of an extra coin |
+| `potion_heal_bonus` | Potions heal this many more half hearts |
+| `xp_bonus_percent` | XP only; doesn't drop while levelling is off |
 
-Block chance became soul hearts (2–6% = 1, 10–15% = 2, 22% = 3), dodge became
-+1 Dexterity, and "every Nth hit" became Luck Up (docs/design/IsaacRules.md).
+Old block chance became heart containers on the items that had no other defence
+(Runebound Bracer +1, Wyvernscale Mantle +3); dodge became +1 Dexterity, and
+"every Nth hit" became Luck (docs/design/RunRules.md).
 
 Item procs (crescents, lightning, burning, chill, novas) carry their own damage
 and don't get `damage`, `boss_damage` or precision on top.

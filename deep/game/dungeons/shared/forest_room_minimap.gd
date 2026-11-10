@@ -1,7 +1,7 @@
 extends Control
 class_name ForestRoomMinimap
 
-## Isaac-style map of the current forest floor. Only rooms the party has entered
+## Map of the current forest floor. Only rooms the party has entered
 ## are drawn; doors to unexplored rooms show as short blank passages. Rooms with a
 ## known purpose carry a small marker. The map stays centred on the party's room.
 
@@ -71,7 +71,7 @@ func _draw() -> void:
 				draw_line(a, b, GATE_COLOR.darkened(0.3), 3.0)
 			else:
 				draw_line(a, a.lerp(b, 0.85), COLORS.unknown, 3.0)
-	# Like Isaac, the gate room shows up as soon as you're next to it.
+	# The gate room shows up as soon as you're next to it.
 	for id in known:
 		if known[id] or not _is_gate(rooms[id]):
 			continue

@@ -1,6 +1,6 @@
 extends SceneTree
-## Binding of Isaac rules: half hearts (half-heart hits, full-heart hits from
-## bosses and champions), soul hearts, room-clear pickups, hearts staying on the
+## Run rules: half hearts (half-heart hits, full-heart hits from
+## bosses and champions), no soul hearts, room-clear pickups, hearts staying on the
 ## floor at full health, champions, key-locked treasure rooms, no campfires,
 ## coins banked at 10 gold, and the HUD's stat line.
 const FOREST := preload("res://game/dungeons/forest/SlasherForest.tscn")
@@ -36,7 +36,7 @@ func _run() -> void:
 	var state := RunState.new()
 	state.campaign = MemoryCampaign.new()
 	state.requested_seed = 2468
-	state.start_new_run(GearData.create("isaac", "Isaac", 3, false, 0, "", "", "warrior"), "forest")
+	state.start_new_run(GearData.create("rules", "Rules", 3, false, 0, "", "", "warrior"), "forest")
 	state.current_floor = 2
 	var scene = FOREST.instantiate()
 	scene._ensure_designer_controls()
@@ -62,7 +62,7 @@ func _run() -> void:
 	var roles: Array = Array(state.field_run.rooms).map(func(r): return String(r.role))
 	expect(
 		not roles.has("rest") and roles.has("treasure") and roles.has("shop") and roles.has("boss"),
-		"Isaac floor rooms wrong: %s" % [roles]
+		"Floor rooms wrong: %s" % [roles]
 	)
 	var treasure: Dictionary = Array(state.field_run.rooms).filter(func(r): return String(r.role) == "treasure")[0]
 	expect(bool(treasure.get("locked", false)), "The floor-2 treasure room isn't locked")
@@ -85,23 +85,23 @@ func _run() -> void:
 	player.invulnerable = 0
 	player.receive_damage(9, Vector2.ZERO, champion)
 	expect(player.health == player.max_health - 3, "A champion's hit should take a full heart")
-	# Soul hearts take damage first and show on the HUD.
-	state.add_soul_hearts(1.0)
-	scene._refresh_hud()
-	player.invulnerable = 0
-	expect(scene.dungeon_hud.soul_count() == 1, "The HUD doesn't show the soul heart")
-	player.receive_damage(9, Vector2.ZERO, foe)
+	# No soul hearts: nothing drops them and no item gives them.
 	expect(
-		state.soul_health == 1 and player.health == player.max_health - 3,
-		"A soul heart should soak the hit"
+		not Dictionary(GameBalance.get_slasher_balance("pickups").weights).has("soul_heart"),
+		"Soul hearts still drop"
 	)
+	for item_id in GameBalance.get_items():
+		expect(
+			not Dictionary(GameBalance.get_item(item_id).get("modifiers", {})).has("soul_hearts"),
+			"%s still gives soul hearts" % item_id
+		)
 	# Champions: double health and a pickup.
 	EnemyHelper.check_champion(self, scene)
 	await _frames(1)
 	# Pickups: hearts stay on the floor at full health.
 	scene.loot_nodes.clear()
 	player.health = player.max_health
-	scene.spawn_isaac_pickup(player.global_position, "heart")
+	scene.spawn_room_pickup(player.global_position, "heart")
 	var heart: Area2D = scene.loot_nodes.back()
 	expect(not scene._can_collect(heart), "A red heart was collectable at full health")
 	player.health = player.max_health - 3
@@ -109,10 +109,6 @@ func _run() -> void:
 	var hurt := player.health
 	scene._collect_loot(heart)
 	expect(player.health == hurt + 2, "A red heart should heal a whole heart")
-	scene.spawn_isaac_pickup(player.global_position, "soul_heart")
-	var souls := state.soul_health
-	scene._collect_loot(scene.loot_nodes.back())
-	expect(state.soul_health == souls + 2, "A soul heart pickup should add a soul heart")
 	# Room clears: a pickup at least sometimes, and kills give no coins.
 	var drops := 0
 	for i in 60:
@@ -172,7 +168,7 @@ func _run() -> void:
 	scene.queue_free()
 	await _frames(2)
 	if failures.is_empty():
-		print("ISAAC_RULES_TESTS_PASSED")
+		print("RUN_RULES_TESTS_PASSED")
 		quit(0)
 	else:
 		for f in failures:

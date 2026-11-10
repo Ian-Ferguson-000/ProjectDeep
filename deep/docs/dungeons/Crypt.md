@@ -1,7 +1,7 @@
 # The Stone Crypt
 
 The crypt now plays like the forest: each floor is a map of rooms you clear
-one at a time, Isaac style, with everything the forest has (minimap, doors
+one at a time, with everything the forest has (minimap, doors
 that open when a room is clear, gate room with a skull over its door, camp,
 treasure and campfire rooms, the trader, loot caches, enemy drops, hidden
 chests, clear times, bounties and unlocks). Five floors: floor 3 is the elite

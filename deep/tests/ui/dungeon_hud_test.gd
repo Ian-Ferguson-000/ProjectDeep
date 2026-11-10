@@ -1,6 +1,6 @@
 extends SceneTree
 
-## The Isaac-style dungeon HUD: hearts and counters bottom left, the run's relics
+## The dungeon HUD: hearts and counters bottom left, the run's relics
 ## top left, updating when a relic is picked up or health drops.
 
 const FOREST := preload("res://game/dungeons/forest/SlasherForest.tscn")

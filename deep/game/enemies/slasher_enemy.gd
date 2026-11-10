@@ -266,7 +266,7 @@ func configure(
 		)
 	)
 	tuning = GameBalance.get_slasher_enemy_tuning("forest_boss" if boss else "forest_normal")
-	# Isaac-style champions: any ordinary foe may spawn as a champion.
+	# Champions: any ordinary foe may spawn as a champion.
 	var elite_tuning := GameBalance.get_slasher_enemy_tuning("forest_elite")
 	var roll: float = champion_roll if champion_roll >= 0.0 else randf()
 	champion = (

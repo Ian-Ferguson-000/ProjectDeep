@@ -487,7 +487,7 @@ static func get_slasher_item_effects(item_id: String) -> Dictionary:
 			"attack_speed":
 				conversions["attack_speed"] = value
 			# Real-time stats (docs/systems/Items.md).
-			"damage", "boss_damage", "block_percent", "dodge_percent", "luck", "soul_hearts":
+			"damage", "boss_damage", "block_percent", "dodge_percent", "luck":
 				conversions[key] = float(conversions.get(key, 0.0)) + value
 			"cooldown_percent":
 				conversions["cooldown_reduction"] = minf(
@@ -523,7 +523,12 @@ static func get_slasher_item_effects(item_id: String) -> Dictionary:
 
 ## Plain-English text for an item stat in real-time combat.
 static func _conversion_phrase(key: String, value: float) -> String:
-	var pct := func(v: float) -> String: return ("%d%%" % int(round(v * 100.0))) if absf(v * 100.0 - round(v * 100.0)) < 0.05 else ("%.1f%%" % (v * 100.0))
+	var pct := func(v: float) -> String:
+		return (
+			("%d%%" % int(round(v * 100.0)))
+			if absf(v * 100.0 - round(v * 100.0)) < 0.05
+			else ("%.1f%%" % (v * 100.0))
+		)
 	match key:
 		"attack_power":
 			return "+%d attack damage" % int(value)
@@ -564,8 +569,6 @@ static func _conversion_phrase(key: String, value: float) -> String:
 			return "+%d damage on every hit" % int(value)
 		"luck":
 			return "+%d luck" % int(value)
-		"soul_hearts":
-			return "+%d soul heart%s" % [int(value), "" if int(value) == 1 else "s"]
 		"boss_damage":
 			return "+%d damage to elites and bosses" % int(value)
 		"block_percent":

@@ -1,6 +1,6 @@
 # Dungeon HUD
 
-Binding of Isaac style: almost nothing on screen.
+Almost nothing on screen.
 
 - **Top left:** every relic picked up this run, five to a row (up to 20, newest
   last). The slot border is the rarity colour, temporary relics show floors left

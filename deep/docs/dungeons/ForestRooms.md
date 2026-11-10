@@ -1,7 +1,6 @@
 # Verdant Forest rooms
 
-The forest is a roguelike descent built from interconnected rooms, in the spirit of
-The Binding of Isaac. Each floor is a fresh graph of hand-authored rooms; the party
+The forest is a roguelike descent built from interconnected rooms. Each floor is a fresh graph of hand-authored rooms; the party
 moves between them through doors on the room edges, and the **Root Gate** room leads
 down to the next floor. There is no end state: floors keep going, with the existing
 elite and boss cadence (`forest.slasher.cycle_length` / `elite_floor_in_cycle`) and
@@ -32,7 +31,7 @@ endless depth.
      that needs no key. Decided once per room per floor; an unopened chest stays put if
      you leave and come back. Chance: `breakable_props.tree_large.hollow_chance` in
      `data/slasher_balance.json`
-   - the way to the gate room is flagged like Isaac's boss door: a horned skull and a
+   - the way to the gate room is flagged before you go in: a horned skull and a
      red glow over the door (a gate glyph on ordinary floors), labelled "Guardian" even
      while barred; the map shows the gate room with a skull once you're next to it; and
      walking in shows a banner naming the guardian

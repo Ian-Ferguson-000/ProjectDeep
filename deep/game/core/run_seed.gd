@@ -3,7 +3,7 @@ class_name RunSeed
 
 ## Run seeds: every run is generated from one number (floors, rooms, foes,
 ## chests, the trader, drops), shown and typed as an 8-character code like
-## "K7QF-2MXA" (Isaac style). The same seed gives the same run layout and loot;
+## "K7QF-2MXA". The same seed gives the same run layout and loot;
 ## combat rolls (crits, procs, boss patterns) stay random.
 ##
 ## Good seeds can be saved for testing (user://saved_seeds.json) and picked on

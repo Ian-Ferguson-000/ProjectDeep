@@ -75,10 +75,10 @@ func _run() -> void:
 	var roles := {}
 	for room in rooms:
 		roles[String(room.role)] = true
-	# Isaac floors: start, boss, treasure and shop; no campfire (rest_room is off).
+	# Floors: start, boss, treasure and shop; no campfire (rest_room is off).
 	for role in ["start", "boss", "treasure", "shop"]:
 		_expect(roles.has(role), "Floor graph is missing a %s room" % role)
-	_expect(not roles.has("rest"), "Isaac floors shouldn't have a campfire room")
+	_expect(not roles.has("rest"), "Floors shouldn't have a campfire room")
 	# Camps still work when switched on: make one to check it.
 	for record in rooms:
 		if String(record.role) == "combat":

@@ -304,7 +304,7 @@ This ties in familiarity and watching a family grow through the generations
 
 `generate_floor(profile, seed, depth, objective) -> FloorGraph` — a shared interface across styles. `FloorGraph` = nodes, connections, room assignments, locks/keys, encounter seeds, validation metadata.
 
-**Generator strategies:** Mystery dungeon (grid-carving, rooms + corridors), Field dungeon (authored templates in a spatial graph, Isaac-style), Spire dungeon (visible branching node graph, path selection). All share the same room/encounter/reward/extraction/settlement contracts — style changes navigation only, never the economy.
+**Generator strategies:** Mystery dungeon (grid-carving, rooms + corridors), Field dungeon (authored templates in a spatial graph), Spire dungeon (visible branching node graph, path selection). All share the same room/encounter/reward/extraction/settlement contracts — style changes navigation only, never the economy.
 
 **Pipeline:** create topology within size/branching bounds → mark entrance/mandatory route/guardian/exit → place locks/keys/objectives via dependency checks → assign room types (weighted quotas + adjacency) → allocate threat/reward budgets → instantiate region content → run reachability/budget/dependency/content validators → retry with derived seed (fixed cap), else load a safe fallback. **Never let generation produce an unwinnable floor.**
 

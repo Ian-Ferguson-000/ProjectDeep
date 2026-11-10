@@ -1050,12 +1050,12 @@ func _process(delta: float) -> void:
 
 
 func _on_enemy_defeated(enemy: SlasherEnemy, reward: int) -> void:
-	# Isaac style: kills give no coins; champions drop a pickup.
+	# Kills give no coins; champions drop a pickup.
 	run_state.record_enemy_defeat(enemy.visual_id, int(enemy.max_health))
 	enemies_remaining = maxi(0, enemies_remaining - 1)
 	if enemy.champion:
 		for i in int(GameBalance.get_slasher_balance("pickups").get("champion_drops", 1)):
-			spawn_isaac_pickup(
+			spawn_room_pickup(
 				enemy.global_position + Vector2(randf_range(-14, 14), randf_range(-10, 10))
 			)
 	if player.item_runtime:
@@ -1424,10 +1424,6 @@ func _collect_loot(loot: Area2D) -> void:
 			player.heal(
 				SimpleCombat.units_per_heart() if String(loot.get_meta("kind")) == "heart" else 1
 			)
-		"soul_heart":
-			AudioCue.play_from(loot, "pickup")
-			run_state.add_soul_hearts(1.0)
-			_refresh_hud()
 		"material":
 			var material_id := String(loot.get_meta("material_id", ""))
 			Materials.add(run_state.materials, material_id)
@@ -1754,14 +1750,14 @@ func _roll_enemy_drop(enemy: SlasherEnemy) -> void:
 	if enemy.boss:
 		for index in int(table.get("boss_materials", 1)):
 			_spawn_material_drop(spot + Vector2(index * 18 - 9, 0), material_id)
-		# Isaac: every boss leaves an item.
+		# Every boss leaves an item.
 		if bool(table.get("boss_item", false)):
 			_spawn_relic_drop(spot + Vector2(0, -30))
 		return
 	if enemy.mini_boss:
 		for index in int(table.get("mini_boss_materials", 2)):
 			_spawn_material_drop(spot + Vector2(index * 20 - 10, 6), material_id)
-		# Isaac: the floor's boss leaves an item (mini_boss_item_chance 1.0).
+		# The floor's boss leaves an item (mini_boss_item_chance 1.0).
 		if (
 			drop_rng().randf()
 			< (
@@ -1780,23 +1776,20 @@ func _roll_enemy_drop(enemy: SlasherEnemy) -> void:
 
 
 ## A small pouch of a crafting or quest material (data/materials.json).
-# ---------------------------------------------------------------- Isaac pickups
+# ---------------------------------------------------------------- Room pickups
 
 
-## Red hearts stay on the floor while you're at full health; soul hearts while
-## you're at the heart cap.
+## Red hearts stay on the floor while you're at full health.
 func _can_collect(loot: Area2D) -> bool:
 	match String(loot.get_meta("kind", "gold")):
 		"heart", "half_heart":
 			return player.health < player.max_health
-		"soul_heart":
-			return player.max_health + run_state.soul_health < SimpleCombat.max_health_units()
 	return true
 
 
 ## One random pickup (slasher_balance.json pickups): a coin, a red or half
-## heart, a soul heart or a key. kind forces one.
-func spawn_isaac_pickup(world_position: Vector2, kind: String = "") -> void:
+## heart, or a key. kind forces one.
+func spawn_room_pickup(world_position: Vector2, kind: String = "") -> void:
 	var table: Dictionary = GameBalance.get_slasher_balance("pickups")
 	var rng := drop_rng()
 	if kind.is_empty():
@@ -1838,7 +1831,7 @@ func roll_room_clear_pickup(world_position: Vector2) -> void:
 			+ luck * float(table.get("luck_per_point", 0.05))
 		)
 	):
-		spawn_isaac_pickup(world_position)
+		spawn_room_pickup(world_position)
 
 
 static func _weighted(weights: Dictionary, rng: RandomNumberGenerator) -> Variant:
@@ -2073,7 +2066,7 @@ func _build_hud() -> void:
 	canvas.name = "HUD"
 	canvas.layer = 10
 	add_child(canvas)
-	# Isaac-style: hearts, coins and keys top left, the map top right, nothing else
+	# Hearts, coins and keys top left, the map top right, nothing else
 	# until it matters. See scripts/ui/dungeon_hud.gd.
 	dungeon_hud = DUNGEON_HUD.new()
 	canvas.add_child(dungeon_hud)
@@ -2286,7 +2279,6 @@ func _refresh_dungeon_hud() -> void:
 	if dungeon_hud == null or not is_instance_valid(player):
 		return
 	var potions := run_state.get_consumables().count("healing_potion")
-	dungeon_hud.show_soul(run_state.soul_health)
 	var stats_top := (
 		clock_label.offset_bottom + 6.0 if clock_label != null and clock_label.visible else 148.0
 	)

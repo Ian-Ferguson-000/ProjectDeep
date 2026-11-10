@@ -1,6 +1,6 @@
 {
   "how_to_edit": [
-    "Active items: one slot, used with Space (the special button). Isaac-style.",
+    "Active items: one slot, used with Space (the special button).",
     "charge: \"rooms\" refills one pip per room you clear (rooms = how many pips); \"timer\" refills over seconds.",
     "Picking one up gives it fully charged. Picking up another swaps: the old one is left on the pedestal.",
     "classes: which adventurers can find it. An empty list means every class.",

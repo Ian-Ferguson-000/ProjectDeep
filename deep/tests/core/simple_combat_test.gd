@@ -95,7 +95,7 @@ func _run() -> void:
 	for pair in [[20, 20, 4, 5], [10, 12, 2, 3]]:
 		var scene = await _fighter(pair[0], pair[1])
 		var player: SlasherPlayer = scene.player
-		# Health is in half hearts (Isaac style): CON 20 = 5 hearts = 10 halves.
+		# Health is in half hearts CON 20 = 5 hearts = 10 halves.
 		_expect(
 			player.max_health == pair[3] * 2 and player.health == pair[3] * 2,
 			"CON %d: %d half hearts, expected %d" % [pair[1], player.max_health, pair[3] * 2]

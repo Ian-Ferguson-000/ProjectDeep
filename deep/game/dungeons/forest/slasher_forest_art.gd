@@ -145,14 +145,14 @@ static func make_sprite(kind: String) -> Sprite2D:
 		"key":
 			sprite.texture = KEY
 			_fit_to_pixels(sprite, 26.0)
-		"heart", "half_heart", "soul_heart":
+		"heart", "half_heart":
 			sprite.texture = heart_texture(kind)
 			sprite.scale = Vector2.ONE * 2.6
 			sprite.offset = Vector2(0, -4)
 	return sprite
 
 
-## Pixel hearts for the floor pickups: red, a red half, or a blue soul heart.
+## Pixel hearts for the floor pickups: red, or a red half.
 static var _heart_textures: Dictionary = {}
 
 
@@ -162,8 +162,8 @@ static func heart_texture(kind: String) -> Texture2D:
 	var rows := [".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."]
 	var image := Image.create(9, 8, false, Image.FORMAT_RGBA8)
 	image.fill(Color(0, 0, 0, 0))
-	var fill := Color("#5a7fe0") if kind == "soul_heart" else Color("#d42a2a")
-	var shade := Color("#2c437f") if kind == "soul_heart" else Color("#8a1414")
+	var fill := Color("#d42a2a")
+	var shade := Color("#8a1414")
 	for y in rows.size():
 		for x in String(rows[y]).length():
 			if String(rows[y])[x] != "X":

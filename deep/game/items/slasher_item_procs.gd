@@ -111,7 +111,7 @@ func _ready_to_fire(proc: Dictionary) -> bool:
 		if int(swing_counts[key]) < every:
 			return false
 		swing_counts[key] = 0
-	# Luck (Isaac): each point adds 5% to a chance effect.
+	# Luck: each point adds 5% to a chance effect.
 	var luck: float = (
 		player.item_runtime.conversion("luck")
 		if is_instance_valid(player) and player.item_runtime

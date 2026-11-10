@@ -80,8 +80,8 @@ func _initialize() -> void:
 	var mantle := RunState.new()
 	mantle.add_inventory_item("wyvernscale_mantle", 1)
 	_expect(
-		int(mantle.get_active_item_modifiers().get("soul_hearts", 0)) == 3,
-		"Wyvernscale Mantle should give 3 soul hearts",
+		int(mantle.get_active_item_modifiers().get("max_health", 0)) == 3,
+		"Wyvernscale Mantle should give 3 heart containers",
 		failures
 	)
 	for item_id in items.keys():
