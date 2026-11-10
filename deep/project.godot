@@ -11,16 +11,16 @@ config_version=5
 [application]
 
 config/name="Eros"
-run/main_scene="res://scenes/main/Main.tscn"
+run/main_scene="res://game/main/Main.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
-GameSettings="*res://scripts/game/game_settings.gd"
-Audio="*res://scripts/audio/game_audio.gd"
-GameState="*res://scripts/codes/game_state.gd"
-DevPerformanceOverlay="*res://scripts/ui/dev_performance_overlay.gd"
+GameSettings="*res://game/core/game_settings.gd"
+Audio="*res://game/audio/game_audio.gd"
+GameState="*res://game/shared/game_state.gd"
+DevPerformanceOverlay="*res://game/ui/dev_performance_overlay.gd"
 
 [display]
 

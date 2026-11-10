@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_gmg21"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_gmg21"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_nnt5k"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_0ti05"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_0ti05"]
 
 [node name="CollapsedNave" type="Node2D" unique_id=1433712249]
 script = ExtResource("1_gmg21")

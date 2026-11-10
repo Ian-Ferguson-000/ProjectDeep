@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://w7ypuwem72sp"]
 
-[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://game/shared/journal/enemy_journal_entry.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://7hcdt5ainxj0" path="res://assets/pixel_art/shroomie.png" id="2"]
 
 [sub_resource type="AtlasTexture" id="Portrait"]

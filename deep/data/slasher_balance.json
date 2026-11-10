@@ -740,7 +740,7 @@
       "mini_boss_reward": 12,
       "champion_chance": 0.1,
       "champion_health_multiplier": 2.0,
-      "how_to_edit": "Champions (Isaac style): any ordinary enemy has champion_chance to spawn as a champion with champion_health_multiplier health. Champions hit for a full heart and drop a pickup. Enemy health doesn't grow with floors (every *_per_floor is 0)."
+      "how_to_edit": "Champions: any ordinary enemy has champion_chance to spawn as a champion with champion_health_multiplier health. Champions hit for a full heart and drop a pickup. Enemy health doesn't grow with floors (every *_per_floor is 0)."
     },
     "elite_guardian": {
       "received_knockback_multiplier": 0.18,
@@ -1418,13 +1418,12 @@
     }
   },
   "pickups": {
-    "how_to_edit": "Isaac-style pickups. Clearing a room has room_clear_chance (+luck_per_point for each point of luck) to drop one pickup, picked by weights. Champions always drop one. coin_values: odds of a penny (1), nickel (5) or dime (10). heart: a red heart heals 1 heart, a half heart half; red hearts stay on the floor while you're at full health. soul_heart: +1 soul heart. Run coins bank at the Hearth at gold_per_coin each.",
+    "how_to_edit": "Room pickups. Clearing a room has room_clear_chance (+luck_per_point for each point of luck) to drop one pickup, picked by weights. Champions always drop one. coin_values: odds of a penny (1), nickel (5) or dime (10). heart: a red heart heals 1 heart, a half heart half; red hearts stay on the floor while you're at full health. Run coins bank at the Hearth at gold_per_coin each.",
     "room_clear_chance": 0.6,
     "luck_per_point": 0.05,
     "weights": {
       "coin": 45,
       "heart": 22,
-      "soul_heart": 7,
       "key": 14
     },
     "coin_values": {

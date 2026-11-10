@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_yco26"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_yco26"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_wtsno"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_xbayw"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_0mpyq"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_0mpyq"]
 
 [node name="DruidsCircle" type="Node2D" unique_id=713023023]
 script = ExtResource("1_yco26")

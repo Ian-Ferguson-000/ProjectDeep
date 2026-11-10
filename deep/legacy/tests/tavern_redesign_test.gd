@@ -1,0 +1,88 @@
+extends SceneTree
+
+const TAVERN := preload("res://game/tavern/2d/Tavern.tscn")
+const CLASS_IDS := ["warrior","mage","healer","tank","rogue","summoner"]
+
+func _initialize() -> void: call_deferred("_run")
+
+func _run() -> void:
+	# Runs are solo for now (progression.json max_party_size); this test covers the
+	# dormant party planner so it keeps working if parties come back.
+	GameBalance.set_party_size_override(4)
+	var failures: Array[String] = []
+	for viewport_size in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+		root.size = viewport_size
+		var state := RunState.new(); state.set_class("warrior")
+		GameBalance.set_debug_unlock_all_dungeons(true); state.campaign.tutorial_phase = CampaignState.TUTORIAL_COMPLETE; state.campaign.ensure_roster(); state.active_character_id = state.campaign.living_roster()[0].id
+		var gear := GearData.create("test","Test Blade",3,false,0,"","Reliable gear.","warrior","none")
+		var summary := {"outcome":"victory","headline":"Forest cleared","dungeon":"forest","depth":5,"gold":42,"changes":["+8 Mara Vell Favor"]}
+		var gear_list: Array[GearData] = [gear]
+		var tavern := TAVERN.instantiate(); tavern.setup(null,state,gear_list,"Welcome home.",summary); root.add_child(tavern)
+		await process_frame
+		_expect(tavern.get_node_or_null("TavernWorld/Walls") != null and tavern.get_node_or_null("TavernWorld/Decor") != null and tavern.top_hud != null, "missing modular world layers or HUD at %s"%viewport_size,failures)
+		_expect(tavern.top_hud.size.y<=56.0 and tavern.hud_date_label.text.contains("Spring") and tavern.hud_bank_label.text.contains(str(state.campaign.banked_gold)),"compact status bar is missing authoritative date/bank values at %s (height %.1f, date '%s', bank '%s')"%[viewport_size,tavern.top_hud.size.y,tavern.hud_date_label.text,tavern.hud_bank_label.text],failures)
+		_expect(tavern.results_backdrop.visible and tavern.results_text.text.contains("Forest cleared"),"structured results missing at %s"%viewport_size,failures)
+		_expect(tavern.player_token==null and tavern.activity_controller!=null and tavern.toolbar!=null and tavern.toolbar.get_child_count()==4,"living tavern world did not replace the legacy avatar/grid or expose four toolbar actions",failures)
+		_expect(tavern.world.get_node("Props").get_child_count()==3 and tavern.navigation_region.navigation_polygon!=null,"editable tavern tables or NavigationRegion2D are missing",failures)
+		_expect(tavern.toolbar.position.y>=tavern.get_viewport_rect().size.y-72 and tavern.toolbar.size.y<=64,"management navigation is not compact and bottom anchored at %s"%viewport_size,failures)
+		for toolbar_button in tavern.toolbar.get_children():_expect(toolbar_button is Button and (toolbar_button as Button).icon!=null,"toolbar action is missing its recognizable icon",failures)
+		var expedition_toolbar:=tavern.toolbar_buttons.get("Expedition") as Button;var calendar_toolbar:=tavern.toolbar_buttons.get("Calendar") as Button
+		_expect(expedition_toolbar!=null and expedition_toolbar.custom_minimum_size.x>calendar_toolbar.custom_minimum_size.x,"Expedition does not have clear primary visual priority",failures)
+		tavern._close_modal(tavern.results_backdrop);await process_frame;tavern._restore_hub_focus()
+		_expect(root.gui_get_focus_owner()==expedition_toolbar,"Expedition is not the default tavern focus target",failures)
+		tavern._open_options();_expect(tavern.options_backdrop.visible and root.gui_get_focus_owner()==tavern.options_panel.first_control,"settings gear did not open the focus-trapped options panel",failures);tavern._close_modal(tavern.options_backdrop)
+		tavern._open_dungeon_selector()
+		_expect(tavern.expedition_panel!=null and tavern.expedition_panel.size.x>=1100,"expedition planner did not expand across the viewport",failures)
+		var dungeon_button_count := 0
+		for entry in tavern.expedition_list.get_children():
+			if entry is Button: dungeon_button_count += 1
+		_expect(dungeon_button_count==8,"dungeon selector did not list all demo dungeons",failures)
+		_expect(tavern.expedition_list.find_child("ForestDungeonButton",false,false) != null,"Forest selector entry missing",failures)
+		_expect(tavern.expedition_list.find_child("AshenFarmsteadDungeonButton",false,false) != null,"Farmstead selector entry missing",failures)
+		_expect(tavern.expedition_list.find_child("CryptDungeonButton",false,false) != null,"Crypt selector entry missing",failures)
+		_expect(tavern.expedition_list.find_child("BalorsHellDungeonButton",false,false) != null,"Balor's Hell selector entry missing",failures)
+		var forest_button:=tavern.expedition_list.find_child("ForestDungeonButton",false,false) as Button;var crypt_button:=tavern.expedition_list.find_child("CryptDungeonButton",false,false) as Button
+		_expect(forest_button.text.begins_with("▶") and crypt_button.has_meta("base_text"),"destination selection feedback is unclear",failures)
+		_expect(tavern.expedition_party_count!=null and tavern.expedition_party_count.text=="2 / 2","expedition planner does not expose its party cap",failures)
+		_expect(tavern.expedition_readiness!=null and tavern.expedition_readiness.text.contains("READY") and tavern.expedition_launch.text.contains("Expedition"),"expedition planner lacks a clear launch summary",failures)
+		tavern._close_modal(tavern.expedition_backdrop)
+		tavern._open_armory()
+		_expect(tavern.armory_backdrop.visible and tavern.armory_list.get_child_count()==1,"armory modal failed",failures)
+		tavern._close_modal(tavern.armory_backdrop)
+		state.campaign.banked_gold=200;state.campaign.relic_essence=100;state.campaign.successful_levels=50;tavern._open_company_ledger()
+		_expect(tavern.company_panel!=null and tavern.company_panel.size.x>=1100,"company ledger did not expand across the viewport",failures)
+		_expect(tavern.company_tabs!=null and tavern.company_tabs.get_tab_count()==5,"company ledger must expose five distinct tabs",failures)
+		for required_page in ["Resources","Party Builder","Improvements","Hall of Heroes","Memorial"]:_expect(tavern.company_pages.has(required_page),"company ledger missing %s tab"%required_page,failures)
+		_expect(tavern.company_pages["Resources"].find_child("UpgradeStartingSuppliesButton",true,false)==null and tavern.company_pages["Improvements"].find_child("PartyRosterGrid",true,false)==null,"ledger tab content leaked between categories",failures)
+		var party_grid:=tavern.company_pages["Party Builder"].find_child("PartyRosterGrid",true,false) as GridContainer;var selection_count:=tavern.company_pages["Party Builder"].find_child("PartySelectionCount",true,false) as Label
+		_expect(party_grid!=null and party_grid.columns==2 and party_grid.get_child_count()==2,"party builder must show the two starting recruits in a two-column card grid",failures)
+		_expect(selection_count!=null and selection_count.text.contains("2 / 2"),"party builder does not explain the Forest party cap",failures)
+		var clear_party:=tavern.company_pages["Party Builder"].find_child("ClearPartyButton",true,false) as Button;var auto_fill:=tavern.company_pages["Party Builder"].find_child("AutoFillPartyButton",true,false) as Button
+		_expect(clear_party!=null and auto_fill!=null,"party builder is missing clear or auto-fill controls",failures)
+		clear_party.pressed.emit();await process_frame;_expect(tavern.selected_party_ids.is_empty(),"Clear Party did not empty the planned party",failures)
+		auto_fill=tavern.company_pages["Party Builder"].find_child("AutoFillPartyButton",true,false) as Button;auto_fill.pressed.emit();await process_frame;_expect(tavern.selected_party_ids.size()==2,"Auto Fill did not respect the Forest party cap",failures)
+		var first_toggle:=tavern.company_pages["Party Builder"].find_child("%sLedgerPartyToggle"%tavern.selected_party_ids[0],true,false) as CheckButton;_expect(first_toggle!=null and first_toggle.text.begins_with("SLOT 1"),"party builder does not expose party slot order",failures)
+		var upgrade_button:=tavern.company_pages["Improvements"].find_child("UpgradeStartingSuppliesButton",true,false) as Button;_expect(upgrade_button!=null and not upgrade_button.disabled and upgrade_button.text=="PURCHASE","improvements tab did not expose an unclipped affordable purchase",failures)
+		var old_rank:=int(state.campaign.tavern_upgrades.starting_supplies);upgrade_button.pressed.emit();await process_frame;_expect(int(state.campaign.tavern_upgrades.starting_supplies)==old_rank+1,"company ledger upgrade click failed",failures);_expect(tavern.company_pages["Improvements"].find_child("UpgradeStartingSuppliesButton",true,false)!=null,"company ledger did not safely rebuild after its button signal",failures);tavern._close_modal(tavern.company_backdrop)
+		tavern._open_expedition("forest")
+		_expect(tavern.expedition_backdrop.visible and not tavern.expedition_launch.disabled,"Forest confirmation failed",failures)
+		tavern._close_modal(tavern.expedition_backdrop)
+		tavern._open_expedition("crypt")
+		_expect(not tavern.expedition_launch.disabled and tavern.expedition_detail.text.contains("Testing unlock active"),"testing unlock did not enable Crypt",failures)
+		tavern.free()
+	GameBalance.set_debug_unlock_all_dungeons(false)
+	for class_id in CLASS_IDS:
+		var class_state := RunState.new(); class_state.set_class(class_id)
+		var class_gear := GearData.create("test_"+class_id,"Test "+class_id.capitalize(),2,false,0,"","Class gear.",class_id,"none")
+		var class_gear_list: Array[GearData] = [class_gear]
+		var class_tavern := TAVERN.instantiate(); class_tavern.setup(null,class_state,class_gear_list,""); root.add_child(class_tavern); await process_frame
+		class_tavern._open_armory()
+		_expect(class_tavern.armory_detail.text.contains(class_state.selected_class_name),"armory omitted %s class identity"%class_id,failures)
+		class_tavern.free()
+	if failures.is_empty(): print("Player-ready Tavern redesign validation passed."); quit(0)
+	else:
+		for failure in failures: push_error(failure)
+		quit(1)
+
+func _expect(value: bool,failure: String,failures: Array[String]) -> void:
+	if not value: failures.append(failure)

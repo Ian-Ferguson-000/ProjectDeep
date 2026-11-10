@@ -1,0 +1,516 @@
+extends RefCounted
+class_name SlasherSpriteLibrary
+
+const NORMALIZED_FRAME_SIZE := Vector2(96, 80)
+const DIRECTIONS := ["down", "left", "right", "up"]
+const HOSTILE_PROJECTILE_ART := {
+	"flaming_disk": "res://assets/projectiles/hostile/balor_flaming_disk.png",
+	"necrotic_skull": "res://assets/projectiles/hostile/necrotic_skull.png",
+	"soul": "res://assets/projectiles/hostile/soul_flame.png",
+	"soul_flame": "res://assets/projectiles/hostile/soul_flame.png",
+	"arrow": "res://assets/projectiles/hostile/spectral_arrow.png",
+	"spectral_arrow": "res://assets/projectiles/hostile/spectral_arrow.png",
+	"hellfire_orb": "res://assets/projectiles/hostile/hellfire_orb.png",
+	"rift_shard": "res://assets/projectiles/hostile/rift_shard.png"
+}
+static var _generated_cache: Dictionary = {}
+static var generated_enemy_build_count := 0
+static var last_generated_enemy_build_ms := 0.0
+static var max_generated_enemy_build_ms := 0.0
+
+
+## A class's sprite for a gender (data/adventurer_sprites.json); falls back to
+## the class's current sprite when that gender has no art yet.
+static func player_frames(class_id: String, gender: String = "") -> SpriteFrames:
+	var path := gendered_sprite_path(class_id, gender)
+	if not path.is_empty() and ResourceLoader.exists(path):
+		var gendered := load(path) as SpriteFrames
+		if gendered != null:
+			return gendered
+	if class_id == "warrior":
+		return _warrior_player_frames()
+	var asset_class_id := "phantom" if class_id == "rogue" else class_id
+	var frame_resource_path := "res://assets/classes/%s/player_frames.tres" % asset_class_id
+	if ResourceLoader.exists(frame_resource_path):
+		return load(frame_resource_path) as SpriteFrames
+	return animation_board_frames("res://assets/classes/%s/slasher_sheet.png" % asset_class_id)
+
+
+static var _gendered_sprites: Dictionary = {}
+
+
+static func gendered_sprite_path(class_id: String, gender: String) -> String:
+	if gender.is_empty():
+		return ""
+	if _gendered_sprites.is_empty():
+		var parsed = JSON.parse_string(
+			FileAccess.get_file_as_string("res://data/adventurer_sprites.json")
+		)
+		_gendered_sprites = (
+			Dictionary(Dictionary(parsed).get("classes", {})) if parsed is Dictionary else {"_": {}}
+		)
+	return String(Dictionary(_gendered_sprites.get(class_id, {})).get(gender, ""))
+
+
+static func _warrior_player_frames() -> SpriteFrames:
+	const CACHE_KEY := "warrior_player_actions"
+	if _generated_cache.has(CACHE_KEY):
+		return _generated_cache[CACHE_KEY] as SpriteFrames
+	var source := load("res://assets/sprite_packs/Player/player_frames.tres") as SpriteFrames
+	if source == null:
+		return null
+	var frames := source.duplicate(true) as SpriteFrames
+	# The source's first two contact frames contain a fixed, oversized white
+	# crescent. Use its clean sword follow-through poses for the standard slash;
+	# the world-space effect supplies the single authoritative contact silhouette.
+	for direction: String in DIRECTIONS:
+		var animation := StringName("slash_%s" % direction)
+		var original := StringName("attack2_%s" % direction)
+		frames.add_animation(animation)
+		frames.set_animation_loop(animation, false)
+		frames.set_animation_speed(animation, 5.0 / 0.18)
+		for index in range(3, 8):
+			frames.add_frame(animation, source.get_frame_texture(original, index))
+	_append_directional_strips(
+		frames, "defensive", "res://assets/sprite_packs/Player/PARRY/parry_%s.png"
+	)
+	_append_directional_strips(
+		frames, "special", "res://assets/sprite_packs/Player/SPECIAL/special_%s.png"
+	)
+	_generated_cache[CACHE_KEY] = frames
+	return frames
+
+
+static func _append_directional_strips(
+	frames: SpriteFrames, state: String, path_pattern: String
+) -> void:
+	for direction: String in DIRECTIONS:
+		var animation := StringName("%s_%s" % [state, direction])
+		if frames.has_animation(animation):
+			frames.remove_animation(animation)
+		frames.add_animation(animation)
+		frames.set_animation_loop(animation, false)
+		frames.set_animation_speed(animation, 28.0)
+		var texture := load(path_pattern % direction) as Texture2D
+		if texture == null:
+			continue
+		for frame_index: int in 8:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = texture
+			atlas.region = Rect2(frame_index * 96, 0, 96, 80)
+			frames.add_frame(animation, atlas)
+
+
+static func companion_frames() -> SpriteFrames:
+	return normalized_sheet_frames("res://assets/classes/wolf_companion/sheet.png")
+
+
+static func tavern_keeper_frames() -> SpriteFrames:
+	const PATH := "res://assets/tavern/keeper/tavern_keeper_frames.png"
+	var cache_key := "tavern_keeper:%s" % PATH
+	if _generated_cache.has(cache_key):
+		return _generated_cache[cache_key] as SpriteFrames
+	var texture := load(PATH) as Texture2D
+	if texture == null:
+		return null
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	for state_index in 2:
+		var state := "idle" if state_index == 0 else "run"
+		for direction_index in DIRECTIONS.size():
+			var animation := StringName("%s_%s" % [state, DIRECTIONS[direction_index]])
+			frames.add_animation(animation)
+			frames.set_animation_loop(animation, true)
+			frames.set_animation_speed(animation, 6.0 if state == "idle" else 10.0)
+			var row := state_index * DIRECTIONS.size() + direction_index
+			for column in 8:
+				var atlas := AtlasTexture.new()
+				atlas.atlas = texture
+				atlas.region = Rect2(column * 96, row * 80, 96, 80)
+				frames.add_frame(animation, atlas)
+	_generated_cache[cache_key] = frames
+	return frames
+
+
+static func enemy_frames(enemy_id: String) -> SpriteFrames:
+	# An enemy can borrow another's sprites until it has its own
+	# (slasher_balance.json enemy_visuals.<id>.art).
+	var art := String(
+		Dictionary(GameBalance.get_slasher_balance("enemy_visuals").get(enemy_id, {})).get(
+			"art", ""
+		)
+	)
+	if not art.is_empty() and art != enemy_id:
+		return enemy_frames(art)
+	if ForestCreatureArt.CREATURES.has(enemy_id):
+		return ForestCreatureArt.frames_for(String(ForestCreatureArt.CREATURES[enemy_id]))
+	var frame_resource_path := "res://assets/enemies/%s/frames.tres" % enemy_id
+	if ResourceLoader.exists(frame_resource_path):
+		return load(frame_resource_path) as SpriteFrames
+	var generated_path := "res://assets/enemies/%s/generated_source.png" % enemy_id
+	if ResourceLoader.exists(generated_path):
+		return generated_enemy_frames(generated_path)
+	var crypt_static_path := "res://assets/enemies/crypt/%s.png" % enemy_id
+	if ResourceLoader.exists(crypt_static_path):
+		return static_enemy_frames(crypt_static_path)
+	if enemy_id.begins_with("wolf_"):
+		enemy_id = "feral_wolf"
+	var path := "res://assets/enemies/%s/frames.tres" % enemy_id
+	return load(path) as SpriteFrames if ResourceLoader.exists(path) else null
+
+
+static func static_enemy_frames(path: String) -> SpriteFrames:
+	if _generated_cache.has(path):
+		return _generated_cache[path] as SpriteFrames
+	var build_started_usec := Time.get_ticks_usec()
+	var texture := load(path) as Texture2D
+	if texture == null:
+		return null
+	var source := texture.get_image()
+	var bounds := _alpha_bounds(source)
+	var isolated := source.get_region(bounds)
+	var scale_factor := minf(
+		88.0 / maxf(1.0, isolated.get_width()), 74.0 / maxf(1.0, isolated.get_height())
+	)
+	isolated.resize(
+		maxi(1, roundi(isolated.get_width() * scale_factor)),
+		maxi(1, roundi(isolated.get_height() * scale_factor)),
+		Image.INTERPOLATE_LANCZOS
+	)
+	var canvas := Image.create(96, 80, false, Image.FORMAT_RGBA8)
+	canvas.fill(Color.TRANSPARENT)
+	canvas.blit_rect(
+		isolated,
+		Rect2i(Vector2i.ZERO, isolated.get_size()),
+		Vector2i((96 - isolated.get_width()) / 2, 80 - isolated.get_height())
+	)
+	var normalized := ImageTexture.create_from_image(canvas)
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	for direction: String in DIRECTIONS:
+		for state: String in ["idle", "run", "attack"]:
+			var animation := StringName("%s_%s" % [state, direction])
+			frames.add_animation(animation)
+			frames.set_animation_loop(animation, state != "attack")
+			frames.set_animation_speed(animation, 6.0)
+			frames.add_frame(animation, normalized)
+			frames.add_frame(animation, normalized)
+	_generated_cache[path] = frames
+	_record_enemy_frame_build(build_started_usec)
+	return frames
+
+
+static func generated_enemy_frames(path: String) -> SpriteFrames:
+	if _generated_cache.has(path):
+		return _generated_cache[path] as SpriteFrames
+	var build_started_usec := Time.get_ticks_usec()
+	var texture := load(path) as Texture2D
+	if texture == null:
+		return null
+	var source := texture.get_image()
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	for row: int in DIRECTIONS.size():
+		for state_index: int in 3:
+			var animation := StringName(
+				"%s_%s" % [["idle", "run", "attack"][state_index], DIRECTIONS[row]]
+			)
+			frames.add_animation(animation)
+			frames.set_animation_loop(animation, state_index < 2)
+			frames.set_animation_speed(animation, 6.0 if state_index == 0 else 10.0)
+			for offset: int in 2:
+				var column: int = state_index * 2 + offset
+				var left := roundi(float(column) * source.get_width() / 6.0)
+				var right := roundi(float(column + 1) * source.get_width() / 6.0)
+				var top := roundi(float(row) * source.get_height() / 4.0)
+				var bottom := roundi(float(row + 1) * source.get_height() / 4.0)
+				var cell := source.get_region(Rect2i(left, top, right - left, bottom - top))
+				_remove_generated_background(cell)
+				var bounds := _alpha_bounds(cell)
+				var isolated := cell.get_region(bounds)
+				var scale_factor := minf(88.0 / isolated.get_width(), 74.0 / isolated.get_height())
+				isolated.resize(
+					maxi(1, roundi(isolated.get_width() * scale_factor)),
+					maxi(1, roundi(isolated.get_height() * scale_factor)),
+					Image.INTERPOLATE_NEAREST
+				)
+				var canvas := Image.create(96, 80, false, Image.FORMAT_RGBA8)
+				canvas.fill(Color.TRANSPARENT)
+				canvas.blit_rect(
+					isolated,
+					Rect2i(Vector2i.ZERO, isolated.get_size()),
+					Vector2i((96 - isolated.get_width()) / 2, 80 - isolated.get_height())
+				)
+				frames.add_frame(animation, ImageTexture.create_from_image(canvas))
+	_generated_cache[path] = frames
+	_record_enemy_frame_build(build_started_usec)
+	return frames
+
+
+static func _record_enemy_frame_build(started_usec: int) -> void:
+	if not OS.is_debug_build():
+		return
+	last_generated_enemy_build_ms = float(Time.get_ticks_usec() - started_usec) / 1000.0
+	max_generated_enemy_build_ms = maxf(max_generated_enemy_build_ms, last_generated_enemy_build_ms)
+	generated_enemy_build_count += 1
+
+
+static func hostile_projectile_frames(visual_type: String) -> SpriteFrames:
+	var path := String(HOSTILE_PROJECTILE_ART.get(visual_type, ""))
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return null
+	var cache_key := "projectile:%s" % visual_type
+	if _generated_cache.has(cache_key):
+		return _generated_cache[cache_key] as SpriteFrames
+	var texture := load(path) as Texture2D
+	if texture == null:
+		return null
+	var source := texture.get_image()
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	frames.add_animation("flight")
+	frames.set_animation_loop("flight", true)
+	frames.set_animation_speed("flight", 12.0)
+	for frame_index: int in 8:
+		var column := frame_index % 4
+		var row := frame_index / 4
+		var left := roundi(float(column) * source.get_width() / 4.0)
+		var right := roundi(float(column + 1) * source.get_width() / 4.0)
+		var top := roundi(float(row) * source.get_height() / 2.0)
+		var bottom := roundi(float(row + 1) * source.get_height() / 2.0)
+		var cell := source.get_region(Rect2i(left, top, right - left, bottom - top))
+		_remove_generated_background(cell)
+		var bounds := _alpha_bounds(cell)
+		var isolated := cell.get_region(bounds)
+		var scale_factor := minf(
+			60.0 / maxf(1.0, isolated.get_width()), 42.0 / maxf(1.0, isolated.get_height())
+		)
+		isolated.resize(
+			maxi(1, roundi(isolated.get_width() * scale_factor)),
+			maxi(1, roundi(isolated.get_height() * scale_factor)),
+			Image.INTERPOLATE_LANCZOS
+		)
+		var canvas := Image.create(64, 48, false, Image.FORMAT_RGBA8)
+		canvas.fill(Color.TRANSPARENT)
+		canvas.blit_rect(
+			isolated,
+			Rect2i(Vector2i.ZERO, isolated.get_size()),
+			Vector2i((64 - isolated.get_width()) / 2, (48 - isolated.get_height()) / 2)
+		)
+		frames.add_frame("flight", ImageTexture.create_from_image(canvas))
+	_generated_cache[cache_key] = frames
+	return frames
+
+
+static func hostile_projectile_scale(visual_type: String) -> float:
+	match visual_type:
+		"flaming_disk", "hellfire_orb":
+			return 0.56
+		"arrow", "spectral_arrow":
+			return 0.66
+		"rift_shard":
+			return 0.60
+		_:
+			return 0.54
+
+
+static func _remove_generated_background(image: Image) -> void:
+	image.convert(Image.FORMAT_RGBA8)
+	var corner := image.get_pixel(0, 0)
+	if corner.a < 0.1:
+		return
+	if corner.get_luminance() < 0.55:
+		_remove_connected_background(image)
+		return
+	for y: int in image.get_height():
+		for x: int in image.get_width():
+			var color := image.get_pixel(x, y)
+			var spread := (
+				maxf(color.r, maxf(color.g, color.b)) - minf(color.r, minf(color.g, color.b))
+			)
+			if color.get_luminance() > 0.72 and spread < 0.16:
+				image.set_pixel(x, y, Color.TRANSPARENT)
+
+
+static func _remove_connected_background(image: Image) -> void:
+	var queue: Array[Vector2i] = []
+	var visited: Dictionary = {}
+	for x: int in image.get_width():
+		queue.append(Vector2i(x, 0))
+		queue.append(Vector2i(x, image.get_height() - 1))
+	for y: int in image.get_height():
+		queue.append(Vector2i(0, y))
+		queue.append(Vector2i(image.get_width() - 1, y))
+	while not queue.is_empty():
+		var point: Vector2i = queue.pop_back()
+		if visited.has(point):
+			continue
+		visited[point] = true
+		var color := image.get_pixelv(point)
+		image.set_pixelv(point, Color.TRANSPARENT)
+		for direction: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var next := point + direction
+			if (
+				next.x < 0
+				or next.y < 0
+				or next.x >= image.get_width()
+				or next.y >= image.get_height()
+				or visited.has(next)
+			):
+				continue
+			var candidate := image.get_pixelv(next)
+			var delta := (
+				absf(candidate.r - color.r)
+				+ absf(candidate.g - color.g)
+				+ absf(candidate.b - color.b)
+			)
+			if delta < 0.04:
+				queue.append(next)
+
+
+static func _alpha_bounds(image: Image) -> Rect2i:
+	var minimum := Vector2i(image.get_width(), image.get_height())
+	var maximum := Vector2i(-1, -1)
+	for y: int in image.get_height():
+		for x: int in image.get_width():
+			if image.get_pixel(x, y).a > 0.05:
+				minimum.x = mini(minimum.x, x)
+				minimum.y = mini(minimum.y, y)
+				maximum.x = maxi(maximum.x, x)
+				maximum.y = maxi(maximum.y, y)
+	return (
+		Rect2i(0, 0, 1, 1) if maximum.x < 0 else Rect2i(minimum, maximum - minimum + Vector2i.ONE)
+	)
+
+
+static func normalized_sheet_frames(path: String) -> SpriteFrames:
+	if _generated_cache.has(path):
+		return _generated_cache[path] as SpriteFrames
+	if not ResourceLoader.exists(path):
+		return null
+	var texture := load(path) as Texture2D
+	if texture == null:
+		return null
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	for row in DIRECTIONS.size():
+		var direction: String = DIRECTIONS[row]
+		for state_index in 3:
+			var state: String = ["idle", "run", "attack"][state_index]
+			var animation: StringName = StringName("%s_%s" % [state, direction])
+			frames.add_animation(animation)
+			frames.set_animation_loop(animation, state != "attack")
+			frames.set_animation_speed(animation, 6.0 if state == "idle" else 10.0)
+			for offset in 2:
+				var atlas := AtlasTexture.new()
+				atlas.atlas = texture
+				atlas.region = Rect2(
+					Vector2(
+						(state_index * 2 + offset) * NORMALIZED_FRAME_SIZE.x,
+						row * NORMALIZED_FRAME_SIZE.y
+					),
+					NORMALIZED_FRAME_SIZE
+				)
+				frames.add_frame(animation, atlas)
+	_generated_cache[path] = frames
+	return frames
+
+
+static func animation_board_frames(path: String) -> SpriteFrames:
+	if _generated_cache.has(path):
+		return _generated_cache[path] as SpriteFrames
+	if not ResourceLoader.exists(path):
+		return null
+	var texture := load(path) as Texture2D
+	if texture == null:
+		return null
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	var source_image: Image = texture.get_image()
+	var cell_size := Vector2i(
+		ceili(float(source_image.get_width()) / 16.0), ceili(float(source_image.get_height()) / 4.0)
+	)
+	var specifications: Array[Dictionary] = [
+		{"name": "idle", "first": 0, "count": 4, "fps": 6.0, "loop": true},
+		{"name": "run", "first": 4, "count": 4, "fps": 10.0, "loop": true},
+		{"name": "basic", "first": 8, "count": 3, "fps": 12.0, "loop": false},
+		{"name": "special", "first": 11, "count": 2, "fps": 10.0, "loop": false},
+		{"name": "defensive", "first": 13, "count": 1, "fps": 6.0, "loop": false},
+		{"name": "movement", "first": 14, "count": 2, "fps": 12.0, "loop": false}
+	]
+	for row in DIRECTIONS.size():
+		var direction: String = DIRECTIONS[row]
+		for specification: Dictionary in specifications:
+			var animation: StringName = StringName(
+				"%s_%s" % [String(specification["name"]), direction]
+			)
+			frames.add_animation(animation)
+			frames.set_animation_speed(animation, float(specification["fps"]))
+			frames.set_animation_loop(animation, bool(specification["loop"]))
+			for offset in int(specification["count"]):
+				var column: int = int(specification["first"]) + offset
+				var left: int = roundi(float(column) * source_image.get_width() / 16.0)
+				var right: int = roundi(float(column + 1) * source_image.get_width() / 16.0)
+				var top: int = roundi(float(row) * source_image.get_height() / 4.0)
+				var bottom: int = roundi(float(row + 1) * source_image.get_height() / 4.0)
+				var bounds := Rect2i(left, top, right - left, bottom - top)
+				frames.add_frame(
+					animation, _isolated_frame_texture(source_image, bounds, cell_size)
+				)
+	_generated_cache[path] = frames
+	return frames
+
+
+static func _isolated_frame_texture(
+	source: Image, bounds: Rect2i, canvas_size: Vector2i
+) -> Texture2D:
+	# Generated animation boards are visually gridded, but large VFX sometimes cross
+	# their nominal gutters. Copying each cell prevents the atlas sampler from ever
+	# displaying pixels belonging to a neighboring frame.
+	var inset := 2
+	var scan := Rect2i(
+		bounds.position + Vector2i(inset, inset), bounds.size - Vector2i(inset * 2, inset * 2)
+	)
+	var min_point := Vector2i(scan.end.x, scan.end.y)
+	var max_point := Vector2i(scan.position.x - 1, scan.position.y - 1)
+	for y in range(scan.position.y, scan.end.y):
+		for x in range(scan.position.x, scan.end.x):
+			if source.get_pixel(x, y).a > 0.04:
+				min_point.x = mini(min_point.x, x)
+				min_point.y = mini(min_point.y, y)
+				max_point.x = maxi(max_point.x, x)
+				max_point.y = maxi(max_point.y, y)
+	var canvas := Image.create(canvas_size.x, canvas_size.y, false, Image.FORMAT_RGBA8)
+	canvas.fill(Color.TRANSPARENT)
+	if max_point.x >= min_point.x and max_point.y >= min_point.y:
+		var content := Rect2i(min_point, max_point - min_point + Vector2i.ONE)
+		var destination := Vector2i(
+			(canvas_size.x - content.size.x) / 2, canvas_size.y - content.size.y - 6
+		)
+		canvas.blit_rect(source, content, destination)
+	return ImageTexture.create_from_image(canvas)
+
+
+static func direction_name(vector: Vector2, fallback: String = "down") -> String:
+	if vector.length_squared() < 0.001:
+		return fallback
+	if absf(vector.x) > absf(vector.y):
+		return "right" if vector.x > 0 else "left"
+	return "down" if vector.y > 0 else "up"
+
+
+static func resolved_animation(
+	frames: SpriteFrames, state: String, direction: String
+) -> StringName:
+	if frames == null:
+		return &""
+	var directional: StringName = StringName("%s_%s" % [state, direction])
+	if frames.has_animation(directional):
+		return directional
+	var attack_two: StringName = StringName("attack2_%s" % direction)
+	if state == "attack" and frames.has_animation(attack_two):
+		return attack_two
+	var simple: StringName = StringName(state)
+	if frames.has_animation(simple):
+		return simple
+	return frames.get_animation_names()[0] if not frames.get_animation_names().is_empty() else &""

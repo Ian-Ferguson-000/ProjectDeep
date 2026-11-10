@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_odhdm"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_odhdm"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_u76s4"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_mg7kg"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_i8jfh"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_i8jfh"]
 
 [node name="BriarCourt" type="Node2D" unique_id=285760722]
 script = ExtResource("1_odhdm")

@@ -4,7 +4,7 @@
     "Relics on offer follow the same rules as chests: usable by the adventurer's class, in the drop pool, and unlocked.",
     "sell_consumables: false keeps potions and other consumables out of every shop: the dungeon trader, the tavern supplier and the Hearth's provisions. Buying potions makes a bad loop, so they have to be found.",
     "potion_drops: true lets healing potions drop from enemies and appear in loot caches during runs, and lets potion relics into the drop pool.",
-    "prices: coins per rarity. Isaac style: every item is 15 coins (Charisma adjusts).",
+    "prices: coins per rarity (Charisma adjusts). A forest floor drops about 3-4 coins, so an uncommon is roughly one floor's coins.",
     "base_slots: how many items the trader lays out (3).",
     "bonus_slots: extra slots that only sometimes appear ([] = none), rarity from tier_weights.",
     "slot_rarity: \"stage\" rolls each slot's rarity from the stage's odds in loot_tables.json (rarity_weights_by_stage), the same as chests. Put a table here instead, e.g. {\"uncommon\":70,\"rare\":30}, to give the trader its own odds.",
@@ -18,10 +18,10 @@
     "legendary": 1
   },
   "prices": {
-    "uncommon": 15,
-    "rare": 15,
-    "very_rare": 15,
-    "legendary": 15
+    "uncommon": 3,
+    "rare": 5,
+    "very_rare": 8,
+    "legendary": 12
   },
   "sell_consumables": false,
   "potion_drops": true,

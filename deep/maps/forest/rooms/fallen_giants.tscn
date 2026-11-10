@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_e8x53"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_e8x53"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_ypsbi"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_admen"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_uhfpx"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_uhfpx"]
 
 [node name="FallenGiants" type="Node2D" unique_id=50492241]
 script = ExtResource("1_e8x53")

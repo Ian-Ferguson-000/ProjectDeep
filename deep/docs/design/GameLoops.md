@@ -1,0 +1,109 @@
+# Game loops: unlocks, bounties, drops, and the guardian choice
+
+## Unlocks (`data/unlocks.json`)
+
+Goals that permanently change the game. They survive
+Hearth loops.
+
+- **Items** listed in an unlock's reward stay out of chests, shops and drops until
+  it's earned. Nine of the newer relics start locked.
+- **Drop luck** multiplies every enemy drop chance (shown on the Unlocks page).
+- **Bounty slots** put more contracts on the board.
+
+| Condition | Checked when |
+| --- | --- |
+| `kills` (lifetime, by family: sporeling, bandit, wolf, beast, any) | every kill |
+| `kills_in_run` | every kill |
+| `clear` (dungeon, optional `class`, `max_seconds`, `max_potions`, `holding`) | a guardian falls |
+| `clears` (total guardians defeated) | a guardian falls |
+| `deaths` (adventurers lost) | an expedition is settled |
+| `bounties` (bounties completed) | an expedition is settled |
+| `reach` (enter a dungeon) | entering it |
+
+Unlocks earned mid-run pop up on screen and are listed on the guardian choice
+screen, the results screen and the expedition report. **Hearth → Records →
+Unlocks** shows them all, with hints and progress for locked ones.
+
+## Bounty board (`data/bounties.json`)
+
+Two contracts are posted (three after *Trusted Contractor*). Each stays up for
+three days. An expedition that **returns alive** (victory or retreat) having met
+a bounty is paid on return in gold, renown or essence. Goals: kill counts per
+family in one run, clear under a time (from the record, or 18:00 with no record),
+clear as a given class, clear without a potion, and bring home an amount of gold.
+
+**Hearth → Expeditions → Bounties** shows the board; the expedition screen lists
+them too. Progress shows on the guardian choice screen.
+
+## Enemy drops (`data/enemy_drops.json`)
+
+Enemies drop **materials**, not items (docs/systems/Materials.md):
+
+- **Basic enemies** (including the tougher floor-3+ versions): only a crafting
+  or quest material for their family, 30% of the time (`basic_material_chance`).
+- **Mini bosses**: always two of their trophy, plus a 30% chance of a relic
+  (`mini_boss_item_chance`). Never an active item.
+- **Bosses**: their trophy (`boss_materials`), on top of their own rewards.
+
+Drop luck from unlocks multiplies the chances, up to ×2.5. A relic drop gives a
+random relic your class can use from the unlocked pool. No enemy ever drops an
+active item; those come from chests, pedestals and traders. The older keys in
+the file (gold piles, potions, keys) are no longer read by kills.
+
+## Guardian choice screen
+
+When a guardian falls (forest, the other dungeons, the farmstead), the game
+pauses on **The Guardian Falls**:
+
+- **Bringing home:** gold carried and what the Hearth keeps after the 20% share,
+  relic essence, unique relics, consumables and keys. Every relic is marked
+  **Kept** (permanent items, equipped gear) or **Lost on return** (run and
+  dungeon-bound items, which end with the expedition).
+- **Bounties:** progress on each posted bounty, ticked when met.
+- **Unlocked this expedition.**
+- **Return to the Hearth** or **Continue to the Crypt** (or wherever the route
+  goes next). Continuing means no rest or resupply, and a death loses everything
+  carried. If the next dungeon isn't open, Continue is greyed out.
+
+The tutorial skips this screen.
+
+## Code
+
+- `game/core/unlocks.gd`: conditions, rewards, locked items, drop luck.
+- `game/campaign/bounty_board.gd`: posting, progress, payout.
+- `RunState.note_kill / note_potion / run_stats()`: per-expedition stats, saved
+  on `ExpeditionState.run_stats`. Lifetime counts are on `CampaignState.lifetime_stats`.
+- `SlasherForest.roll_drop / _roll_enemy_drop`: enemy drops.
+- `game/ui/guardian_crossroads.gd` and `main.gd _guardian_crossroads`: the choice screen.
+- Test: `tests/core/game_loops_test.gd`.
+
+## The dungeon trader (`data/trader.json`)
+
+The trader in camp rooms and behind hidden merchant doors rolls new stock for
+**every floor of every run** (the run's floor seed is now random each run and
+saved with the expedition, so a resumed run keeps its floors and stock):
+
+- **Slots 1–3:** always common relics.
+- **Slots 4 and 5:** appear 45% and 20% of the time, each holding an uncommon,
+  rare, very rare or legendary relic (weights 50/30/15/5).
+- **Prices are steep on purpose:** common 60, uncommon 140, rare 240, very rare 380,
+  legendary 600. Gold-find relics (Scavenger's Token, Lucky Coin, Gilded Beetle...)
+  are how you afford the good slots.
+- One of each; bought slots stay sold for that floor only.
+- Stock follows chest rules: usable by your class, in the drop pool, and unlocked.
+
+**Potions are found, never bought.** Buying them makes a bad loop, so
+`"sell_consumables": false` keeps potions and other consumables out of every shop:
+the dungeon trader, the tavern supplier and the Hearth's provisions. With
+`"potion_drops": true` they still turn up in runs: enemy drops (see
+`enemy_drops.json`), loot caches after a room is cleared, and the Hearth's starting
+supplies upgrade. Potion relics are in the drop pool too. Drink one with Q; the
+HUD's potion pocket (bottom left) shows how many you carry.
+
+## Run start: no free relic
+
+A run starts with nothing: there's no relic choice on floor 1 any more, so every
+relic is earned in the dungeon (chests, pedestals, traders, mini bosses). To bring
+the opening choice back, set `run_start.starter_relic` to `true` in
+`data/slasher_balance.json` (`slasher_forest.gd → starter_relic_enabled`).
+Test: `tests/core/run_start_test.gd`.

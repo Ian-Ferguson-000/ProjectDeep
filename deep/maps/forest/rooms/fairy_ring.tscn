@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_kdk5b"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_kdk5b"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_jwuhe"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_7d4o4"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_eh8lx"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_eh8lx"]
 
 [node name="FairyRing" type="Node2D" unique_id=1179610334]
 script = ExtResource("1_kdk5b")

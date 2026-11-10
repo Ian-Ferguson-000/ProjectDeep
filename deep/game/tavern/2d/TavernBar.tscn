@@ -1,0 +1,79 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://game/tavern/2d/TavernProp.tscn" id="1_prop"]
+[ext_resource type="Texture2D" path="res://assets/tavern/wall_kit/bar_front.png" id="2_art"]
+
+[sub_resource type="AtlasTexture" id="Atlas_counter"]
+atlas = ExtResource("2_art")
+region = Rect2(20, 147, 302, 100)
+
+[sub_resource type="AtlasTexture" id="Atlas_shelves"]
+atlas = ExtResource("2_art")
+region = Rect2(0, 0, 322, 147)
+
+[sub_resource type="AtlasTexture" id="Atlas_shelf_post"]
+atlas = ExtResource("2_art")
+region = Rect2(0, 0, 51, 147)
+
+[sub_resource type="AtlasTexture" id="Atlas_counter_post"]
+atlas = ExtResource("2_art")
+region = Rect2(21, 147, 40, 100)
+
+[sub_resource type="AtlasTexture" id="Atlas_footrail"]
+atlas = ExtResource("2_art")
+region = Rect2(65, 223, 130, 12)
+
+[sub_resource type="RectangleShape2D" id="Shape_shelf"]
+size = Vector2(322, 20)
+
+[node name="BarFixture" instance=ExtResource("1_prop")]
+prop_id = "bar"
+display_name = "The bar"
+interaction_text = "Polished timber, stocked shelves, and a place to trade stories with Mara."
+obstacle_enabled = true
+prop_texture = SubResource("Atlas_counter")
+visual_scale = Vector2(1.07, 0.82)
+visual_offset = Vector2(0, -41)
+collision_size = Vector2(322, 54)
+collision_offset = Vector2(0, -27)
+
+[node name="BottleShelf" type="Sprite2D" parent="."]
+position = Vector2(0, -182)
+z_index = -10
+texture = SubResource("Atlas_shelves")
+scale = Vector2(1, 0.82)
+
+[node name="ShelfEndPost" type="Sprite2D" parent="."]
+position = Vector2(146, -182)
+z_index = -10
+texture = SubResource("Atlas_shelf_post")
+scale = Vector2(0.65, 0.82)
+flip_h = true
+
+[node name="ShelfSill" type="Sprite2D" parent="."]
+position = Vector2(0, -121)
+z_index = -10
+texture = SubResource("Atlas_footrail")
+scale = Vector2(2.2, 0.7)
+
+[node name="ShelfCollision" type="StaticBody2D" parent="."]
+position = Vector2(0, -118)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShelfCollision"]
+shape = SubResource("Shape_shelf")
+
+[node name="ShelfObstacle" type="NavigationObstacle2D" parent="."]
+position = Vector2(0, -118)
+vertices = PackedVector2Array(-161, -10, 161, -10, 161, 10, -161, 10)
+avoidance_enabled = true
+
+[node name="CounterEndPost" type="Sprite2D" parent="."]
+position = Vector2(145, -41)
+texture = SubResource("Atlas_counter_post")
+scale = Vector2(1.07, 0.82)
+flip_h = true
+
+[node name="FootRail" type="Sprite2D" parent="."]
+position = Vector2(0, -8)
+texture = SubResource("Atlas_footrail")
+scale = Vector2(1.9, 0.8)

@@ -84,6 +84,6 @@ func purchase_upgrade(branch: String) -> Array[String]:
 		expedition.due_day = calendar_day+7''')
  return s
 # Character migration already applied
-edit('scripts/game/expedition_state.gd',expedition)
-edit('scripts/game/campaign_state.gd',campaign)
+edit('game/core/expedition_state.gd',expedition)
+edit('game/core/campaign_state.gd',campaign)
 

@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_6ld6a"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_6ld6a"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_4qebo"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_n1shq"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_n1shq"]
 
 [node name="BoneChoir" type="Node2D" unique_id=421375141]
 script = ExtResource("1_6ld6a")

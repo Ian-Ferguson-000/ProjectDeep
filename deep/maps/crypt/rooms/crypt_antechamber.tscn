@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_plt52"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_plt52"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_b7r2x"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_fdik8"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_fdik8"]
 
 [node name="CryptAntechamber" type="Node2D" unique_id=92980870]
 script = ExtResource("1_plt52")

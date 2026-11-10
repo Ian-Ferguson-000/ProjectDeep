@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_0i48h"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_0i48h"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_x80u1"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_mi83f"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_mi83f"]
 
 [node name="CandleShrine" type="Node2D" unique_id=1873168932]
 script = ExtResource("1_0i48h")

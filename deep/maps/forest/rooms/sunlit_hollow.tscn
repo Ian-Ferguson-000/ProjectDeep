@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_bcqay"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_bcqay"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_um7dt"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_85a32"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_vm7ha"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_vm7ha"]
 
 [node name="SunlitHollow" type="Node2D" unique_id=1647339197]
 script = ExtResource("1_bcqay")

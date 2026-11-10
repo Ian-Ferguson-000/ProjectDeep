@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_auneo"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_auneo"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_rsg0v"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_6k1kl"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_6k1kl"]
 
 [node name="TwinPits" type="Node2D" unique_id=1995515220]
 script = ExtResource("1_auneo")

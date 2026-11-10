@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_05dwh"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_05dwh"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_1oh0y"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_5prif"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_5prif"]
 
 [node name="Reliquary" type="Node2D" unique_id=1299306074]
 script = ExtResource("1_05dwh")

@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyJournalEntry" format=3 uid="uid://blqjpty5de5ap"]
 
-[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://scripts/codes/journal/enemy_journal_entry.gd" id="1"]
+[ext_resource type="Script" uid="uid://vwryb0d8a3mt" path="res://game/shared/journal/enemy_journal_entry.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://dl2ht8rioasou" path="res://assets/sprite_packs/Kobold/Sprites/with_outline/IDLE.png" id="2"]
 
 [sub_resource type="AtlasTexture" id="Portrait"]

@@ -5,7 +5,7 @@
     "class_groups says which classes count as melee and ranged.",
     "name: shown to players. rarity: uncommon, rare, very_rare or legendary (there's no common tier; drop rates by rarity are in loot_tables.json).",
     "lasts: every item lasts the whole run (lost when the expedition ends).",
-    "stats (Isaac style, all stack): damage (Damage Up: +N per hit), boss_damage (+N against elites and bosses), attack_speed (Tears Up: % faster basic attacks), dex (Speed Up: +1 Dexterity), max_health (Health Up: heart containers), soul_hearts (soul hearts, once on pickup), range (Range Up), luck (Luck Up: +5% to chance effects and room-clear drops), cooldown_percent (faster ability recharge), gold_bonus_percent (a chance of an extra coin), potion_heal_bonus (half hearts more from potions). xp_bonus_percent only matters with levelling on.",
+    "stats (all stack): damage (+N per hit), boss_damage (+N against elites and bosses), attack_speed (% faster basic attacks), dex (+1 Dexterity: faster walking), max_health (+N heart containers, filled), range (longer reach), luck (+5% to chance effects and room-clear drops), cooldown_percent (faster ability recharge), gold_bonus_percent (a chance of an extra coin), potion_heal_bonus (half hearts more from potions). xp_bonus_percent only matters with levelling on.",
     "combat.room_ward: true blocks the first hit taken in each room. Proc types drop_potion (a healing potion) and drop_gold (amount_min..amount_max coins) put loot on the floor; use them with on: kill or on: hit and a chance.",
     "To add an item, copy an existing block, give it a new unique id (lowercase_with_underscores) and change its fields.",
     "combat (optional): how the item behaves in real-time combat. 'rules' is the text players read; 'trigger' is passive, hit, potion_use, floor_entry, action_complete, lethal_damage and so on; other numbers tune the effect.",
@@ -15,9 +15,9 @@
     "type chain_lightning: leaps from the target to nearby enemies. damage_percent, damage, jumps, jump_range.",
     "type burn: sets the target alight. damage (per half-second tick), damage_percent, duration.  type chill: slows the target. slow (0.5 = half speed), duration.",
     "type nova: a burst around the target (or you, for swing/special/dash). damage_percent, damage, radius, element, knockback.  type heal: amount.",
-    "See docs/ItemEffects.md for worked examples.",
+    "See docs/systems/ItemEffects.md for worked examples.",
     "drops: false keeps an item out of chests and shops without deleting it. note: a reminder for the team, not shown in game.",
-    "Run tests/pickup_items_test.gd after editing to check the file."
+    "Run tests/items/pickup_items_test.gd after editing to check the file."
   ],
   "class_groups": {
     "melee": [
@@ -184,8 +184,7 @@
       "lasts": "run",
       "description": "Bronze thorns punish anything that presses into the wearer's guard.",
       "stats": {
-        "max_health": 2,
-        "soul_hearts": 1
+        "max_health": 2
       },
       "tags": [
         "defense",
@@ -464,8 +463,7 @@
       "lasts": "run",
       "description": "A royal ward turns the first wound of every battle into a glancing blow.",
       "stats": {
-        "max_health": 4,
-        "soul_hearts": 2
+        "max_health": 4
       },
       "tags": [
         "defense",
@@ -664,7 +662,7 @@
       "description": "A warm rune divides its loyalty between blade and guard.",
       "stats": {
         "damage": 1,
-        "soul_hearts": 2
+        "max_health": 1
       },
       "tags": [
         "martial",
@@ -679,8 +677,7 @@
       "description": "A bronze second pulse turns pain into crushing force.",
       "stats": {
         "max_health": 9,
-        "damage": 1,
-        "soul_hearts": 1
+        "damage": 1
       },
       "tags": [
         "health",
@@ -694,7 +691,7 @@
       "lasts": "run",
       "description": "Overlapping scales turn poison and blades in different ways.",
       "stats": {
-        "soul_hearts": 3
+        "max_health": 3
       },
       "tags": [
         "defense",
@@ -709,11 +706,10 @@
       "description": "Its runes turn excess force into fractures that outlast the blow.",
       "stats": {
         "damage": 2,
-        "boss_damage": 3,
-        "soul_hearts": 2
+        "boss_damage": 3
       },
       "combat": {
-        "rules": "+2 damage on every hit and +3 against elites and bosses, +2 soul hearts, and your impacts hit harder, wider and with more knockback.",
+        "rules": "+2 damage on every hit, +3 against elites and bosses, and your impacts hit harder, wider and with more knockback.",
         "trigger": "hit",
         "area_radius_bonus": 20.0
       },
@@ -880,7 +876,7 @@
       "description": "A disposable ember lens stretches fire beyond its natural reach.",
       "stats": {
         "damage": 1,
-        "soul_hearts": 1
+        "cooldown_percent": 5
       },
       "tags": [
         "arcane",
@@ -994,11 +990,10 @@
       "lasts": "run",
       "description": "The talisman rewards spellcasters who stand close enough to feel the heat.",
       "stats": {
-        "damage": 2,
-        "soul_hearts": 1
+        "damage": 2
       },
       "combat": {
-        "rules": "+2 damage on every hit, +1 soul heart, and spell impacts burst over a wider area.",
+        "rules": "+2 damage on every hit, and spell impacts burst over a wider area.",
         "trigger": "hit",
         "area_radius_bonus": 18.0,
         "internal_cooldown": 1.5
@@ -1015,11 +1010,10 @@
       "lasts": "run",
       "description": "Uncooling ash kindles when healing would otherwise be too late.",
       "stats": {
-        "damage": 2,
-        "soul_hearts": 1
+        "damage": 2
       },
       "combat": {
-        "rules": "+2 damage on every hit, +1 soul heart, and survive one lethal hit per floor at half a heart.",
+        "rules": "+2 damage on every hit, and survive one lethal hit per floor at half a heart.",
         "trigger": "lethal_damage",
         "once_per_floor": true
       },
@@ -1037,11 +1031,10 @@
       "description": "The first flame refuses resistance and feeds on fallen magic.",
       "stats": {
         "damage": 2,
-        "boss_damage": 2,
-        "soul_hearts": 2
+        "boss_damage": 2
       },
       "combat": {
-        "rules": "+2 damage on every hit and +2 against elites and bosses, +2 soul hearts, and specials hit 30% harder over a wider area.",
+        "rules": "+2 damage on every hit, +2 against elites and bosses, and specials hit 30% harder over a wider area.",
         "trigger": "action_start",
         "special_damage_multiplier": 1.3,
         "area_radius_bonus": 28.0

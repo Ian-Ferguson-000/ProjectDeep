@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyDefinition" format=3]
 
-[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://scripts/codes/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://game/shared/combat/enemy_definition.gd" id="1"]
 [ext_resource type="Resource" path="res://Data/enemies/poison_ranger/profile.tres" id="2"]
 [ext_resource type="Resource" uid="uid://dktf2cmtskb1j" path="res://Data/enemies/poison_ranger/journal.tres" id="3"]
 [ext_resource type="SpriteFrames" path="res://assets/enemies/poison_ranger/frames.tres" id="4"]

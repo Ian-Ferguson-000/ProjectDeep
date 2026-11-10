@@ -1,9 +1,9 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_1635w"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_1635w"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_ground.tres" id="2_oxu4x"]
 [ext_resource type="TileSet" path="res://maps/forest/tiles/forest_paths.tres" id="3_cyr2d"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="4_vf6b3"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="4_vf6b3"]
 
 [node name="TwinPools" type="Node2D" unique_id=1945230242]
 script = ExtResource("1_1635w")

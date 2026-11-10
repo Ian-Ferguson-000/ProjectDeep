@@ -1,8 +1,8 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://scripts/maps/map_room.gd" id="1_4tawh"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_room.gd" id="1_4tawh"]
 [ext_resource type="TileSet" path="res://maps/crypt/tiles/crypt_ground.tres" id="2_rh748"]
-[ext_resource type="Script" path="res://scripts/maps/map_marker.gd" id="3_gpoea"]
+[ext_resource type="Script" path="res://game/dungeons/shared/maps/map_marker.gd" id="3_gpoea"]
 
 [node name="OssuaryRows" type="Node2D" unique_id=1219343439]
 script = ExtResource("1_4tawh")

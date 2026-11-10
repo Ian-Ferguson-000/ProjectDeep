@@ -66,7 +66,7 @@ def balance(s):
 def tavern(s):
  s=s.replace('var controller: Node','var management: HearthManagement\nvar controller: Node',1)
  s=s.replace('\t_setup_merchant_shops()','''	_setup_merchant_shops()
-	management = preload("res://scenes/ui/hearth/Company.tscn").instantiate()
+	management = preload("res://game/ui/hearth/Company.tscn").instantiate()
 	ui_root.add_child(management)
 	management.manual_launch.connect(_hearth_manual_launch)
 	management.candidate_requested.connect(_open_candidate)
@@ -129,7 +129,7 @@ for page in ['Company','Armory','Expeditions','Facilities','Merchants','Reports'
  p=ROOT/f'scenes/ui/hearth/{page}.tscn'; p.parent.mkdir(parents=True,exist_ok=True)
  p.write_text(f'''[gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/hearth_management.gd" id="1"]
+[ext_resource type="Script" path="res://game/ui/hearth/hearth_management.gd" id="1"]
 
 [node name="{page}" type="ColorRect"]
 layout_mode = 3
@@ -141,7 +141,7 @@ grow_vertical = 2
 script = ExtResource("1")
 initial_section = "{page}"
 ''')
-edit('scripts/game/run_state.gd',runtime)
-edit('scripts/game/game_balance.gd',balance)
-edit('scripts/scenes/tavern.gd',tavern)
-edit('scripts/main.gd',main)
+edit('game/core/run_state.gd',runtime)
+edit('game/core/game_balance.gd',balance)
+edit('game/tavern/tavern.gd',tavern)
+edit('game/main/main.gd',main)
