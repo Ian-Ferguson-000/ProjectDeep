@@ -54,9 +54,11 @@ func _run() -> void:
 		failures
 	)
 	_expect(
-		loaded.unlocked_classes.has("warrior")
-		and loaded.unlocked_classes.has("mage")
-		and loaded.unlocked_classes.size() == 2,
+		(
+			loaded.unlocked_classes.has("warrior")
+			and loaded.unlocked_classes.has("mage")
+			and loaded.unlocked_classes.size() == 2
+		),
 		"Loaded save did not keep exactly the Fighter and Mage unlocks",
 		failures
 	)
@@ -81,8 +83,11 @@ func _run() -> void:
 	)
 	var classes_now: Array = shelved_loaded.roster.values().map(func(m): return m.class_id)
 	_expect(
-		classes_now.has("warrior") and classes_now.has("mage")
-		and classes_now.all(func(id): return GameBalance.is_playable_class(id)),
+		(
+			classes_now.has("warrior")
+			and classes_now.has("mage")
+			and classes_now.all(func(id): return GameBalance.is_playable_class(id))
+		),
 		"Shelved-class members were not retrained to Fighter/Mage: %s" % [classes_now],
 		failures
 	)
