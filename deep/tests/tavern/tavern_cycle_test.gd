@@ -96,27 +96,32 @@ func _run() -> void:
 	)
 	var rotation := CampaignState.new()
 	rotation.apply_post_tutorial_state("victory")
-	rotation.unlock_class("rogue")
-	rotation.unlock_class("summoner")
+	_expect(
+		rotation.unlock_class("rogue").is_empty() and not rotation.unlocked_classes.has("rogue"),
+		"A shelved class could still be unlocked",
+		failures
+	)
 	var seen_classes: Dictionary = {}
 	for wave in 4:
 		rotation._generate_candidate_wave(false)
 		for candidate in rotation.get_candidates():
 			seen_classes[candidate.adventurer.class_id] = true
 	_expect(
-		seen_classes.has("rogue") and seen_classes.has("summoner"),
+		(
+			seen_classes.has("warrior")
+			and seen_classes.has("mage")
+			and seen_classes.keys().all(func(id): return GameBalance.is_playable_class(id))
+		),
 		"Shift candidate rotation skipped unlocked classes",
 		failures
 	)
 	var stale := CampaignState.new()
 	stale.apply_post_tutorial_state("victory")
-	stale.unlock_class("rogue")
-	stale.unlock_class("summoner")
 	stale.completed_dungeons["forest"] = true
 	stale.candidate_pool.clear()
 	stale.candidate_wave_id = 14
 	stale.calendar_day = 92
-	for class_id in ["warrior", "mage"]:
+	for class_id in ["warrior"]:
 		var member := stale._generate_character(class_id)
 		stale.candidate_pool[member.id] = CandidateRecord.create(
 			member, stale.calendar_day, stale.candidate_wave_id, "Original candidate", false
@@ -127,10 +132,7 @@ func _run() -> void:
 		(
 			original_ids.all(func(id: Variant): return stale.candidate_pool.has(id))
 			and stale.get_candidates().any(
-				func(candidate: CandidateRecord): return candidate.adventurer.class_id == "rogue"
-			)
-			and stale.get_candidates().any(
-				func(candidate: CandidateRecord): return candidate.adventurer.class_id == "summoner"
+				func(candidate: CandidateRecord): return candidate.adventurer.class_id == "mage"
 			)
 		),
 		"Tavern catch-up failed to retain old candidates and show unlocked classes",

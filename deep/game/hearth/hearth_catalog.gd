@@ -14,6 +14,12 @@ static func item(id: String) -> Dictionary:
 	return data().items.get(id, {})
 
 
+## False for gear that belongs to a shelved class (healer, tank, rogue,
+## summoner): it stays in the data but is never sold or dropped.
+static func in_play(entry: Dictionary) -> bool:
+	return not entry.has("class_id") or GameBalance.is_playable_class(String(entry.class_id))
+
+
 static func tier(rank: int) -> Dictionary:
 	return data().tiers[clampi(rank, 0, 3)]
 

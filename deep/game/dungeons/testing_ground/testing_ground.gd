@@ -8,7 +8,7 @@ const PYROMANCY := preload("res://game/player/mage/slasher_pyromancy.gd")
 const WARRIOR_KITS := preload("res://game/player/warrior/slasher_warrior_kits.gd")
 const MAGE_KITS := preload("res://game/player/mage/slasher_mage_kits.gd")
 const FLOOR := Rect2(-900, -450, 1800, 900)
-const CLASS_IDS := ["warrior", "mage", "healer", "tank", "rogue", "summoner"]
+const CLASS_IDS := GameBalance.PLAYABLE_CLASS_IDS
 const MILESTONES := [7, 9, 11, 13, 17, 19]
 const ITEM_CONTACT_RADIUS := 25.0
 const PODIUM_CONTACT_RADIUS := 34.0
@@ -365,7 +365,7 @@ func _build_ui() -> void:
 ## controls above remain hidden so the detailed kit regression suites can still
 ## configure progression combinations without exposing a form to players.
 func _build_walk_in_armory() -> void:
-	var class_y := [-250.0, -150.0, -50.0, 50.0, 150.0, 250.0]
+	var class_y := [-50.0, 50.0]
 	for index in CLASS_IDS.size():
 		var class_id: String = CLASS_IDS[index]
 		var podium := ArmoryClassPodium.new()

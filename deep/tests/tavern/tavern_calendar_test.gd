@@ -163,8 +163,6 @@ func run() -> void:
 	for definition in definitions.slice(0, 24):
 		if not established.used_curated_ids.has(definition.id):
 			established.used_curated_ids.append(definition.id)
-	for class_id in ["healer", "tank", "rogue", "summoner"]:
-		established.unlock_class(class_id)
 	var old_ids := established.used_curated_ids.duplicate()
 	var loaded := CampaignState.new()
 	loaded._load_dict(established.to_dict())

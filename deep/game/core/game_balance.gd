@@ -742,6 +742,28 @@ static func get_class_data(class_id: String) -> Dictionary:
 	return {}
 
 
+## The classes in the game right now. The others (healer, tank, rogue,
+## summoner) keep their data and code but are shelved: they never unlock, are
+## never offered, and old saves retrain them. See docs/plans/FutureUpdates.md.
+const PLAYABLE_CLASS_IDS := ["warrior", "mage"]
+const SHELVED_CLASS_IDS := ["healer", "tank", "rogue", "summoner"]
+## What a shelved class becomes when an old save is loaded.
+const SHELVED_CLASS_FALLBACK := {
+	"healer": "mage", "tank": "warrior", "rogue": "warrior", "summoner": "mage"
+}
+
+
+static func is_playable_class(class_id: String) -> bool:
+	return PLAYABLE_CLASS_IDS.has(normalize_class_id(class_id))
+
+
+static func playable_class_for(class_id: String) -> String:
+	class_id = normalize_class_id(class_id)
+	if PLAYABLE_CLASS_IDS.has(class_id):
+		return class_id
+	return String(SHELVED_CLASS_FALLBACK.get(class_id, "warrior"))
+
+
 static func normalize_class_id(class_id: String) -> String:
 	if class_id == "fighter":
 		return "warrior"

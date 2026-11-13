@@ -33,10 +33,13 @@ static func inject_next(campaign) -> Dictionary:
 			continue
 		if not campaign.has_completed_dungeon(String(arrival.get("requires_dungeon", ""))):
 			continue
-		var definition := AdventurerContent.definition(definition_id)
+		var definition := AdventurerContent.definition(definition_id).duplicate(true)
 		if definition.is_empty():
 			continue
-		var class_id := String(definition.get("class", ""))
+		# Story characters written for a shelved class arrive as its playable
+		# stand-in (tank/rogue -> Fighter, healer/summoner -> Mage).
+		var class_id := GameBalance.playable_class_for(String(definition.get("class", "")))
+		definition["class"] = class_id
 		if not campaign.unlocked_classes.has(class_id):
 			continue
 		if campaign.candidate_pool.size() >= 7:

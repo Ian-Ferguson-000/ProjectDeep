@@ -418,6 +418,7 @@ static func settle(
 			var entry := HearthCatalog.item(id)
 			if (
 				entry.sources.has(e.dungeon_id)
+				and HearthCatalog.in_play(entry)
 				and (
 					int(entry.tier)
 					<= mini(3, c.establishment_tier + int(c.tavern_upgrades.item_rarity))
