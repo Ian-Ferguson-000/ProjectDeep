@@ -275,10 +275,13 @@ func _run() -> void:
 	)
 	var raw := plain.max_health
 	plain.free()
+	# A champion has double health, so rule them out for the exact check.
+	SlasherEnemy.champion_override = 0
 	var spawned: SlasherEnemy = scene._spawn_enemy(
 		scene.player.global_position + Vector2(300, 0), "bandit_cutthroat", "bandit_cutthroat"
 	)
 	await _frames(1)
+	SlasherEnemy.champion_override = -1
 	_expect(
 		(
 			spawned.max_health == SimpleCombat.enemy_health(raw)
