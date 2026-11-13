@@ -162,6 +162,8 @@ func _sync_objects() -> void:
 					actors[source].visible = source.visible and not source.dead
 					if source is SlasherCharnelKing:
 						_pose_charnel_king(source, actors[source])
+					elif source is SlasherColossus:
+						_animate_colossus(source, actors[source])
 	for source in actors.keys():
 		if not is_instance_valid(source):
 			actors[source].queue_free()
@@ -291,6 +293,51 @@ func _sync_sprite(source: Node2D, original: AnimatedSprite2D, proxy: Sprite3D) -
 
 
 ## The skull's jaw drops for the Soul Wail; its eyes burn red when it roars.
+## Plays the Heartwood Colossus model's animation for what the boss is doing.
+## Wind-ups are sped up or slowed so the blow lands as the telegraph runs out.
+func _animate_colossus(boss: SlasherColossus, model: Node3D) -> void:
+	var player := model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if player == null:
+		return
+	var last_health := int(model.get_meta("last_health", boss.health))
+	model.set_meta("last_health", boss.health)
+	var key := "%s:%s:%d" % [boss.state, boss.pattern, boss.slams_left]
+	if key == String(model.get_meta("anim_key", "")):
+		if boss.health < last_health and player.current_animation == "Idle":
+			player.play("Hit", 0.05)
+			player.queue("Idle")
+		return
+	model.set_meta("anim_key", key)
+	# Seconds into each clip where the blow lands (30 fps in Blender).
+	var impact := {"RootSlamL": 25.0 / 30.0, "RootSlamR": 25.0 / 30.0, "SporeBloom": 33.0 / 30.0}
+	var clip := "Idle"
+	match boss.state:
+		"roar":
+			clip = "Roar"
+		"telegraph", "attack":
+			match boss.pattern:
+				"root_slam":
+					clip = "RootSlamL" if boss.slams_left % 2 == 1 else "RootSlamR"
+				"spore_bloom":
+					clip = "SporeBloom"
+				"thorn_spiral":
+					clip = "ThornSpiral"
+		"window":
+			# Hold the end of a slam (fist on the ground); otherwise settle to idle.
+			if player.current_animation.begins_with("RootSlam"):
+				return
+	if boss.state == "attack" and player.current_animation == clip:
+		return
+	if not player.has_animation(clip):
+		return
+	var speed := 1.0
+	if boss.state == "telegraph" and impact.has(clip) and boss.timer > 0.05:
+		speed = clampf(float(impact[clip]) / boss.timer, 0.5, 2.5)
+	player.play(clip, 0.15, speed)
+	if clip != "Idle" and clip != "ThornSpiral":
+		player.queue("Idle")
+
+
 func _pose_charnel_king(king: SlasherCharnelKing, model: Node3D) -> void:
 	var jaw := model.get_node_or_null("Skull/Jaw") as Node3D
 	var wailing := king.pattern == "soul_wail" and king.state in ["telegraph", "attack"]

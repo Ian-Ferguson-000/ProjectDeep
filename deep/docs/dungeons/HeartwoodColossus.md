@@ -34,7 +34,33 @@ All numbers are in `data/slasher_balance.json` → `enemies.heartwood_colossus`
 
 ## Art
 
-The colossus is drawn in code as a placeholder. To use real art, set these on
+### 3D model (the live forest)
+
+The 3D forest shows a Blender model with animations:
+`assets/enemies/heartwood_colossus/heartwood_colossus.glb`.
+
+- **Source:** `art_source/heartwood_colossus/heartwood_colossus.blend`, built by
+  `build_heartwood_colossus.py` (run it with Blender to regenerate from scratch).
+  Once someone edits the `.blend` by hand, the `.blend` is the source of truth:
+  export it to the `.glb` path above (glTF Binary, animations on) instead of rerunning
+  the script.
+- **Units:** one Blender unit is one map cell. The game scales the model by
+  `GOLIATH_SCALE` (2.3) and by 0.85, and sets it back into the north wall
+  (`forest_room_art.gd`, `colossus()`). The model faces -Y in Blender.
+- **Skeleton:** `root`, `trunk_lower`, `trunk_upper`, `canopy`, `heart`, and for each
+  arm `arm_upper`, `arm_lower`, `fist` (`.L` / `.R`). One mesh, each part weighted
+  to one bone.
+- **Animations** (`forest_world_3d.gd`, `_animate_colossus()` picks them from the boss's
+  state): `Idle` (loops), `RootSlamL` / `RootSlamR` (a double slam alternates arms),
+  `SporeBloom`, `ThornSpiral` (loops), `Roar` (phase change), `Hit` (heart struck),
+  `Death` (not played yet: the game swaps in the split stump when it falls).
+  Slam and bloom wind-ups are sped up or slowed so the blow lands as the telegraph ends.
+- `render_previews.py` renders stills from the game's camera angle for checking poses.
+- If the `.glb` is missing, the game falls back to the primitive placeholder.
+
+### 2D placeholder
+
+The 2D colossus is drawn in code as a placeholder. To use real art, set these on
 the colossus (`game/enemies/bosses/slasher_colossus.gd`):
 
 - `body_texture`: the whole tree, centred on the middle of its 13×7 cell block

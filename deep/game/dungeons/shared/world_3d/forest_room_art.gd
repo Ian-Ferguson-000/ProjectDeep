@@ -11,6 +11,7 @@ var torches := 0
 const GOLIATH_SCALE := 2.3
 const GOLIATH_BACK := 2.2
 const TAVERN_ROOM := "res://assets/tavern3d/hearth_room.glb"
+const COLOSSUS_MODEL := "res://assets/enemies/heartwood_colossus/heartwood_colossus.glb"
 var rng := RandomNumberGenerator.new()
 var materials: Dictionary = {}
 var batches: Dictionary = {}
@@ -904,6 +905,22 @@ func colossus(point: Vector3) -> Node3D:
 	root.position = point + Vector3(0, 0, -GOLIATH_BACK)
 	root.scale = Vector3.ONE * GOLIATH_SCALE
 	add_child(root)
+	# The Blender model (art_source/heartwood_colossus/), with its animations.
+	# Without it, fall back to the primitive placeholder below.
+	if ResourceLoader.exists(COLOSSUS_MODEL):
+		var model := (load(COLOSSUS_MODEL) as PackedScene).instantiate()
+		model.name = "Model"
+		# The crown towers well past the north wall; this keeps it on screen.
+		model.scale = Vector3.ONE * 0.85
+		root.add_child(model)
+		var player := model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		if player != null:
+			for looping in ["Idle", "ThornSpiral"]:
+				if player.has_animation(looping):
+					player.get_animation(looping).loop_mode = Animation.LOOP_LINEAR
+			if player.has_animation("Idle"):
+				player.play("Idle")
+		return root
 	primitive("trunk", "57432f", Vector3(0, 2.1, 0), Vector3(4.5, 4.2, 3.3), root)
 	for side in [-1.0, 1.0]:
 		primitive(
