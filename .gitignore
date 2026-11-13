@@ -1,0 +1,41 @@
+# Root ignore rules for the Claude Code Game Studios framework files.
+#
+# Trimmed from the template's .gitignore on purpose: its engine and build
+# patterns (*.log, build/, out/, export_presets.cfg, *.zip, ...) would also
+# apply inside deep/, where the game tracks build logs and export presets.
+# The Godot project keeps its own rules in deep/.gitignore.
+
+# === Claude Code local ===
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+# Ephemeral per-session checkpoint; never committed.
+production/session-state/
+.scratch/
+# Per-agent working memory written at runtime
+.claude/agent-memory/
+# Worktrees from the prototyper, isolated subagents and `claude --worktree`.
+.claude/worktrees/
+
+# === Local sandboxes and scratch work (root level only) ===
+/examples/
+/sandbox/
+/sandboxes/
+
+# === Runtime artifacts ===
+# Created on first use by /consistency-check and /architecture-review
+/docs/consistency-failures.md
+
+# === Test output (root level only) ===
+/reports/
+/test-results/
+
+# === Secrets and environment ===
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+secrets.json

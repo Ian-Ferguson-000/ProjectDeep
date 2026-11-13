@@ -1,0 +1,20 @@
+# Line endings for the Claude Code Game Studios framework files. Scoped to the
+# framework's own folders so nothing under deep/ changes; the Godot project
+# keeps its own rules in deep/.gitattributes.
+
+# Shell hooks and scripts must be LF: a CRLF checkout breaks bash on Windows
+# Git Bash (stray \r corrupts commands and string comparisons).
+.claude/**/*.sh text eol=lf
+
+# awk programs read with `awk -f`; mawk and BWK awk may not tolerate CRLF.
+.claude/**/*.awk text eol=lf
+
+# Pattern list Claude Code reads when it creates a worktree; a trailing \r
+# would stop every pattern matching.
+.worktreeinclude text eol=lf
+
+# Tabular data compared byte-for-byte against freshly generated LF output.
+.claude/**/*.tsv text eol=lf
+
+# Markdown under .claude/ is authored LF (tooling substring-matches sentences).
+.claude/**/*.md text eol=lf

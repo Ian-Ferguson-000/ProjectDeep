@@ -1,0 +1,69 @@
+# Technical Requirement ID Registry
+#
+# PURPOSE: Persistent, stable IDs for every GDD technical requirement.
+# Prevents TR-ID renumbering across /architecture-review runs, which would
+# break story references.
+#
+# RULES:
+#   - IDs are PERMANENT. Never renumber, never delete (use status: deprecated).
+#   - Add new entries only at the END of each system's list.
+#   - When a GDD requirement is reworded (same intent): update `requirement`
+#     text and add a `revised` date. The ID stays the same.
+#   - When a requirement is removed from the GDD: set status: deprecated.
+#   - When a requirement is split or replaced: set
+#     status: "superseded-by: TR-[system]-NNN" with the new TR-ID(s), quoted:
+#     unquoted, the second colon makes the file invalid YAML.
+#
+# WRITTEN BY: /architecture-review (appends new entries, never overwrites)
+# READ BY:    /create-stories (embed IDs in stories)
+#             /dev-story (current requirement text before implementing)
+#             /story-done (look up current requirement text at review time)
+#             /story-readiness (validate TR-ID exists and is active)
+#             /create-epics (trace requirements to ADR coverage)
+#             /test-helpers (map requirements to tested systems)
+#             /adopt (brownfield audit: is the registry there)
+#             /create-architecture (reuses registered IDs in its baseline)
+#
+# ID FORMAT: TR-[system]-[NNN]
+#   [system] = a short lowercase slug for the system. It is an alias: the
+#   system's key (system_overrides and the like) is its GDD filename stem
+#   NNN = three-digit zero-padded sequence per system, starting at 001
+#
+# STATUS VALUES: active | deprecated | "superseded-by: TR-[system]-NNN"
+#
+# LAYOUT: the one shape .claude/scripts/registry.sh reads. requirements: holds
+#   a block list, or [] while it is empty. Each entry starts "- id: TR-..." with
+#   the dash at column 0, as in the examples (or 2, the same for every entry);
+#   its fields sit two columns past the dash. Quote a value that holds ": ". A
+#   line in any other shape is reported as unsupported layout, with its number.
+
+version: 1
+last_updated: ""
+
+requirements: []
+
+# --- EXAMPLE ENTRIES (remove when first real entries are added) ---
+#
+# - id: TR-combat-001
+#   system: combat
+#   gdd: design/gdd/combat-system.md
+#   requirement: "Player takes damage from enemies based on attack power minus defence"
+#   created: 2026-03-10
+#   revised: ""
+#   status: active
+#
+# - id: TR-combat-002
+#   system: combat
+#   gdd: design/gdd/combat-system.md
+#   requirement: "Combo window timing is 0.4 seconds between hits"
+#   created: 2026-03-10
+#   revised: "2026-04-01"
+#   status: active
+#
+# - id: TR-combat-003
+#   system: combat
+#   gdd: design/gdd/combat-system.md
+#   requirement: "Old damage formula using raw stats"
+#   created: 2026-03-10
+#   revised: ""
+#   status: "superseded-by: TR-combat-001"

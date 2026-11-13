@@ -1,0 +1,2 @@
+# Godot skips this folder. Project records and evidence screenshots are not game
+# resources: without this file a Godot project imports them and exports them.
