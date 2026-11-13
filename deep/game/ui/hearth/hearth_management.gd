@@ -2044,7 +2044,11 @@ func merchant_page() -> void:
 	var listed := 0
 	for id in HearthCatalog.data().items:
 		var entry := HearthCatalog.item(id)
-		if not entry.sources.has("merchant") or int(entry.tier) > campaign.establishment_tier:
+		if (
+			not entry.sources.has("merchant")
+			or int(entry.tier) > campaign.establishment_tier
+			or not HearthCatalog.in_play(entry)
+		):
 			continue
 		listed += 1
 		var rarity := String(entry.get("rarity", "common"))
@@ -2361,7 +2365,7 @@ func best_times_page() -> void:
 			stack.add_child(label(String(pair[1]), 16, THEME.HIGHLIGHT_GOLD))
 		var grid := _grid(3, content)
 		grid.columns = 3
-		for class_id in ["warrior", "tank", "rogue", "mage", "healer", "summoner"]:
+		for class_id in GameBalance.PLAYABLE_CLASS_IDS:
 			var best := ClearRecords.best(campaign, id, class_id)
 			var row := HBoxContainer.new()
 			row.add_theme_constant_override("separation", 6)

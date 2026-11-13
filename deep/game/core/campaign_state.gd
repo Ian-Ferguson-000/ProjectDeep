@@ -796,14 +796,11 @@ func record_dungeon_clear(dungeon_id: String) -> Array[String]:
 		logs.append_array(OBJECTIVES.resolve(self, expedition, dungeon_id))
 		if expedition.active:
 			expedition.rewarded_checkpoints[resolution_key] = true
-	if dungeon_id == "forest":
-		logs.append_array(unlock_class("tank"))
-		logs.append_array(unlock_class("rogue"))
+	# Clearing dungeons used to unlock Tank and Rogue (forest), Healer
+	# (farmstead) and Summoner (crypt). Those classes are shelved for now.
 	if dungeon_id == "ashen_farmstead":
-		logs.append_array(unlock_class("healer"))
 		clues["moonlit_farmstead"] = true
 	if dungeon_id == "crypt":
-		logs.append_array(unlock_class("summoner"))
 		clues["abyssal_crypt"] = true
 	if dungeon_id == "forest":
 		clues["moonlit_forest"] = true
@@ -822,7 +819,7 @@ func record_dungeon_clear(dungeon_id: String) -> Array[String]:
 
 func unlock_class(class_id: String) -> Array[String]:
 	class_id = GameBalance.normalize_class_id(class_id)
-	if unlocked_classes.has(class_id):
+	if unlocked_classes.has(class_id) or not GameBalance.is_playable_class(class_id):
 		return []
 	unlocked_classes.append(class_id)
 	return ["%s recruits may now arrive at the tavern." % class_id.capitalize()]
@@ -846,7 +843,7 @@ func _generate_character(class_id: String = "") -> CharacterRecord:
 	for value in ADVENTURERS.curated():
 		if (
 			value is Dictionary
-			and String(value.get("class", "")) == class_id
+			and GameBalance.playable_class_for(String(value.get("class", ""))) == class_id
 			and not used_curated_ids.has(String(value.get("id", "")))
 			and not reserved_arrivals.has(String(value.get("id", "")))
 		):
@@ -1004,7 +1001,7 @@ func _character_from_definition(definition: Dictionary) -> CharacterRecord:
 	var member := CharacterRecord.create(
 		id,
 		String(definition.get("name", "Adventurer")),
-		String(definition.get("class", "warrior")),
+		GameBalance.playable_class_for(String(definition.get("class", "warrior"))),
 		trait_data,
 		int(definition.get("portrait", 0))
 	)
@@ -1288,19 +1285,7 @@ func reassign_class(character_id: String, class_id: String) -> Dictionary:
 			"error": "%s is already a %s." % [member.display_name, _class_name(class_id)]
 		}
 	var previous := member.class_id
-	for slot in member.equipment.keys():
-		var instance_id := String(member.equipment[slot])
-		var instance: Dictionary = armory.get(instance_id, {})
-		var item := HearthCatalog.item(String(instance.get("item_id", "")))
-		if not instance.is_empty() and String(item.get("class_id", class_id)) == class_id:
-			continue
-		if bool(instance.get("bound", false)):
-			armory.erase(instance_id)
-		elif not instance.is_empty():
-			armory[instance_id].owner = ""
-		member.equipment.erase(slot)
-	_set_class(member, class_id)
-	HearthArmory.ensure_starter(self, member)
+	_retrain(member, class_id)
 	_add_calendar_event(
 		"retraining",
 		(
@@ -1322,6 +1307,42 @@ func reassign_class(character_id: String, class_id: String) -> Dictionary:
 			]
 		)
 	}
+
+
+## Change a member's class: unequip gear the new class cannot use, then hand
+## out its starter kit.
+func _retrain(member: CharacterRecord, class_id: String) -> void:
+	for slot in member.equipment.keys():
+		var instance_id := String(member.equipment[slot])
+		var instance: Dictionary = armory.get(instance_id, {})
+		var item := HearthCatalog.item(String(instance.get("item_id", "")))
+		if not instance.is_empty() and String(item.get("class_id", class_id)) == class_id:
+			continue
+		if bool(instance.get("bound", false)):
+			armory.erase(instance_id)
+		elif not instance.is_empty():
+			armory[instance_id].owner = ""
+		member.equipment.erase(slot)
+	_set_class(member, class_id)
+	HearthArmory.ensure_starter(self, member)
+
+
+## Old saves can hold shelved classes (healer, tank, rogue, summoner): drop
+## them from the unlocks and retrain anyone who has one into Fighter or Mage.
+func _retrain_shelved_classes() -> void:
+	unlocked_classes.assign(
+		unlocked_classes.filter(func(id): return GameBalance.is_playable_class(String(id)))
+	)
+	for class_id in GameBalance.PLAYABLE_CLASS_IDS:
+		if not unlocked_classes.has(class_id):
+			unlocked_classes.append(class_id)
+	for member in roster.values():
+		if not GameBalance.is_playable_class(member.class_id):
+			_retrain(member, GameBalance.playable_class_for(member.class_id))
+	for candidate in get_candidates():
+		var member: CharacterRecord = candidate.adventurer
+		if not GameBalance.is_playable_class(member.class_id):
+			_set_class(member, GameBalance.playable_class_for(member.class_id))
 
 
 ## The weapon a new recruit of this class arrives with (picked by seed).
@@ -2085,9 +2106,6 @@ func _load_dict(data: Dictionary) -> void:
 			var member := CharacterRecord.from_dict(value)
 			if not member.id.is_empty():
 				roster[member.id] = member
-	if has_completed_dungeon("forest"):
-		unlock_class("tank")
-		unlock_class("rogue")
 	expedition = ExpeditionState.from_dict(Dictionary(data.get("expedition", {})))
 	legacy_runtime = Dictionary(data.get("legacy_runtime", {})).duplicate(true)
 	calendar_shift = clampi(int(data.get("calendar_shift", 0)), 0, 1)
@@ -2150,6 +2168,7 @@ func _load_dict(data: Dictionary) -> void:
 	if not bool(data.get("simple_hearts", false)):
 		_simplify_roster_health()
 	HearthArmory.drop_unknown_items(self)
+	_retrain_shelved_classes()
 	ECOLOGY.ensure(self)
 	ECOLOGY.advance_to_day(self, calendar_day)
 	CRISIS.ensure(self)

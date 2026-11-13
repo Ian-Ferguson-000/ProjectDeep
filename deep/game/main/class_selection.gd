@@ -1,6 +1,6 @@
 extends Control
 
-const CLASS_IDS := ["warrior", "mage", "healer", "tank", "rogue", "summoner"]
+const CLASS_IDS := GameBalance.PLAYABLE_CLASS_IDS
 const STAT_IDS := ["str", "dex", "con", "int", "wis", "cha"]
 
 var controller: Node

@@ -115,16 +115,11 @@ func _run() -> void:
 		failures
 	)
 	campaign.record_dungeon_clear("forest")
-	_expect(
-		campaign.unlocked_classes.has("tank") and campaign.unlocked_classes.has("rogue"),
-		"A Forest clear did not unlock both Tank and Rogue",
-		failures
-	)
 	campaign.record_dungeon_clear("ashen_farmstead")
 	campaign.record_dungeon_clear("crypt")
 	_expect(
-		campaign.unlocked_classes.has("healer") and campaign.unlocked_classes.has("summoner"),
-		"later class unlocks failed",
+		campaign.unlocked_classes == ["warrior", "mage"],
+		"Clearing dungeons unlocked a shelved class: %s" % [campaign.unlocked_classes],
 		failures
 	)
 	campaign.tavern_upgrades["secret_research"] = 1

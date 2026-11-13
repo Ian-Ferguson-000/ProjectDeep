@@ -54,8 +54,36 @@ func _run() -> void:
 		failures
 	)
 	_expect(
-		loaded.unlocked_classes.has("tank") and loaded.unlocked_classes.has("rogue"),
-		"Prior Forest clear did not preserve both class unlocks",
+		loaded.unlocked_classes.has("warrior")
+		and loaded.unlocked_classes.has("mage")
+		and loaded.unlocked_classes.size() == 2,
+		"Loaded save did not keep exactly the Fighter and Mage unlocks",
+		failures
+	)
+	# Old saves with shelved classes: unlocks dropped, members retrained.
+	var shelved := CampaignState.new()
+	shelved.apply_post_tutorial_state("victory")
+	for candidate in shelved.get_candidates():
+		shelved.recruit_candidate(candidate.id)
+	var shelved_data := shelved.to_dict()
+	shelved_data["unlocked_classes"] = ["warrior", "mage", "tank", "phantom", "healer"]
+	var shelved_roster: Array = shelved_data.get("roster", [])
+	_expect(shelved_roster.size() >= 2, "Shelved-class fixture needs two members", failures)
+	if shelved_roster.size() >= 2:
+		shelved_roster[0]["class_id"] = "tank"
+		shelved_roster[1]["class_id"] = "summoner"
+	var shelved_loaded := CampaignState.new()
+	shelved_loaded._load_dict(CampaignState._migrate_dict(shelved_data))
+	_expect(
+		shelved_loaded.unlocked_classes.all(func(id): return GameBalance.is_playable_class(id)),
+		"Shelved class unlocks survived loading an old save",
+		failures
+	)
+	var classes_now: Array = shelved_loaded.roster.values().map(func(m): return m.class_id)
+	_expect(
+		classes_now.has("warrior") and classes_now.has("mage")
+		and classes_now.all(func(id): return GameBalance.is_playable_class(id)),
+		"Shelved-class members were not retrained to Fighter/Mage: %s" % [classes_now],
 		failures
 	)
 	var memorial_count := loaded.memorial.size()

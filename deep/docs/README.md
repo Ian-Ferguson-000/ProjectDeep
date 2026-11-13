@@ -33,6 +33,10 @@ Design notes, grouped by topic. Start with [ProjectLayout.md](ProjectLayout.md) 
 - [Run Seeds](systems/RunSeeds.md)
 - [Simple Combat Numbers](systems/SimpleCombat.md)
 
+## Plans
+
+- [Future updates (shelved features, such as the extra classes)](plans/FutureUpdates.md)
+
 ## Dungeons, rooms and bosses
 
 - [The Stone Crypt](dungeons/Crypt.md)
