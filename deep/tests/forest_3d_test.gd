@@ -162,6 +162,58 @@ func _run() -> void:
 	for i in 5: await process_frame
 	expect(not tutorial.rooms_active and tutorial.world_3d!=null,"Tutorial fallback did not build in 3D")
 	expect(tutorial.tutorial_sequence!=null,"3D tutorial lost its onboarding UI")
+	tutorial_state.set_class("mage")
+	tutorial.player.setup(tutorial_state)
+	tutorial.world_3d._sync_objects()
+	var mage_model: Node3D = tutorial.world_3d.actors[tutorial.player]
+	expect(not mage_model is Sprite3D,"Mage still uses a billboard")
+	expect(mage_model.find_child("AnimationPlayer",true,false)!=null,"Mage has no animation player")
+	var mage_animation := mage_model.find_child("AnimationPlayer",true,false) as AnimationPlayer
+	tutorial.player.animation_lock=0.0
+	tutorial.player.velocity=Vector2(277.5,0)
+	tutorial.world_3d._sync_objects()
+	expect(String(mage_animation.current_animation).contains("Run"),"Moving mage did not enter Run")
+	tutorial.player.active_action_slot="basic"
+	tutorial.player.animation_lock=0.2
+	tutorial.player.set_meta("mage_attack_serial",100)
+	tutorial.world_3d._sync_objects()
+	expect(String(mage_animation.current_animation).contains("Cast"),"Mage attack did not enter Cast")
+	mage_animation.advance(0.08)
+	tutorial.player.set_meta("mage_attack_serial",101)
+	tutorial.world_3d._sync_objects()
+	expect(mage_animation.current_animation_position<0.01,"Repeated attack did not restart the casting animation")
+	tutorial.player.animation_lock=0.0
+	tutorial.player.velocity=Vector2.ZERO
+	tutorial.world_3d._sync_objects()
+	expect(String(mage_animation.current_animation).contains("Idle"),"Mage did not return to Idle")
+	for visual in ["aether","fireball"]:
+		var bolt := SlasherProjectile.new().setup(tutorial.player,tutorial.player.global_position,Vector2.RIGHT,{"damage":1,"visual":visual})
+		tutorial.actor_layer.add_child(bolt)
+		bolt.set_physics_process(false)
+		tutorial.world_3d._sync_objects()
+		expect(tutorial.world_3d.actors.has(bolt),"Mage projectile has no 3D model")
+		expect(bolt.sprite.visibility_layer==tutorial.world_3d.HIDDEN_LAYER,"Mage projectile sprite was not hidden")
+		bolt.impacted=true
+		tutorial.world_3d._sync_objects()
+		expect(not tutorial.world_3d.actors[bolt].visible,"Impacted projectile model remains visible")
+		bolt.free()
+	tutorial.world_3d._sync_objects()
+	for visual in ["arrow","spectral_arrow","knife","bone","flaming_disk","necrotic_skull","rift_shard","bolt","soul","soul_flame","hellfire_orb","spore"]:
+		var hostile := SlasherHostileProjectile.new().setup(null,tutorial.player,tutorial.player.global_position+Vector2(100,0),Vector2.LEFT,1,{"visual_type":visual})
+		tutorial.actor_layer.add_child(hostile)
+		hostile.set_physics_process(false)
+		tutorial.world_3d._sync_objects()
+		expect(tutorial.world_3d.actors.has(hostile),visual+": hostile projectile has no 3D model")
+		var hostile_model: Node3D = tutorial.world_3d.actors[hostile]
+		expect(hostile_model.get_child_count()>0,visual+": hostile projectile geometry is empty")
+		expect(hostile.visibility_layer==tutorial.world_3d.HIDDEN_LAYER,visual+": hostile 2D drawing remains visible")
+		hostile.deflect(tutorial.player,Vector2.RIGHT)
+		tutorial.world_3d._sync_objects()
+		expect(hostile_model.visible,visual+": deflection hid projectile model")
+		hostile.free()
+		tutorial.world_3d._sync_objects()
+		await process_frame
+		expect(not is_instance_valid(hostile_model),visual+": projectile model leaked after removal")
 	tutorial.queue_free()
 	await process_frame
 	if failures.is_empty(): print("FOREST_3D_TEST_PASSED")

@@ -5,6 +5,10 @@ const ART := preload("res://scripts/scenes/forest3d/forest_room_art.gd")
 const EFFECT_LAYER := 1 << 19
 const HIDDEN_LAYER := 1 << 20
 const UNIT := 48.0
+const MAGE_MODEL := preload("res://assets/models/mage/shadowkin_mage.glb")
+const ARCANE_MODEL := preload("res://assets/models/mage/arcane_missile.glb")
+const FIREBALL_MODEL := preload("res://assets/models/mage/fireball.glb")
+const HOSTILE_MODEL := preload("res://scripts/scenes/forest3d/hostile_projectile_3d.gd")
 var dungeon: Node2D
 ## "forest" or "crypt": picks the art kit's theme and the lighting.
 var theme := "forest"
@@ -106,7 +110,22 @@ func _sync_objects() -> void:
 	# Scan only actors: dynamically spawned summons, projectiles, loot and props
 	# keep their existing lifetimes. Procedural effects stay in the shared pass.
 	for source in dungeon.actor_layer.get_children():
-		if source.name == "ColossusRemains":
+		if source is SlasherHostileProjectile:
+			if not actors.has(source):
+				var projectile_model := HOSTILE_MODEL.new()
+				projectile_model.setup(source)
+				add_child(projectile_model)
+				actors[source] = projectile_model
+			actors[source].position = to_world(source.global_position,0.65)
+			actors[source].sync(source)
+			source.visibility_layer = HIDDEN_LAYER
+			if is_instance_valid(source.sprite):
+				source.sprite.visibility_layer = HIDDEN_LAYER
+		elif source is SlasherPlayer and source.class_id == "mage":
+			_sync_mage(source)
+		elif source is SlasherProjectile and is_instance_valid(source.source) and source.source.class_id == "mage":
+			_sync_mage_projectile(source)
+		elif source.name == "ColossusRemains":
 			if not actors.has(source): actors[source] = art.bone_heap(to_world(source.global_position)) if theme == "crypt" else art.stump(to_world(source.global_position))
 			source.self_modulate.a = 0.0
 		elif source is SlasherBreakableProp:
@@ -174,6 +193,60 @@ func _sync_objects() -> void:
 		doors[direction].get_node("Brambles").visible = is_instance_valid(barrier) and barrier.visible
 		# Three-dimensional posts/gate replace the old bushes; retain door hints.
 		if is_instance_valid(barrier): barrier.visibility_layer = HIDDEN_LAYER
+
+func _sync_mage(source: SlasherPlayer) -> void:
+	if actors.has(source) and actors[source] is Sprite3D:
+		actors[source].queue_free()
+		actors.erase(source)
+	if not actors.has(source):
+		var model := MAGE_MODEL.instantiate() as Node3D
+		add_child(model)
+		actors[source] = model
+	var model: Node3D = actors[source]
+	model.position = to_world(source.global_position,0.03)
+	model.visible = source.visible and source.sprite.visible
+	source.sprite.visibility_layer = HIDDEN_LAYER
+	var facing: Vector2 = source.aim_direction if source.animation_lock > 0.0 else source.last_direction
+	if not facing.is_zero_approx():
+		# Shadowkin's authored forward is +Z after glTF's axis conversion.
+		model.rotation.y = lerp_angle(model.rotation.y,atan2(facing.x,facing.y),1.0-exp(-20.0*get_process_delta_time()))
+	var animation_player := model.find_child("AnimationPlayer",true,false) as AnimationPlayer
+	if animation_player == null: return
+	var casting := source.animation_lock > 0.0 and source.active_action_slot in ["basic","special"]
+	var action := "Cast" if casting else ("Run" if source.velocity.length_squared() > 1.0 else "Idle")
+	var serial := int(source.get_meta("mage_attack_serial",0))
+	var new_cast := casting and serial != int(model.get_meta("cast_serial",-1))
+	if new_cast:
+		model.set_meta("cast_serial",serial)
+		model.set_meta("cast_duration",maxf(0.12,source.animation_lock))
+	for animation_name in animation_player.get_animation_list():
+		if String(animation_name).contains(action):
+			if animation_player.current_animation != animation_name or new_cast:
+				animation_player.get_animation(animation_name).loop_mode = Animation.LOOP_NONE if action == "Cast" else Animation.LOOP_LINEAR
+				animation_player.play(animation_name,0.045 if casting else 0.12)
+				if new_cast:
+					animation_player.seek(0.0,true)
+			if casting:
+				animation_player.speed_scale = animation_player.get_animation(animation_name).length / float(model.get_meta("cast_duration",0.25))
+			elif action == "Run":
+				animation_player.speed_scale = clampf(source.velocity.length()/277.5,0.65,1.8)
+			else:
+				animation_player.speed_scale = 1.0
+			break
+
+func _sync_mage_projectile(source: SlasherProjectile) -> void:
+	if not actors.has(source):
+		var scene: PackedScene = FIREBALL_MODEL if String(source.attack.get("visual","aether")) == "fireball" else ARCANE_MODEL
+		var model := scene.instantiate() as Node3D
+		add_child(model)
+		actors[source] = model
+	var model: Node3D = actors[source]
+	model.visible = source.visible and not source.impacted
+	model.position = to_world(source.global_position,0.8)
+	# Exported spell noses point along -Z.
+	model.rotation.y = atan2(-source.direction.x,-source.direction.y)
+	if is_instance_valid(source.sprite):
+		source.sprite.visibility_layer = EFFECT_LAYER if source.impacted else HIDDEN_LAYER
 
 func _sync_sprite(source: Node2D, original: AnimatedSprite2D, proxy: Sprite3D) -> void:
 	if original.sprite_frames == null: return

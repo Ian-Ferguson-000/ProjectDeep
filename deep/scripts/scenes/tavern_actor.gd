@@ -94,4 +94,10 @@ func _arrive()->void:
 func _play(action:String)->void:
 	if sprite==null or sprite.sprite_frames==null:return
 	var animation:=SlasherSpriteLibrary.resolved_animation(sprite.sprite_frames,action,_last_direction)
-	if not animation.is_empty() and sprite.animation!=animation:sprite.play(animation)
+	if animation.is_empty():return
+	# The 3D resident also requests idle each frame, so keep the seated pose here.
+	if state==ActivityState.SEATED:
+		sprite.animation=animation
+		sprite.stop()
+	elif sprite.animation!=animation or not sprite.is_playing():
+		sprite.play(animation)
