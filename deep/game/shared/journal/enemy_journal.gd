@@ -1,8 +1,8 @@
 class_name EnemyJournal
 extends RefCounted
 
-const DEFINITIONS_ROOT := "res://Data/enemies"
-const SPECIAL_ENTRY_PATH := "res://Data/journal/corrupted_heart.tres"
+const DEFINITIONS_ROOT := "res://data/enemies"
+const SPECIAL_ENTRY_PATH := "res://data/journal/corrupted_heart.tres"
 static var cached_definitions: Array[EnemyDefinition] = []
 
 

@@ -1,10 +1,10 @@
 [gd_resource type="Resource" script_class="EnemyDefinition" format=3]
 
 [ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://game/shared/combat/enemy_definition.gd" id="1"]
-[ext_resource type="Resource" path="res://Data/enemies/spore_beast/profile.tres" id="2"]
-[ext_resource type="Resource" uid="uid://w7ypuwem72sp" path="res://Data/enemies/spore_beast/journal.tres" id="3"]
+[ext_resource type="Resource" path="res://data/enemies/spore_beast/profile.tres" id="2"]
+[ext_resource type="Resource" uid="uid://w7ypuwem72sp" path="res://data/enemies/spore_beast/journal.tres" id="3"]
 [ext_resource type="SpriteFrames" uid="uid://ddk3x847fm1tv" path="res://assets/enemies/spore_beast/frames.tres" id="4"]
-[ext_resource type="Resource" path="res://Data/enemies/spore_beast/abilities/spore_burst.tres" id="5"]
+[ext_resource type="Resource" path="res://data/enemies/spore_beast/abilities/spore_burst.tres" id="5"]
 [resource]
 script=ExtResource("1")
 enemy_id="spore_beast"

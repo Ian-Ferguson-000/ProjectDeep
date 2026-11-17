@@ -1,10 +1,10 @@
 [gd_resource type="Resource" script_class="EnemyDefinition" format=3]
 
 [ext_resource type="Script" uid="uid://d0cbhay8kybvv" path="res://game/shared/combat/enemy_definition.gd" id="1"]
-[ext_resource type="Resource" path="res://Data/enemies/fire_mage/profile.tres" id="2"]
-[ext_resource type="Resource" uid="uid://dfar7orva8eon" path="res://Data/enemies/fire_mage/journal.tres" id="3"]
+[ext_resource type="Resource" path="res://data/enemies/fire_mage/profile.tres" id="2"]
+[ext_resource type="Resource" uid="uid://dfar7orva8eon" path="res://data/enemies/fire_mage/journal.tres" id="3"]
 [ext_resource type="SpriteFrames" uid="uid://biarnd6k3rlpl" path="res://assets/enemies/fire_mage/frames.tres" id="4"]
-[ext_resource type="Resource" path="res://Data/enemies/fire_mage/abilities/fire_bolt.tres" id="5"]
+[ext_resource type="Resource" path="res://data/enemies/fire_mage/abilities/fire_bolt.tres" id="5"]
 [resource]
 script=ExtResource("1")
 enemy_id="fire_mage"
